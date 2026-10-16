@@ -1,1 +1,517 @@
-PLACEHOLDER_WILL_REPLACE
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arsenal Pro: Interactive Bowling Ball Dossier & Motion Simulator</title>
+<style>
+  :root {
+    --bg: #0a0e17;
+    --card: #151b2b;
+    --accent: #00d4ff;
+    --lane: #1a472a;
+    --text: #e8f0ff;
+    --muted: #8aa0c8;
+    --pocket: #ff6b35;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    background: linear-gradient(90deg, #0d1320, #1a2338);
+    padding: 1rem 1.5rem;
+    border-bottom: 2px solid var(--accent);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  header h1 { font-size: 1.6rem; color: var(--accent); letter-spacing: -0.5px; }
+  header .user-stats { font-size: 0.85rem; color: var(--muted); background: #151b2b; padding: 0.4rem 0.8rem; border-radius: 20px; }
+  .container { display: flex; flex: 1; overflow: hidden; }
+  .sidebar {
+    width: 320px;
+    background: var(--card);
+    border-right: 1px solid #2a3550;
+    overflow-y: auto;
+    padding: 1rem;
+  }
+  .sidebar h2 { font-size: 1.1rem; margin-bottom: 0.75rem; color: var(--accent); }
+  .ball-card {
+    background: #1e2740;
+    border: 1px solid #2a3550;
+    border-radius: 8px;
+    padding: 0.6rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 68px;
+  }
+  .ball-card img {
+    width: 52px;
+    height: 52px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+  .ball-card .info { flex: 1; }
+  .ball-card:hover, .ball-card.active { border-color: var(--accent); background: #253055; }
+  .ball-card .brand { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; }
+  .ball-card .name { font-weight: 600; margin: 0.15rem 0; font-size: 0.95rem; }
+  .ball-card .meta { font-size: 0.7rem; color: var(--muted); }
+  .main { flex: 1; display: flex; flex-direction: column; padding: 1rem; overflow: auto; }
+  .controls {
+    display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;
+    background: var(--card); padding: 1rem; border-radius: 8px;
+  }
+  .control-group { display: flex; flex-direction: column; min-width: 120px; flex: 1; }
+  .control-group label { font-size: 0.7rem; color: var(--muted); margin-bottom: 0.2rem; }
+  .control-group input, .control-group select {
+    background: #0d1320; border: 1px solid #2a3550; color: var(--text);
+    padding: 0.35rem; border-radius: 4px; font-size: 0.85rem;
+  }
+  .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+  button {
+    background: var(--accent); color: #000; border: none; padding: 0.45rem 0.9rem;
+    border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem;
+  }
+  button.secondary { background: #2a3550; color: var(--text); }
+  button:hover { opacity: 0.9; }
+  .canvas-wrap {
+    flex: 1; background: #0d1320; border-radius: 8px; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid #2a3550; min-height: 380px;
+  }
+  canvas { max-width: 100%; max-height: 100%; background: var(--lane); border-radius: 4px; }
+  .info-panel {
+    background: var(--card); margin-top: 1rem; padding: 1rem; border-radius: 8px;
+    font-size: 0.85rem; line-height: 1.4;
+  }
+  .modal {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    z-index: 100; align-items: center; justify-content: center; padding: 1rem;
+  }
+  .modal.open { display: flex; }
+  .modal-content {
+    background: var(--card); border: 1px solid var(--accent); border-radius: 12px;
+    width: min(720px, 95vw); max-height: 90vh; overflow-y: auto; padding: 1.5rem;
+  }
+  .modal-content h2 { color: var(--accent); margin-bottom: 0.5rem; }
+  .modal-content .close { float: right; cursor: pointer; font-size: 1.5rem; line-height: 1; }
+  .spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin: 1rem 0; }
+  .spec-item { background: #1e2740; padding: 0.5rem; border-radius: 4px; font-size: 0.85rem; }
+  .recommendation {
+    background: #1a3a2a; border-left: 3px solid #4ade80; padding: 0.75rem; margin-top: 1rem; border-radius: 4px;
+  }
+  .phase-note { font-size: 0.7rem; color: var(--muted); margin-top: 1rem; text-align: center; }
+  .compare-active { outline: 2px solid #ff6b35; }
+  @media (max-width: 900px) {
+    .container { flex-direction: column; }
+    .sidebar { width: 100%; max-height: 280px; border-right: none; border-bottom: 1px solid #2a3550; }
+    .ball-card { min-height: 60px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Arsenal Pro — Full Motion Lab</h1>
+  <div class="user-stats">15 lb • ~15 mph • ~220 RPM • House / Tournament</div>
+</header>
+<div class="container">
+  <aside class="sidebar">
+    <h2>Your Arsenal (24 balls)</h2>
+    <div id="ballList"></div>
+    <div class="phase-note">All sprints complete • Deeper physics • Multi-ball • Patterns • Metrics • Local presets • Responsive</div>
+  </aside>
+  <main class="main">
+    <div class="controls">
+      <div class="control-group">
+        <label>Speed (mph)</label>
+        <input type="range" id="speed" min="12" max="22" value="15" step="0.5">
+        <span id="speedVal">15</span>
+      </div>
+      <div class="control-group">
+        <label>Rev Rate (RPM)</label>
+        <input type="range" id="rev" min="100" max="500" value="220" step="10">
+        <span id="revVal">220</span>
+      </div>
+      <div class="control-group">
+        <label>Release Board</label>
+        <input type="range" id="release" min="1" max="35" value="15" step="1">
+        <span id="releaseVal">15</span>
+      </div>
+      <div class="control-group">
+        <label>Aim Angle (°)</label>
+        <input type="range" id="aim" min="-10" max="10" value="0" step="0.5">
+        <span id="aimVal">0</span>
+      </div>
+      <div class="control-group">
+        <label>Oil Volume</label>
+        <input type="range" id="oil" min="0.4" max="1.8" value="1.0" step="0.1">
+        <span id="oilVal">1.0</span>
+      </div>
+      <div class="control-group">
+        <label>Surface Strength</label>
+        <input type="range" id="surface" min="0.6" max="1.5" value="1.0" step="0.05">
+        <span id="surfaceVal">1.0</span>
+      </div>
+      <div class="control-group">
+        <label>Layout Strength</label>
+        <input type="range" id="layout" min="0.7" max="1.4" value="1.0" step="0.05">
+        <span id="layoutVal">1.0</span>
+      </div>
+      <div class="control-group">
+        <label>Pattern</label>
+        <select id="pattern">
+          <option value="house">House Shot</option>
+          <option value="sport">Sport / Flat</option>
+          <option value="cheetah">Cheetah (short)</option>
+          <option value="scorpion">Scorpion (medium)</option>
+          <option value="shark">Shark (long)</option>
+          <option value="dry">Dry / Transition</option>
+        </select>
+      </div>
+      <div class="btn-row">
+        <button id="simulate">Simulate</button>
+        <button class="secondary" id="compareToggle">Compare Mode</button>
+        <button class="secondary" id="savePreset">Save Preset</button>
+        <button class="secondary" id="loadPreset">Load Preset</button>
+        <button class="secondary" id="exportShot">Export Shot</button>
+      </div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="lane" width="780" height="480"></canvas>
+    </div>
+    <div class="info-panel" id="infoPanel">
+      Select a ball, adjust controls, and simulate. Compare mode lets you overlay a second ball path. Metrics include entry board, approximate entry angle, and board at arrows.
+    </div>
+  </main>
+</div>
+<div class="modal" id="dossierModal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <div id="dossierContent"></div>
+  </div>
+</div>
+<script>
+const balls = [
+  {id: 'super-nova', brand: 'Storm', name: 'Super Nova', image: 'ball_images/super-nova.jpg', rg: 2.490, diff: 0.052, mb: 0.019, cover: 'Solid Reactive', coverName: 'NeX Solid', core: 'Asymmetric', coreName: 'Ignition', finish: '2000 Abralon', year: 2022, motion: 'Very early reading, strong midlane, high flare potential. Aggressive overall.', rec: 'Strong for heavy oil or when you need early traction. With your speed/rev, use for fresh house when you want the ball to read early and control the midlane. May be too strong once the pattern breaks down.', hookFactor: 1.35, early: 0.85},
+  {id: 'hy-road', brand: 'Storm', name: 'Original Hy-Road', image: 'ball_images/hy-road.jpg', rg: 2.570, diff: 0.046, cover: 'Hybrid Reactive', coverName: 'R2S Hybrid', core: 'Symmetric', coreName: 'Inverted Fe2', finish: '1500 Polished', year: 2008, motion: 'Classic benchmark length with strong backend. Versatile and predictable.', rec: 'Excellent all-around for your style. Reliable on medium house and many tournament conditions. Great first or second ball out.', hookFactor: 1.05, early: 0.45},
+  {id: 'hy-road-solid', brand: 'Storm', name: 'Hy-Road Solid', image: 'ball_images/hy-road-solid.jpg', rg: 2.570, diff: 0.046, cover: 'Solid Reactive', coverName: 'R2S Solid', core: 'Symmetric', coreName: 'Inverted Fe2', finish: '2000 Abralon', year: 2014, motion: 'Earlier than original Hy-Road, controlled midlane read with good continuation.', rec: 'Stronger than the pearl/hybrid versions. Use when you need more traction on fresher oil or heavier volume.', hookFactor: 1.15, early: 0.65},
+  {id: 'hy-road-pearl', brand: 'Storm', name: 'Hy-Road Pearl', image: 'ball_images/hy-road-pearl.jpg', rg: 2.570, diff: 0.046, cover: 'Pearl Reactive', coverName: 'R2S Pearl', core: 'Symmetric', coreName: 'Inverted Fe2', finish: '1500 Polished', year: 2010, motion: 'Clean through the fronts, strong angular backend.', rec: 'Ideal transition ball or for lighter oil. With 220 RPM you can play more direct angles.', hookFactor: 0.95, early: 0.25},
+  {id: 'hy-road-40', brand: 'Storm', name: 'Hy-Road 40', rg: 2.570, diff: 0.046, cover: 'Pearl Reactive', coverName: 'A1S Pearl', core: 'Symmetric', coreName: 'Inverted Fe2', finish: 'Power Edge', year: 2025, motion: 'Modern pearl with good oil absorption and consistent reaction.', rec: 'Contemporary Hy-Road motion. Excellent for your house-shot benchmark when you want length + backend.', hookFactor: 1.0, early: 0.3},
+  {id: 'hy-road-x', brand: 'Storm', name: 'Hy-Road X', image: 'ball_images/hy-road-x.jpg', rg: 2.570, diff: 0.046, cover: 'Solid Reactive', coverName: 'R2X Solid', core: 'Symmetric', coreName: 'Inverted Fe2', finish: '1500 Polished', year: 2018, motion: 'Slightly more aggressive solid than classic R2S, balanced length and hook.', rec: 'Solid option for medium-heavy conditions. Reliable control.', hookFactor: 1.12, early: 0.55},
+  {id: 'hy-road-nano', brand: 'Storm', name: 'Hy-Road Nano', rg: 2.570, diff: 0.046, cover: 'Solid Reactive', coverName: 'NRG Solid', core: 'Symmetric', coreName: 'Inverted Fe2', finish: '2000 Abralon', year: 2017, motion: 'Nano cover gives strong midlane traction while retaining Hy-Road hitting power.', rec: 'Earlier reading solid in the Hy-Road family. Good when the front of the lane starts to open.', hookFactor: 1.18, early: 0.7},
+  {id: 'astrophysix', brand: 'Storm', name: 'AstroPhysiX', image: 'ball_images/astrophysix.jpg', rg: 2.480, diff: 0.053, mb: 0.017, cover: 'Pearl Reactive', coverName: 'R2S Pearl', core: 'Asymmetric', coreName: 'Atomic', finish: '1500 Polished', year: 2019, motion: 'Low RG pearl with strong flare — length then sharp backend.', rec: 'Power pearl for when you need angle and entry. Can be strong for lower-rev players on medium conditions.', hookFactor: 1.2, early: 0.35},
+  {id: 'ice-storm', brand: 'Storm', name: 'Ice Storm', image: 'ball_images/ice-storm.jpg', rg: 2.55, diff: 0.040, cover: 'Pearl Reactive', core: 'Symmetric', finish: 'Polished', year: 2015, motion: 'Cleaner, more controllable pearl motion.', rec: 'Use for dry lanes or when stronger pearls over-react.', hookFactor: 0.85, early: 0.2},
+  {id: 'conspiracy-pearl', brand: 'Radical', name: 'Conspiracy Pearl', rg: 2.49, diff: 0.045, cover: 'Pearl Reactive', core: 'Asymmetric', year: 2021, motion: 'Angular pearl with good continuation.', rec: 'Tournament pearl option when you need length and backend.', hookFactor: 1.05, early: 0.3},
+  {id: 'innovator', brand: 'Radical', name: 'Innovator', image: 'ball_images/innovator.jpg', rg: 2.47, diff: 0.050, cover: 'Solid Reactive', core: 'Asymmetric', year: 2020, motion: 'Strong early-to-mid reading solid.', rec: 'Heavy oil / fresh solid for control.', hookFactor: 1.25, early: 0.75},
+  {id: 'bigfoot-hybrid', brand: 'Radical', name: 'Bigfoot Hybrid', rg: 2.468, diff: 0.053, cover: 'Hybrid Reactive', coverName: 'HK22 Hybrid', core: 'Symmetric', coreName: 'Bigfoot', year: 2022, motion: 'Strong hybrid with continuous motion.', rec: 'Benchmark hybrid strength for medium-heavy.', hookFactor: 1.22, early: 0.6},
+  {id: 'rattler', brand: 'Radical', name: 'Rattler', rg: 2.480, diff: 0.035, cover: 'Solid Reactive', coverName: 'S.H.A.R.P', core: 'Symmetric', coreName: 'Rattler', finish: '500/1500/4000', year: 2023, motion: 'Benchmark symmetric solid — continuous and controllable.', rec: 'Reliable control piece.', hookFactor: 1.05, early: 0.55},
+  {id: 'rattler-big-bite', brand: 'Radical', name: 'Rattler Big Bite', image: 'ball_images/rattler-big-bite.jpg', rg: 2.480, diff: 0.035, cover: 'Hybrid Reactive', coverName: 'S.H.A.R.P. Hybrid', core: 'Symmetric', coreName: 'Rattler', finish: '500/1500/3000 Siaair', year: 2024, motion: 'Stronger mid-lane and overall hook than Deadly Rattler. Excellent benchmark.', rec: 'YOUR PRIMARY HOUSE-SHOT BENCHMARK. With 15 mph / 220 RPM this gives controllable midlane read and enough backend for the pocket on typical league conditions. First ball out.', hookFactor: 1.15, early: 0.6},
+  {id: 'rattler-nu', brand: 'Radical', name: 'Rattler Nu', rg: 2.480, diff: 0.035, cover: 'Not Urethane', core: 'Symmetric', coreName: 'Rattler', year: 2024, motion: 'Urethane-like smooth continuous motion without urethane downsides.', rec: 'Control ball for short patterns or when you need to blend the lane.', hookFactor: 0.75, early: 0.4},
+  {id: 'deadly-rattler', brand: 'Radical', name: 'Deadly Rattler', image: 'ball_images/deadly-rattler.jpg', rg: 2.480, diff: 0.035, cover: 'Pearl Reactive', coverName: 'HK22 HyperKinetic Pearl', core: 'Symmetric', coreName: 'Rattler', finish: '500/1000/1500 Crown', year: 2023, motion: 'Cleaner through the front, sharper continuous downlane than original Rattler.', rec: 'YOUR TRANSITION BALL. When the lanes open up, this gives cleaner projection and sharper backend while retaining control. Perfect second ball after Big Bite.', hookFactor: 1.0, early: 0.3},
+  {id: 'counter-attack-solid', brand: 'Radical', name: 'Counter Attack Solid', rg: 2.575, diff: 0.023, cover: 'Solid Reactive', core: 'Symmetric', year: 2022, motion: 'Higher RG, lower diff — more length and controlled shape.', rec: 'When you need the ball to get further down the lane before reading.', hookFactor: 0.9, early: 0.4},
+  {id: 'guru-supreme', brand: 'Radical', name: 'Guru Supreme', rg: 2.48, diff: 0.048, cover: 'Hybrid Reactive', core: 'Asymmetric', year: 2021, motion: 'Strong hybrid with good mid and backend.', rec: 'Power hybrid for medium-heavy conditions.', hookFactor: 1.18, early: 0.55},
+  {id: 'trailblazer', brand: 'Radical', name: 'Trailblazer', rg: 2.50, diff: 0.040, cover: 'Pearl Reactive', core: 'Symmetric', year: 2023, motion: 'Clean pearl motion.', rec: 'Length and angle option.', hookFactor: 0.95, early: 0.25},
+  {id: 'ordnance-c4', brand: '900 Global', name: 'Ordnance C4', image: 'ball_images/ordnance-c4.jpg', rg: 2.49, diff: 0.041, cover: 'Hybrid Reactive', coverName: 'S70 Hybrid', core: 'Symmetric', coreName: 'Shrapnel 2.0', finish: '4000 Abralon', year: 2020, motion: 'Clean hybrid with predictable shape on medium conditions.', rec: 'Versatile medium-oil hybrid.', hookFactor: 1.05, early: 0.45},
+  {id: 'raw-hammer-black', brand: 'Hammer', name: 'Raw Hammer Black', image: 'ball_images/raw-hammer.jpg', rg: 2.54, diff: 0.038, cover: 'Solid Reactive', core: 'Symmetric', year: 2021, motion: 'Controlled solid with good traction.', rec: 'Benchmark solid for house shot.', hookFactor: 1.1, early: 0.6},
+  {id: 'fortress-endgame', brand: 'Pyramid', name: 'Fortress Endgame', image: 'ball_images/fortress-endgame.jpg', rg: 2.50, diff: 0.045, cover: 'Solid Reactive', core: 'Asymmetric', year: 2022, motion: 'Strong solid reaction.', rec: 'Heavy oil option.', hookFactor: 1.2, early: 0.7},
+  {id: 'rack-attack', brand: 'Sports Tec', name: 'Rack Attack Pro Line Urethane', rg: 2.60, diff: 0.015, cover: 'Urethane', core: 'Symmetric', year: 2020, motion: 'Classic urethane — smooth, early roll, controllable on short or high-friction.', rec: 'Short patterns, dry lanes, or when you need maximum control and blending.', hookFactor: 0.6, early: 0.5},
+  {id: 'green-scout', brand: 'Scout', name: 'Green Scout Reactive', rg: 2.52, diff: 0.040, cover: 'Solid Reactive', core: 'Symmetric', year: 2021, motion: 'Solid reactive benchmark.', rec: 'Reliable control piece.', hookFactor: 1.05, early: 0.55}
+];
+
+let selectedBall = balls.find(b => b.id === 'rattler-big-bite');
+let compareBall = null;
+let compareMode = false;
+let canvas, ctx;
+
+function init() {
+  const list = document.getElementById('ballList');
+  balls.forEach(b => {
+    const card = document.createElement('div');
+    card.className = 'ball-card' + (b.id === selectedBall.id ? ' active' : '');
+    card.dataset.id = b.id;
+    card.innerHTML = `${b.image ? `<img src="${b.image}" alt="${b.name}">` : '<div style="width:52px;height:52px;background:#2a3550;border-radius:8px;flex-shrink:0;"></div>'}<div class="info"><div class="brand">${b.brand}</div><div class="name">${b.name}</div><div class="meta">${b.cover} • RG ${b.rg} • Diff ${b.diff}</div></div>`;
+    card.onclick = () => selectBall(b, card);
+    list.appendChild(card);
+  });
+
+  ['speed','rev','release','aim','oil','surface','layout'].forEach(id => {
+    const el = document.getElementById(id);
+    const val = document.getElementById(id + 'Val');
+    if (el && val) el.oninput = e => val.textContent = e.target.value;
+  });
+
+  document.getElementById('simulate').onclick = drawLane;
+  document.getElementById('compareToggle').onclick = () => {
+    compareMode = !compareMode;
+    document.getElementById('compareToggle').textContent = compareMode ? 'Compare ON' : 'Compare Mode';
+    if (!compareMode) compareBall = null;
+    drawLane();
+  };
+  document.getElementById('savePreset').onclick = savePreset;
+  document.getElementById('loadPreset').onclick = loadPreset;
+  document.getElementById('exportShot').onclick = exportShot;
+  document.querySelector('.close').onclick = () => document.getElementById('dossierModal').classList.remove('open');
+  document.getElementById('dossierModal').onclick = e => { if (e.target.id === 'dossierModal') e.target.classList.remove('open'); };
+
+  canvas = document.getElementById('lane');
+  ctx = canvas.getContext('2d');
+  drawLane();
+}
+
+function selectBall(ball, card) {
+  if (compareMode) {
+    compareBall = ball;
+    document.querySelectorAll('.ball-card').forEach(c => c.classList.remove('compare-active'));
+    card.classList.add('compare-active');
+  } else {
+    selectedBall = ball;
+    document.querySelectorAll('.ball-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    showDossier(ball);
+  }
+  drawLane();
+}
+
+function showDossier(b) {
+  const html = `
+    <h2>${b.brand} ${b.name}</h2>
+    ${b.image ? `<img src="${b.image}" alt="${b.name}" style="max-width:200px;max-height:200px;border-radius:12px;float:right;margin:0 0 1rem 1rem;object-fit:cover;box-shadow:0 4px 12px rgba(0,0,0,0.4);">` : ''}
+    <p style="color:var(--muted);margin-bottom:0.5rem;">${b.year || ''} • ${b.cover}${b.coverName ? ' ('+b.coverName+')' : ''}</p>
+    <div class="spec-grid">
+      <div class="spec-item"><strong>RG (15 lb)</strong><br>${b.rg}</div>
+      <div class="spec-item"><strong>Diff</strong><br>${b.diff}${b.mb ? ' / MB '+b.mb : ''}</div>
+      <div class="spec-item"><strong>Core</strong><br>${b.core || 'Symmetric'}${b.coreName ? ' ('+b.coreName+')' : ''}</div>
+      <div class="spec-item"><strong>Finish</strong><br>${b.finish || 'Factory'}</div>
+    </div>
+    <p><strong>Motion:</strong> ${b.motion}</p>
+    <div class="recommendation">
+      <strong>Recommendation for your style (~15 mph / 220 RPM):</strong><br>
+      ${b.rec}
+    </div>
+    <p style="margin-top:1rem;font-size:0.8rem;color:var(--muted);clear:both;">Data primarily from bowwwl.com. Layout, surface, and oil volume modeled via sliders. Images are real product photos where available.</p>
+  `;
+  document.getElementById('dossierContent').innerHTML = html;
+  document.getElementById('dossierModal').classList.add('open');
+}
+
+function simulatePath(ball, params) {
+  const {speed, rev, releaseBoard, aimDeg, oil, surface, layout, pattern, w, h} = params;
+  const revRatio = rev / (speed * 12);
+  const baseHook = ball.hookFactor * (0.55 + revRatio * 0.45) * surface * layout / oil;
+  const earlyFactor = ball.early * (surface > 1 ? 1.1 : 1) * (layout > 1 ? 1.05 : 1);
+
+  const startX = 40 + (releaseBoard / 39) * (w - 80);
+  const aimRad = (aimDeg * Math.PI) / 180;
+  let points = [];
+  let x = startX, y = 20;
+  let vx = Math.sin(aimRad) * 1.4;
+  let vy = 3.2 + (speed - 15) * 0.05;
+
+  for (let t = 0; t < 140; t++) {
+    points.push({x, y});
+    const board = ((x - 40) / (w - 80)) * 39;
+    let friction = 0.35;
+    if (pattern === 'house') {
+      friction = board < 10 || board > 29 ? 1.25 : (board > 16 && board < 23 ? 0.35 : 0.75);
+    } else if (pattern === 'cheetah') {
+      friction = board < 12 || board > 27 ? 1.4 : 0.5;
+    } else if (pattern === 'scorpion') {
+      friction = board < 8 || board > 31 ? 1.1 : 0.65;
+    } else if (pattern === 'shark') {
+      friction = 0.7;
+    } else if (pattern === 'dry') {
+      friction = 1.5;
+    } else {
+      friction = 0.85;
+    }
+    friction *= oil;
+
+    const progress = (y - 20) / (h - 80);
+    const hookPhase = Math.max(0, progress - (0.22 - earlyFactor * 0.18));
+    const lateralForce = baseHook * friction * hookPhase * 0.18 * (board < 19.5 ? 1 : -0.25);
+
+    vx += lateralForce * 0.09;
+    x += vx;
+    y += vy;
+    if (y > h - 45) break;
+  }
+  return points;
+}
+
+function drawLane() {
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const pattern = document.getElementById('pattern').value;
+  const oil = parseFloat(document.getElementById('oil').value);
+  const gradient = ctx.createLinearGradient(0, 0, w, 0);
+  if (pattern === 'house') {
+    gradient.addColorStop(0, '#2d5a3d');
+    gradient.addColorStop(0.3, '#1e4a2e');
+    gradient.addColorStop(0.5, '#163d26');
+    gradient.addColorStop(0.7, '#1e4a2e');
+    gradient.addColorStop(1, '#2d5a3d');
+  } else if (pattern === 'dry') {
+    gradient.addColorStop(0, '#3a6a4a');
+    gradient.addColorStop(1, '#3a6a4a');
+  } else {
+    gradient.addColorStop(0, '#1a3d2a');
+    gradient.addColorStop(1, '#1a3d2a');
+  }
+  ctx.fillStyle = gradient;
+  ctx.fillRect(40, 20, w - 80, h - 60);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  for (let i = 0; i <= 39; i++) {
+    const x = 40 + (i / 39) * (w - 80);
+    ctx.beginPath();
+    ctx.moveTo(x, 20);
+    ctx.lineTo(x, h - 40);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.fillRect(40, h * 0.48, w - 80, 6);
+  ctx.fillStyle = '#fff';
+  ctx.font = '9px sans-serif';
+  ctx.fillText('ARROWS', 50, h * 0.48 - 4);
+
+  ctx.fillStyle = '#444';
+  ctx.fillRect(40, h - 40, w - 80, 20);
+  const pocketX = 40 + (17.8 / 39) * (w - 80);
+  ctx.fillStyle = 'rgba(255,107,53,0.45)';
+  ctx.fillRect(pocketX - 20, h - 42, 40, 22);
+  ctx.strokeStyle = '#ff6b35';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(pocketX - 20, h - 42, 40, 22);
+  ctx.fillStyle = '#fff';
+  ctx.font = '10px sans-serif';
+  ctx.fillText('POCKET', pocketX - 18, h - 28);
+
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(40, 20);
+  ctx.lineTo(w - 40, 20);
+  ctx.stroke();
+
+  const params = {
+    speed: parseFloat(document.getElementById('speed').value),
+    rev: parseFloat(document.getElementById('rev').value),
+    releaseBoard: parseFloat(document.getElementById('release').value),
+    aimDeg: parseFloat(document.getElementById('aim').value),
+    oil: parseFloat(document.getElementById('oil').value),
+    surface: parseFloat(document.getElementById('surface').value),
+    layout: parseFloat(document.getElementById('layout').value),
+    pattern,
+    w, h
+  };
+
+  const mainPoints = simulatePath(selectedBall, params);
+  drawPath(mainPoints, '#00d4ff', 3.5);
+
+  let comparePoints = null;
+  if (compareMode && compareBall) {
+    comparePoints = simulatePath(compareBall, params);
+    drawPath(comparePoints, '#ff6b35', 2.5);
+  }
+
+  function drawPath(points, color, width) {
+    if (!points.length) return;
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineJoin = 'round';
+    points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+    ctx.stroke();
+    const last = points[points.length - 1];
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(last.x, last.y, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  const endBoard = mainPoints.length ? ((mainPoints[mainPoints.length-1].x - 40) / (w - 80) * 39).toFixed(1) : '—';
+  const arrowIdx = mainPoints.findIndex(p => p.y > h * 0.48);
+  const arrowBoard = arrowIdx >= 0 ? ((mainPoints[arrowIdx].x - 40) / (w - 80) * 39).toFixed(1) : '—';
+  const entryAngle = mainPoints.length > 5 ? (Math.atan2(mainPoints[mainPoints.length-1].x - mainPoints[mainPoints.length-5].x, mainPoints[mainPoints.length-1].y - mainPoints[mainPoints.length-5].y) * 180 / Math.PI).toFixed(1) : '—';
+
+  let info = `<strong>${selectedBall.brand} ${selectedBall.name}</strong> • Hook ~${selectedBall.hookFactor} (early ${selectedBall.early})<br>`;
+  info += `Speed ${params.speed} • ${params.rev} RPM • Release ${params.releaseBoard} • Aim ${params.aimDeg}° • Oil ${params.oil} • Surface ${params.surface} • Layout ${params.layout}<br>`;
+  info += `Entry board: ${endBoard} • Board at arrows: ${arrowBoard} • Approx entry angle: ${entryAngle}° (pocket ~17–20)<br>`;
+  if (compareBall) info += `<span style="color:#ff6b35">Compare: ${compareBall.brand} ${compareBall.name}</span><br>`;
+  info += `<em>Enhanced model with oil volume, surface, layout strength, and expanded patterns. Still approximate — real results depend on actual conditions.</em>`;
+  document.getElementById('infoPanel').innerHTML = info;
+}
+
+function savePreset() {
+  const preset = {
+    ball: selectedBall.id,
+    speed: document.getElementById('speed').value,
+    rev: document.getElementById('rev').value,
+    release: document.getElementById('release').value,
+    aim: document.getElementById('aim').value,
+    oil: document.getElementById('oil').value,
+    surface: document.getElementById('surface').value,
+    layout: document.getElementById('layout').value,
+    pattern: document.getElementById('pattern').value
+  };
+  localStorage.setItem('arsenalProPreset', JSON.stringify(preset));
+  alert('Preset saved locally in this browser.');
+}
+
+function loadPreset() {
+  const raw = localStorage.getItem('arsenalProPreset');
+  if (!raw) return alert('No preset found.');
+  const p = JSON.parse(raw);
+  document.getElementById('speed').value = p.speed;
+  document.getElementById('speedVal').textContent = p.speed;
+  document.getElementById('rev').value = p.rev;
+  document.getElementById('revVal').textContent = p.rev;
+  document.getElementById('release').value = p.release;
+  document.getElementById('releaseVal').textContent = p.release;
+  document.getElementById('aim').value = p.aim;
+  document.getElementById('aimVal').textContent = p.aim;
+  document.getElementById('oil').value = p.oil;
+  document.getElementById('oilVal').textContent = p.oil;
+  document.getElementById('surface').value = p.surface;
+  document.getElementById('surfaceVal').textContent = p.surface;
+  document.getElementById('layout').value = p.layout;
+  document.getElementById('layoutVal').textContent = p.layout;
+  document.getElementById('pattern').value = p.pattern;
+  const ball = balls.find(b => b.id === p.ball);
+  if (ball) {
+    selectedBall = ball;
+    document.querySelectorAll('.ball-card').forEach(c => c.classList.toggle('active', c.dataset.id === ball.id));
+  }
+  drawLane();
+  alert('Preset loaded.');
+}
+
+function exportShot() {
+  const link = document.createElement('a');
+  link.download = `arsenal-pro-shot-${Date.now()}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+init();
+</script>
+</body>
+</html>
