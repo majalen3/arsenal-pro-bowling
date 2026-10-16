@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arsenal Pro: Interactive Bowling Ball Dossier & Motion Simulator</title>
+<style>
+  :root {
+    --bg: #0a0e17;
+    --card: #151b2b;
+    --accent: #00d4ff;
+    --lane: #1a472a;
+    --oil: #2a5a3a;
+    --dry: #3a6a4a;
+    --text: #e8f0ff;
+    --muted: #8aa0c8;
+    --pocket: #ff6b35;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    background: linear-gradient(90deg, #0d1320, #1a2338);
+    padding: 1rem 1.5rem;
+    border-bottom: 2px solid var(--accent);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  header h1 { font-size: 1.6rem; color: var(--accent); letter-spacing: -0.5px; }
+  header .user-stats { font-size: 0.9rem; color: var(--muted); background: #151b2b; padding: 0.4rem 0.8rem; border-radius: 20px; }
+  .container { display: flex; flex: 1; overflow: hidden; }
+  .sidebar {
+    width: 340px;
+    background: var(--card);
+    border-right: 1px solid #2a3550;
+    overflow-y: auto;
+    padding: 1rem;
+  }
+  .sidebar h2 { font-size: 1.1rem; margin-bottom: 0.75rem; color: var(--accent); }
+  .ball-card {
+    background: #1e2740;
+    border: 1px solid #2a3550;
+    border-radius: 8px;
+    padding: 0.6rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 72px;
+  }
+  .ball-card img {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  }
+  .ball-card .info { flex: 1; }
+  .ball-card:hover, .ball-card.active { border-color: var(--accent); background: #253055; transform: translateX(2px); }
+  .ball-card .brand { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; }
+  .ball-card .name { font-weight: 600; margin: 0.2rem 0; }
+  .ball-card .meta { font-size: 0.75rem; color: var(--muted); }
+  .main { flex: 1; display: flex; flex-direction: column; padding: 1rem; }
+  .controls {
+    display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;
+    background: var(--card); padding: 1rem; border-radius: 8px;
+  }
+  .control-group { display: flex; flex-direction: column; min-width: 140px; }
+  .control-group label { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.25rem; }
+  .control-group input, .control-group select {
+    background: #0d1320; border: 1px solid #2a3550; color: var(--text);
+    padding: 0.4rem; border-radius: 4px;
+  }
+  .canvas-wrap {
+    flex: 1; background: #0d1320; border-radius: 8px; position: relative;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid #2a3550;
+  }
+  canvas { max-width: 100%; max-height: 100%; background: var(--lane); border-radius: 4px; }
+  .info-panel {
+    background: var(--card); margin-top: 1rem; padding: 1rem; border-radius: 8px;
+    max-height: 200px; overflow-y: auto;
+  }
+  .modal {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    z-index: 100; align-items: center; justify-content: center;
+  }
+  .modal.open { display: flex; }
+  .modal-content {
+    background: var(--card); border: 1px solid var(--accent); border-radius: 12px;
+    width: min(700px, 90vw); max-height: 85vh; overflow-y: auto; padding: 1.5rem;
+  }
+  .modal-content h2 { color: var(--accent); margin-bottom: 0.5rem; }
+  .modal-content .close { float: right; cursor: pointer; font-size: 1.5rem; }
+  .spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin: 1rem 0; }
+  .spec-item { background: #1e2740; padding: 0.5rem; border-radius: 4px; font-size: 0.85rem; }
+  .recommendation {
+    background: #1a3a2a; border-left: 3px solid #4ade80; padding: 0.75rem; margin-top: 1rem; border-radius: 4px;
+  }
+  .phase-note { font-size: 0.75rem; color: var(--muted); margin-top: 1rem; text-align: center; }
+  button {
+    background: var(--accent); color: #000; border: none; padding: 0.5rem 1rem;
+    border-radius: 4px; cursor: pointer; font-weight: 600;
+  }
+  button:hover { opacity: 0.9; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Arsenal Pro — Interactive Ball Motion Lab</h1>
+  <div class="user-stats">Your Profile: 15 lb • ~15 mph • ~220 RPM • House / Tournament</div>
+</header>
+<div class="container">
+  <aside class="sidebar">
+    <h2>Your Arsenal (24 balls)</h2>
+    <div id="ballList"></div>
+    <div class="phase-note">Complete interactive arsenal lab • Real product photos • Data from bowwwl.com • Approximate physics model for training & visualization</div>
+  </aside>
+  <main class="main">
+    <div class="controls">
+      <div class="control-group">
+        <label>Speed (mph)</label>
+        <input type="range" id="speed" min="12" max="20" value="15" step="0.5">
+        <span id="speedVal">15</span>
+      </div>
+      <div class="control-group">
+        <label>Rev Rate (RPM)</label>
+        <input type="range" id="rev" min="100" max="450" value="220" step="10">
+        <span id="revVal">220</span>
+      </div>
+      <div class="control-group">
+        <label>Release Board</label>
+        <input type="range" id="release" min="1" max="35" value="15" step="1">
+        <span id="releaseVal">15</span>
+      </div>
+      <div class="control-group">
+        <label>Aim Angle (° left of target)</label>
+        <input type="range" id="aim" min="-8" max="8" value="0" step="0.5">
+        <span id="aimVal">0</span>
+      </div>
+      <div class="control-group">
+        <label>Pattern</label>
+        <select id="pattern">
+          <option value="house">House Shot (typical)</option>
+          <option value="sport">Sport / Flat</option>
+          <option value="dry">Dry / Transition</option>
+        </select>
+      </div>
+      <button id="simulate">Simulate Shot</button>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="lane" width="700" height="420"></canvas>
+    </div>
+    <div class="info-panel" id="infoPanel">
+      Select a ball from the left and adjust release / aim. The path shows approximate top-down ball motion based on core (RG/Diff), coverstock type, your speed & rev rate, and lane pattern. Target the highlighted pocket zone at the pins.
+    </div>
+  </main>
+</div>
+<div class="modal" id="dossierModal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <div id="dossierContent"></div>
+  </div>
+</div>
+<script>
+const balls = [
+  {id: 'super-nova', brand: 'Storm', name: 'Super Nova', image: 'ball_images/super-nova.jpg', rg: 2.490, diff: 0.052, mb: 0.019, cover: 'Solid Reactive', coverName: 'NeX Solid', core: 'Asymmetric', coreName: 'Ignition', finish: '2000 Abralon', year: 2022, motion: 'Very early reading, strong midlane, high flare potential. Aggressive overall.', rec: 'Strong for heavy oil or when you need early traction. With your speed/rev, use for fresh house when you want the ball to read early and control the midlane. May be too strong once the pattern breaks down.', hookFactor: 1.35, early: 0.85},
+  {id: 'hy-road', brand: 'Storm', name: 'Original Hy-Road', image: 'ball_images/hy-road.jpg', rg: 2.570, diff: 0.046, cover: 'Hybrid Reactive', coverName: 'R2S Hybrid', core: 'Symmetric', coreName: 'Inverted Fe2', finish: '1500 Polished', year: 2008, motion: 'Classic benchmark length with strong backend. Versatile and predictable.', rec: 'Excellent all-around for your style. Reliable on medium house and many tournament conditions. Great first or second ball out.', hookFactor: 1.05, early: 0.45},
+  {id: 'hy-road-solid', brand: 'Storm', name: 'Hy-Road Solid', image: 'ball_images/hy-road-solid.jpg', rg: 2.570, diff: 0.046, cover: 'Solid Reactive', coverName: 'R2S Solid', core: 'Symmetric', coreName: 'Inverted Fe2', finish: '2000 Abralon', year: 2014, motion: 'Earlier than original Hy-Road, controlled midlane read with good continuation.', rec: 'Stronger than the pearl/hybrid versions. Use when you need more traction on fresher oil or heavier volume.', hookFactor: 1.15, early: 0.65},
+  {id: 'hy-road-pearl', brand: 'Storm', name: 'Hy-Road Pearl', image: 'ball_images/hy-road-pearl.jpg', rg: 2.570, diff: 0.046, cover: 'Pearl Reactive', coverName: 'R2S Pearl', core: 'Symmetric', coreName: 'Inverted Fe2', finish: '1500 Polished', year: 2010, motion: 'Clean through the fronts, strong angular backend.', rec: 'Ideal transition ball or for lighter oil. With 220 RPM you can play more direct angles.', hookFactor: 0.95, early: 0.25},
+  {id: 'hy-road-40', brand: 'Storm', name: 'Hy-Road 40', rg: 2.570, diff: 0.046, cover: 'Pearl Reactive', coverName: 'A1S Pearl', core: 'Symmetric', coreName: 'Inverted Fe2', finish: 'Power Edge', year: 2025, motion: 'Modern pearl with good oil absorption and consistent reaction.', rec: 'Contemporary Hy-Road motion. Excellent for your house-shot benchmark when you want length + backend.', hookFactor: 1.0, early: 0.3},
+  {id: 'hy-road-x', brand: 'Storm', name: 'Hy-Road X', image: 'ball_images/hy-road-x.jpg', rg: 2.570, diff: 0.046, cover: 'Solid Reactive', coverName: 'R2X Solid', core: 'Symmetric', coreName: 'Inverted Fe2', finish: '1500 Polished', year: 2018, motion: 'Slightly more aggressive solid than classic R2S, balanced length and hook.', rec: 'Solid option for medium-heavy conditions. Reliable control.', hookFactor: 1.12, early: 0.55},
+  {id: 'hy-road-nano', brand: 'Storm', name: 'Hy-Road Nano', rg: 2.570, diff: 0.046, cover: 'Solid Reactive', coverName: 'NRG Solid', core: 'Symmetric', coreName: 'Inverted Fe2', finish: '2000 Abralon', year: 2017, motion: 'Nano cover gives strong midlane traction while retaining Hy-Road hitting power.', rec: 'Earlier reading solid in the Hy-Road family. Good when the front of the lane starts to open.', hookFactor: 1.18, early: 0.7},
+  {id: 'astrophysix', brand: 'Storm', name: 'AstroPhysiX', image: 'ball_images/astrophysix.jpg', rg: 2.480, diff: 0.053, mb: 0.017, cover: 'Pearl Reactive', coverName: 'R2S Pearl', core: 'Asymmetric', coreName: 'Atomic', finish: '1500 Polished', year: 2019, motion: 'Low RG pearl with strong flare — length then sharp backend.', rec: 'Power pearl for when you need angle and entry. Can be strong for lower-rev players on medium conditions.', hookFactor: 1.2, early: 0.35},
+  {id: 'ice-storm', brand: 'Storm', name: 'Ice Storm', image: 'ball_images/ice-storm.jpg', rg: 2.55, diff: 0.040, cover: 'Pearl Reactive', core: 'Symmetric', finish: 'Polished', year: 2015, motion: 'Cleaner, more controllable pearl motion.', rec: 'Use for dry lanes or when stronger pearls over-react.', hookFactor: 0.85, early: 0.2},
+  {id: 'conspiracy-pearl', brand: 'Radical', name: 'Conspiracy Pearl', rg: 2.49, diff: 0.045, cover: 'Pearl Reactive', core: 'Asymmetric', year: 2021, motion: 'Angular pearl with good continuation.', rec: 'Tournament pearl option when you need length and backend.', hookFactor: 1.05, early: 0.3},
+  {id: 'innovator', brand: 'Radical', name: 'Innovator', image: 'ball_images/innovator.jpg', rg: 2.47, diff: 0.050, cover: 'Solid Reactive', core: 'Asymmetric', year: 2020, motion: 'Strong early-to-mid reading solid.', rec: 'Heavy oil / fresh solid for control.', hookFactor: 1.25, early: 0.75},
+  {id: 'bigfoot-hybrid', brand: 'Radical', name: 'Bigfoot Hybrid', rg: 2.468, diff: 0.053, cover: 'Hybrid Reactive', coverName: 'HK22 Hybrid', core: 'Symmetric', coreName: 'Bigfoot', year: 2022, motion: 'Strong hybrid with continuous motion.', rec: 'Benchmark hybrid strength for medium-heavy.', hookFactor: 1.22, early: 0.6},
+  {id: 'rattler', brand: 'Radical', name: 'Rattler', rg: 2.480, diff: 0.035, cover: 'Solid Reactive', coverName: 'S.H.A.R.P', core: 'Symmetric', coreName: 'Rattler', finish: '500/1500/4000', year: 2023, motion: 'Benchmark symmetric solid — continuous and controllable.', rec: 'Reliable control piece.', hookFactor: 1.05, early: 0.55},
+  {id: 'rattler-big-bite', brand: 'Radical', name: 'Rattler Big Bite', image: 'ball_images/rattler-big-bite.jpg', rg: 2.480, diff: 0.035, cover: 'Hybrid Reactive', coverName: 'S.H.A.R.P. Hybrid', core: 'Symmetric', coreName: 'Rattler', finish: '500/1500/3000 Siaair', year: 2024, motion: 'Stronger mid-lane and overall hook than Deadly Rattler. Excellent benchmark.', rec: 'YOUR PRIMARY HOUSE-SHOT BENCHMARK. With 15 mph / 220 RPM this gives controllable midlane read and enough backend for the pocket on typical league conditions. First ball out.', hookFactor: 1.15, early: 0.6},
+  {id: 'rattler-nu', brand: 'Radical', name: 'Rattler Nu', rg: 2.480, diff: 0.035, cover: 'Not Urethane', core: 'Symmetric', coreName: 'Rattler', year: 2024, motion: 'Urethane-like smooth continuous motion without urethane downsides.', rec: 'Control ball for short patterns or when you need to blend the lane.', hookFactor: 0.75, early: 0.4},
+  {id: 'deadly-rattler', brand: 'Radical', name: 'Deadly Rattler', image: 'ball_images/deadly-rattler.jpg', rg: 2.480, diff: 0.035, cover: 'Pearl Reactive', coverName: 'HK22 HyperKinetic Pearl', core: 'Symmetric', coreName: 'Rattler', finish: '500/1000/1500 Crown', year: 2023, motion: 'Cleaner through the front, sharper continuous downlane than original Rattler.', rec: 'YOUR TRANSITION BALL. When the lanes open up, this gives cleaner projection and sharper backend while retaining control. Perfect second ball after Big Bite.', hookFactor: 1.0, early: 0.3},
+  {id: 'counter-attack-solid', brand: 'Radical', name: 'Counter Attack Solid', rg: 2.575, diff: 0.023, cover: 'Solid Reactive', core: 'Symmetric', year: 2022, motion: 'Higher RG, lower diff — more length and controlled shape.', rec: 'When you need the ball to get further down the lane before reading.', hookFactor: 0.9, early: 0.4},
+  {id: 'guru-supreme', brand: 'Radical', name: 'Guru Supreme', rg: 2.48, diff: 0.048, cover: 'Hybrid Reactive', core: 'Asymmetric', year: 2021, motion: 'Strong hybrid with good mid and backend.', rec: 'Power hybrid for medium-heavy conditions.', hookFactor: 1.18, early: 0.55},
+  {id: 'trailblazer', brand: 'Radical', name: 'Trailblazer', rg: 2.50, diff: 0.040, cover: 'Pearl Reactive', core: 'Symmetric', year: 2023, motion: 'Clean pearl motion.', rec: 'Length and angle option.', hookFactor: 0.95, early: 0.25},
+  {id: 'ordnance-c4', brand: '900 Global', name: 'Ordnance C4', image: 'ball_images/ordnance-c4.jpg', rg: 2.49, diff: 0.041, cover: 'Hybrid Reactive', coverName: 'S70 Hybrid', core: 'Symmetric', coreName: 'Shrapnel 2.0', finish: '4000 Abralon', year: 2020, motion: 'Clean hybrid with predictable shape on medium conditions.', rec: 'Versatile medium-oil hybrid.', hookFactor: 1.05, early: 0.45},
+  {id: 'raw-hammer-black', brand: 'Hammer', name: 'Raw Hammer Black', image: 'ball_images/raw-hammer.jpg', rg: 2.54, diff: 0.038, cover: 'Solid Reactive', core: 'Symmetric', year: 2021, motion: 'Controlled solid with good traction.', rec: 'Benchmark solid for house shot.', hookFactor: 1.1, early: 0.6},
+  {id: 'fortress-endgame', brand: 'Pyramid', name: 'Fortress Endgame', image: 'ball_images/fortress-endgame.jpg', rg: 2.50, diff: 0.045, cover: 'Solid Reactive', core: 'Asymmetric', year: 2022, motion: 'Strong solid reaction.', rec: 'Heavy oil option.', hookFactor: 1.2, early: 0.7},
+  {id: 'rack-attack', brand: 'Sports Tec', name: 'Rack Attack Pro Line Urethane', rg: 2.60, diff: 0.015, cover: 'Urethane', core: 'Symmetric', year: 2020, motion: 'Classic urethane — smooth, early roll, controllable on short or high-friction.', rec: 'Short patterns, dry lanes, or when you need maximum control and blending.', hookFactor: 0.6, early: 0.5},
+  {id: 'green-scout', brand: 'Scout', name: 'Green Scout Reactive', rg: 2.52, diff: 0.040, cover: 'Solid Reactive', core: 'Symmetric', year: 2021, motion: 'Solid reactive benchmark.', rec: 'Reliable control piece.', hookFactor: 1.05, early: 0.55}
+];
+
+let selectedBall = balls.find(b => b.id === 'rattler-big-bite');
+let canvas, ctx;
+
+function init() {
+  const list = document.getElementById('ballList');
+  balls.forEach(b => {
+    const card = document.createElement('div');
+    card.className = 'ball-card' + (b.id === selectedBall.id ? ' active' : '');
+    card.innerHTML = `${b.image ? `<img src="${b.image}" alt="${b.name}">` : '<div style="width:56px;height:56px;background:#2a3550;border-radius:8px;flex-shrink:0;"></div>'}<div class="info"><div class="brand">${b.brand}</div><div class="name">${b.name}</div><div class="meta">${b.cover} • RG ${b.rg} • Diff ${b.diff}</div></div>`;
+    card.onclick = () => selectBall(b, card);
+    list.appendChild(card);
+  });
+
+  document.getElementById('speed').oninput = e => document.getElementById('speedVal').textContent = e.target.value;
+  document.getElementById('rev').oninput = e => document.getElementById('revVal').textContent = e.target.value;
+  document.getElementById('release').oninput = e => document.getElementById('releaseVal').textContent = e.target.value;
+  document.getElementById('aim').oninput = e => document.getElementById('aimVal').textContent = e.target.value;
+  document.getElementById('simulate').onclick = drawLane;
+  document.querySelector('.close').onclick = () => document.getElementById('dossierModal').classList.remove('open');
+  document.getElementById('dossierModal').onclick = e => { if (e.target.id === 'dossierModal') e.target.classList.remove('open'); };
+
+  canvas = document.getElementById('lane');
+  ctx = canvas.getContext('2d');
+  drawLane();
+}
+
+function selectBall(ball, card) {
+  selectedBall = ball;
+  document.querySelectorAll('.ball-card').forEach(c => c.classList.remove('active'));
+  card.classList.add('active');
+  showDossier(ball);
+  drawLane();
+}
+
+function showDossier(b) {
+  const html = `
+    <h2>${b.brand} ${b.name}</h2>
+    ${b.image ? `<img src="${b.image}" alt="${b.name}" style="max-width:220px;max-height:220px;border-radius:12px;float:right;margin:0 0 1rem 1rem;object-fit:cover;box-shadow:0 4px 12px rgba(0,0,0,0.4);">` : ''}
+    <p style="color:var(--muted);margin-bottom:0.5rem;">${b.year || ''} • ${b.cover}${b.coverName ? ' ('+b.coverName+')' : ''}</p>
+    <div class="spec-grid">
+      <div class="spec-item"><strong>RG (15 lb)</strong><br>${b.rg}</div>
+      <div class="spec-item"><strong>Diff</strong><br>${b.diff}${b.mb ? ' / MB '+b.mb : ''}</div>
+      <div class="spec-item"><strong>Core</strong><br>${b.core || 'Symmetric'}${b.coreName ? ' ('+b.coreName+')' : ''}</div>
+      <div class="spec-item"><strong>Finish</strong><br>${b.finish || 'Factory'}</div>
+    </div>
+    <p><strong>Motion:</strong> ${b.motion}</p>
+    <div class="recommendation">
+      <strong>Recommendation for your style (~15 mph / 220 RPM, house & tournament):</strong><br>
+      ${b.rec}
+    </div>
+    <p style="margin-top:1rem;font-size:0.8rem;color:var(--muted);clear:both;">Specs and motion notes primarily sourced from bowwwl.com database and manufacturer descriptions. Layout and surface adjustments will alter real-world performance. Images are real product photos.</p>
+  `;
+  document.getElementById('dossierContent').innerHTML = html;
+  document.getElementById('dossierModal').classList.add('open');
+}
+
+function drawLane() {
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const pattern = document.getElementById('pattern').value;
+  const gradient = ctx.createLinearGradient(0, 0, w, 0);
+  if (pattern === 'house') {
+    gradient.addColorStop(0, '#2d5a3d');
+    gradient.addColorStop(0.25, '#1e4a2e');
+    gradient.addColorStop(0.5, '#163d26');
+    gradient.addColorStop(0.75, '#1e4a2e');
+    gradient.addColorStop(1, '#2d5a3d');
+  } else if (pattern === 'sport') {
+    gradient.addColorStop(0, '#1a3d2a');
+    gradient.addColorStop(1, '#1a3d2a');
+  } else {
+    gradient.addColorStop(0, '#3a6a4a');
+    gradient.addColorStop(1, '#3a6a4a');
+  }
+  ctx.fillStyle = gradient;
+  ctx.fillRect(40, 20, w - 80, h - 60);
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  for (let i = 0; i <= 39; i++) {
+    const x = 40 + (i / 39) * (w - 80);
+    ctx.beginPath();
+    ctx.moveTo(x, 20);
+    ctx.lineTo(x, h - 40);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+  ctx.fillRect(40, h * 0.45, w - 80, 8);
+
+  ctx.fillStyle = '#444';
+  ctx.fillRect(40, h - 40, w - 80, 20);
+  const pocketX = 40 + (17.5 / 39) * (w - 80);
+  ctx.fillStyle = 'rgba(255,107,53,0.4)';
+  ctx.fillRect(pocketX - 18, h - 42, 36, 22);
+  ctx.strokeStyle = '#ff6b35';
+  ctx.strokeRect(pocketX - 18, h - 42, 36, 22);
+  ctx.fillStyle = '#fff';
+  ctx.font = '10px sans-serif';
+  ctx.fillText('POCKET', pocketX - 16, h - 28);
+
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(40, 20);
+  ctx.lineTo(w - 40, 20);
+  ctx.stroke();
+
+  const speed = parseFloat(document.getElementById('speed').value);
+  const rev = parseFloat(document.getElementById('rev').value);
+  const releaseBoard = parseFloat(document.getElementById('release').value);
+  const aimDeg = parseFloat(document.getElementById('aim').value);
+
+  const revRatio = rev / (speed * 10);
+  const ball = selectedBall;
+  const baseHook = ball.hookFactor * (0.6 + revRatio * 0.4);
+  const earlyFactor = ball.early;
+
+  const startX = 40 + (releaseBoard / 39) * (w - 80);
+  const startY = 20;
+
+  const aimRad = (aimDeg * Math.PI) / 180;
+  let points = [];
+  let x = startX, y = startY;
+  let vx = Math.sin(aimRad) * 1.2;
+  let vy = 3.5;
+
+  for (let t = 0; t < 120; t++) {
+    points.push({x, y});
+    const board = ((x - 40) / (w - 80)) * 39;
+    let friction = 0.3;
+    if (pattern === 'house') {
+      friction = board < 10 || board > 29 ? 1.2 : (board > 15 && board < 24 ? 0.4 : 0.7);
+    } else if (pattern === 'dry') {
+      friction = 1.4;
+    } else {
+      friction = 0.8;
+    }
+    const progress = y / (h - 60);
+    const hookPhase = Math.max(0, progress - (0.25 - earlyFactor * 0.15));
+    const lateralForce = baseHook * friction * hookPhase * 0.15 * (board < 20 ? 1 : -0.3);
+
+    vx += lateralForce * 0.08;
+    x += vx;
+    y += vy;
+
+    if (y > h - 40) break;
+  }
+
+  ctx.beginPath();
+  ctx.strokeStyle = '#00d4ff';
+  ctx.lineWidth = 3;
+  ctx.lineJoin = 'round';
+  points.forEach((p, i) => {
+    if (i === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  });
+  ctx.stroke();
+
+  if (points.length) {
+    const last = points[points.length - 1];
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(last.x, last.y, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#00d4ff';
+    ctx.stroke();
+  }
+
+  const endBoard = points.length ? ((points[points.length-1].x - 40) / (w - 80) * 39).toFixed(1) : '—';
+  document.getElementById('infoPanel').innerHTML = `
+    <strong>${ball.brand} ${ball.name}</strong> • Hook factor ~${ball.hookFactor.toFixed(2)} (early ${ball.early})<br>
+    Speed ${speed} mph • ${rev} RPM • Release board ${releaseBoard} • Aim ${aimDeg}°<br>
+    Estimated entry board: ${endBoard} (target pocket ~17–20)<br>
+    <em>Approximate model only — real motion depends on surface, layout, oil volume, and lane surface.</em>
+  `;
+}
+
+init();
+</script>
+</body>
+</html>
