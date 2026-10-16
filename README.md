@@ -2,8 +2,19 @@
 
 **Fearless. Relentless. Always Hunting Strikes.**
 
-**Status:** Final polish complete (Iteration 10 + design/dev/UI/UX pass)  
-**Repository:** https://github.com/majalen3/arsenal-pro-bowling  
+<div align="center">
+
+## 🎳 Launch the App
+
+[![Launch Arsenal Pro](https://img.shields.io/badge/Launch%20App-Live%20Demo-DAAF37?style=for-the-badge&logo=github&logoColor=black)](https://majalen3.github.io/arsenal-pro-bowling/)
+
+**[Open Live App →](https://majalen3.github.io/arsenal-pro-bowling/)**
+
+</div>
+
+---
+
+**Status:** Final polish complete  
 **Target:** 15 lb bowler, ~15 mph, ~220 RPM, house + tournament  
 **Primary Benchmark:** Radical Rattler Big Bite  
 **Transition Ball:** Radical Deadly Rattler
@@ -23,8 +34,8 @@
 - Mobile-responsive layout
 
 ## How to Run
-Open `index.html` in any modern browser. No build step required.  
-Enable GitHub Pages for a live URL.
+Click the **Launch App** button above, or open `index.html` locally.  
+Live URL: https://majalen3.github.io/arsenal-pro-bowling/
 
 ## Physics Model
 Educational approximation. Hook strength scales with ball-specific factors, rev/speed ratio, surface, layout, and inverse oil volume. Pattern friction varies. Real results depend on actual surface, layout, and lane conditions.
