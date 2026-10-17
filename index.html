@@ -201,6 +201,12 @@
         <input id="noteAdj" aria-label="Adjustment" placeholder="Adjustment (e.g. 2 boards left)" maxlength="300" style="margin-bottom:0.3rem">
         <button id="saveNote">Save note</button>
         <ul id="noteList"></ul>
+        <h4>Backup / move to another phone</h4>
+        <div class="status">Your data is tied to this code. Keep it safe; anyone with it can see your lines.</div>
+        <input id="deviceCode" readonly aria-label="Your backup code">
+        <div class="row"><button class="secondary" id="copyCode">Copy code</button><button class="secondary" id="dlBackup">Download backup</button></div>
+        <input id="restoreCode" placeholder="Paste a code to use it here" aria-label="Paste backup code" maxlength="64" autocomplete="off">
+        <button class="secondary" id="useCode">Use this code</button>
       </details>
     </div>
     <div class="right-col">
@@ -797,6 +803,19 @@ function initPersistence() {
   document.getElementById('saveLine').onclick = saveLine;
   document.getElementById('logFinish').onclick = logFinish;
   document.getElementById('saveNote').onclick = saveNote;
+  document.getElementById('deviceCode').value = deviceId();
+  document.getElementById('copyCode').onclick = async () => { try { await navigator.clipboard.writeText(deviceId()); setStatus('Code copied','ok'); } catch(e) { document.getElementById('deviceCode').select(); setStatus('Select the code and copy it','off'); } };
+  document.getElementById('dlBackup').onclick = () => {
+    const data = { app:'arsenal-pro', code:deviceId(), exportedAt:new Date().toISOString(), lines:lsGet(LS.lines), surfaceLog:lsGet(LS.surface), patternNotes:lsGet(LS.notes) };
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data,null,1)],{type:'application/json'})); a.download = 'arsenal-pro-backup.json'; document.body.appendChild(a); a.click(); a.remove(); setStatus('Backup downloaded','ok');
+  };
+  document.getElementById('useCode').onclick = () => {
+    const v = document.getElementById('restoreCode').value.trim();
+    if (!/^[A-Za-z0-9_-]{8,64}$/.test(v)) { setStatus('That is not a valid code','off'); return; }
+    try { localStorage.setItem('ap_device', v); } catch(e) {}
+    _dev = v; document.getElementById('deviceCode').value = v; document.getElementById('restoreCode').value = '';
+    lsSet(LS.lines, lsGet(LS.lines).map(x=>Object.assign(x,{synced:false}))); setStatus('Code set. Syncing\u2026'); syncLines(); syncAlley();
+  };
   renderSavedLines(); renderAlleyLists(); syncLines(); syncAlley();
   fetch(API_BASE+'/api/health',{cache:'no-store'}).catch(()=>{});
   if ('serviceWorker' in navigator && /^https:|^http:\/\/localhost/.test(location.protocol+'//'+location.host)) navigator.serviceWorker.register('sw.js').catch(()=>{});

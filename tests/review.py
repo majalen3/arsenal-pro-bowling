@@ -115,6 +115,17 @@ with sync_playwright() as p:
     for i in range(1,8): touch('touchMove',x+i*8,y)
     touch('touchEnd',0,0); pg.wait_for_timeout(200)
     check('mobile',pg.evaluate('+document.getElementById("aim").value')!=0,'horizontal touch drag on lane sets aim','High')
+    if '127.0.0.1:1' not in API:
+        code=pg.evaluate('localStorage.getItem("ap_device")'); pg.fill('#lineName','CodeLine'); pg.click('#saveLine'); pg.wait_for_timeout(600)
+        ctx2=br.new_context(viewport={'width':390,'height':844},is_mobile=True,has_touch=True); p2=ctx2.new_page(); p2.goto(URL); p2.wait_for_timeout(800)
+        check('persist',p2.evaluate('document.getElementById("deviceCode").value')!=code and p2.locator('#savedLines .load',has_text='CodeLine').count()==0,'fresh phone starts with its own code and no foreign data','High')
+        p2.evaluate('document.querySelectorAll("details").forEach(d=>d.open=true)'); p2.fill('#restoreCode','bad code!'); p2.click('#useCode')
+        check('persist',p2.text_content('#saveStatus').startswith('That is not'),'invalid backup code rejected','Med')
+        p2.fill('#restoreCode',code); p2.click('#useCode'); p2.wait_for_timeout(1800)
+        p2.reload(); p2.wait_for_timeout(1200)
+        n=p2.evaluate('lsGet("ap_lines")' if False else 'JSON.parse(localStorage.getItem("ap_lines")||"[]").filter(l=>l.name==="CodeLine").length')
+        check('persist',n>=1 and p2.evaluate('localStorage.getItem("ap_device")')==code,'backup code moves saved lines to another phone','High')
+        ctx2.close(); pg.evaluate('fetch(API_BASE+"/api/me",{method:"DELETE",headers:{"X-Device-Id":localStorage.getItem("ap_device")}})'); pg.wait_for_timeout(300)
     # corrupt localStorage resilience
     pg.evaluate('localStorage.setItem("ap_lines","{{notjson");localStorage.setItem("ap_notes","123")'); pg.reload(); pg.wait_for_timeout(600)
     check('persist',pg.is_visible('#lane') and pg.evaluate('typeof lastResult')=='object','corrupt localStorage does not break app','High')
