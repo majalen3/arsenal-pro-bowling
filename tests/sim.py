@@ -10,7 +10,7 @@ URL = BASE + ('&' if '?' in BASE else '?') + 'api=' + API
 DEV = [('iPhoneSE',375,667,2,True),('iPhone14',390,844,3,True),('Pixel7',412,915,2.6,True),('Galaxy360',360,640,3,True),('iPad',768,1024,2,True),('Laptop',1280,800,1,False),('Desktop',1920,1080,1,False),('Fold',280,653,3,True),('iPhone14Land',844,390,3,True)]
 NET = ['normal']*11+['slow3g']*3+['offline']*2+['api_slow']*1+['api_fail']*2+['api_429']*1
 NAMES = lambda r,u: [f'SIM{RUN}-u{u}-Lane{r.randint(1,40)} fresh', f'SIM{RUN}-u{u}-'+'L'*45, f'SIM{RUN}-u{u}-\U0001F3B3\U0001F525\U0001F3B3', f'SIM{RUN}-u{u}-<img src=x onerror=window.__x=1>', f'SIM{RUN}-u{u}-"\'><svg onload=window.__x=1>', f'SIM{RUN}-u{u}-  spaces  ']
-ACTS = ['save','save','drag','keys','sliders','rapid','balls','finish','note','arsenal','arsenal','reload','dossier','delete','recommend']
+ACTS = ['save','save','drag','keys','sliders','rapid','balls','finish','note','arsenal','arsenal','reload','dossier','delete','recommend','backup','swipe']
 def run_user(br, u):
     r = random.Random(RUN.__hash__() % 1000 * 1000 + u)
     dev = r.choice(DEV); net = r.choice(NET)
@@ -116,6 +116,19 @@ def run_user(br, u):
             elif a == 'delete':
                 if pg.locator('#savedLines .del').count(): pg.locator('#savedLines .del').first.click(); pg.wait_for_timeout(300)
             elif a == 'recommend': pg.click('#recommend')
+            elif a == 'backup':
+                pg.evaluate('document.getElementById("alleyNotes").open=true'); F(len(pg.input_value('#deviceCode'))>=8, 'no device code shown')
+                pg.fill('#restoreCode', r.choice(['bad code!','', '<script>'])); pg.click('#useCode'); pg.wait_for_timeout(150)
+                F(pg.text_content('#saveStatus').startswith('That is not'), 'invalid code not rejected')
+                pg.click('#copyCode'); pg.wait_for_timeout(150)
+            elif a == 'swipe' and mob:
+                bb = pg.eval_on_selector('#lane','e=>{const r=e.getBoundingClientRect();return [r.x,r.y,r.width,r.height]}')
+                if bb[1] >= 0 and bb[1]+bb[3] <= h:
+                    aim0 = pg.evaluate('+document.getElementById("aim").value'); cdp = ctx.new_cdp_session(pg); x = bb[0]+bb[2]/2; y = bb[1]+bb[3]/2
+                    cdp.send('Input.dispatchTouchEvent', {'type':'touchStart','touchPoints':[{'x':x,'y':y+60}]})
+                    for i in range(1,8): cdp.send('Input.dispatchTouchEvent', {'type':'touchMove','touchPoints':[{'x':x,'y':y+60-i*25}]})
+                    cdp.send('Input.dispatchTouchEvent', {'type':'touchEnd','touchPoints':[]}); pg.wait_for_timeout(250)
+                    F(pg.evaluate('+document.getElementById("aim").value')==aim0, 'vertical swipe on lane changed aim')
             vis_ok(a)
         F(pg.evaluate('window.__x')==0, 'XSS executed')
         # persistence: pick a ball w/ saved line, reload, line must still be listed (local fallback must always work)

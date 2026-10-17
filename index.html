@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Urbanek Honey Badgers Arsenal Pro: bowling lane simulator, ball arsenal and saved lines for the alley.">
 <meta name="theme-color" content="#0F4D34">
 <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="icon.svg">
@@ -419,7 +420,7 @@ function init() {
   balls.forEach(b => {
     const card = document.createElement('div');
     card.className = 'ball-card'+(b.id===selectedBall.id?' active':'');
-    card.innerHTML = `<button class="pick" aria-label="${b.brand} ${b.name}"><span class="ball-dot" style="background:${b.color}" aria-hidden="true">${b.brand[0]}</span><span><span class="name" style="display:block">${b.name}</span><span class="meta" style="display:block">${b.cover.split(' ')[0]} • RG ${rgTxt(b)}</span></span></button><button class="info-btn" aria-label="Info: ${b.brand} ${b.name}">Info</button>`;
+    card.innerHTML = `<button class="pick"><span class="ball-dot" style="background:${b.color}" aria-hidden="true">${b.brand[0]}</span><span><span class="name" style="display:block">${b.name}</span><span class="meta" style="display:block">${b.cover.split(' ')[0]} • RG ${rgTxt(b)}</span></span></button><button class="info-btn" aria-label="Info: ${b.brand} ${b.name}">Info</button>`;
     card.onclick = e => { if(e.target.closest('.info-btn')) return; selectedBall=b; document.querySelectorAll('.ball-card').forEach(c=>{c.classList.remove('active'); const pk=c.querySelector('.pick'); if(pk) pk.removeAttribute('aria-current');}); card.classList.add('active'); card.querySelector('.pick').setAttribute('aria-current','true'); renderSavedLines(); renderAlleyLists(); scheduleSync(); drawLane(); card.scrollIntoView({block:'nearest',inline:'nearest'}); };
     card.querySelector('.info-btn').onclick = e => { e.stopPropagation(); openDossier(b); };
     list.appendChild(card);
@@ -697,13 +698,13 @@ async function api(path, opts={}) {
   const ctl = new AbortController(); const t = setTimeout(()=>ctl.abort(), opts.method&&opts.method!=='GET'?API_WRITE_TIMEOUT:API_TIMEOUT);
   try {
     const r = await fetch(API_BASE+path, { ...opts, signal:ctl.signal, headers:Object.assign({'X-Device-Id':deviceId()},opts.body?{'Content-Type':'application/json'}:{}) });
-    if (!r.ok) { const er=new Error('HTTP '+r.status); er.status=r.status; throw er; }
+    if (!r.ok) { const er=new Error('HTTP '+r.status); er.status=r.status; er.retryAfter=+r.headers.get('Retry-After')||0; throw er; }
     return await r.json();
   } finally { clearTimeout(t); }
 }
 function failStatus(e){ return e&&e.status===429?'Server busy. Saved on this phone, will retry.':e&&e.name==='AbortError'?'Server waking up. Saved on this phone, will retry.':'Offline (saved on this phone)'; }
 let retryN=0, retryT=null;
-function retryLater(){ if(retryT||retryN>=4) return; const d=[15000,45000,120000,300000][retryN++]; retryT=setTimeout(async()=>{ retryT=null; await syncLines(); await syncAlley(); },d); }
+function retryLater(e){ if(retryT||retryN>=4) return; const d=Math.max([15000,45000,120000,300000][retryN++], e&&e.retryAfter?e.retryAfter*1000+500:0); retryT=setTimeout(async()=>{ retryT=null; await syncLines(); await syncAlley(); },d); }
 function setStatus(txt, cls) { const el=document.getElementById('saveStatus'); el.textContent=txt; el.className='status full '+(cls||''); }
 const esc = t => String(t==null?'':t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function setControl(id, v) { if (v===null||v===undefined) return; const el=document.getElementById(id); el.value=v; const lab=document.getElementById(id+'Val'); if (lab) lab.textContent = id==='oil'?(+el.value).toFixed(1):el.value; }
@@ -737,7 +738,7 @@ async function saveLine() {
   const l = { ...currentLine(name), updatedAt:Date.now(), synced:false };
   const all = lsGet(LS.lines).filter(x=>!(x.ballId===l.ballId && x.name===l.name)); all.push(l); lsSet(LS.lines, all);
   renderSavedLines(); setStatus('Saving\u2026');
-  try { await pushLine(l); setStatus('Saved','ok'); retryN=0; } catch(e) { setStatus(failStatus(e),'off'); retryLater(); }
+  try { await pushLine(l); setStatus('Saved','ok'); retryN=0; } catch(e) { setStatus(failStatus(e),'off'); retryLater(e); }
   renderSavedLines();
 }
 async function deleteLine(l) {
@@ -761,7 +762,7 @@ async function syncLines() {
     for (const l of all.filter(x=>x.ballId===ballId && !x.synced)) { try { await pushLine(l); } catch(e) { break; } }
     if (selectedBall.id===ballId) renderSavedLines();
     setStatus('Synced','ok'); retryN=0;
-  } catch(e) { setStatus(failStatus(e),'off'); retryLater(); }
+  } catch(e) { setStatus(failStatus(e),'off'); retryLater(e); }
 }
 /* surface log + pattern notes */
 const today = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
@@ -774,14 +775,14 @@ function renderAlleyLists() {
 async function logFinish() {
   const e = { ballId:selectedBall.id, date:today(), finish:document.getElementById('finish').value, synced:false };
   const all = lsGet(LS.surface); all.push(e); lsSet(LS.surface, all.slice(-200)); renderAlleyLists(); setStatus('Saving\u2026');
-  try { await api('/api/surface-log', {method:'POST', body:JSON.stringify({ballId:e.ballId,date:e.date,finish:e.finish})}); e.synced=true; lsSet(LS.surface, lsGet(LS.surface).map(x=>x===e||(x.ballId===e.ballId&&x.date===e.date&&x.finish===e.finish&&x.synced===false)?Object.assign(x,{synced:true}):x)); setStatus('Saved','ok'); } catch(err) { setStatus(failStatus(err),'off'); retryLater(); }
+  try { await api('/api/surface-log', {method:'POST', body:JSON.stringify({ballId:e.ballId,date:e.date,finish:e.finish})}); e.synced=true; lsSet(LS.surface, lsGet(LS.surface).map(x=>x===e||(x.ballId===e.ballId&&x.date===e.date&&x.finish===e.finish&&x.synced===false)?Object.assign(x,{synced:true}):x)); setStatus('Saved','ok'); } catch(err) { setStatus(failStatus(err),'off'); retryLater(err); }
 }
 async function saveNote() {
   const e = { lane:document.getElementById('noteLane').value.trim(), oil:document.getElementById('noteOil').value.trim(), adjustment:document.getElementById('noteAdj').value.trim(), synced:false };
   if (!e.lane||!e.oil||!e.adjustment) { setStatus('Fill lane, oil and adjustment','off'); return; }
   const all = lsGet(LS.notes); all.push(e); lsSet(LS.notes, all.slice(-100)); renderAlleyLists();
   ['noteLane','noteOil','noteAdj'].forEach(id=>document.getElementById(id).value=''); setStatus('Saving\u2026');
-  try { await api('/api/pattern-notes', {method:'POST', body:JSON.stringify({lane:e.lane,oil:e.oil,adjustment:e.adjustment})}); lsSet(LS.notes, lsGet(LS.notes).map(x=>(x.lane===e.lane&&x.oil===e.oil&&x.adjustment===e.adjustment&&x.synced===false)?Object.assign(x,{synced:true}):x)); setStatus('Saved','ok'); } catch(err) { setStatus(failStatus(err),'off'); retryLater(); }
+  try { await api('/api/pattern-notes', {method:'POST', body:JSON.stringify({lane:e.lane,oil:e.oil,adjustment:e.adjustment})}); lsSet(LS.notes, lsGet(LS.notes).map(x=>(x.lane===e.lane&&x.oil===e.oil&&x.adjustment===e.adjustment&&x.synced===false)?Object.assign(x,{synced:true}):x)); setStatus('Saved','ok'); } catch(err) { setStatus(failStatus(err),'off'); retryLater(err); }
 }
 async function pushUnsyncedAlley(){
   for (const x of lsGet(LS.surface).filter(x=>x.synced===false)) { await api('/api/surface-log',{method:'POST',body:JSON.stringify({ballId:x.ballId,date:x.date,finish:x.finish})}); x.synced=true; const a=lsGet(LS.surface); const m=a.find(y=>y.synced===false&&y.ballId===x.ballId&&y.date===x.date&&y.finish===x.finish); if(m){m.synced=true; lsSet(LS.surface,a);} }
