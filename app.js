@@ -85,7 +85,9 @@ function renderBags(){
     l.forEach(([id,r])=>{const b=balls.find(x=>x.id===id); const bt=document.createElement('button'); bt.className='bagball'; bt.dataset.ball=id; bt.innerHTML=`${b.name}<small>${r}</small>`; bt.onclick=()=>putOnLane(b); d.querySelector('.bagballs').appendChild(bt);});
     el.appendChild(d);});
 }
-function renderArsenal(){
+let readMed = 20;
+function readHtml(b) { const r = readInfo(b, readMed); return r ? `<div class="reads reads-${r.tag}">Reads ${r.tag} \u2022 skids ~${Math.round(r.f)} ft</div>` : ''; }
+function renderArsenal(){ readMed = readMedian();
   chipRow('clsChips',[['All','All classes']].concat(CLASSES.map(c=>[c,c.split(' / ')[0].replace('Strong ','Str. ').replace('Medium ','Med. ').replace('Asymmetrical','Asym').replace('Symmetrical','Sym')])),'cls');
   chipRow('coverChips',[['All','All'],['Solid','Solid'],['Pearl','Pearl'],['Hybrid','Hybrid'],['Urethane','Urethane']],'cover');
   chipRow('oilChips',[['All','Any oil'],['Heavy','Heavy'],['Medium','Medium'],['Light','Light']],'oil');
@@ -99,7 +101,7 @@ function renderArsenal(){
     if(ars.sort==='cls'&&b.cls!==lastCls){lastCls=b.cls; const h=document.createElement('h2'); h.className='clshead'; h.textContent=CLASSES[b.cls]; grid.appendChild(h);}
     const c=document.createElement('div'); c.className='acard'+(ars.hl===b.id?' hl':''); c.id='acard-'+b.id; c.dataset.ball=b.id;
     c.innerHTML=`<label class="cmp"><input type="checkbox" ${ars.picked.includes(b.id)?'checked':''} aria-label="Compare ${b.name}">Compare</label>
-<h3><span class="sw" style="background:${b.color}"></span>${b.name}</h3><div class="brand">${b.brand}${b.year?' • '+b.year:''}</div><div class="role">${b.role}</div>
+<h3><span class="sw" style="background:${b.color}"></span>${b.name}</h3><div class="brand">${b.brand}${b.year?' • '+b.year:''}</div><div class="role">${b.role}</div>${readHtml(b)}
 <div class="specs"><span>Cover <b>${b.cover}${estTag(b)}${b.coverName?' ('+b.coverName+')':''}</b></span><span>Core <b>${b.core}${b.coreName?' • '+b.coreName:''}</b></span><span>RG <b>${rgTxt(b)}</b></span><span>Diff <b>${diffTxt(b)}</b></span><span style="grid-column:1/-1">Factory finish <b>${b.finish||'—'}</b></span></div>${b.note?`<div class="est">${esc(b.note)}</div>`:''}
 <div class="use"><b>Use when:</b> ${b.when}</div><div class="leave"><b>Leave in bag:</b> ${b.whenNot}</div>
 <div class="btns"><button class="secondary info">Info</button><button class="onlane">Put on lane</button></div>`;
@@ -116,7 +118,7 @@ function renderArsenal(){
 function renderCompare(){
   const w=document.getElementById('compareWrap'); const ps=ars.picked.map(id=>balls.find(b=>b.id===id));
   if(!ars.compare||!ps.length){w.hidden=true; w.innerHTML=''; return;}
-  const rows=[['Brand',b=>b.brand],['Role',b=>b.role],['Cover',b=>b.cover+(b.coverName?' ('+b.coverName+')':'')],['Core',b=>b.core+(b.coreName?' • '+b.coreName:'')],['RG',b=>rgTxt(b)],['Diff',b=>diffTxt(b)],['Finish',b=>b.finish||'—'],['Motion',b=>b.motion],['Use when',b=>b.when],['Leave in bag',b=>b.whenNot]];
+  const rows=[['Brand',b=>b.brand],['Role',b=>b.role],['Cover',b=>b.cover+(b.coverName?' ('+b.coverName+')':'')],['Core',b=>b.core+(b.coreName?' • '+b.coreName:'')],['RG',b=>rgTxt(b)],['Diff',b=>diffTxt(b)],['Finish',b=>b.finish||'—'],['Reads',b=>{const r=readInfo(b,readMed);return r?'Reads '+r.tag+' (skids ~'+Math.round(r.f)+' ft)':'\u2014';}],['Motion',b=>b.motion],['Use when',b=>b.when],['Leave in bag',b=>b.whenNot]];
   w.hidden=false;
   w.innerHTML='<table><thead><tr><th></th>'+ps.map(b=>`<th>${b.name}</th>`).join('')+'</tr></thead><tbody>'+rows.map(r=>`<tr><th>${r[0]}</th>`+ps.map(b=>`<td>${r[1](b)}</td>`).join('')+'</tr>').join('')+'</tbody></table>';
 }
@@ -228,7 +230,7 @@ function simulatePath(ball, ov) {
   const revRatio = rev / (speed*14);
   const baseHook = hookPot * (0.55 + revRatio*0.45) / oil;
   let x = boardToX(release, w), y = h - 42, vx = Math.sin(aim * Math.PI/180) * 0.85, vy = -5.6;
-  const points = []; let breakpoint = null, gutter = false;
+  const points = []; let breakpoint = null, gutter = false, skidY = null;
   for (let t=0; t<240; t++) {
     points.push({x,y});
     const board = 39 - ((x-14)/(w-28))*39;
@@ -241,6 +243,7 @@ function simulatePath(ball, ov) {
     const phaseStart = 0.40 - early*0.18;
     let phase = 0;
     if (prog > phaseStart) { const p = Math.min(1, (prog-phaseStart)/(1-phaseStart)); phase = Math.pow(p, 1.5) * (1.05 - p*0.25); }
+    if (skidY===null && phase>0) skidY = y;
     const force = baseHook * fr * phase * 0.36;
     vx -= force * 0.10;
     if (prog > 0.80) vx *= 0.983;
@@ -248,7 +251,7 @@ function simulatePath(ball, ov) {
     if (!breakpoint && phase>0.28 && force>0.04) breakpoint = {x,y,board};
     if (y < 60) break;
   }
-  return {points, breakpoint, gutter};
+  return {points, breakpoint, gutter, skidY};
 }
 function drawPins(w, h) {
   const baseY = 68, spacing = 14, centerX = boardToX(20, w);
@@ -292,9 +295,23 @@ function ruleOf31(pattern, bpBoard) {
   const rel = Math.abs(d) < 0.5 ? 'on it' : (d > 0 ? d.toFixed(1)+' inside' : (-d).toFixed(1)+' outside');
   return {len, target, d, text: `Rule of 31: ${len} ft oil, target board ${target}, you are ${rel}.`};
 }
+/* Phases from the existing sim: skid ends where the sim's hook phase starts (~17.5-20 ft across the arsenal, so ~20 ft is the nominal boundary);
+   roll starts at the nominal 52 ft, shifted by the same amount this ball's skid differs from 20 ft. No new friction constants. */
+const SKID_NOM = 20, ROLL_NOM = 52, C_SKID = '#7dd3fc', C_HOOK = '#DAAF37', C_ROLL = '#86efac';
+function phasesOf(r) {
+  const pts = r.points; if (!pts.length) return null;
+  const end = Math.min(60, yToFeet(pts[pts.length-1].y));
+  const skid = r.skidY==null ? end : Math.min(end, yToFeet(r.skidY));
+  const roll = r.skidY==null ? end : Math.min(end, Math.max(skid, Math.min(58, Math.max(44, ROLL_NOM + (skid - SKID_NOM)))));
+  return { skid, roll, end, hook: roll - skid, rollLen: end - roll };
+}
+const rollMph = v => v * 5 / 7;   // slip-to-roll with initial pure slide: v_roll = (5/7) v_i (estimate; ignores initial rev)
+function skidFtOf(b) { const r = simulatePath(b, {release:12, aim:-4}); return r.skidY==null ? null : yToFeet(r.skidY); }
+function readInfo(b, med) { const f = skidFtOf(b); if (f==null) return null; const tag = f < med-0.5 ? 'early' : f > med+0.5 ? 'late' : 'mid'; return { f, tag }; }
+function readMedian() { const a = balls.map(skidFtOf).filter(x=>x!=null).sort((x,y)=>x-y); return a.length ? a[Math.floor(a.length/2)] : SKID_NOM; }
 function analyze(ball, ov) {
   const r = simulatePath(ball, ov), pts = r.points;
-  const out = {points:pts, gutter:r.gutter, breakpoint:r.breakpoint, entryBoard:null, angle:null, strike:false, call:'', bpFeet:null, bpBoard:null};
+  const out = {phases:phasesOf(r), points:pts, gutter:r.gutter, breakpoint:r.breakpoint, entryBoard:null, angle:null, strike:false, call:'', bpFeet:null, bpBoard:null};
   let entry = null;
   for (let i=1;i<pts.length;i++) if (pts[i].y <= HEAD_Y) {
     const a=pts[i-1], c=pts[i], f=(a.y-HEAD_Y)/(a.y-c.y), x=a.x+(c.x-a.x)*f;
@@ -326,6 +343,11 @@ function coachLine(a) {
   const off = Math.abs(a.entryBoard-17.5), mv = Math.min(6, Math.max(1, Math.round(off))), far = off > 8 ? ' Way off. Reset the line.' : '';
   if (a.call==='LIGHT') return `Light. ${b}, ${f1(off)} boards short of 17.5. Move feet left ${mv} board${mv>1?'s':''} or go stronger.${far}`;
   return `High. ${b}, ${f1(off)} boards past 17.5. Move feet right ${mv} board${mv>1?'s':''} or go weaker.${far}`;
+}
+function phaseLine(ph) {
+  if (!ph) return '';
+  const n = v => Math.round(v), sp = +document.getElementById('speed').value, seg = (c,l,a,b) => `<span style="color:${c}">\u25cf</span> ${l} <strong>${n(a)}-${n(b)} ft</strong>`;
+  return `${seg(C_SKID,'Skid',0,ph.skid)} \u2022 ${seg(C_HOOK,'Hook',ph.skid,ph.roll)} (${n(ph.hook)} ft) \u2022 ${seg(C_ROLL,'Roll',ph.roll,ph.end)}. Rolls at ~<strong>${rollMph(sp).toFixed(1)} mph</strong> (est.)`;
 }
 function drawLane() {
   const w=LW, h=LH;
@@ -386,13 +408,14 @@ function drawLane() {
   ctx.beginPath(); ctx.moveTo(relX, FOUL_Y-4); ctx.lineTo(boardToX(aimBoard,w), arrowYm); ctx.stroke(); ctx.setLineDash([]);
   ctx.strokeStyle='#DAAF37'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.arc(boardToX(aimBoard,w), arrowYm, 4, 0, Math.PI*2); ctx.stroke();
   ctx.fillStyle='#DAAF37'; ctx.beginPath(); ctx.arc(relX, FOUL_Y-4, 3, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.strokeStyle = isStrike ? '#22c55e' : selectedBall.color; ctx.lineWidth = isStrike ? 3 : 2.2;
+  const ph = result.phases; ctx.lineWidth = isStrike ? 3 : 2.4; ctx.lineCap = 'round';
   if (isStrike) { ctx.shadowColor='#22c55e'; ctx.shadowBlur=6; }
-  pts.forEach((p,i)=> i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y)); ctx.stroke(); ctx.shadowBlur=0;
+  for (let i=1;i<pts.length;i++) { const ft = yToFeet(pts[i].y); ctx.strokeStyle = !ph ? selectedBall.color : ft < ph.skid ? C_SKID : ft < ph.roll ? C_HOOK : C_ROLL; ctx.beginPath(); ctx.moveTo(pts[i-1].x,pts[i-1].y); ctx.lineTo(pts[i].x,pts[i].y); ctx.stroke(); }
+  ctx.shadowBlur=0; ctx.lineCap = 'butt';
   if (result.breakpoint) { ctx.fillStyle='#ff6b35'; ctx.beginPath(); ctx.arc(result.breakpoint.x, result.breakpoint.y, 3, 0, Math.PI*2); ctx.fill(); }
-  if (pts.length) { const last=pts[pts.length-1]; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(last.x,last.y,4,0,Math.PI*2); ctx.fill(); ctx.strokeStyle=isStrike?'#22c55e':selectedBall.color; ctx.lineWidth=1; ctx.stroke(); }
+  if (pts.length) { const last=pts[pts.length-1]; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(last.x,last.y,4,0,Math.PI*2); ctx.fill(); ctx.strokeStyle=isStrike?'#22c55e':(ph&&ph.rollLen>0?C_ROLL:selectedBall.color); ctx.lineWidth=1; ctx.stroke(); }
   const pocketCall = result.call, endBoard = result.entryBoard;
-  window.lastResult = {points:pts, endBoard, pocketCall, strike:isStrike, angle:result.angle, startX:pts.length?pts[0].x:null, endX:pts.length?pts.at(-1).x:null};
+  window.lastResult = {phases:ph, points:pts, endBoard, pocketCall, strike:isStrike, angle:result.angle, startX:pts.length?pts[0].x:null, endX:pts.length?pts.at(-1).x:null};
   const mf = document.getElementById('missFeedback');
   const mfTxt = coachLine(result);
   mf.className='miss-feedback '+(isStrike?'strike':pocketCall==='LIGHT'?'light':pocketCall==='HIGH'?'high':pocketCall==='GUTTER'?'gutter':'angle');
@@ -405,7 +428,7 @@ function drawLane() {
   const bpTxt = result.bpFeet==null ? '\u2014' : `${Math.round(result.bpFeet)} ft, board ${f1(result.bpBoard)}`;
   const r31 = result.bpBoard==null ? '' : ruleOf31(pattern, result.bpBoard).text;
   saveState();
-  document.getElementById('infoPanel').innerHTML = `<strong>${selectedBall.brand} ${selectedBall.name}</strong> \u2014 Factory: ${selectedBall.finish||'\u2014'} \u2022 Finish: <strong>${finish==='factory'?'Factory':finish}</strong><br>Angle <strong>${f1(result.angle)}\u00b0</strong> \u2022 Breakpoint <strong>${bpTxt}</strong> \u2022 Entry <strong>${f1(endBoard)}</strong> \u2022 Hooked <strong>${hooked==null?'\u2014':Math.abs(hooked).toFixed(1)} boards</strong><br>${r31}<br>Half a mph, 20 rpm, or one board: <strong>${sensitivity(selectedBall)} still strike.</strong><br><span style="font-size:0.68rem;color:#94a3b8">Drag the lane: near the foul line sets release, up-lane sets aim at the arrows. Dots ~7.5ft \u2022 Arrows ~15ft \u2022 Range ~37ft \u2022 Baker Box boards 5-8 at 42-46ft</span>`;
+  document.getElementById('infoPanel').innerHTML = `<strong>${selectedBall.brand} ${selectedBall.name}</strong> \u2014 Factory: ${selectedBall.finish||'\u2014'} \u2022 Finish: <strong>${finish==='factory'?'Factory':finish}</strong><br>Angle <strong>${f1(result.angle)}\u00b0</strong> \u2022 Breakpoint <strong>${bpTxt}</strong> \u2022 Entry <strong>${f1(endBoard)}</strong> \u2022 Hooked <strong>${hooked==null?'\u2014':Math.abs(hooked).toFixed(1)} boards</strong><br>${phaseLine(ph)}<br>${r31}<br>Half a mph, 20 rpm, or one board: <strong>${sensitivity(selectedBall)} still strike.</strong><br><span style="font-size:0.68rem;color:#94a3b8">Drag the lane: near the foul line sets release, up-lane sets aim at the arrows. Dots ~7.5ft \u2022 Arrows ~15ft \u2022 Range ~37ft \u2022 Baker Box boards 5-8 at 42-46ft</span>`;
 }
 
 /* ===== Drag to set (pointer events; touch-action:pan-y on the canvas: horizontal drag / tap sets the board, vertical swipe scrolls) ===== */
