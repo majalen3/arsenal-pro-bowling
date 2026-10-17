@@ -130,6 +130,11 @@ with sync_playwright() as p:
         cx=br.new_context(viewport={'width':390,'height':844}); cx.add_init_script(js); px=cx.new_page(); pe=[]; px.on('pageerror',lambda e:pe.append(str(e)))
         px.goto(URL); px.wait_for_timeout(600); px.fill('#lineName','Mem1'); px.click('#saveLine'); px.wait_for_timeout(500)
         check('persist',px.locator('#savedLines .load',has_text='Mem1').count()==1 and not pe,f'storage {mode}: line still listed in this tab, no errors {pe}','High'); cx.close()
+    check('security',pg.evaluate('!!document.querySelector("meta[http-equiv=Content-Security-Policy]")') and 'unsafe-inline' not in pg.evaluate('document.querySelector("meta[http-equiv=Content-Security-Policy]").content.match(/script-src[^;]*/)[0]'),'CSP present and scripts/inline handlers blocked (no unsafe-inline in script-src)','Med')
+    pg.evaluate('window.__x=0;document.body.insertAdjacentHTML("beforeend","<img src=x onerror=window.__x=1>")'); pg.wait_for_timeout(300)
+    check('security',pg.evaluate('window.__x')==0,'injected inline event handler does not run (CSP)','High')
+    pg.evaluate('document.querySelectorAll(".ball-card .pick")[3].click();setControl("release",19);setControl("aim",1.5);drawLane()'); pg.wait_for_timeout(600); pg.reload(); pg.wait_for_timeout(700)
+    check('persist',pg.evaluate('selectedBall.id')==pg.evaluate('balls[3].id') and pg.evaluate('+document.getElementById("release").value')==19 and pg.evaluate('document.querySelector(".ball-card.active .name").textContent')==pg.evaluate('balls[3].name'),'selected ball + settings survive refresh','Med')
     # corrupt localStorage resilience
     pg.evaluate('localStorage.setItem("ap_lines","{{notjson");localStorage.setItem("ap_notes","123")'); pg.reload(); pg.wait_for_timeout(600)
     check('persist',pg.is_visible('#lane') and pg.evaluate('typeof lastResult')=='object','corrupt localStorage does not break app','High')
