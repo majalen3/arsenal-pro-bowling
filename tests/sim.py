@@ -8,7 +8,7 @@ N = int(sys.argv[6]) if len(sys.argv) > 6 else 100
 os.makedirs('/workspace/sim', exist_ok=True)
 URL = BASE + ('&' if '?' in BASE else '?') + 'api=' + API
 DEV = [('iPhoneSE',375,667,2,True),('iPhone14',390,844,3,True),('Pixel7',412,915,2.6,True),('Galaxy360',360,640,3,True),('iPad',768,1024,2,True),('Laptop',1280,800,1,False),('Desktop',1920,1080,1,False),('Fold',280,653,3,True),('iPhone14Land',844,390,3,True)]
-NET = ['normal']*11+['slow3g']*3+['offline']*2+['api_slow']*1+['api_fail']*2+['api_429']*1
+NET = ['normal']*8+['nostorage','quota','cpu4x']+['slow3g']*3+['offline']*2+['api_slow']*1+['api_fail']*2+['api_429']*1
 NAMES = lambda r,u: [f'SIM{RUN}-u{u}-Lane{r.randint(1,40)} fresh', f'SIM{RUN}-u{u}-'+'L'*45, f'SIM{RUN}-u{u}-\U0001F3B3\U0001F525\U0001F3B3', f'SIM{RUN}-u{u}-<img src=x onerror=window.__x=1>', f'SIM{RUN}-u{u}-"\'><svg onload=window.__x=1>', f'SIM{RUN}-u{u}-  spaces  ']
 ACTS = ['save','save','drag','keys','sliders','rapid','balls','finish','note','arsenal','arsenal','reload','dossier','delete','recommend','backup','swipe']
 def run_user(br, u):
@@ -19,7 +19,7 @@ def run_user(br, u):
     ctx = br.new_context(viewport={'width':w,'height':h}, device_scale_factor=dpr, is_mobile=mob, has_touch=mob)
     pg = ctx.new_page(); pg.set_default_timeout(8000)
     pg.evaluate("1") if False else None
-    expected_fail = net in ('offline','api_fail','api_429','api_slow')
+    expected_fail = net in ('offline','api_fail','api_429','api_slow'); storage_off = net in ('nostorage','quota')
     def on_console(m):
         if m.type == 'error' and not (expected_fail and ('Failed to load resource' in m.text or 'ERR_' in m.text or 'CORS' in m.text)): rec['console'].append(m.text[:200])
     pg.on('console', on_console); pg.on('pageerror', lambda e: rec['pageerrors'].append(str(e)[:200]))
@@ -30,6 +30,10 @@ def run_user(br, u):
         if '/api/' in q.url and q in starts: rec['api'].append([q.method, re.sub(r'\?.*','',q.url.split('/api/')[1]), resp.status, round((time.time()-starts[q])*1000)])
     pg.on('response', on_resp)
     pg.on('requestfailed', lambda q: rec['reqfail'].append([q.url[:80], str(q.failure)[:60]]) if not (expected_fail and '/api/' in q.url) else rec['reqfail'].append(['(expected)'+q.url[:60], '']))
+    if net == 'nostorage': ctx.add_init_script("Object.defineProperty(window,'localStorage',{get(){throw new DOMException('denied','SecurityError')}})")
+    if net == 'quota': ctx.add_init_script("Storage.prototype.setItem=function(){throw new DOMException('full','QuotaExceededError')}")
+    if net == 'cpu4x':
+        cdp0 = ctx.new_cdp_session(pg); cdp0.send('Emulation.setCPUThrottlingRate', {'rate': 4})
     if net == 'slow3g':
         cdp = ctx.new_cdp_session(pg); cdp.send('Network.enable'); cdp.send('Network.emulateNetworkConditions', {'offline':False,'latency':300,'downloadThroughput':400*1024/8,'uploadThroughput':200*1024/8})
     if net == 'api_slow': ctx.route('**/api/**', lambda rt: (time.sleep(3.0 if r.random()<.6 else 7.5), rt.continue_())[1])
@@ -137,13 +141,14 @@ def run_user(br, u):
             pg.reload(wait_until='load'); pg.wait_for_timeout(800)
             if net == 'offline': ctx.set_offline(True)
             ls = pg.evaluate('(()=>{try{return JSON.parse(localStorage.getItem("ap_lines")||"[]").length}catch(e){return -1}})()')
-            F(ls >= 0, 'localStorage lines unreadable')
+            F(ls >= 0 or storage_off, 'localStorage lines unreadable')
+            F(not storage_off or pg.evaluate('typeof lastResult')=='object', 'app dead with storage disabled')
             F(not pg.evaluate('window.__x'), 'XSS after reload')
-        rec['device_id'] = pg.evaluate('localStorage.getItem("ap_device")')
+        rec['device_id'] = pg.evaluate('deviceId()')
         rec['t']['dcl'] = pg.evaluate('performance.getEntriesByType("navigation")[0].domContentLoadedEventEnd') if False else None
     except Exception as e:
         rec['fails'].append('EXC['+(rec['acts'][-1] if rec['acts'] else 'load')+'] '+str(e).split('\n')[0][:160])
-        try: rec['device_id'] = pg.evaluate('localStorage.getItem("ap_device")')
+        try: rec['device_id'] = pg.evaluate('deviceId()')
         except Exception: pass
     rec['pass'] = not rec['fails'] and not rec['pageerrors'] and not rec['console']
     ctx.close(); return rec

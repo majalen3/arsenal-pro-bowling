@@ -126,6 +126,10 @@ with sync_playwright() as p:
         n=p2.evaluate('lsGet("ap_lines")' if False else 'JSON.parse(localStorage.getItem("ap_lines")||"[]").filter(l=>l.name==="CodeLine").length')
         check('persist',n>=1 and p2.evaluate('localStorage.getItem("ap_device")')==code,'backup code moves saved lines to another phone','High')
         ctx2.close(); pg.evaluate('fetch(API_BASE+"/api/me",{method:"DELETE",headers:{"X-Device-Id":localStorage.getItem("ap_device")}})'); pg.wait_for_timeout(300)
+    for mode,js in [('blocked',"Object.defineProperty(window,'localStorage',{get(){throw new DOMException('denied','SecurityError')}})"),('full',"Storage.prototype.setItem=function(){throw new DOMException('full','QuotaExceededError')}")]:
+        cx=br.new_context(viewport={'width':390,'height':844}); cx.add_init_script(js); px=cx.new_page(); pe=[]; px.on('pageerror',lambda e:pe.append(str(e)))
+        px.goto(URL); px.wait_for_timeout(600); px.fill('#lineName','Mem1'); px.click('#saveLine'); px.wait_for_timeout(500)
+        check('persist',px.locator('#savedLines .load',has_text='Mem1').count()==1 and not pe,f'storage {mode}: line still listed in this tab, no errors {pe}','High'); cx.close()
     # corrupt localStorage resilience
     pg.evaluate('localStorage.setItem("ap_lines","{{notjson");localStorage.setItem("ap_notes","123")'); pg.reload(); pg.wait_for_timeout(600)
     check('persist',pg.is_visible('#lane') and pg.evaluate('typeof lastResult')=='object','corrupt localStorage does not break app','High')

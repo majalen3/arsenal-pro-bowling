@@ -20,27 +20,15 @@
 **Transition Ball:** Radical Deadly Rattler
 
 ## Features
-- Full Urbanek Honey Badgers branding (forest green, gold, black)
-- 24-ball arsenal with personalized recommendations
-- Top-down interactive lane simulator
-- Recommended Line button (pattern-aware starting line)
-- Multi-ball Compare Mode
-- Metrics: entry board, breakpoint, board at arrows, entry angle
-- Oil volume, surface strength, and layout strength sliders
-- Patterns: House, Sport/Flat, Cheetah, Scorpion, Shark, Dry/Transition
-- Local presets (Save / Load)
-- Export shot as PNG
-- Live bowwwl.com links in dossiers (where available)
-- Mobile-responsive layout
+- Honey Badgers branding (forest green #0F4D34, gold #DAAF37, black)
+- Lane simulator: pins top, board 1 right, ball hooks left to the 17.5 pocket; markers at real distances (dots 7.5 ft, arrows 15 ft, range 37 ft, Baker boards 5-8 at 42-46 ft)
+- Coach-voice call under the lane (strike = entry board 16.8-18.2 and 4-6 degree entry); Rule of 31; sensitivity line
+- Drag the lane (release near the foul line, aim farther up), arrow keys on the lane, or sliders
+- Save Line / load in one tap, surface log, pattern notes; localStorage first, synced to the Render API (per-device code, backup/restore)
+- Arsenal view: 22 balls in 11 classes, filters, sort, compare (max 3), RG-vs-diff chart, bag builder, gaps
+- Installable PWA (manifest + service worker); works offline
 
-## How to Run
-Click the **Launch App** button above, or open `index.html` locally.  
-Live URL: https://majalen3.github.io/arsenal-pro-bowling/
-
-## Physics Model
-Educational approximation. Hook strength scales with ball-specific factors, rev/speed ratio, surface, layout, and inverse oil volume. Pattern friction varies. Real results depend on actual surface, layout, and lane conditions.
-
-## Data Sources
-Primary: bowwwl.com database + manufacturer descriptions.
-
-MIT license. Ready for use.
+## Repo map
+- `index.html` single-file app; `sw.js`, `manifest.webmanifest`, `icon.svg`
+- `docs/TEAM_PROMPT.md` team prompt; `tests/` Playwright suites (`review.py`, `test_ui.py`, `test_arsenal.py`), `sim.py` (scripted-user simulation), `run_all.sh`, `run_sim.sh`, `lighthouse.sh`
+- Backend: https://github.com/majalen3/arsenal-pro-api (Render free tier: first call after idle can take ~30 s; free Postgres expires ~30 days after creation)

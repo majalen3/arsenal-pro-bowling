@@ -681,16 +681,19 @@ function setupDrag() {
 const API_BASE = new URLSearchParams(location.search).get('api') || 'https://arsenal-pro-api.onrender.com';
 const API_TIMEOUT = 8000, API_WRITE_TIMEOUT = 25000; // writes wait out a free-tier cold start; UI never blocks on them
 const LS = { lines:'ap_lines', surface:'ap_surface', notes:'ap_notes', dels:'ap_dels' };
-const lsGet = k => { try { const v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v.filter(x => x && typeof x === 'object') : []; } catch(e) { return []; } };
-const lsGetIds = k => { try { const v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v.filter(Number.isInteger) : []; } catch(e) { return []; } };
-const lsSet = (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} };
+const mem = {}; let memMode = false;   // fallback when localStorage is blocked/full (private mode, quota)
+const rawGet = k => { if (k in mem) return mem[k]; try { return localStorage.getItem(k); } catch(e) { memMode = true; return null; } };
+const rawSet = (k, str) => { try { localStorage.setItem(k, str); delete mem[k]; } catch(e) { memMode = true; mem[k] = str; } };
+const lsGet = k => { try { const v = JSON.parse(rawGet(k)); return Array.isArray(v) ? v.filter(x => x && typeof x === 'object') : []; } catch(e) { return []; } };
+const lsGetIds = k => { try { const v = JSON.parse(rawGet(k)); return Array.isArray(v) ? v.filter(Number.isInteger) : []; } catch(e) { return []; } };
+const lsSet = (k,v) => rawSet(k, JSON.stringify(v));
 let _dev=null;
 function deviceId(){
   if(_dev) return _dev;
-  try { _dev=localStorage.getItem('ap_device'); } catch(e) {}
+  _dev=rawGet('ap_device');
   if(!_dev || !/^[A-Za-z0-9_-]{8,64}$/.test(_dev)){
     const b=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2));
-    _dev='d-'+b; try { localStorage.setItem('ap_device',_dev); } catch(e) {}
+    _dev='d-'+b; rawSet('ap_device',_dev);
   }
   return _dev;
 }
@@ -738,7 +741,7 @@ async function saveLine() {
   const l = { ...currentLine(name), updatedAt:Date.now(), synced:false };
   const all = lsGet(LS.lines).filter(x=>!(x.ballId===l.ballId && x.name===l.name)); all.push(l); lsSet(LS.lines, all);
   renderSavedLines(); setStatus('Saving\u2026');
-  try { await pushLine(l); setStatus('Saved','ok'); retryN=0; } catch(e) { setStatus(failStatus(e),'off'); retryLater(e); }
+  try { await pushLine(l); setStatus(memMode?'Saved (browser storage blocked: kept until this tab closes)':'Saved','ok'); retryN=0; } catch(e) { setStatus(failStatus(e),'off'); retryLater(e); }
   renderSavedLines();
 }
 async function deleteLine(l) {
@@ -813,7 +816,7 @@ function initPersistence() {
   document.getElementById('useCode').onclick = () => {
     const v = document.getElementById('restoreCode').value.trim();
     if (!/^[A-Za-z0-9_-]{8,64}$/.test(v)) { setStatus('That is not a valid code','off'); return; }
-    try { localStorage.setItem('ap_device', v); } catch(e) {}
+    rawSet('ap_device', v);
     _dev = v; document.getElementById('deviceCode').value = v; document.getElementById('restoreCode').value = '';
     lsSet(LS.lines, lsGet(LS.lines).map(x=>Object.assign(x,{synced:false}))); setStatus('Code set. Syncing\u2026'); syncLines(); syncAlley();
   };
