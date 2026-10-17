@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0F4D34">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="icon.svg">
 <title>Urbanek Honey Badgers — Arsenal Pro</title>
 <style>
   :root { --bg:#0a0e17; --surface:#141b28; --surface-2:#1c2538; --gold:#DAAF37; --green:#0F4D34; --text:#f1f5f9; --muted:#94a3b8; --border:#2a3548; }
@@ -134,50 +137,94 @@
   #compareWrap th:first-child { color:var(--gold); white-space:nowrap; }
   @media (max-width:1099px) and (min-width:800px) { .ars-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
   @media (max-width:799px) { .ars-grid { grid-template-columns:minmax(0,1fr); } #arsenalView { padding:0.5rem; } header { gap:0.5rem; } .slogan { display:none; } .viewtoggle button { min-height:34px; padding:0.3rem 0.7rem; } .chip { min-height:38px; } .acard .btns button { min-height:42px; } }
+
+  :focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
+  .control-group { display:grid; grid-template-columns:1fr auto; align-items:center; column-gap:0.4rem; }
+  .control-group label { grid-column:1; font-size:0.7rem; }
+  .control-group span { grid-column:2; font-size:0.78rem; font-variant-numeric:tabular-nums; }
+  .control-group input, .control-group select, .control-group > div { grid-column:1 / -1; }
+  .control-group.full label { grid-column:1 / -1; }
+  .line-item .load { min-width:0; overflow-wrap:anywhere; }
+  .saved-lines { max-height:190px; overflow-y:auto; }
+  .ball-card .pick { display:flex; align-items:center; gap:0.55rem; background:none; color:inherit; text-align:left; margin:0; padding:0; width:auto; min-height:0; font-weight:inherit; font-size:inherit; flex:1; min-width:0; }
+  .ball-card .pick .name { white-space:nowrap; }
+  .ball-card .meta { font-size:0.68rem; }
+  .strike-banner { background:#15803d !important; color:#fff !important; }
+  .modal-content .close { background:none; color:var(--muted); width:44px; height:44px; font-size:1.6rem; margin:0; padding:0; }
+  .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  canvas#lane:focus-visible { outline:3px solid var(--gold); }
+  @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto !important; transition:none !important; } }
+  @media (max-width:799px) {
+    .viewtoggle button { min-height:44px; }
+    .info-btn { width:44px; height:44px; top:2px; right:2px; font-size:0.7rem; padding:0; }
+    .ball-card { padding-right:3.2rem; min-height:50px; }
+    .control-group label { font-size:0.7rem; }
+    .controls { gap:0.25rem 0.6rem; }
+    input[type=range] { min-height:44px; }
+    button.secondary, button { min-height:44px; }
+    input, select { min-height:44px; }
+    .acard .cmp input { width:44px; height:44px; }
+    .chip { min-height:44px; }
+    .ball-card .pick { min-height:44px; }
+  }
+
+  .right-col { width:250px; flex-shrink:0; display:flex; flex-direction:column; gap:0.6rem; max-height:calc(100vh - 70px); overflow-y:auto; }
+  .right-col .controls { width:100%; max-height:none; overflow:visible; }
+  .linebox { background:var(--surface); padding:0.55rem; border-radius:10px; border:1px solid var(--border); display:flex; flex-direction:column; gap:0.35rem; }
+  @media (max-width:799px) {
+    .right-col { display:contents; max-height:none; }
+    .linebox { order:2; display:grid; grid-template-columns:1fr 1fr; gap:0.25rem 0.6rem; padding:0.5rem; }
+    .linebox .full { grid-column:1 / -1; }
+    .controls > button { margin-top:0.1rem; }
+  }
 </style>
 </head>
 <body>
 <header>
   <div><h1>URBANEK HONEY BADGERS</h1><div class="slogan">Fearless. Relentless. Always Hunting Strikes.</div></div>
-  <div class="viewtoggle" role="tablist"><button id="tabLane" class="on" role="tab">Lane</button><button id="tabArsenal" role="tab">Arsenal</button></div>
+  <nav class="viewtoggle" aria-label="View"><button id="tabLane" class="on" aria-pressed="true">Lane</button><button id="tabArsenal" aria-pressed="false">Arsenal</button></nav>
 </header>
 <div class="container" id="laneView">
-  <aside class="sidebar"><h2>ARSENAL</h2><div id="ballList"></div></aside>
+  <aside class="sidebar" aria-label="Balls"><h2>ARSENAL</h2><div id="ballList"></div></aside>
   <main class="main">
     <div class="lane-area">
-      <div class="canvas-wrap"><div class="strike-banner" id="strikeBanner">STRIKE</div><canvas id="lane" width="220" height="880"></canvas></div>
+      <div class="canvas-wrap"><div class="strike-banner" id="strikeBanner">STRIKE</div><canvas id="lane" width="220" height="880" role="img" tabindex="0" aria-label="Lane. Pins at top, board 1 on the right. Drag near the foul line to set release, farther up to set aim. Arrow keys: left/right release, up/down aim." aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"></canvas></div>
       <div class="info-panel" id="infoPanel">Head pin closest to bowler. Board 1 on right. Hooks left toward pocket.</div>
-      <div class="miss-feedback" id="missFeedback" aria-live="polite"></div>
+      <div class="miss-feedback" id="missFeedback" role="status" aria-live="polite"></div>
       <details class="alley" id="alleyNotes"><summary>Alley notes</summary>
         <h4>Surface log</h4>
         <button class="secondary" id="logFinish">Log finish today</button>
         <ul id="surfaceList"></ul>
         <h4>Pattern note</h4>
-        <div class="row"><input id="noteLane" placeholder="Lane #" maxlength="10" inputmode="numeric"><input id="noteOil" placeholder="Oil level (e.g. heavy)" maxlength="40"></div>
-        <input id="noteAdj" placeholder="Adjustment (e.g. 2 boards left)" maxlength="300" style="margin-bottom:0.3rem">
+        <div class="row"><input id="noteLane" aria-label="Lane number" placeholder="Lane #" maxlength="10" inputmode="numeric"><input id="noteOil" aria-label="Oil level" placeholder="Oil level (e.g. heavy)" maxlength="40"></div>
+        <input id="noteAdj" aria-label="Adjustment" placeholder="Adjustment (e.g. 2 boards left)" maxlength="300" style="margin-bottom:0.3rem">
         <button id="saveNote">Save note</button>
         <ul id="noteList"></ul>
       </details>
     </div>
+    <div class="right-col">
     <div class="controls">
-      <div class="control-group"><label>SPEED</label><input type="range" id="speed" min="12" max="22" value="15" step="0.5"><span id="speedVal">15</span></div>
-      <div class="control-group"><label>REV</label><input type="range" id="rev" min="100" max="500" value="220" step="10"><span id="revVal">220</span></div>
-      <div class="control-group"><label>RELEASE</label><input type="range" id="release" min="5" max="30" value="12" step="1"><span id="releaseVal">12</span></div>
-      <div class="control-group"><label>AIM °</label><input type="range" id="aim" min="-8" max="8" value="-4" step="0.5"><span id="aimVal">-4</span></div>
-      <div class="control-group"><label>OIL</label><input type="range" id="oil" min="0.6" max="1.5" value="1" step="0.1"><span id="oilVal">1.0</span></div>
-      <div class="control-group"><label>FINISH</label><select id="finish"><option value="factory">Factory</option><option value="500">500</option><option value="1000">1000</option><option value="2000">2000</option><option value="3000">3000</option><option value="polished">Polished</option></select></div>
-      <div class="control-group"><label>PATTERN</label><select id="pattern"><option value="house">House</option><option value="sport">Sport</option><option value="cheetah">Cheetah</option><option value="scorpion">Scorpion</option><option value="shark">Shark</option><option value="dry">Dry</option></select></div>
+      <div class="control-group"><label for="speed">SPEED</label><input type="range" id="speed" min="12" max="22" value="15" step="0.5"><span id="speedVal">15</span></div>
+      <div class="control-group"><label for="rev">REV</label><input type="range" id="rev" min="100" max="500" value="220" step="10"><span id="revVal">220</span></div>
+      <div class="control-group"><label for="release">RELEASE</label><input type="range" id="release" min="5" max="30" value="12" step="1"><span id="releaseVal">12</span></div>
+      <div class="control-group"><label for="aim">AIM °</label><input type="range" id="aim" min="-8" max="8" value="-4" step="0.5"><span id="aimVal">-4</span></div>
+      <div class="control-group"><label for="oil">OIL</label><input type="range" id="oil" min="0.6" max="1.5" value="1" step="0.1"><span id="oilVal">1.0</span></div>
+      <div class="control-group"><label for="finish">FINISH</label><select id="finish"><option value="factory">Factory</option><option value="500">500</option><option value="1000">1000</option><option value="2000">2000</option><option value="3000">3000</option><option value="polished">Polished</option></select></div>
+      <div class="control-group"><label for="pattern">PATTERN</label><select id="pattern"><option value="house">House</option><option value="sport">Sport</option><option value="cheetah">Cheetah</option><option value="scorpion">Scorpion</option><option value="shark">Shark</option><option value="dry">Dry</option></select></div>
       <button id="simulate">Simulate</button>
       <button class="secondary" id="recommend">Recommended</button>
-      <div class="control-group full"><label>LINE NAME</label><input id="lineName" maxlength="60" placeholder="e.g. Lane 12 fresh"></div>
-      <div class="control-group full"><label>NOTE</label><input id="lineNote" maxlength="200" placeholder="optional note"></div>
+    </div>
+    <section class="linebox" aria-label="Saved lines">
+      <div class="control-group"><label for="lineName">LINE NAME</label><input id="lineName" maxlength="60" placeholder="e.g. Lane 12 fresh"></div>
+      <div class="control-group"><label for="lineNote">NOTE</label><input id="lineNote" maxlength="200" placeholder="optional note"></div>
       <button class="full" id="saveLine">Save Line</button>
-      <div class="status full" id="saveStatus"></div>
-      <div class="control-group full"><label>SAVED LINES (this ball)</label><div class="saved-lines" id="savedLines"></div></div>
+      <div class="status full" id="saveStatus" role="status" aria-live="polite"></div>
+      <div class="control-group full"><label id="savedLabel">SAVED LINES (this ball)</label><div class="saved-lines" id="savedLines" role="group" aria-labelledby="savedLabel"></div></div>
+    </section>
     </div>
   </main>
 </div>
-<section id="arsenalView" hidden>
+<main id="arsenalView" hidden aria-label="Arsenal"><h2 class="sr-only">Arsenal</h2>
   <div class="ars-bar">
     <div class="chips" id="clsChips"></div><div class="chips" id="coverChips"></div>
     <div class="chips" id="oilChips"></div>
@@ -190,8 +237,8 @@
   <div class="ars-chart"><canvas id="rgChart" width="700" height="360"></canvas><div class="chart-hint">RG across, differential up. Tap a dot. Balls with spec TBD are left off.</div></div>
   <div id="compareWrap" hidden></div>
   <div class="ars-grid" id="arsGrid"></div>
-</section>
-<div class="modal" id="dossierModal"><div class="modal-content"><span class="close">&times;</span><div id="dossierContent"></div></div></div>
+</main>
+<div class="modal" id="dossierModal"><div class="modal-content" role="dialog" aria-modal="true" aria-label="Ball dossier"><button class="close" aria-label="Close dossier">&times;</button><div id="dossierContent"></div></div></div>
 <script>
 const balls = [
   {id:'rattler-big-bite', cls:0, role:'Benchmark house-shot read', oil:['heavy','medium'], brand:'Radical', name:'Rattler Big Bite', color:'#DAAF37', rg:2.480, diff:0.035, cover:'Hybrid Reactive', coverName:'HK22 SHARP Hybrid', core:'Symmetric', coreName:'Rattler', finish:'500/1500/3000 Siaair', year:2024, motion:'Stronger mid-lane read with continuous motion.', rec:'YOUR PRIMARY HOUSE-SHOT BENCHMARK.', when:'Fresh to medium house.', whenNot:'Very dry lanes.', link:'https://www.bowwwl.com/bowling-balls/radical-rattler-big-bite'},
@@ -230,8 +277,10 @@ function getFinishMod(f) { if(f==='500')return{e:1.25,h:1.15}; if(f==='1000')ret
 function getCoverMod(c) { if(c.includes('Solid'))return{e:0.75,h:1.15}; if(c.includes('Pearl'))return{e:0.3,h:0.95}; if(c.includes('Hybrid'))return{e:0.52,h:1.05}; if(c.includes('Urethane'))return{e:0.85,h:0.65}; return{e:0.5,h:1}; }
 function openDossier(ball) {
   document.getElementById('dossierContent').innerHTML = `<h2>${ball.brand} ${ball.name}</h2><div style="color:var(--muted);font-size:0.82rem;margin-bottom:0.5rem;">${ball.year||''} • ${ball.cover}${ball.coverName?' ('+ball.coverName+')':''}</div><div class="spec-grid"><div class="spec-item"><strong>RG</strong><br>${rgTxt(ball)}</div><div class="spec-item"><strong>Diff</strong><br>${diffTxt(ball)}</div><div class="spec-item"><strong>Core</strong><br>${ball.core}${estTag(ball)}${ball.coreName?' • '+ball.coreName:''}</div><div class="spec-item"><strong>Factory Finish</strong><br>${ball.finish||'—'}</div></div><p><strong>Motion:</strong> ${ball.motion}</p><div class="recommendation"><strong>Recommendation for ~15 mph / ~220 RPM</strong><br>${ball.rec}<br><br><strong>When to use:</strong> ${ball.when}<br><strong>When to leave it in the bag:</strong> ${ball.whenNot}</div>${ball.link?`<div class="links" style="margin-top:0.7rem;"><a href="${ball.link}" target="_blank">View on bowwwl.com →</a></div>`:''}`;
-  document.getElementById('dossierModal').classList.add('open');
+  lastFocus=document.activeElement; document.getElementById('dossierModal').classList.add('open'); document.querySelector('.close').focus();
 }
+let lastFocus=null;
+function closeDossier(){ document.getElementById('dossierModal').classList.remove('open'); if(lastFocus&&lastFocus.focus) try{lastFocus.focus();}catch(e){} }
 
 // ===== Arsenal view =====
 const ars={cls:'All',cover:'All',oil:'All',sort:'cls',compare:false,picked:[],hl:null,pts:[]};
@@ -240,6 +289,7 @@ function showView(v){
   const a=v==='arsenal';
   document.getElementById('laneView').hidden=a; document.getElementById('arsenalView').hidden=!a;
   document.getElementById('tabLane').classList.toggle('on',!a); document.getElementById('tabArsenal').classList.toggle('on',a);
+  document.getElementById('tabLane').setAttribute('aria-pressed',String(!a)); document.getElementById('tabArsenal').setAttribute('aria-pressed',String(a));
   if(a) renderArsenal(); else drawLane();
 }
 function arsList(){
@@ -362,12 +412,12 @@ function init() {
   balls.forEach(b => {
     const card = document.createElement('div');
     card.className = 'ball-card'+(b.id===selectedBall.id?' active':'');
-    card.innerHTML = `<div class="ball-dot" style="background:${b.color}">${b.brand[0]}</div><div><div class="name">${b.name}</div><div class="meta">${b.cover.split(' ')[0]} • RG ${rgTxt(b)}</div></div><button class="info-btn">Info</button>`;
-    card.onclick = e => { if(e.target.classList.contains('info-btn')) return; selectedBall=b; document.querySelectorAll('.ball-card').forEach(c=>c.classList.remove('active')); card.classList.add('active'); renderSavedLines(); renderAlleyLists(); syncLines(); drawLane(); card.scrollIntoView({block:'nearest',inline:'nearest'}); };
+    card.innerHTML = `<button class="pick" aria-label="${b.brand} ${b.name}"><span class="ball-dot" style="background:${b.color}" aria-hidden="true">${b.brand[0]}</span><span><span class="name" style="display:block">${b.name}</span><span class="meta" style="display:block">${b.cover.split(' ')[0]} • RG ${rgTxt(b)}</span></span></button><button class="info-btn" aria-label="Info: ${b.brand} ${b.name}">Info</button>`;
+    card.onclick = e => { if(e.target.closest('.info-btn')) return; selectedBall=b; document.querySelectorAll('.ball-card').forEach(c=>{c.classList.remove('active'); const pk=c.querySelector('.pick'); if(pk) pk.removeAttribute('aria-current');}); card.classList.add('active'); card.querySelector('.pick').setAttribute('aria-current','true'); renderSavedLines(); renderAlleyLists(); scheduleSync(); drawLane(); card.scrollIntoView({block:'nearest',inline:'nearest'}); };
     card.querySelector('.info-btn').onclick = e => { e.stopPropagation(); openDossier(b); };
     list.appendChild(card);
   });
-  ['speed','rev','release','aim','oil'].forEach(id => document.getElementById(id).oninput = e => { document.getElementById(id+'Val').textContent = e.target.value; drawLane(); });
+  ['speed','rev','release','aim','oil'].forEach(id => document.getElementById(id).oninput = e => { document.getElementById(id+'Val').textContent = id==='oil'?(+e.target.value).toFixed(1):e.target.value; scheduleDraw(); });
   document.getElementById('finish').onchange = drawLane;
   document.getElementById('pattern').onchange = drawLane;
   document.getElementById('simulate').onclick = drawLane;
@@ -381,14 +431,19 @@ function init() {
     document.getElementById('releaseVal').textContent = rel;
     drawLane();
   };
-  document.querySelector('.close').onclick = () => document.getElementById('dossierModal').classList.remove('open');
-  document.getElementById('dossierModal').onclick = e => { if(e.target.id==='dossierModal') e.target.classList.remove('open'); };
+  document.querySelector('.close').onclick = closeDossier;
+  document.addEventListener('keydown', e => { if (e.key==='Escape' && document.getElementById('dossierModal').classList.contains('open')) closeDossier(); });
+  document.getElementById('dossierModal').onclick = e => { if(e.target.id==='dossierModal') closeDossier(); };
   canvas = document.getElementById('lane');
   ctx = canvas.getContext('2d');
   setupDrag();
   initPersistence();
   drawLane();
 }
+let drawQueued=false;
+function scheduleDraw(){ if(drawQueued) return; drawQueued=true; requestAnimationFrame(()=>{ drawQueued=false; drawLane(); }); }
+let syncTimer=null;
+function scheduleSync(){ clearTimeout(syncTimer); syncTimer=setTimeout(()=>{ syncLines(); },350); }
 function boardToX(board, w) { return 14 + ((39 - board) / 39) * (w - 28); }
 function simulatePath(ball, ov) {
   ov = ov || {};
@@ -591,7 +646,7 @@ function setupDrag() {
     const board = xToBoard(Math.max(14, Math.min(LW-14, p.x)));
     if (mode==='release') setControl('release', Math.max(5, Math.min(30, Math.round(board))));
     else { const rel = +document.getElementById('release').value; setControl('aim', Math.max(-8, Math.min(8, Math.round((rel-board)*2)/2))); }
-    drawLane();
+    scheduleDraw();
   };
   canvas.addEventListener('pointerdown', e => {
     const p = pos(e); mode = (FOUL_Y - p.y) / PX_FT < 9 ? 'release' : 'aim';
@@ -599,6 +654,12 @@ function setupDrag() {
     apply(e); e.preventDefault();
   });
   canvas.addEventListener('pointermove', e => { if (mode) apply(e); });
+  canvas.addEventListener('keydown', e => {
+    const k = e.key; const r = +document.getElementById('release').value, a = +document.getElementById('aim').value;
+    if (k==='ArrowLeft') setControl('release', Math.min(30, r+1)); else if (k==='ArrowRight') setControl('release', Math.max(5, r-1));
+    else if (k==='ArrowUp') setControl('aim', Math.min(8, a+0.5)); else if (k==='ArrowDown') setControl('aim', Math.max(-8, a-0.5)); else return;
+    e.preventDefault(); drawLane();
+  });
   const end = () => { mode = null; };
   canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
 }
@@ -607,13 +668,23 @@ function setupDrag() {
 const API_BASE = new URLSearchParams(location.search).get('api') || 'https://arsenal-pro-api.onrender.com';
 const API_TIMEOUT = 6000;
 const LS = { lines:'ap_lines', surface:'ap_surface', notes:'ap_notes' };
-const lsGet = k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch(e) { return []; } };
+const lsGet = k => { try { const v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v.filter(x => x && typeof x === 'object') : []; } catch(e) { return []; } };
 const lsSet = (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} };
+let _dev=null;
+function deviceId(){
+  if(_dev) return _dev;
+  try { _dev=localStorage.getItem('ap_device'); } catch(e) {}
+  if(!_dev || !/^[A-Za-z0-9_-]{8,64}$/.test(_dev)){
+    const b=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2));
+    _dev='d-'+b; try { localStorage.setItem('ap_device',_dev); } catch(e) {}
+  }
+  return _dev;
+}
 async function api(path, opts={}) {
   const ctl = new AbortController(); const t = setTimeout(()=>ctl.abort(), API_TIMEOUT);
   try {
-    const r = await fetch(API_BASE+path, { ...opts, signal:ctl.signal, headers:opts.body?{'Content-Type':'application/json'}:undefined });
-    if (!r.ok) throw new Error('HTTP '+r.status);
+    const r = await fetch(API_BASE+path, { ...opts, signal:ctl.signal, headers:Object.assign({'X-Device-Id':deviceId()},opts.body?{'Content-Type':'application/json'}:{}) });
+    if (!r.ok) { const er=new Error('HTTP '+r.status); er.status=r.status; throw er; }
     return await r.json();
   } finally { clearTimeout(t); }
 }
@@ -710,6 +781,9 @@ function initPersistence() {
   document.getElementById('logFinish').onclick = logFinish;
   document.getElementById('saveNote').onclick = saveNote;
   renderSavedLines(); renderAlleyLists(); syncLines(); syncAlley();
+  fetch(API_BASE+'/api/health',{cache:'no-store'}).catch(()=>{});
+  if ('serviceWorker' in navigator && /^https:|^http:\/\/localhost/.test(location.protocol+'//'+location.host)) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  window.addEventListener('online', () => { syncLines(); syncAlley(); });
 }
 init();
 </script>
