@@ -142,9 +142,9 @@
   body, details.alley li, .line-item small { overflow-wrap:anywhere; }
   :focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
   .control-group { display:grid; grid-template-columns:1fr auto; align-items:center; column-gap:0.4rem; }
-  .control-group label { grid-column:1; font-size:0.7rem; }
-  .control-group span { grid-column:2; font-size:0.78rem; font-variant-numeric:tabular-nums; }
-  .control-group input, .control-group select, .control-group > div { grid-column:1 / -1; }
+  .control-group label { grid-column:1; grid-row:1; font-size:0.7rem; }
+  .control-group span { grid-column:2; grid-row:1; font-size:0.78rem; font-variant-numeric:tabular-nums; }
+  .control-group input, .control-group select, .control-group > div { grid-column:1 / -1; grid-row:2; }
   .control-group.full label { grid-column:1 / -1; }
   .line-item .load { min-width:0; overflow-wrap:anywhere; }
   .saved-lines { max-height:190px; overflow-y:auto; }
@@ -178,6 +178,12 @@
     .linebox { order:2; display:grid; grid-template-columns:1fr 1fr; gap:0.25rem 0.6rem; padding:0.5rem; }
     .linebox .full { grid-column:1 / -1; }
     .controls > button { margin-top:0.1rem; }
+  }
+  @media (min-width:800px) and (max-height:560px) {
+    header { padding:0.3rem 1rem; } .slogan { display:none; }
+    .canvas-wrap { margin-top:4px; padding-top:14px; }
+    canvas { height:calc(100vh - 130px); min-height:240px; }
+    .lane-area, .right-col { max-height:calc(100vh - 56px); }
   }
 </style>
 </head>

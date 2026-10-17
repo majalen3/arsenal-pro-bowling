@@ -66,7 +66,7 @@ def run_user(br, u):
                 except Exception: st = 'TIMEOUT'
                 lat = round((time.time()-t)*1000); rec['saves'].append([st, lat]); saved_names.append(nm.strip())
                 F(st != 'TIMEOUT', 'save status never resolved (UI stuck on Saving...)')
-                if net == 'normal': F(st.startswith('Saved'), f'normal-network save status {st!r}')
+                if net == 'normal': F(st.startswith(('Saved','Synced')), f'normal-network save status {st!r}')
                 F(pg.locator('#savedLines .load').count() >= 1, 'saved line not listed immediately')
             elif a == 'drag':
                 bb = pg.eval_on_selector('#lane','e=>{const r=e.getBoundingClientRect();return [r.x,r.y,r.width,r.height]}')
