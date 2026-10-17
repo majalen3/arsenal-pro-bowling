@@ -37,7 +37,7 @@
   button { background:var(--gold); color:#000; border:none; padding:0.4rem 0.6rem; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.78rem; width:100%; margin-top:0.2rem; }
   button.secondary { background:#2a3548; color:var(--text); }
   .canvas-wrap { background:var(--surface); border-radius:10px; display:flex; align-items:center; justify-content:center; position:relative; border:1px solid var(--border); padding:20px 6px 6px; margin-top:8px; }
-  canvas { touch-action:none; cursor:crosshair; display:block; height:calc(100vh - 250px); min-height:360px; max-height:880px; aspect-ratio:220/880; width:auto; max-width:100%; }
+  canvas { touch-action:pan-y; cursor:crosshair; display:block; height:calc(100vh - 250px); min-height:360px; max-height:880px; aspect-ratio:220/880; width:auto; max-width:100%; }
   .info-panel { background:var(--surface); padding:0.65rem; border-radius:10px; font-size:0.78rem; line-height:1.45; border:1px solid var(--border); }
   .miss-feedback { background:#122a22; border-left:3px solid var(--gold); padding:0.5rem 0.65rem; border-radius:6px; font-size:0.8rem; font-weight:600; }
   .miss-feedback.light, .miss-feedback.high { border-left-color:#e74c3c; background:#2a1717; }
@@ -638,7 +638,7 @@ function drawLane() {
   document.getElementById('infoPanel').innerHTML = `<strong>${selectedBall.brand} ${selectedBall.name}</strong> \u2014 Factory: ${selectedBall.finish||'\u2014'} \u2022 Finish: <strong>${finish==='factory'?'Factory':finish}</strong><br>Angle <strong>${f1(result.angle)}\u00b0</strong> \u2022 Breakpoint <strong>${bpTxt}</strong> \u2022 Entry <strong>${f1(endBoard)}</strong> \u2022 Hooked <strong>${hooked==null?'\u2014':Math.abs(hooked).toFixed(1)} boards</strong><br>${r31}<br>Half a mph, 20 rpm, or one board: <strong>${sensitivity(selectedBall)} still strike.</strong><br><span style="font-size:0.68rem;color:#94a3b8">Drag the lane: near the foul line sets release, up-lane sets aim at the arrows. Dots ~7.5ft \u2022 Arrows ~15ft \u2022 Range ~37ft \u2022 Baker Box boards 5-8 at 42-46ft</span>`;
 }
 
-/* ===== Drag to set (pointer events; touch-action:none on the canvas only) ===== */
+/* ===== Drag to set (pointer events; touch-action:pan-y on the canvas: horizontal drag / tap sets the board, vertical swipe scrolls) ===== */
 function setupDrag() {
   let mode = null;
   const pos = e => { const r = canvas.getBoundingClientRect(); return {x:(e.clientX-r.left)/r.width*LW, y:(e.clientY-r.top)/r.height*LH}; };
@@ -649,20 +649,25 @@ function setupDrag() {
     else { const rel = +document.getElementById('release').value; setControl('aim', Math.max(-8, Math.min(8, Math.round((rel-board)*2)/2))); }
     scheduleDraw();
   };
+  let startE = null, moved = false;
   canvas.addEventListener('pointerdown', e => {
-    const p = pos(e); mode = (FOUL_Y - p.y) / PX_FT < 9 ? 'release' : 'aim';
-    try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
-    apply(e); e.preventDefault();
+    const p = pos(e); mode = (FOUL_Y - p.y) / PX_FT < 9 ? 'release' : 'aim'; startE = e; moved = false;
+    if (e.pointerType === 'mouse') { try { canvas.setPointerCapture(e.pointerId); } catch(_) {} apply(e); e.preventDefault(); }
   });
-  canvas.addEventListener('pointermove', e => { if (mode) apply(e); });
+  canvas.addEventListener('pointermove', e => {
+    if (!mode) return;
+    if (e.pointerType === 'mouse') { apply(e); return; }
+    if (!moved && Math.abs(e.clientX - startE.clientX) > 3) { moved = true; try { canvas.setPointerCapture(e.pointerId); } catch(_) {} }
+    if (moved) apply(e);   // touch: horizontal drag sets the board; vertical swipes scroll the page (touch-action:pan-y)
+  });
+  const end = e => { if (mode && e.type === 'pointerup' && e.pointerType !== 'mouse' && !moved) apply(e); mode = null; };
+  canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
   canvas.addEventListener('keydown', e => {
     const k = e.key; const r = +document.getElementById('release').value, a = +document.getElementById('aim').value;
     if (k==='ArrowLeft') setControl('release', Math.min(30, r+1)); else if (k==='ArrowRight') setControl('release', Math.max(5, r-1));
     else if (k==='ArrowUp') setControl('aim', Math.min(8, a+0.5)); else if (k==='ArrowDown') setControl('aim', Math.max(-8, a-0.5)); else return;
     e.preventDefault(); drawLane();
   });
-  const end = () => { mode = null; };
-  canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
 }
 
 /* ===== Persistence: Render API + localStorage mirror ===== */

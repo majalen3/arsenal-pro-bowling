@@ -58,7 +58,7 @@ def run_user(br, u):
                 nm = r.choice(NAMES(r, u)); pg.fill('#lineName', nm); pg.fill('#lineNote', r.choice(['', 'ok', '<b>x</b>', 'n'*200]))
                 if r.random() < .5: pg.evaluate(f'setControl("release",{r.randint(5,30)});setControl("aim",{r.randint(-8,8)});drawLane()')
                 t = time.time(); pg.click('#saveLine')
-                try: pg.wait_for_function('()=>/^(Saved|Offline|Slow|Too|Server|Could)/.test(document.getElementById("saveStatus").textContent)', timeout=20000); st = pg.text_content('#saveStatus')
+                try: pg.wait_for_function('()=>/^(Saved|Synced|Offline|Slow|Too|Server|Could)/.test(document.getElementById("saveStatus").textContent)', timeout=20000); st = pg.text_content('#saveStatus')
                 except Exception: st = 'TIMEOUT'
                 lat = round((time.time()-t)*1000); rec['saves'].append([st, lat]); saved_names.append(nm.strip())
                 F(st != 'TIMEOUT', 'save status never resolved (UI stuck on Saving...)')

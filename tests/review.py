@@ -102,6 +102,19 @@ with sync_playwright() as p:
             gone=pg.evaluate('(async()=>{const h={"X-Device-Id":localStorage.getItem("ap_device")};const a=await (await fetch(API_BASE+"/api/lines",{headers:h})).json();return a.filter(x=>x.name==="DelMe").length})()')
             check('persist',gone==0 and pg.locator('#savedLines .line-item',has_text='DelMe').count()==0,'line deleted while offline is removed from server after reconnect and does not reappear','High')
             pg.evaluate('fetch(API_BASE+"/api/me",{method:"DELETE",headers:{"X-Device-Id":localStorage.getItem("ap_device")}})'); pg.wait_for_timeout(300)
+    # touch: vertical swipe over the lane must scroll the page and not change aim; horizontal drag sets aim
+    bb=pg.eval_on_selector('#lane','e=>{const r=e.getBoundingClientRect();return [r.x,r.y,r.width,r.height]}'); cdp=ctx.new_cdp_session(pg)
+    def touch(t,x,y): cdp.send('Input.dispatchTouchEvent',{'type':t,'touchPoints':[{'x':x,'y':y}] if t!='touchEnd' else []})
+    pg.evaluate('setControl("aim",0);drawLane();scrollTo(0,0)'); x=bb[0]+bb[2]*.5; y=bb[1]+bb[3]*.5
+    touch('touchStart',x,y+100)
+    for i in range(1,10): touch('touchMove',x,y+100-i*20)
+    touch('touchEnd',0,0); pg.wait_for_timeout(300)
+    check('mobile',pg.evaluate('scrollY')>50 and pg.evaluate('+document.getElementById("aim").value')==0,'vertical swipe on lane scrolls page without moving aim','High')
+    pg.evaluate('scrollTo(0,0)'); pg.wait_for_timeout(100)
+    bb=pg.eval_on_selector('#lane','e=>{const r=e.getBoundingClientRect();return [r.x,r.y,r.width,r.height]}'); x=bb[0]+bb[2]*.5; y=bb[1]+bb[3]*.5; touch('touchStart',x,y)
+    for i in range(1,8): touch('touchMove',x+i*8,y)
+    touch('touchEnd',0,0); pg.wait_for_timeout(200)
+    check('mobile',pg.evaluate('+document.getElementById("aim").value')!=0,'horizontal touch drag on lane sets aim','High')
     # corrupt localStorage resilience
     pg.evaluate('localStorage.setItem("ap_lines","{{notjson");localStorage.setItem("ap_notes","123")'); pg.reload(); pg.wait_for_timeout(600)
     check('persist',pg.is_visible('#lane') and pg.evaluate('typeof lastResult')=='object','corrupt localStorage does not break app','High')

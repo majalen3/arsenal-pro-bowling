@@ -85,7 +85,7 @@ with sync_playwright() as p:
             x0,y0=at(12,1); touch('touchStart',x0,y0); x1,y1=at(18,1); touch('touchMove',x1,y1); touch('touchEnd',0,0); pg.wait_for_timeout(200)
             rel=pg.evaluate('+release.value'); check(rel==18, f'{name}: touch drag sets release -> {rel}; scrollY={pg.evaluate("scrollY")}')
             pg.evaluate('setControl("release",12);setControl("aim",-4);drawLane()')
-            check(pg.evaluate('getComputedStyle(lane).touchAction')=='none' and pg.evaluate('getComputedStyle(document.body).touchAction')!='none', f'{name}: touch-action none only on canvas')
+            check(pg.evaluate('getComputedStyle(lane).touchAction')=='pan-y' and pg.evaluate('getComputedStyle(document.body).touchAction')!='none', f'{name}: canvas touch-action pan-y (vertical scroll allowed, body untouched)')
         if name=='mobile':
             # find a definite LIGHT MISS / HIGH MISS example
             pass
