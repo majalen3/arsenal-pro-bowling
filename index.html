@@ -234,7 +234,7 @@
   <div class="gaps" id="gapsNote"></div>
   <div class="assess" id="assess"></div>
   <div class="bag" id="bagBuilder"></div>
-  <div class="ars-chart"><canvas id="rgChart" width="700" height="360"></canvas><div class="chart-hint">RG across, differential up. Tap a dot. Balls with spec TBD are left off.</div></div>
+  <div class="ars-chart"><canvas id="rgChart" width="700" height="360"></canvas><div class="chart-hint">RG across, differential up. Tap a dot. Balls without a confirmed spec are left off.</div></div>
   <div id="compareWrap" hidden></div>
   <div class="ars-grid" id="arsGrid"></div>
 </main>
@@ -262,7 +262,7 @@ const balls = [
   {id:'hy-road-40', cls:4, role:'Medium-strong hybrid', oil:['medium','light'], brand:'Storm', name:'Hy-Road 40', color:'#34d399', rg:2.57, diff:0.046, cover:'Pearl Reactive', core:'Symmetric', year:2025, coverName:'A1S Pearl', finish:'Power Edge', motion:'Clean length, defined backend. Fast oil absorption.', rec:'Hy-Road family when the benchmark is too clean.', when:'Medium to medium-heavy.', whenNot:'Light oil.'},
   {id:'hy-road-x', cls:2, role:'Strong symmetric solid', oil:['medium','heavy'], brand:'Storm', name:'Hy-Road X', color:'#c4b5fd', rg:2.57, diff:0.046, cover:'Solid Reactive', core:'Symmetric', year:2018, coverName:'R2X Solid', finish:'1500 Polished', motion:'Good midlane read, smooth strong backend.', rec:'Solid Hy-Road when the fronts are drier than the benchmark likes.', when:'Medium to medium-heavy oil.', whenNot:'Light or burned lanes.'},
   {id:'rattler-nu', cls:7, role:'Control variant', oil:['medium'], brand:'Radical', name:'Rattler NU', color:'#a3e635', rg:2.48, diff:0.035, cover:'Hybrid Reactive', core:'Symmetric', year:2024, coverName:'Not Urethane (urethane-like motion)', finish:'500/1000 Siaair', motion:'Smooth, continuous, urethane-like. Control the backend.', rec:'Rattler motion with a different surface read.', when:'Medium house, need control.', whenNot:'When you need more angle.'},
-  {id:'green-scout', cls:8, role:'Burn ball', oil:['medium','light'], est:true, brand:'Radical', name:'Green Scout Reactive', color:'#22c55e', rg:null, diff:null, simRg:2.54, simDiff:0.038, cover:'Solid Reactive', core:'Symmetric', year:null, motion:'Burn-ball read. Gives up length, holds line.', note:'Closest match found: Columbia 300 Scout Reactive (RG 2.65, diff .020) - awaiting user confirmation', rec:'Burned-up lanes where everything else hooks too soon.', when:'Broken-down or burned lanes.', whenNot:'Fresh oil.'}
+  {id:'green-scout', cls:8, role:'Burn ball', oil:['medium','light'], brand:'Columbia 300', name:'Scout Reactive', color:'#22c55e', rg:2.65, diff:0.02, cover:'Solid Reactive', coverName:'Super-Flex reactive (solid/pearl unconfirmed)', core:'Symmetric', coreName:'Pancake', finish:'Polished', year:2012, motion:'Burn-ball read. Gives up length, holds line.', rec:'Burned-up lanes where everything else hooks too soon.', when:'Broken-down or burned lanes.', whenNot:'Fresh oil.'}
 ];
 const CLASSES=['Benchmark / First Read', 'Strong Asymmetrical Solids', 'Strong Symmetrical Solids', 'Strong Asymmetrical Hybrids', 'Medium-Strong Hybrids', 'Medium Asymmetrical Pearls', 'Medium Symmetrical Pearls', 'Control Pieces / Benchmark Variants', 'Burn / Transition', 'Urethane', 'Spare Ball'];
 const rgOf=b=>b.rg!=null?b.rg:b.simRg, diffOf=b=>b.diff!=null?b.diff:b.simDiff;
@@ -306,7 +306,7 @@ function gapsText(){
   const cnt=Object.fromEntries(oils.map(o=>[o,balls.filter(b=>b.oil.includes(o)).length]));
   const thin=oils.slice().sort((a,b)=>cnt[a]-cnt[b])[0];
   const tbd=balls.filter(b=>!specOK(b)).length;
-  return `Gaps. Oil count: heavy ${cnt.heavy}, medium ${cnt.medium}, light ${cnt.light}. Thinnest is ${thin}. ${tbd} ball${tbd===1?'':'s'} still spec TBD.`;
+  return `Gaps. Oil count: heavy ${cnt.heavy}, medium ${cnt.medium}, light ${cnt.light}. Thinnest is ${thin}. ${tbd?tbd+' ball'+(tbd===1?'':'s')+' still spec TBD.':'All 22 balls have specs.'}`;
 }
 function renderAssess(){
   document.getElementById('assess').innerHTML=`<div><b>Profile:</b> right-handed tweener, ~15 mph, ~220 rpm, PAP 5 1/8, medium tilt and rotation.</div>
