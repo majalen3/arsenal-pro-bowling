@@ -57,7 +57,7 @@ function arsList(){
 }
 function chipRow(id,opts,key){
   const el=document.getElementById(id); el.innerHTML='';
-  opts.forEach(o=>{const b=document.createElement('button'); b.className='chip'+(ars[key]===o[0]?' on':''); b.textContent=o[1]; b.dataset.v=o[0]; b.onclick=()=>{ars[key]=o[0]; renderArsenal();}; el.appendChild(b);});
+  opts.forEach(o=>{const b=document.createElement('button'); b.className='chip'+(ars[key]===o[0]?' on':''); b.textContent=o[1]; b.dataset.v=o[0]; b.setAttribute('aria-pressed',String(ars[key]===o[0])); b.onclick=()=>{ars[key]=o[0]; renderArsenal();}; el.appendChild(b);});
 }
 function gapsText(){
   const oils=['heavy','medium','light'];
@@ -90,7 +90,7 @@ function renderArsenal(){
   chipRow('coverChips',[['All','All'],['Solid','Solid'],['Pearl','Pearl'],['Hybrid','Hybrid'],['Urethane','Urethane']],'cover');
   chipRow('oilChips',[['All','Any oil'],['Heavy','Heavy'],['Medium','Medium'],['Light','Light']],'oil');
   chipRow('sortChips',[['cls','By class'],['rg','Sort RG'],['diff','Sort Diff'],['name','Sort Name']],'sort');
-  const cb=document.getElementById('compareToggle'); cb.classList.toggle('on',ars.compare); cb.textContent=ars.compare?'Compare: pick up to 3':'Compare';
+  const cb=document.getElementById('compareToggle'); cb.classList.toggle('on',ars.compare); cb.setAttribute('aria-pressed',String(ars.compare)); cb.textContent=ars.compare?'Compare: pick up to 3':'Compare';
   cb.onclick=()=>{ars.compare=!ars.compare; if(!ars.compare) ars.picked=[]; renderArsenal();};
   document.getElementById('gapsNote').textContent=gapsText(); renderAssess(); renderBags();
   const grid=document.getElementById('arsGrid'); grid.innerHTML=''; grid.classList.toggle('compare-on',ars.compare);
@@ -128,7 +128,8 @@ function putOnLane(b){
   window.scrollTo(0,0);
 }
 function drawChart(){
-  const cv=document.getElementById('rgChart'); if(!cv) return; const g=cv.getContext('2d'); const W=cv.width,H=cv.height;
+  const cv=document.getElementById('rgChart'); if(!cv) return;
+  cv.setAttribute('role','img'); cv.setAttribute('aria-label','Chart of core RG (across) against differential (up) for '+balls.filter(specOK).length+' balls. The cards below list every ball with its specs.'); const g=cv.getContext('2d'); const W=cv.width,H=cv.height;
   g.clearRect(0,0,W,H); g.fillStyle='#0d1320'; g.fillRect(0,0,W,H);
   const L=52,R=18,T=16,B=40, x0=2.45,x1=2.62,y0=0.01,y1=0.06;
   const X=v=>L+(v-x0)/(x1-x0)*(W-L-R), Y=v=>H-B-(v-y0)/(y1-y0)*(H-T-B);

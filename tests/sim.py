@@ -122,7 +122,7 @@ def run_user(br, u):
             elif a == 'recommend': pg.click('#recommend')
             elif a == 'backup':
                 pg.evaluate('document.getElementById("alleyNotes").open=true'); F(len(pg.input_value('#deviceCode'))>=8, 'no device code shown')
-                pg.fill('#restoreCode', r.choice(['bad code!','', '<script>'])); pg.click('#useCode'); pg.wait_for_timeout(150)
+                pg.fill('#restoreCode', r.choice(['bad code!','', '<script>'])); pg.click('#useCode')
                 F(pg.text_content('#saveStatus').startswith('That is not'), 'invalid code not rejected')
                 pg.click('#copyCode'); pg.wait_for_timeout(150)
             elif a == 'swipe' and mob:

@@ -54,6 +54,7 @@ with sync_playwright() as p:
         # arsenal view axe once
         if name in('390x844','1280x800'):
             pg.click('#tabArsenal'); pg.wait_for_timeout(300)
+            check('a11y',pg.evaluate('[...document.querySelectorAll(".chip")].every(c=>c.hasAttribute("aria-pressed"))') and pg.evaluate('document.getElementById("rgChart").getAttribute("role")')=='img',f'{name} filter chips expose pressed state; chart has text alternative','Med')
             check('mobile',pg.evaluate('document.documentElement.scrollWidth')<=w,f'{name} arsenal no h-overflow','High')
             pg.evaluate(AXE); ax=pg.evaluate('axe.run({runOnly:["wcag2a","wcag2aa","best-practice"]}).then(r=>r.violations.map(v=>({id:v.id,impact:v.impact,n:v.nodes.length,ex:v.nodes[0].target.join(" ")})))')
             check('a11y',not ax,f'{name} arsenal axe: {ax}','High' if any(a['impact'] in('serious','critical') for a in ax) else 'Low')
