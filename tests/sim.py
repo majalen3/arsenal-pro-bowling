@@ -96,11 +96,11 @@ def run_user(br, u):
                 pg.click('#saveNote'); pg.wait_for_timeout(400)
             elif a == 'arsenal':
                 pg.click('#tabArsenal'); pg.wait_for_timeout(250)
-                F(pg.locator('.acard').count()==22, f'arsenal cards {pg.locator(".acard").count()}!=22'); vis_ok('arsenal')
+                exp=pg.evaluate('arsList().length'); F(pg.locator('.acard').count()==exp, f'arsenal cards {pg.locator(".acard").count()}!={exp}'); F(len(rec.setdefault('_v',[]))>0 or exp==22, f'first arsenal visit shows {exp}!=22'); rec['_v'].append(1); vis_ok('arsenal')
                 for sel in r.sample(['#clsChips .chip','#coverChips .chip','#oilChips .chip','#sortChips .chip'], 2):
                     c = pg.locator(sel); c.nth(r.randrange(c.count())).click()
                 pg.click('#compareToggle')
-                for i in range(r.randint(1,4)): pg.locator('.acard .cmp input').nth(i).click(force=True)
+                for i in range(min(r.randint(1,4), pg.locator('.acard .cmp input').count())): pg.locator('.acard .cmp input').nth(i).click(force=True)
                 F(pg.locator('#compareWrap thead th').count()<=4, 'compare >3 balls'); vis_ok('compare')
                 pg.click('#compareToggle')
                 pg.locator('.bagball').nth(r.randrange(pg.locator('.bagball').count())).click(); pg.wait_for_timeout(250)
@@ -129,7 +129,7 @@ def run_user(br, u):
         rec['device_id'] = pg.evaluate('localStorage.getItem("ap_device")')
         rec['t']['dcl'] = pg.evaluate('performance.getEntriesByType("navigation")[0].domContentLoadedEventEnd') if False else None
     except Exception as e:
-        rec['fails'].append('EXC '+str(e).split('\n')[0][:160])
+        rec['fails'].append('EXC['+(rec['acts'][-1] if rec['acts'] else 'load')+'] '+str(e).split('\n')[0][:160])
         try: rec['device_id'] = pg.evaluate('localStorage.getItem("ap_device")')
         except Exception: pass
     rec['pass'] = not rec['fails'] and not rec['pageerrors'] and not rec['console']
