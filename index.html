@@ -34,11 +34,15 @@
   button { background:var(--gold); color:#000; border:none; padding:0.4rem 0.6rem; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.78rem; width:100%; margin-top:0.2rem; }
   button.secondary { background:#2a3548; color:var(--text); }
   .canvas-wrap { background:var(--surface); border-radius:10px; display:flex; align-items:center; justify-content:center; position:relative; border:1px solid var(--border); padding:20px 6px 6px; margin-top:8px; }
-  canvas { display:block; height:calc(100vh - 250px); min-height:360px; max-height:880px; aspect-ratio:220/880; width:auto; max-width:100%; }
+  canvas { touch-action:none; cursor:crosshair; display:block; height:calc(100vh - 250px); min-height:360px; max-height:880px; aspect-ratio:220/880; width:auto; max-width:100%; }
   .info-panel { background:var(--surface); padding:0.65rem; border-radius:10px; font-size:0.78rem; line-height:1.45; border:1px solid var(--border); }
   .miss-feedback { background:#122a22; border-left:3px solid var(--gold); padding:0.5rem 0.65rem; border-radius:6px; font-size:0.8rem; font-weight:600; }
   .miss-feedback.light, .miss-feedback.high { border-left-color:#e74c3c; background:#2a1717; }
   .strike-banner { position:absolute; top:-12px; z-index:2; left:50%; transform:translateX(-50%); background:var(--gold); color:#000; font-weight:800; padding:0.35rem 1.1rem; border-radius:20px; font-size:0.95rem; display:none; white-space:nowrap; }
+  .strike-banner { background:#22c55e; color:#fff; }
+  .miss-feedback.strike { border-left-color:#22c55e; background:#0f2f1c; color:#86efac; }
+  .miss-feedback.gutter { border-left-color:#e74c3c; background:#2a1717; }
+  .miss-feedback.angle { border-left-color:#f59e0b; }
   .strike-banner.show { display:block; }
   .status { font-size:0.68rem; color:var(--muted); min-height:1em; }
   .status.ok { color:#4ade80; } .status.off { color:#f59e0b; }
@@ -73,7 +77,7 @@
     .ball-card .meta { display:none; }
     .main { flex-direction:column; padding:0.4rem; }
     .lane-area { display:contents; }
-    .canvas-wrap { order:0; } .info-panel { order:1; } .miss-feedback { order:2; } .controls { order:3; } details.alley { order:4; }
+    .canvas-wrap { order:0; } .miss-feedback { order:1; } .controls { order:2; } .info-panel { order:3; } details.alley { order:4; }
     .main { gap:0.5rem; }
     .controls { width:100%; max-height:none; overflow:visible; display:grid; grid-template-columns:1fr 1fr; gap:0.4rem 0.6rem; padding:0.5rem; }
     .control-group { min-width:0; }
@@ -113,8 +117,8 @@
     <div class="controls">
       <div class="control-group"><label>SPEED</label><input type="range" id="speed" min="12" max="22" value="15" step="0.5"><span id="speedVal">15</span></div>
       <div class="control-group"><label>REV</label><input type="range" id="rev" min="100" max="500" value="220" step="10"><span id="revVal">220</span></div>
-      <div class="control-group"><label>RELEASE</label><input type="range" id="release" min="5" max="30" value="15" step="1"><span id="releaseVal">15</span></div>
-      <div class="control-group"><label>AIM °</label><input type="range" id="aim" min="-8" max="8" value="0" step="0.5"><span id="aimVal">0</span></div>
+      <div class="control-group"><label>RELEASE</label><input type="range" id="release" min="5" max="30" value="12" step="1"><span id="releaseVal">12</span></div>
+      <div class="control-group"><label>AIM °</label><input type="range" id="aim" min="-8" max="8" value="-4" step="0.5"><span id="aimVal">-4</span></div>
       <div class="control-group"><label>OIL</label><input type="range" id="oil" min="0.6" max="1.5" value="1" step="0.1"><span id="oilVal">1.0</span></div>
       <div class="control-group"><label>FINISH</label><select id="finish"><option value="factory">Factory</option><option value="500">500</option><option value="1000">1000</option><option value="2000">2000</option><option value="3000">3000</option><option value="polished">Polished</option></select></div>
       <div class="control-group"><label>PATTERN</label><select id="pattern"><option value="house">House</option><option value="sport">Sport</option><option value="cheetah">Cheetah</option><option value="scorpion">Scorpion</option><option value="shark">Shark</option><option value="dry">Dry</option></select></div>
@@ -166,7 +170,7 @@ function init() {
     card.querySelector('.info-btn').onclick = e => { e.stopPropagation(); openDossier(b); };
     list.appendChild(card);
   });
-  ['speed','rev','release','aim','oil'].forEach(id => document.getElementById(id).oninput = e => document.getElementById(id+'Val').textContent = e.target.value);
+  ['speed','rev','release','aim','oil'].forEach(id => document.getElementById(id).oninput = e => { document.getElementById(id+'Val').textContent = e.target.value; drawLane(); });
   document.getElementById('finish').onchange = drawLane;
   document.getElementById('pattern').onchange = drawLane;
   document.getElementById('simulate').onclick = drawLane;
@@ -184,12 +188,15 @@ function init() {
   document.getElementById('dossierModal').onclick = e => { if(e.target.id==='dossierModal') e.target.classList.remove('open'); };
   canvas = document.getElementById('lane');
   ctx = canvas.getContext('2d');
+  setupDrag();
   initPersistence();
   drawLane();
 }
 function boardToX(board, w) { return 14 + ((39 - board) / 39) * (w - 28); }
-function simulatePath(ball) {
-  const speed = +document.getElementById('speed').value, rev = +document.getElementById('rev').value, release = +document.getElementById('release').value, aim = +document.getElementById('aim').value, oil = +document.getElementById('oil').value, finish = document.getElementById('finish').value, pattern = document.getElementById('pattern').value, w = LW, h = LH;
+function simulatePath(ball, ov) {
+  ov = ov || {};
+  const num = (k,id) => ov[k]!==undefined ? ov[k] : +document.getElementById(id).value;
+  const speed = num('speed','speed'), rev = num('rev','rev'), release = num('release','release'), aim = num('aim','aim'), oil = +document.getElementById('oil').value, finish = document.getElementById('finish').value, pattern = document.getElementById('pattern').value, w = LW, h = LH;
   const cover = getCoverMod(ball.cover), fin = getFinishMod(finish);
   const rgEarly = Math.max(0.2, Math.min(0.9, (2.60-ball.rg)*2.2));
   const diffHook = 0.7 + ball.diff*12;
@@ -199,10 +206,11 @@ function simulatePath(ball) {
   const revRatio = rev / (speed*14);
   const baseHook = hookPot * (0.55 + revRatio*0.45) / oil;
   let x = boardToX(release, w), y = h - 42, vx = Math.sin(aim * Math.PI/180) * 0.85, vy = -5.6;
-  const points = []; let breakpoint = null;
+  const points = []; let breakpoint = null, gutter = false;
   for (let t=0; t<240; t++) {
     points.push({x,y});
     const board = 39 - ((x-14)/(w-28))*39;
+    if (board < 1 || board > 39) { gutter = true; break; } // ball left the lane: stop the path here
     let fr = 0.28;
     if (pattern==='house') fr = (board<8||board>31)?1.55 : (board>15&&board<24?0.22:0.6);
     else if (pattern==='cheetah') fr = 1.6; else if (pattern==='dry') fr = 1.8; else if (pattern==='shark') fr = 0.42; else fr = 0.58;
@@ -218,7 +226,7 @@ function simulatePath(ball) {
     if (!breakpoint && phase>0.28 && force>0.04) breakpoint = {x,y,board};
     if (y < 60) break;
   }
-  return {points, breakpoint};
+  return {points, breakpoint, gutter};
 }
 function drawPins(w, h) {
   const baseY = 68, spacing = 14, centerX = boardToX(20, w);
@@ -243,6 +251,59 @@ function drawPins(w, h) {
   });
   ctx.strokeStyle='rgba(218,175,55,0.75)'; ctx.lineWidth=1.5;
   ctx.beginPath(); ctx.arc(centerX+10, baseY-spacing*0.5, 15, 0, Math.PI*2); ctx.stroke();
+}
+
+/* ===== Breakpoint-style analysis =====
+   Coordinates: feet 0 = foul line, 15 = arrows, 60 = head pin. Board 1-39 (1 right, 20 center). Pocket = board 17.5.
+   Strike = entry board 16.8-18.2 AND entry angle 4-6 deg. The angle is measured on the drawn lane
+   (the lane is drawn stretched sideways, so this is the visual pocket angle, same as the old panel).
+   Board in tolerance + angle in tolerance means the ball is inside the 17.5-to-20 pocket line, i.e. sweeps the 5-pin. */
+const HEAD_Y = 68, FOUL_Y = LH - 34, PX_FT = (FOUL_Y - HEAD_Y) / 60;
+const yToFeet = y => (FOUL_Y - y) / PX_FT;
+const xToBoard = x => 39 - ((x - 14) / (LW - 28)) * 39;
+const OIL_LEN = {house:38, sport:42, cheetah:35, scorpion:42, shark:45, dry:32};
+/* Rule of 31: oil length (ft) - 31 = board where the ball should exit the oil (breakpoint board).
+   Only the board check is shown; the breakpoint distance is not enforced. */
+function ruleOf31(pattern, bpBoard) {
+  const len = OIL_LEN[pattern] || 38, target = len - 31;
+  const d = bpBoard - target; // higher board = further left = further inside here
+  const rel = Math.abs(d) < 0.5 ? 'on it' : (d > 0 ? d.toFixed(1)+' inside' : (-d).toFixed(1)+' outside');
+  return {len, target, d, text: `Rule of 31: ${len} ft oil, target board ${target}, you are ${rel}.`};
+}
+function analyze(ball, ov) {
+  const r = simulatePath(ball, ov), pts = r.points;
+  const out = {points:pts, gutter:r.gutter, breakpoint:r.breakpoint, entryBoard:null, angle:null, strike:false, call:'', bpFeet:null, bpBoard:null};
+  let entry = null;
+  for (let i=1;i<pts.length;i++) if (pts[i].y <= HEAD_Y) {
+    const a=pts[i-1], c=pts[i], f=(a.y-HEAD_Y)/(a.y-c.y), x=a.x+(c.x-a.x)*f;
+    const b=pts[Math.max(0,i-4)];
+    entry = {board:xToBoard(x), angle:Math.abs(Math.atan2(b.x-c.x, b.y-c.y)*180/Math.PI)}; break;
+  }
+  if (r.gutter || !entry) { out.call = 'GUTTER'; if (!entry) { const e=pts[pts.length-1]; out.entryBoard = e?xToBoard(e.x):null; } }
+  else {
+    out.entryBoard = entry.board; out.angle = entry.angle;
+    const bOK = Math.abs(entry.board-17.5) <= 0.7, aOK = entry.angle>=4 && entry.angle<=6;
+    out.strike = bOK && aOK;
+    out.call = out.strike ? 'STRIKE' : bOK ? 'ANGLE' : entry.board<17.5 ? 'LIGHT' : 'HIGH';
+  }
+  if (r.breakpoint) { out.bpFeet = yToFeet(r.breakpoint.y); out.bpBoard = r.breakpoint.board; }
+  return out;
+}
+function sensitivity(ball) {
+  const g = id => +document.getElementById(id).value;
+  const rel = g('release'), sp = g('speed'), rv = g('rev');
+  const vars = [{speed:sp+0.5},{speed:sp-0.5},{rev:rv+20},{rev:rv-20},{release:rel+1},{release:rel-1}];
+  return vars.filter(v => analyze(ball, v).strike).length + ' of ' + vars.length;
+}
+function coachLine(a) {
+  const f1 = v => v.toFixed(1);
+  if (a.call==='GUTTER') return 'In the gutter.';
+  const b = f1(a.entryBoard);
+  if (a.call==='STRIKE') return `Strike. ${b}, sweeping the 5.`;
+  if (a.call==='ANGLE') return `On ${b}. The angle is missing the 5-pin. ${f1(a.angle)}\u00b0, need 4-6.`;
+  const off = Math.abs(a.entryBoard-17.5), mv = Math.max(1, Math.round(off));
+  if (a.call==='LIGHT') return `Light. ${b}, ${f1(off)} boards short of 17.5. Move feet left ${mv} board${mv>1?'s':''} or go stronger.`;
+  return `High. ${b}, ${f1(off)} boards past 17.5. Move feet right ${mv} board${mv>1?'s':''} or go weaker.`;
 }
 function drawLane() {
   const w=LW, h=LH;
@@ -294,28 +355,55 @@ function drawLane() {
   ctx.textAlign = 'center';
   ctx.fillText('BAKER', (bakerX1+bakerX2)/2, bakerY - 3);
   drawPins(w,h);
-  const result = simulatePath(selectedBall);
-  const pts = result.points;
-  ctx.beginPath(); ctx.strokeStyle = selectedBall.color; ctx.lineWidth = 2.2;
-  pts.forEach((p,i)=> i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y)); ctx.stroke();
+  const result = analyze(selectedBall);
+  const pts = result.points, isStrike = result.strike;
+  const relV = +document.getElementById('release').value, aimV = +document.getElementById('aim').value;
+  // aim target marker at the arrows: 1 board per degree of aim, dashed line from the release
+  const aimBoard = Math.max(1, Math.min(39, relV - aimV)), arrowYm = FOUL_Y - 15*PX_FT, relX = boardToX(relV, w);
+  ctx.setLineDash([3,3]); ctx.strokeStyle='rgba(218,175,55,0.8)'; ctx.lineWidth=0.8;
+  ctx.beginPath(); ctx.moveTo(relX, FOUL_Y-4); ctx.lineTo(boardToX(aimBoard,w), arrowYm); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle='#DAAF37'; ctx.lineWidth=1.2; ctx.beginPath(); ctx.arc(boardToX(aimBoard,w), arrowYm, 4, 0, Math.PI*2); ctx.stroke();
+  ctx.fillStyle='#DAAF37'; ctx.beginPath(); ctx.arc(relX, FOUL_Y-4, 3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.strokeStyle = isStrike ? '#22c55e' : selectedBall.color; ctx.lineWidth = isStrike ? 3 : 2.2;
+  if (isStrike) { ctx.shadowColor='#22c55e'; ctx.shadowBlur=6; }
+  pts.forEach((p,i)=> i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y)); ctx.stroke(); ctx.shadowBlur=0;
   if (result.breakpoint) { ctx.fillStyle='#ff6b35'; ctx.beginPath(); ctx.arc(result.breakpoint.x, result.breakpoint.y, 3, 0, Math.PI*2); ctx.fill(); }
-  if (pts.length) { const last=pts[pts.length-1]; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(last.x,last.y,4,0,Math.PI*2); ctx.fill(); ctx.strokeStyle=selectedBall.color; ctx.lineWidth=1; ctx.stroke(); }
-  const endBoard = pts.length ? (39 - ((pts.at(-1).x-14)/(w-28))*39) : null;
-  let pocketCall='—', isStrike=false;
-  if (endBoard!==null) { if (endBoard>=17.5 && endBoard<=19.5) { pocketCall='FLUSH'; isStrike=true; } else if (endBoard>=16.5 && endBoard<17.5) { pocketCall='LIGHT'; isStrike=true; } else if (endBoard>19.5 && endBoard<=20.8) { pocketCall='HIGH'; isStrike=true; } else if (endBoard<16.5) pocketCall='LIGHT MISS'; else pocketCall='HIGH MISS'; }
-  window.lastResult = {points:pts, endBoard, pocketCall, startX:pts.length?pts[0].x:null, endX:pts.length?pts.at(-1).x:null};
+  if (pts.length) { const last=pts[pts.length-1]; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(last.x,last.y,4,0,Math.PI*2); ctx.fill(); ctx.strokeStyle=isStrike?'#22c55e':selectedBall.color; ctx.lineWidth=1; ctx.stroke(); }
+  const pocketCall = result.call, endBoard = result.entryBoard;
+  window.lastResult = {points:pts, endBoard, pocketCall, strike:isStrike, angle:result.angle, startX:pts.length?pts[0].x:null, endX:pts.length?pts.at(-1).x:null};
   const mf = document.getElementById('missFeedback');
-  let mfCls='', mfTxt='';
-  if (pocketCall.startsWith('LIGHT')) { mfCls='light'; mfTxt='Finished light \u2014 move feet left or try a stronger finish.'; }
-  else if (pocketCall.startsWith('HIGH')) { mfCls='high'; mfTxt='Finished high \u2014 move feet right or try a weaker finish.'; }
-  else if (pocketCall==='FLUSH') { mfCls='flush'; mfTxt='Flush hit \u2014 repeat this line.'; }
-  mf.className='miss-feedback '+mfCls; mf.textContent=mfTxt; mf.style.display=mfTxt?'':'none'; mf.dataset.call=pocketCall;
-  document.getElementById('strikeBanner').classList.toggle('show', isStrike);
-  document.getElementById('strikeBanner').textContent = isStrike ? pocketCall : 'STRIKE';
-  let entryAngle=null;
-  if (pts.length>5) { const last=pts[pts.length-1], prev=pts[pts.length-4]; entryAngle = Math.abs(Math.atan2(last.x-prev.x, last.y-prev.y)*180/Math.PI); }
-  const finish = document.getElementById('finish').value;
-  document.getElementById('infoPanel').innerHTML = `<strong>${selectedBall.brand} ${selectedBall.name}</strong> — Factory: ${selectedBall.finish||'—'}<br>Finish: <strong>${finish==='factory'?'Factory':finish}</strong> • Entry: <strong>${endBoard?endBoard.toFixed(1):'—'}</strong> • Angle: <strong>${entryAngle?entryAngle.toFixed(1):'—'}°</strong><br>Pocket: <strong style="color:#DAAF37">${pocketCall}</strong><br><span style="font-size:0.7rem;color:#94a3b8">Dots ~7.5ft • Arrows ~15ft • Range ~37ft • Baker Box boards 5-8 at 42-46ft</span>`;
+  const mfTxt = coachLine(result);
+  mf.className='miss-feedback '+(isStrike?'strike':pocketCall==='LIGHT'?'light':pocketCall==='HIGH'?'high':pocketCall==='GUTTER'?'gutter':'angle');
+  mf.textContent=mfTxt; mf.style.display=''; mf.dataset.call=pocketCall;
+  const banner = document.getElementById('strikeBanner');
+  banner.classList.toggle('show', isStrike); banner.textContent='STRIKE';
+  const finish = document.getElementById('finish').value, pattern = document.getElementById('pattern').value;
+  const f1 = v => v==null ? '\u2014' : v.toFixed(1);
+  const hooked = result.bpBoard==null ? null : relV - result.bpBoard;
+  const bpTxt = result.bpFeet==null ? '\u2014' : `${Math.round(result.bpFeet)} ft, board ${f1(result.bpBoard)}`;
+  const r31 = result.bpBoard==null ? '' : ruleOf31(pattern, result.bpBoard).text;
+  document.getElementById('infoPanel').innerHTML = `<strong>${selectedBall.brand} ${selectedBall.name}</strong> \u2014 Factory: ${selectedBall.finish||'\u2014'} \u2022 Finish: <strong>${finish==='factory'?'Factory':finish}</strong><br>Angle <strong>${f1(result.angle)}\u00b0</strong> \u2022 Breakpoint <strong>${bpTxt}</strong> \u2022 Entry <strong>${f1(endBoard)}</strong> \u2022 Hooked <strong>${hooked==null?'\u2014':Math.abs(hooked).toFixed(1)} boards</strong><br>${r31}<br>Half a mph, 20 rpm, or one board: <strong>${sensitivity(selectedBall)} still strike.</strong><br><span style="font-size:0.68rem;color:#94a3b8">Drag the lane: near the foul line sets release, up-lane sets aim at the arrows. Dots ~7.5ft \u2022 Arrows ~15ft \u2022 Range ~37ft \u2022 Baker Box boards 5-8 at 42-46ft</span>`;
+}
+
+/* ===== Drag to set (pointer events; touch-action:none on the canvas only) ===== */
+function setupDrag() {
+  let mode = null;
+  const pos = e => { const r = canvas.getBoundingClientRect(); return {x:(e.clientX-r.left)/r.width*LW, y:(e.clientY-r.top)/r.height*LH}; };
+  const apply = e => {
+    const p = pos(e);
+    const board = xToBoard(Math.max(14, Math.min(LW-14, p.x)));
+    if (mode==='release') setControl('release', Math.max(5, Math.min(30, Math.round(board))));
+    else { const rel = +document.getElementById('release').value; setControl('aim', Math.max(-8, Math.min(8, Math.round((rel-board)*2)/2))); }
+    drawLane();
+  };
+  canvas.addEventListener('pointerdown', e => {
+    const p = pos(e); mode = (FOUL_Y - p.y) / PX_FT < 9 ? 'release' : 'aim';
+    try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
+    apply(e); e.preventDefault();
+  });
+  canvas.addEventListener('pointermove', e => { if (mode) apply(e); });
+  const end = () => { mode = null; };
+  canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
 }
 
 /* ===== Persistence: Render API + localStorage mirror ===== */
