@@ -84,6 +84,24 @@ with sync_playwright() as p:
     pg.evaluate('setControl("release",5);drawLane()')
     pg.locator('#savedLines .load',has_text='Persist1').first.click()
     check('persist',pg.evaluate('+document.getElementById("release").value')==21,'saved line survives refresh & one-tap load','Blocker')
+    if 'ahora' or True:
+        if '127.0.0.1:1' not in API:
+            # offline writes must sync later; offline delete must reach server
+            ctx.route('**/api/**', lambda rt: rt.abort()); pg.evaluate('document.getElementById("alleyNotes").open=true')
+            pg.click('#logFinish'); pg.wait_for_timeout(400)
+            pg.fill('#noteLane','7'); pg.fill('#noteOil','offlineoil'); pg.fill('#noteAdj','offline adj'); pg.click('#saveNote'); pg.wait_for_timeout(400)
+            ctx.unroute('**/api/**')
+            pg.evaluate('window.dispatchEvent(new Event("online"))'); pg.wait_for_timeout(2500)
+            dv=pg.evaluate('localStorage.getItem("ap_device")')
+            cnt=pg.evaluate('(async()=>{const h={"X-Device-Id":localStorage.getItem("ap_device")};const a=await (await fetch(API_BASE+"/api/surface-log",{headers:h})).json();const b=await (await fetch(API_BASE+"/api/pattern-notes",{headers:h})).json();return [a.length,b.filter(x=>x.oil==="offlineoil").length]})()')
+            check('persist',cnt[0]>=1 and cnt[1]==1,f'offline surface log + pattern note sync when connection returns {cnt}','High')
+            pg.fill('#lineName','DelMe'); pg.click('#saveLine'); pg.wait_for_timeout(600)
+            ctx.route('**/api/**', lambda rt: rt.abort())
+            pg.locator('#savedLines .line-item',has_text='DelMe').locator('.del').click(); pg.wait_for_timeout(400)
+            ctx.unroute('**/api/**'); pg.evaluate('window.dispatchEvent(new Event("online"))'); pg.wait_for_timeout(2500)
+            gone=pg.evaluate('(async()=>{const h={"X-Device-Id":localStorage.getItem("ap_device")};const a=await (await fetch(API_BASE+"/api/lines",{headers:h})).json();return a.filter(x=>x.name==="DelMe").length})()')
+            check('persist',gone==0 and pg.locator('#savedLines .line-item',has_text='DelMe').count()==0,'line deleted while offline is removed from server after reconnect and does not reappear','High')
+            pg.evaluate('fetch(API_BASE+"/api/me",{method:"DELETE",headers:{"X-Device-Id":localStorage.getItem("ap_device")}})'); pg.wait_for_timeout(300)
     # corrupt localStorage resilience
     pg.evaluate('localStorage.setItem("ap_lines","{{notjson");localStorage.setItem("ap_notes","123")'); pg.reload(); pg.wait_for_timeout(600)
     check('persist',pg.is_visible('#lane') and pg.evaluate('typeof lastResult')=='object','corrupt localStorage does not break app','High')

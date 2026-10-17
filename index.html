@@ -667,9 +667,10 @@ function setupDrag() {
 
 /* ===== Persistence: Render API + localStorage mirror ===== */
 const API_BASE = new URLSearchParams(location.search).get('api') || 'https://arsenal-pro-api.onrender.com';
-const API_TIMEOUT = 6000;
-const LS = { lines:'ap_lines', surface:'ap_surface', notes:'ap_notes' };
+const API_TIMEOUT = 8000, API_WRITE_TIMEOUT = 25000; // writes wait out a free-tier cold start; UI never blocks on them
+const LS = { lines:'ap_lines', surface:'ap_surface', notes:'ap_notes', dels:'ap_dels' };
 const lsGet = k => { try { const v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v.filter(x => x && typeof x === 'object') : []; } catch(e) { return []; } };
+const lsGetIds = k => { try { const v = JSON.parse(localStorage.getItem(k)); return Array.isArray(v) ? v.filter(Number.isInteger) : []; } catch(e) { return []; } };
 const lsSet = (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} };
 let _dev=null;
 function deviceId(){
@@ -682,13 +683,16 @@ function deviceId(){
   return _dev;
 }
 async function api(path, opts={}) {
-  const ctl = new AbortController(); const t = setTimeout(()=>ctl.abort(), API_TIMEOUT);
+  const ctl = new AbortController(); const t = setTimeout(()=>ctl.abort(), opts.method&&opts.method!=='GET'?API_WRITE_TIMEOUT:API_TIMEOUT);
   try {
     const r = await fetch(API_BASE+path, { ...opts, signal:ctl.signal, headers:Object.assign({'X-Device-Id':deviceId()},opts.body?{'Content-Type':'application/json'}:{}) });
     if (!r.ok) { const er=new Error('HTTP '+r.status); er.status=r.status; throw er; }
     return await r.json();
   } finally { clearTimeout(t); }
 }
+function failStatus(e){ return e&&e.status===429?'Server busy. Saved on this phone, will retry.':e&&e.name==='AbortError'?'Server waking up. Saved on this phone, will retry.':'Offline (saved on this phone)'; }
+let retryN=0, retryT=null;
+function retryLater(){ if(retryT||retryN>=4) return; const d=[15000,45000,120000,300000][retryN++]; retryT=setTimeout(async()=>{ retryT=null; await syncLines(); await syncAlley(); },d); }
 function setStatus(txt, cls) { const el=document.getElementById('saveStatus'); el.textContent=txt; el.className='status full '+(cls||''); }
 const esc = t => String(t==null?'':t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function setControl(id, v) { if (v===null||v===undefined) return; const el=document.getElementById(id); el.value=v; const lab=document.getElementById(id+'Val'); if (lab) lab.textContent = id==='oil'?(+el.value).toFixed(1):el.value; }
@@ -700,7 +704,7 @@ function linesForBall() { return lsGet(LS.lines).filter(l=>l.ballId===selectedBa
 function renderSavedLines() {
   const box = document.getElementById('savedLines'); const ls = linesForBall();
   if (!ls.length) { box.innerHTML = '<div class="status">No saved lines yet.</div>'; return; }
-  box.innerHTML = ls.map((l,i)=>`<div class="line-item"><button class="load" data-i="${i}">${esc(l.name)}<small>rel ${l.release} \u2022 aim ${l.aim} \u2022 ${esc(l.finish)} \u2022 ${esc(l.pattern)}${l.note?' \u2022 '+esc(l.note):''}${l.synced?'':' \u2022 on this phone'}</small></button><button class="del" data-i="${i}" aria-label="Delete line">\u2715</button></div>`).join('');
+  box.innerHTML = ls.map((l,i)=>`<div class="line-item"><button class="load" data-i="${i}">${esc(l.name)}<small>rel ${l.release} \u2022 aim ${l.aim} \u2022 ${esc(l.finish)} \u2022 ${esc(l.pattern)}${l.note?' \u2022 '+esc(l.note):''}${l.synced?'':' \u2022 on this phone'}</small></button><button class="del" data-i="${i}" aria-label="Delete line ${esc(l.name)}">\u2715</button></div>`).join('');
   box.querySelectorAll('.load').forEach(b=>b.onclick=()=>loadLine(ls[+b.dataset.i]));
   box.querySelectorAll('.del').forEach(b=>b.onclick=()=>deleteLine(ls[+b.dataset.i]));
 }
@@ -722,16 +726,18 @@ async function saveLine() {
   const l = { ...currentLine(name), updatedAt:Date.now(), synced:false };
   const all = lsGet(LS.lines).filter(x=>!(x.ballId===l.ballId && x.name===l.name)); all.push(l); lsSet(LS.lines, all);
   renderSavedLines(); setStatus('Saving\u2026');
-  try { await pushLine(l); setStatus('Saved','ok'); } catch(e) { setStatus('Offline (saved on this phone)','off'); }
+  try { await pushLine(l); setStatus('Saved','ok'); retryN=0; } catch(e) { setStatus(failStatus(e),'off'); retryLater(); }
   renderSavedLines();
 }
 async function deleteLine(l) {
   lsSet(LS.lines, lsGet(LS.lines).filter(x=>!(x.ballId===l.ballId && x.name===l.name))); renderSavedLines();
-  if (l.id) { try { await api('/api/lines/'+l.id, {method:'DELETE'}); setStatus('Deleted','ok'); } catch(e) { setStatus('Deleted here; server unreachable','off'); } }
+  if (l.id) { try { await api('/api/lines/'+l.id, {method:'DELETE'}); setStatus('Deleted','ok'); } catch(e) { if(!(e&&e.status===404)){ const q=lsGetIds(LS.dels); q.push(l.id); lsSet(LS.dels,q.slice(-100)); retryLater(); } setStatus('Deleted here; will remove from server when online','off'); } }
 }
+async function flushDels(){ const q=lsGetIds(LS.dels); if(!q.length) return; const keep=[]; for(const id of q){ try { await api('/api/lines/'+id,{method:'DELETE'}); } catch(e){ if(!(e&&e.status===404)) keep.push(id); } } lsSet(LS.dels,keep); }
 async function syncLines() {
   const ballId = selectedBall.id;
   try {
+    await flushDels();
     const server = await api('/api/lines?ballId='+encodeURIComponent(ballId));
     const all = lsGet(LS.lines);
     server.forEach(s=>{
@@ -743,8 +749,8 @@ async function syncLines() {
     if (selectedBall.id===ballId) renderSavedLines();
     for (const l of all.filter(x=>x.ballId===ballId && !x.synced)) { try { await pushLine(l); } catch(e) { break; } }
     if (selectedBall.id===ballId) renderSavedLines();
-    setStatus('Synced','ok');
-  } catch(e) { setStatus('Offline (saved on this phone)','off'); }
+    setStatus('Synced','ok'); retryN=0;
+  } catch(e) { setStatus(failStatus(e),'off'); retryLater(); }
 }
 /* surface log + pattern notes */
 const today = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
@@ -755,27 +761,32 @@ function renderAlleyLists() {
   document.getElementById('noteList').innerHTML = nl.length ? nl.map(x=>`<li>Lane ${esc(x.lane)} \u2022 ${esc(x.oil)} \u2014 ${esc(x.adjustment)}</li>`).join('') : '<li>No notes yet.</li>';
 }
 async function logFinish() {
-  const e = { ballId:selectedBall.id, date:today(), finish:document.getElementById('finish').value };
+  const e = { ballId:selectedBall.id, date:today(), finish:document.getElementById('finish').value, synced:false };
   const all = lsGet(LS.surface); all.push(e); lsSet(LS.surface, all.slice(-200)); renderAlleyLists(); setStatus('Saving\u2026');
-  try { await api('/api/surface-log', {method:'POST', body:JSON.stringify(e)}); setStatus('Saved','ok'); } catch(err) { setStatus('Offline (saved on this phone)','off'); }
+  try { await api('/api/surface-log', {method:'POST', body:JSON.stringify({ballId:e.ballId,date:e.date,finish:e.finish})}); e.synced=true; lsSet(LS.surface, lsGet(LS.surface).map(x=>x===e||(x.ballId===e.ballId&&x.date===e.date&&x.finish===e.finish&&x.synced===false)?Object.assign(x,{synced:true}):x)); setStatus('Saved','ok'); } catch(err) { setStatus(failStatus(err),'off'); retryLater(); }
 }
 async function saveNote() {
-  const e = { lane:document.getElementById('noteLane').value.trim(), oil:document.getElementById('noteOil').value.trim(), adjustment:document.getElementById('noteAdj').value.trim() };
+  const e = { lane:document.getElementById('noteLane').value.trim(), oil:document.getElementById('noteOil').value.trim(), adjustment:document.getElementById('noteAdj').value.trim(), synced:false };
   if (!e.lane||!e.oil||!e.adjustment) { setStatus('Fill lane, oil and adjustment','off'); return; }
   const all = lsGet(LS.notes); all.push(e); lsSet(LS.notes, all.slice(-100)); renderAlleyLists();
   ['noteLane','noteOil','noteAdj'].forEach(id=>document.getElementById(id).value=''); setStatus('Saving\u2026');
-  try { await api('/api/pattern-notes', {method:'POST', body:JSON.stringify(e)}); setStatus('Saved','ok'); } catch(err) { setStatus('Offline (saved on this phone)','off'); }
+  try { await api('/api/pattern-notes', {method:'POST', body:JSON.stringify({lane:e.lane,oil:e.oil,adjustment:e.adjustment})}); lsSet(LS.notes, lsGet(LS.notes).map(x=>(x.lane===e.lane&&x.oil===e.oil&&x.adjustment===e.adjustment&&x.synced===false)?Object.assign(x,{synced:true}):x)); setStatus('Saved','ok'); } catch(err) { setStatus(failStatus(err),'off'); retryLater(); }
+}
+async function pushUnsyncedAlley(){
+  for (const x of lsGet(LS.surface).filter(x=>x.synced===false)) { await api('/api/surface-log',{method:'POST',body:JSON.stringify({ballId:x.ballId,date:x.date,finish:x.finish})}); x.synced=true; const a=lsGet(LS.surface); const m=a.find(y=>y.synced===false&&y.ballId===x.ballId&&y.date===x.date&&y.finish===x.finish); if(m){m.synced=true; lsSet(LS.surface,a);} }
+  for (const x of lsGet(LS.notes).filter(x=>x.synced===false)) { await api('/api/pattern-notes',{method:'POST',body:JSON.stringify({lane:x.lane,oil:x.oil,adjustment:x.adjustment})}); const a=lsGet(LS.notes); const m=a.find(y=>y.synced===false&&y.lane===x.lane&&y.oil===x.oil&&y.adjustment===x.adjustment); if(m){m.synced=true; lsSet(LS.notes,a);} }
 }
 async function syncAlley() {
   try {
+    await pushUnsyncedAlley();
     const sv = await api('/api/surface-log?ballId='+encodeURIComponent(selectedBall.id));
     const all = lsGet(LS.surface);
-    sv.forEach(s=>{ if (!all.some(x=>x.ballId===s.ballId && x.date===s.date && x.finish===s.finish)) all.push({ballId:s.ballId,date:s.date,finish:s.finish}); });
+    sv.forEach(s=>{ if (!all.some(x=>x.ballId===s.ballId && x.date===s.date && x.finish===s.finish)) all.push({ballId:s.ballId,date:s.date,finish:s.finish,synced:true}); });
     all.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0); lsSet(LS.surface, all.slice(-200));
     const nv = await api('/api/pattern-notes'); const notes = lsGet(LS.notes);
-    nv.slice().reverse().forEach(n=>{ if (!notes.some(x=>x.lane===n.lane && x.oil===n.oil && x.adjustment===n.adjustment)) notes.unshift({lane:n.lane,oil:n.oil,adjustment:n.adjustment}); });
+    nv.slice().reverse().forEach(n=>{ if (!notes.some(x=>x.lane===n.lane && x.oil===n.oil && x.adjustment===n.adjustment)) notes.unshift({lane:n.lane,oil:n.oil,adjustment:n.adjustment,synced:true}); });
     lsSet(LS.notes, notes.slice(-100)); renderAlleyLists();
-  } catch(e) {}
+  } catch(e) { retryLater(); }
 }
 function initPersistence() {
   document.getElementById('saveLine').onclick = saveLine;
