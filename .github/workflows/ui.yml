@@ -3,10 +3,19 @@ on: [push, pull_request]
 jobs:
   ui:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
+      - name: Engine equivalence (v1 simulatePath vs 2.0 module)
+        run: node tests/engine_equivalence.mjs
       - run: pip install playwright && playwright install --with-deps chromium
       - run: python -m http.server 8099 &
-      - run: sleep 2 && python tests/review.py http://localhost:8099/index.html
+      - name: End-to-end (phone + desktop, axe, offline, migration, pin deck)
+        run: sleep 2 && python tests/e2e.py http://localhost:8099/ --shots e2e-shots
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: e2e-shots, path: e2e-shots }

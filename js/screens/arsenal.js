@@ -12,13 +12,13 @@ const short = c => c.split(' / ')[0].replace('Strong ', 'Str. ').replace('Medium
 export function tile(b, { onCompareToggle, picked }) {
   const r = readInfo(b, readMed());
   const t = h('article', { class:'btile' + (b.id === app.ball.id ? ' current' : ''), 'data-ball':b.id },
-    h('a', { class:'btile-link', href:`#/ball/${b.id}`, 'aria-label':`${b.brand} ${b.name}, ${b.role}. Details` },
+    h('a', { class:'btile-link', href:`#/ball/${b.id}`, 'aria-describedby':null },
       h('span', { class:'ball-orb', style:{ '--c':b.color }, 'aria-hidden':'true' }),
       h('span', { class:'btile-text' }, h('span', { class:'btile-name', text:b.name }), h('span', { class:'btile-brand', text:`${b.brand}${b.year ? ' · ' + b.year : ''}` }), h('span', { class:'btile-role', text:b.role }))),
     h('div', { class:'btile-specs num' }, h('span', {}, h('small', { text:'RG' }), String(rgTxt(b))), h('span', {}, h('small', { text:'Diff' }), String(diffTxt(b))), h('span', {}, h('small', { text:'Cover' }), coverKind(b)), r ? h('span', {}, h('small', { text:'Reads' }), r.tag) : null),
     h('div', { class:'btile-actions' },
-      b.id === app.ball.id ? h('span', { class:'pill gold', text:'On lane' }) : h('button', { class:'btn sm primary', 'aria-label':`Put ${b.name} on the lane`, onclick:() => { setBall(b); go('#/lane'); } }, 'Put on lane'),
-      h('button', { class:'btn sm ghost cmp-btn', 'aria-pressed':String(picked), 'aria-label':`Compare ${b.name}`, onclick:() => onCompareToggle(b) }, h('span', { html:icon(picked ? 'check' : 'compare') }), picked ? 'Picked' : 'Compare')));
+      b.id === app.ball.id ? h('span', { class:'pill gold', text:'On lane' }) : h('button', { class:'btn sm primary', 'aria-label':`Put on lane: ${b.name}`, onclick:() => { setBall(b); go('#/lane'); } }, 'Put on lane'),
+      h('button', { class:'btn sm ghost cmp-btn', 'aria-pressed':String(picked), 'aria-label':`${picked ? 'Picked' : 'Compare'} ${b.name}`, onclick:() => onCompareToggle(b) }, h('span', { html:icon(picked ? 'check' : 'compare') }), picked ? 'Picked' : 'Compare')));
   return t;
 }
 export function render() {
@@ -50,7 +50,7 @@ export function render() {
     const oil = PAT_OIL[S.pattern], fit = balls.filter(b => b.oil.includes(oil) && b.id !== app.ball.id).sort((a, b) => a.cls - b.cls).slice(0, 4);
     sugg.innerHTML = '';
     sugg.append(h('div', { class:'sugg-h' }, h('span', { class:'label', text:`Fits ${PATTERN_LABEL[S.pattern]} · ${oil} oil` }), h('span', { class:'muted small', text:'from each ball\u2019s oil tags' })),
-      h('div', { class:'sugg-row' }, ...fit.map(b => h('button', { class:'sugg-ball', onclick:() => { setBall(b); go('#/lane'); toast(`${b.name} on the lane`); }, 'aria-label':`Put ${b.name} on the lane` }, h('span', { class:'swatch', style:{ background:b.color } }), h('span', {}, b.name, h('small', { text:b.role }))))));
+      h('div', { class:'sugg-row' }, ...fit.map(b => h('button', { class:'sugg-ball', onclick:() => { setBall(b); go('#/lane'); toast(`${b.name} on the lane`); }}, h('span', { class:'sr-only', text:'Put on lane: ' }), h('span', { class:'swatch', style:{ background:b.color } }), h('span', {}, b.name, h('small', { text:b.role }))))));
   }
   search.oninput = () => { st.q = search.value; draw(); };
   drawChips(); draw();

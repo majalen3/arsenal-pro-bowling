@@ -3,6 +3,7 @@ import { rgTxt, coverKind } from '../data.js';
 import { app, on, saveLine, renameLine, linesForBall, status } from '../store.js';
 import { h, icon, toast, sheet } from '../ui.js';
 import { createLane } from '../lane.js';
+import { createDeck, describe } from '../deck.js';
 import { adjust, miss, restore, target, MISSES } from '../ctl.js';
 import { openBallSheet, openConditions, openTune, openLines, tunePanel } from './pickers.js';
 import { PATTERN_LABEL, FINISH_LABEL, CALL_LABEL, CALL_TONE, f1, fmtBoard } from '../labels.js';
@@ -19,6 +20,8 @@ export function render() {
   const canvas = h('canvas', { id:'lane', class:'lane-canvas', tabindex:'0', role:'img' });
   const callBadge = h('div', { class:'call-badge', id:'callBadge' });
   const coach = h('p', { class:'coach', id:'coach', 'aria-live':'polite' });
+  const deckCv = h('canvas', { class:'deck', id:'deck', role:'img' });
+  const deckRead = h('div', { class:'deck-read', id:'deckRead' });
   const tile = (id, label) => h('div', { class:'tile', id }, h('div', { class:'tile-label', text:label }), h('div', { class:'tile-val num' }), h('div', { class:'tile-sub' }));
   const tEntry = tile('tEntry', 'Entry'), tAngle = tile('tAngle', 'Angle'), tBp = tile('tBp', 'Break pt');
   const lineSum = h('button', { class:'line-sum', id:'lineSum', onclick:() => { tune = openTune(); } });
@@ -36,31 +39,31 @@ export function render() {
     h('div', { class:'lane-grid' },
       h('div', { class:'lane-col' }, canvas,
         h('div', { class:'legend', 'aria-hidden':'true' }, h('span', { html:`<i style="background:${C_SKID}"></i>Skid` }), h('span', { html:`<i style="background:${C_HOOK}"></i>Hook` }), h('span', { html:`<i style="background:${C_ROLL}"></i>Roll` }), h('span', { html:'<i class="bp"></i>Breakpoint' }))),
+      h('section', { class:'deck-card', id:'deckCard', 'aria-labelledby':'deckH' }, h('figure', { class:'deck-fig' }, deckCv), h('div', { class:'deck-side' }, h('h2', { class:'deck-h', id:'deckH', text:'Pin deck' }), callBadge, coach, deckRead, h('p', { class:'deck-cap', id:'deckCap' }))),
       h('div', { class:'read-col' },
-        h('div', { class:'call-card', id:'callCard' }, callBadge, coach),
         h('div', { class:'tiles' }, tEntry, tAngle, tBp),
         lineSum, hold, missRow, lefty ? h('p', { class:'note small', text:'Left-handed: the model draws a right-hander’s lane. Read board numbers mirrored.' }) : null, more, inlineTune)));
   let tune = null;
   const lane = createLane(canvas, { onAdjust:ch => adjust(ch) });
+  const deck = createDeck(deckCv);
   function setTile(t, val, sub, tone) { t.querySelector('.tile-val').textContent = val; t.querySelector('.tile-sub').textContent = sub; t.dataset.tone = tone; }
   let lastKey = '';
   function update({ animate = false } = {}) {
     const b = app.ball, a = analyze(b);
     ballBtn.innerHTML = `<span class="ball-orb sm" style="--c:${b.color}" aria-hidden="true"></span><span class="ball-btn-text"><span class="ball-btn-name">${b.name}</span><span class="ball-btn-sub">${b.brand} · ${coverKind(b)} · RG ${rgTxt(b)}</span></span>${icon('down', 'chev')}`;
-    ballBtn.setAttribute('aria-label', `Ball on lane: ${b.brand} ${b.name}. Change ball`);
+    ballBtn.title = 'Change ball';
     el.querySelector('#laneH1').textContent = `Lane: ${b.name}`;
     patChip.innerHTML = `<span class="chip-k">Pattern</span> ${PATTERN_LABEL[S.pattern]}`; patChip.setAttribute('aria-label', `Pattern ${PATTERN_LABEL[S.pattern]}. Change conditions`);
     surfChip.innerHTML = `<span class="chip-k">Surface</span> ${FINISH_LABEL[S.finish]}`; surfChip.setAttribute('aria-label', `Surface ${FINISH_LABEL[S.finish]}. Change conditions`);
-    oilChip.innerHTML = `<span class="chip-k">Oil</span> ×${(+S.oil).toFixed(1)}`; oilChip.setAttribute('aria-label', `Oil volume ${(+S.oil).toFixed(1)}. Change conditions`);
-    tuneChip.innerHTML = `${icon('tune')} ${S.speed} mph · ${S.rev} rpm`; tuneChip.setAttribute('aria-label', `Speed ${S.speed} mph, ${S.rev} rpm. Tune shot`);
-    const tone = CALL_TONE[a.call]; callBadge.textContent = CALL_LABEL[a.call]; el.querySelector('#callCard').dataset.tone = tone;
+    oilChip.innerHTML = `<span class="chip-k">Oil</span> ×${(+S.oil).toFixed(1)}`; oilChip.setAttribute('aria-label', `Oil ×${(+S.oil).toFixed(1)}. Change oil volume`);
+    tuneChip.innerHTML = `${icon('tune')} ${S.speed} mph · ${S.rev} rpm`; tuneChip.setAttribute('aria-label', `${S.speed} mph · ${S.rev} rpm. Tune shot`);
+    const tone = CALL_TONE[a.call]; callBadge.textContent = CALL_LABEL[a.call]; 
     coach.textContent = coachLine(a);
     setTile(tEntry, f1(a.entryBoard), 'pocket 17.5', a.entryBoard != null && Math.abs(a.entryBoard - 17.5) <= 0.7 ? 'good' : 'warn');
     setTile(tAngle, a.angle == null ? '\u2014' : f1(a.angle) + '\u00b0', 'need 4\u20136\u00b0', a.angle != null && a.angle >= 4 && a.angle <= 6 ? 'good' : 'warn');
     const r31 = a.bpBoard == null ? null : ruleOf31(S.pattern, a.bpBoard);
     setTile(tBp, a.bpBoard == null ? '\u2014' : f1(a.bpBoard), a.bpFeet == null ? 'no hook' : `@ ${Math.round(a.bpFeet)} ft`, r31 && Math.abs(r31.d) <= 2 ? 'good' : 'warn');
-    lineSum.innerHTML = `<span><b class="num">${S.release}</b><small>Feet</small></span><span class="arrow" aria-hidden="true">→</span><span><b class="num">${fmtBoard(target())}</b><small>Target</small></span><span><b class="num">${S.speed}</b><small>mph</small></span><span><b class="num">${S.rev}</b><small>rpm</small></span>${icon('tune', 'ls-ic')}`;
-    lineSum.setAttribute('aria-label', `Line: feet ${S.release}, target ${fmtBoard(target())}, ${S.speed} miles per hour, ${S.rev} rpm. Tune shot`);
+    lineSum.innerHTML = `<span class="sr-only">Tune shot. </span><span><b class="num">${S.release}</b><small>Feet</small></span><span class="arrow" aria-hidden="true">→</span><span><b class="num">${fmtBoard(target())}</b><small>Target</small></span><span><b class="num">${S.speed}</b><small>mph</small></span><span><b class="num">${S.rev}</b><small>rpm</small></span>${icon('tune', 'ls-ic')}`;
     const sens = sensitivity(b), n = +sens.split(' ')[0];
     hold.innerHTML = `<span class="hold-bar" aria-hidden="true">${Array.from({ length:6 }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span><span>Margin: <b>${sens}</b> small misses still strike</span>`;
     hold.dataset.tone = !a.strike ? 'off' : n >= 4 ? 'good' : 'warn';
@@ -73,6 +76,12 @@ export function render() {
     inlineTune.sync(); tune && tune.p && document.contains(tune.p) && tune.p.sync();
     const key = b.id + S.pattern + S.finish;
     lane.draw({ ball:b, result:a }, { animate:animate && key !== lastKey ? true : animate });
+    const lefty = !!(profile() && profile().hand === 'left'), d = describe(a, lefty);
+    deck.draw({ res:a, lefty, tone, color:b.color }, { animate });
+    deckCv.setAttribute('aria-label', `Pin deck close-up, ${d.pocket} pocket. ${CALL_LABEL[a.call]}. ${d.text}`);
+    deckRead.innerHTML = a.entryBoard == null ? `<p>${d.text}</p>` : `<p class="deck-side-call">${d.side[0].toUpperCase() + d.side.slice(1)}, ${d.ang}.</p><p class="deck-contact">${d.contact}</p><p class="deck-five">${d.five}</p>`;
+    el.querySelector('#deckCard').dataset.tone = tone;
+    el.querySelector('#deckCap').textContent = `True 12 in pin spacing; path past contact is projected (no deflection).${lefty ? ' Mirrored for left hand.' : ''}`;
     lastKey = key;
   }
   function drawSync() { syncDot.dataset.state = status.cls || 'idle'; syncDot.setAttribute('aria-label', status.text || 'Not synced yet'); syncDot.title = status.text || ''; }
@@ -89,5 +98,5 @@ export function render() {
   let rq = 0, ranim = false;
   const queue = d => { ranim = ranim || !!(d && d.animate); if (rq) return; rq = requestAnimationFrame(() => { rq = 0; const a = ranim; ranim = false; update({ animate:a }); }); };
   const offs = [on('state', queue), on('lines', () => update()), on('status', drawSync)];
-  return { el, title:'Lane', mounted() { update({ animate:true }); drawSync(); }, destroy() { cancelAnimationFrame(rq); offs.forEach(f => f()); lane.destroy(); } };
+  return { el, title:'Lane', mounted() { update({ animate:true }); drawSync(); }, destroy() { cancelAnimationFrame(rq); offs.forEach(f => f()); lane.destroy(); deck.destroy(); } };
 }

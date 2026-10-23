@@ -107,7 +107,7 @@ body[data-tab=none] #view{padding-bottom:var(--s4)}
 .chips{display:flex;gap:var(--s2);flex-wrap:wrap}
 .chips.scroll{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 calc(-1 * var(--s4));padding:2px var(--s4)}
 .chips.scroll::-webkit-scrollbar{display:none}
-.chip{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--line);font-size:var(--fs-sm);font-weight:600;white-space:nowrap;color:var(--text)}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:var(--tap);padding:0 14px;border-radius:var(--r-pill);background:var(--surface-2);border:1px solid var(--line);font-size:var(--fs-sm);font-weight:600;white-space:nowrap;color:var(--text)}
 @media (pointer:coarse){.chip{min-height:var(--tap)}}
 .chip[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
 .chip .chip-k{color:var(--text-2);font-weight:500}
@@ -276,8 +276,9 @@ body[data-tab=none] #toast{bottom:16px}
 .btile-specs small{font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em}
 .btile-actions{display:flex;align-items:center;justify-content:space-between;gap:var(--s2)}
 .cmp-btn[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
-.tray{position:sticky;bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + 10px);margin:var(--s4) var(--s4) 0;z-index:15;display:flex;align-items:center;gap:var(--s2);padding:8px 8px 8px 14px;border-radius:var(--r-lg);background:var(--surface-3);border:1px solid var(--line-2);box-shadow:var(--shadow-2);animation:up var(--t-med) var(--ease)}
-@media (min-width:900px){.tray{bottom:var(--s4)}}
+.tray{position:fixed;left:var(--s4);right:var(--s4);bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + 10px);max-width:640px;margin:0 auto;z-index:15;display:flex;align-items:center;gap:var(--s2);padding:8px 8px 8px 14px;border-radius:var(--r-lg);background:var(--surface-3);border:1px solid var(--line-2);box-shadow:var(--shadow-2);animation:up var(--t-med) var(--ease)}
+@media (min-width:900px){.tray{bottom:var(--s4);left:calc(var(--rail-w,88px) + var(--s4))}}
+.screen:has(.tray:not([hidden])){padding-bottom:96px}
 .tray[hidden]{display:none}
 .tray-balls{display:flex;gap:10px;flex:1;min-width:0;overflow:hidden;font-size:var(--fs-sm);font-weight:700}
 .tray-ball{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.tray-ball .swatch{width:16px;height:16px}
@@ -380,3 +381,27 @@ noscript p{padding:24px}
 .sheet-root:not(.open) .sheet{transform:translateY(24px);opacity:0;transition:transform var(--t-med),opacity var(--t-med)}
 @media (min-width:700px){.sheet-root:not(.open) .sheet{transform:translate(-50%,-48%);opacity:0}}
 .sheet-root:not(.open) .scrim{opacity:0;transition:opacity var(--t-med)}
+
+/* ---- pin-deck close-up: phone = full-width strip above the lane; desktop = top of the read column */
+.lane-grid{grid-template-areas:"deck deck" "lane read"}
+.lane-col{grid-area:lane} .read-col{grid-area:read} .deck-card{grid-area:deck}
+.deck-card{--tone:var(--text-2);display:grid;grid-template-columns:minmax(0,54%) 1fr;gap:var(--s3);align-items:center;background:var(--surface);border:1px solid color-mix(in srgb,var(--tone) 45%,var(--line));border-radius:var(--r-lg);padding:var(--s2)}
+.deck-card[data-tone=good]{--tone:var(--good)} .deck-card[data-tone=warn]{--tone:var(--warn)} .deck-card[data-tone=bad]{--tone:var(--bad)} .deck-card[data-tone=info]{--tone:var(--info)}
+.deck-fig{margin:0}
+.deck{display:block;width:100%;aspect-ratio:42/47;border-radius:var(--r-md);
+  --deck-good:var(--good);--deck-warn:var(--warn);--deck-bad:var(--bad);--deck-info:var(--info)}
+.deck-side{display:grid;gap:6px;min-width:0}
+.deck-h{margin:0;font-size:var(--fs-xs);letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)}
+.deck-read{display:grid;gap:6px;font-size:var(--fs-sm);color:var(--text-2)}
+.deck-read p{margin:0}
+.deck-side-call{font-weight:600;color:var(--tone)}
+.deck-side .call-badge{color:var(--tone);font-size:var(--fs-xl);font-weight:800;line-height:1.1}
+.deck-side .coach{margin:0;font-size:var(--fs-sm);color:var(--text)}
+.deck-contact{color:var(--text)}
+.deck-five{font-size:var(--fs-xs);color:var(--text-3)}
+.deck-cap{margin:0;font-size:var(--fs-xs);color:var(--text-3)}
+@media (min-width:900px){
+  .lane-grid{grid-template-areas:"lane deck" "lane read";grid-template-rows:auto 1fr}
+  .deck-card{grid-template-columns:minmax(220px,300px) 1fr;align-self:start}
+}
+.sugg-ball,.line-row{position:relative}

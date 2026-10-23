@@ -19,7 +19,7 @@ export function render() {
       if (!res.length) { list.append(h('p', { class:'muted', text:'No lines match.' })); return; }
       res.forEach(l => { const b = balls.find(x => x.id === l.ballId);
         list.append(h('div', { class:'line-card' },
-          h('button', { class:'line-row', 'aria-label':`Load ${l.name} on the lane`, onclick:() => { applyLine(l); go('#/lane'); toast(`Loaded \u201c${l.name}\u201d`); } },
+          h('button', { class:'line-row', onclick:() => { applyLine(l); go('#/lane'); toast(`Loaded \u201c${l.name}\u201d`); } }, h('span', { class:'sr-only', text:'Load on lane: ' }),
             h('span', { class:'swatch', style:{ background:b ? b.color : '#888' } }),
             h('span', { class:'line-text' }, h('span', { class:'line-name', text:l.name }), h('span', { class:'line-meta', text:`${b ? b.name : l.ballId} \u00b7 Feet ${l.release} \u2192 ${fmtBoard(l.release - l.aim)} \u00b7 ${l.speed} mph \u00b7 ${PATTERN_LABEL[l.pattern] || l.pattern}` }), l.note ? h('span', { class:'line-note', text:l.note }) : null),
             h('span', { class:'sync-ic', title:l.synced ? 'Synced' : 'Not synced yet', html:icon(l.synced ? 'check' : 'cloudOff') })),
