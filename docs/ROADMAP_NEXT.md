@@ -31,7 +31,12 @@ Written 2026-10-23. Evidence: `FEATURE_DEMAND_RESEARCH.md` (demand), `IMPORTS_RE
 | **Video replay** | 4 | 2 | 5 | 4 | **Later / partner** | LaneTrax owns this space (F). Storage and CSP make it costly. Defer. |
 | **Center live-scoring integration** | 4 | 3 | 5 | 5 | **Not planned** | Center-side only; partner contracts (IMPORTS §2). |
 | **Social feed / leaderboards** | 2 | 2 | 3 | 4 | **Not planned** | Little demand found; privacy risk without accounts. |
-| **Monetization** | — | — | — | — | **Policy** | Evidence says bowlers resent subscriptions (F, S). Rule: core data, history and export stay free forever. Options to be decided by the owner: one-time "supporter" unlock, or paid extras (cloud backup, coach tier). No ads in the lane view. |
+| **Command Center (decision tool + bag builder)** | 4 | 5 | 3 | 2 | **Now → Next** | Owner request 2026-10-23. Spec: `COMMAND_CENTER_PLAN.md`; phases CC0–CC4 ride with N0–N4. |
+
+**Owner decisions (2026-10-23):**
+- The app is **free for now**. No monetization work is planned, and the monetization items are dropped from this roadmap.
+- Core data, history and export stay free.
+- The owner uses **LaneTrax** and **LaneTalk** and owns a **Ruby** sensor. Import order follows from that (N3).
 
 ## 2. Phases
 
@@ -71,7 +76,12 @@ As written in `ARSENAL_MANAGER_PLAN.md` §5, with its targets unchanged. New lin
 - **Target:** reminder counts equal the games logged per ball (test).
 
 ### N3. Measured data → better predictions
-- **Import presets:** Ruby, then Witsee, then LaneTrax CSV, each only once a sample is held.
+- **Import order (owner's gear):**
+  1. **Ruby CSV** preset first. It is built only from the owner's real sample file, which is still pending.
+  2. **LaneTrax**: PDF parse (sample needed) plus manual board entry. LaneTrax CSV is used when it ships.
+  3. **LaneTalk**: GDPR export file or manual entry.
+  4. Witsee/F5 are not planned unless the owner acquires one.
+- **Ruby release data becomes the primary source for release inputs** once imported. Precedence: Ruby, then the manual card, then the profile. The user confirms before any value is used.
 - Measurements attach to ball and session.
 - **Profile suggestions:** "Your last N Ruby shots: median ‹speed› mph / ‹rpm› rpm. Use these in the sim?" (template; real values only) Values are never auto-applied.
 - **Predicted vs measured panel** where tracker data has boards (LaneTrax arrows, breakpoint and entry; Specto by hand). Shows the error in boards.
@@ -80,6 +90,14 @@ As written in `ARSENAL_MANAGER_PLAN.md` §5, with its targets unchanged. New lin
   - median, IQR and n are shown for every suggestion; no suggestion with n < 10;
   - the predicted-vs-measured error is logged per pattern and published in `docs/` (even when bad);
   - sensor sessions are tagged practice by default with the USBC devices note (ES Manual, F).
+
+### Command Center (CC0–CC4)
+See `COMMAND_CENTER_PLAN.md` §5. Each CC phase ships with its N phase and passes the same QA gate (§3):
+- **CC0 Tonight shell** with N0;
+- **CC1 quick log + spares + Plan A/B** with N1;
+- **CC2 bag builder + arsenal status** with N2;
+- **CC3 Ruby-primary release + LaneTrax boards** with N3;
+- **CC4 tournament mode + gated 3-D** with N4.
 
 ### N4. Tournament prep, team-lite, AM P4
 - **Tournament prep card:** pattern (from `patdata.js`) + chosen bag (AM P3) + maintenance due before the event date + spare plan.
@@ -92,11 +110,10 @@ As written in `ARSENAL_MANAGER_PLAN.md` §5, with its targets unchanged. New lin
 
 ### Later (needs owner decision or partner)
 - Video replay.
-- LaneTalk GDPR-file import (format UNKNOWN).
+- LaneTalk GDPR-file import (format UNKNOWN; the owner uses LaneTalk, so this is worth requesting).
 - CDE/Conqueror files from a friendly center.
 - Kegel KOSI import (needs a sample and permission).
 - Accounts.
-- Monetization model.
 
 ## 3. QA gate (every phase)
 1. Existing `tests/e2e.py` suite stays green, plus the new tests for the phase.
@@ -109,8 +126,8 @@ As written in `ARSENAL_MANAGER_PLAN.md` §5, with its targets unchanged. New lin
 8. Reviewer score 10/10, or residual risks documented (as in `TEAM_PROMPT.md` §9).
 
 ## 4. Open questions for the owner
-1. Which sensor or tracker do you own or plan to buy: Ruby, Witsee, F5, LaneTrax? Can you share one real export (CSV/PDF)?
+1. ~~Which sensor or tracker?~~ **Answered:** Ruby (owned), LaneTrax, LaneTalk. Still needed: one real **Ruby CSV** and one **LaneTrax PDF**.
 2. What is your center's scoring system (Brunswick Sync / Qubica Conqueror or BES X / Steltronic)? Does the league post to LeagueSecretary or LeaguePals?
-3. Do you pay for LaneTalk Pro? Would you file a GDPR export request so we can see the format?
-4. Monetization: always free, a one-time supporter unlock, or paid cloud extras?
+3. Do you pay for LaneTalk Pro? Would you file a GDPR export request so we can see the format? (The owner uses LaneTalk.)
+4. ~~Monetization~~ **Answered:** free for now, no monetization.
 5. Should Honey Badgers team features use share codes (no accounts), or is it time for accounts?
