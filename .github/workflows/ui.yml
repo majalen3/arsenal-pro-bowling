@@ -12,6 +12,8 @@ jobs:
         with: { python-version: '3.12' }
       - name: Engine equivalence (v1 simulatePath vs 2.0 module)
         run: node tests/engine_equivalence.mjs
+      - name: Data layer (events, migration, backup, import parsers, scoring, Command Center)
+        run: node --test tests/data/
       - run: pip install playwright && playwright install --with-deps chromium
       - run: python -m http.server 8099 &
       - name: End-to-end (phone + desktop, axe, offline, migration, pin deck)

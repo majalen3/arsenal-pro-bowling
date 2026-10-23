@@ -19,6 +19,7 @@ route(/^\/pattern\/([\w.-]+)$/, 'patterns', () => import('./screens/pattern.js')
 route(/^\/sessions$/, 'sessions', () => import('./screens/sessions.js'));
 route(/^\/more$/, 'more', () => import('./screens/more.js'));
 route(/^\/welcome$/, null, () => import('./screens/welcome.js'));
+route(/^\/import$/, 'more', () => import('./screens/import.js'));
 // tab bar / rail
 const TABS = [['lane', 'Lane'], ['arsenal', 'Arsenal'], ['patterns', 'Patterns'], ['sessions', 'Sessions'], ['more', 'More']];
 const nav = $('#tabs');
@@ -28,6 +29,8 @@ function setTab(t) { $$('.tab', nav).forEach(a => { if (a.dataset.tab === t) a.s
 if (!profile() && !prefs().onboarded && !rawGet('ap_state') && !location.hash) history.replaceState(null, '', '#/welcome');
 start($('#view'), setTab);
 startSync();
+// v1 event log opens after first paint (IndexedDB; never blocks the lane)
+import('./hub.js').then(m => m.ready()).catch(e => console.error(e));
 // service worker with prompt-to-update
 if ('serviceWorker' in navigator && /^https:|^http:\/\/localhost/.test(location.protocol + '//' + location.host)) {
   navigator.serviceWorker.register('sw.js').then(reg => {

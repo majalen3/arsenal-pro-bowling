@@ -13,6 +13,11 @@ const lsGetIds = k => { try { const v = JSON.parse(rawGet(k)); return Array.isAr
 export const lsSet = (k,v) => rawSet(k, JSON.stringify(v));
 export const objGet = k => { try { const v = JSON.parse(rawGet(k)); return v && typeof v === 'object' && !Array.isArray(v) ? v : null; } catch(e) { return null; } };
 
+// --- event-log sink (js/hub.js wires this to the v1 event log; ap_* keys stay as the hot mirror + API compat)
+let sink = null; const pending = [];
+export function setSink(f, { dropPending = false } = {}) { sink = f; if (dropPending) pending.length = 0; while (pending.length) { const a = pending.shift(); try { f(...a); } catch(e) { console.error(e); } } }
+export function record(type, entityId, data) { if (sink) { try { sink(type, entityId, data); } catch(e) { console.error(e); } } else pending.push([type, entityId, data]); }
+const lineData = l => ({ ballId:l.ballId, name:l.name, release:l.release, aim:l.aim, speed:l.speed, rev:l.rev, oil:l.oil, finish:l.finish, pattern:l.pattern, note:l.note||'' });
 // --- tiny event bus
 const subs = {};
 export const on = (ev, fn) => { (subs[ev] = subs[ev] || []).push(fn); return () => subs[ev] = subs[ev].filter(f => f !== fn); };
@@ -78,6 +83,7 @@ export async function saveLine(name, note) {
   name = String(name || '').trim(); if (!name) return null;
   const l = { ...currentLine(name, note), updatedAt:Date.now(), synced:false };
   const all = lsGet(LS.lines).filter(x => !(x.ballId === l.ballId && x.name === l.name)); all.push(l); lsSet(LS.lines, all); app.lastLine = { ballId:l.ballId, name:l.name };
+  record('line.created', l.ballId + '|' + l.name, lineData(l));
   emit('lines'); setStatus('Saving\u2026');
   pushLine(l).then(() => { setStatus(memMode ? 'Saved (browser storage blocked: kept until this tab closes)' : 'Synced', 'ok'); retryN = 0; emit('lines'); })
     .catch(e => { setStatus(failStatus(e), 'off'); retryLater(e); });
@@ -87,16 +93,17 @@ export async function renameLine(l, name, note) {
   name = String(name || '').trim(); if (!name) return;
   const old = { ...l }; const nl = { ...l, name, note:(note||'').trim(), updatedAt:Date.now(), synced:false }; delete nl.id;
   const all = lsGet(LS.lines).filter(x => !(x.ballId === l.ballId && x.name === l.name) && !(x.ballId === nl.ballId && x.name === nl.name)); all.push(nl); lsSet(LS.lines, all);
+  if (old.name !== name) record('line.deleted', old.ballId + '|' + old.name, {}); record('line.created', nl.ballId + '|' + nl.name, lineData(nl));
   emit('lines');
   if (old.name !== name && old.id) queueDelete(old.id);
   pushLine(nl).then(() => { setStatus('Synced', 'ok'); emit('lines'); }).catch(e => { setStatus(failStatus(e), 'off'); retryLater(e); });
 }
-function queueDelete(id) { api('/api/lines/' + id, {method:'DELETE'}).catch(e => { if (!(e && e.status === 404)) { const q = lsGetIds(LS.dels); q.push(id); lsSet(LS.dels, q.slice(-100)); retryLater(); } }); }
+function queueDelete(id) { api('/api/lines/' + id, {method:'DELETE'}).catch(e => { if (!(e && e.status === 404)) { const q = lsGetIds(LS.dels); q.push(id); lsSet(LS.dels, q); retryLater(); } }); }
 export async function deleteLine(l) {
-  lsSet(LS.lines, lsGet(LS.lines).filter(x => !(x.ballId === l.ballId && x.name === l.name))); emit('lines');
-  if (l.id) { try { await api('/api/lines/' + l.id, {method:'DELETE'}); setStatus('Deleted', 'ok'); } catch(e) { if (!(e && e.status === 404)) { const q = lsGetIds(LS.dels); q.push(l.id); lsSet(LS.dels, q.slice(-100)); retryLater(); } setStatus('Deleted here; will remove from server when online', 'off'); } }
+  lsSet(LS.lines, lsGet(LS.lines).filter(x => !(x.ballId === l.ballId && x.name === l.name))); record('line.deleted', l.ballId + '|' + l.name, {}); emit('lines');
+  if (l.id) { try { await api('/api/lines/' + l.id, {method:'DELETE'}); setStatus('Deleted', 'ok'); } catch(e) { if (!(e && e.status === 404)) { const q = lsGetIds(LS.dels); q.push(l.id); lsSet(LS.dels, q); retryLater(); } setStatus('Deleted here; will remove from server when online', 'off'); } }
 }
-export function restoreLine(l) { const all = lsGet(LS.lines).filter(x => !(x.ballId === l.ballId && x.name === l.name)); const r = { ...l, synced:false, updatedAt:Date.now() }; delete r.id; all.push(r); lsSet(LS.lines, all); emit('lines'); pushLine(r).catch(e => retryLater(e)); }
+export function restoreLine(l) { const all = lsGet(LS.lines).filter(x => !(x.ballId === l.ballId && x.name === l.name)); const r = { ...l, synced:false, updatedAt:Date.now() }; delete r.id; all.push(r); lsSet(LS.lines, all); record('line.created', r.ballId + '|' + r.name, lineData(r)); emit('lines'); pushLine(r).catch(e => retryLater(e)); }
 async function flushDels() { const q = lsGetIds(LS.dels); if (!q.length) return; const keep = []; for (const id of q) { try { await api('/api/lines/' + id, {method:'DELETE'}); } catch(e) { if (!(e && e.status === 404)) keep.push(id); } } lsSet(LS.dels, keep); }
 export async function syncLines() {
   const ballId = app.ball.id;
@@ -121,13 +128,13 @@ export function scheduleSync() { clearTimeout(syncTimer); syncTimer = setTimeout
 export const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
 export async function logFinish(ballId, finish) {
   const e = { ballId, date:today(), finish, synced:false };
-  const all = lsGet(LS.surface); all.push(e); lsSet(LS.surface, all.slice(-200)); emit('alley'); setStatus('Saving\u2026');
+  const all = lsGet(LS.surface); all.push(e); lsSet(LS.surface, all); record('ball.surfaceLogged', ballId, { ballId, date:e.date, finish, type:'surfaceChange' }); emit('alley'); setStatus('Saving\u2026');
   try { await api('/api/surface-log', {method:'POST', body:JSON.stringify({ballId:e.ballId, date:e.date, finish:e.finish})}); lsSet(LS.surface, lsGet(LS.surface).map(x => (x.ballId===e.ballId && x.date===e.date && x.finish===e.finish && x.synced===false) ? Object.assign(x, {synced:true}) : x)); setStatus('Synced', 'ok'); emit('alley'); } catch(err) { setStatus(failStatus(err), 'off'); retryLater(err); }
 }
 export async function saveNote(lane, oil, adjustment) {
   const e = { lane:String(lane).trim(), oil:String(oil).trim(), adjustment:String(adjustment).trim(), synced:false };
   if (!e.lane || !e.oil || !e.adjustment) return false;
-  const all = lsGet(LS.notes); all.push(e); lsSet(LS.notes, all.slice(-100)); emit('alley'); setStatus('Saving\u2026');
+  const all = lsGet(LS.notes); all.push(e); lsSet(LS.notes, all); record('patternNote.created', null, { lane:e.lane, oil:e.oil, adjustment:e.adjustment, date:today() }); emit('alley'); setStatus('Saving\u2026');
   api('/api/pattern-notes', {method:'POST', body:JSON.stringify({lane:e.lane, oil:e.oil, adjustment:e.adjustment})}).then(() => { lsSet(LS.notes, lsGet(LS.notes).map(x => (x.lane===e.lane && x.oil===e.oil && x.adjustment===e.adjustment && x.synced===false) ? Object.assign(x, {synced:true}) : x)); setStatus('Synced', 'ok'); emit('alley'); }).catch(err => { setStatus(failStatus(err), 'off'); retryLater(err); });
   return true;
 }
@@ -141,15 +148,15 @@ export async function syncAlley() {
     const sv = await api('/api/surface-log?ballId=' + encodeURIComponent(app.ball.id));
     const all = lsGet(LS.surface);
     sv.forEach(s => { if (!all.some(x => x.ballId===s.ballId && x.date===s.date && x.finish===s.finish)) all.push({ballId:s.ballId, date:s.date, finish:s.finish, synced:true}); });
-    all.sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0); lsSet(LS.surface, all.slice(-200));
+    all.sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0); lsSet(LS.surface, all);
     const nv = await api('/api/pattern-notes'); const notes = lsGet(LS.notes);
     nv.slice().reverse().forEach(n => { if (!notes.some(x => x.lane===n.lane && x.oil===n.oil && x.adjustment===n.adjustment)) notes.unshift({lane:n.lane, oil:n.oil, adjustment:n.adjustment, synced:true}); });
-    lsSet(LS.notes, notes.slice(-100)); emit('alley');
+    lsSet(LS.notes, notes); emit('alley');
   } catch(e) { retryLater(); }
 }
 
 // --- shots (new, local-only): one entry per miss-button tap
-export function logShot(miss, before, after) { const a = lsGet(LS.shots); a.push({ t:Date.now(), ballId:app.ball.id, pattern:S.pattern, miss, before, after }); lsSet(LS.shots, a.slice(-300)); emit('shots'); }
+export function logShot(miss, before, after) { const a = lsGet(LS.shots), x = { t:Date.now(), ballId:app.ball.id, pattern:S.pattern, miss, before, after }; a.push(x); lsSet(LS.shots, a); record('shot.logged', null, { sessionId:null, ballId:x.ballId, pattern:x.pattern, miss, before, after }); emit('shots'); }
 
 // --- backup / device code (v1 semantics)
 export function backupBlob() { const data = { app:'arsenal-pro', code:deviceId(), exportedAt:new Date().toISOString(), lines:lsGet(LS.lines), surfaceLog:lsGet(LS.surface), patternNotes:lsGet(LS.notes) }; return new Blob([JSON.stringify(data, null, 1)], {type:'application/json'}); }
@@ -164,6 +171,14 @@ export function startSync() {
   window.addEventListener('online', () => { syncLines(); syncAlley(); });
 }
 export const profile = () => objGet(LS.profile);
-export const setProfile = p => { lsSet(LS.profile, p); emit('profile'); };
+export const setProfile = p => {
+  lsSet(LS.profile, p);
+  const f = {}; if (p.hand) f.hand = p.hand; if (p.style) f.style = p.style;
+  if (Number.isFinite(+p.speed) && p.speed !== '') f.speed = { v:+p.speed, unit:'mph', at:'unknown', prov:{ kind:'user' } };
+  if (Number.isFinite(+p.rev) && p.rev !== '') f.rev = { v:+p.rev, unit:'rpm', prov:{ kind:'user' } };
+  if (p.pap) f.pap = { v:String(p.pap), unit:'in', prov:{ kind:'user' } }; if (p.tilt) f.tilt = { v:String(p.tilt), unit:null, prov:{ kind:'user' } };
+  record('bowler.edited', 'me', { fields:f });
+  emit('profile');
+};
 export const prefs = () => objGet(LS.prefs) || {};
 export const setPrefs = p => { lsSet(LS.prefs, Object.assign(prefs(), p)); emit('prefs'); };

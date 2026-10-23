@@ -83,3 +83,12 @@ Each cycle: change → test → independent review → commit+push. Scores are 1
 * Test records 1003/1004 in the live API DB: still present (see DECISIONS #13).
 * Live check after the c3e5682 deploy (sw v8), phone with a left-hand profile: the lane is mirrored, the lane label and caption say "Mirrored for left hand.", the old note is gone, and there are no page errors. Live Lighthouse (mobile): `#/` 100/100/100/100, `#/lane` 99/100/100/100.
 * Repo note: the arsenal-manager planning docs (`docs/ARSENAL_MANAGER_RESEARCH.md`, `docs/ARSENAL_MANAGER_PLAN.md`, `docs/TEAM_PROMPT_ARSENAL_MANAGER.md`, written by another worker) went in with commit a6e5e34, content unchanged.
+
+## D0 — event log, migration, backup v1 (2026-10-23)
+* New `js/data/` modules + `js/hub.js` glue. IndexedDB event log (fallbacks localStorage → memory), v0 migration (idempotent, raw snapshot kept), v1 backup/restore with SHA-256, import undo, no truncation anywhere in `store.js`.
+* More → "Your data" card: event count, backend, unsynced count; "Download backup" now writes `arsenal-pro-backup-v1.json` (all events + imports + prefs + the legacy snapshot). New `#/import` screen: pick → preview (nothing saved) → Import → Undo; older v0 backups restore through the migration.
+* Tests: `node --test tests/data/` 10/10 (migration golden counts + idempotency, corrupt keys, LWW, voids/undo, validators, backup round trip + tamper detection, localStorage backend, seed, no truncation). e2e +12 `[data]` checks: IndexedDB backend, migrate + seed, export → wipe (localStorage **and** IndexedDB) → restore gives the identical projection hash, the saved-lines list is rebuilt, re-import adds nothing, preview persists nothing; `#/import` axe 0 serious, 44 px, no overflow. e2e 135/135. Engine equivalence 7500 / 0. Lighthouse local `#/lane` 97/100/100/100, `#/import` 99/100/100/100.
+* Boot: the log opens after first paint; open + migrate 32 ms (budget +50 ms).
+* Fixed in passing: the dark theme's `--info-soft` token was missing its `;`, which voided `--shadow-1`.
+* sw v9 (new files in the shell).
+

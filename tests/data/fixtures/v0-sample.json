@@ -1,0 +1,10 @@
+{
+ "_note": "Synthetic v0 localStorage snapshot for migration tests. Values are test inputs, not user data.",
+ "ap_lines": "[{\"ballId\":\"rattler-big-bite\",\"name\":\"Fresh 2nd arrow\",\"release\":12,\"aim\":-4,\"speed\":15,\"rev\":220,\"oil\":1,\"finish\":\"factory\",\"pattern\":\"house\",\"note\":\"\",\"updatedAt\":1760000000000,\"synced\":true,\"id\":7},{\"ballId\":\"ice-storm\",\"name\":\"Spares\",\"release\":20,\"aim\":0,\"speed\":16,\"rev\":220,\"oil\":1,\"finish\":\"polished\",\"pattern\":\"house\",\"note\":\"<b>x</b>\",\"updatedAt\":1760000100000,\"synced\":false}]",
+ "ap_surface": "[{\"ballId\":\"rattler-big-bite\",\"date\":\"2026-09-01\",\"finish\":\"2000\",\"synced\":true}]",
+ "ap_notes": "[{\"lane\":\"Lanes 5-6\",\"oil\":\"House\",\"adjustment\":\"2 left\",\"synced\":true},{\"lane\":\"Lanes 5-6\",\"oil\":\"House\",\"adjustment\":\"2 left\",\"synced\":true}]",
+ "ap_shots": "[{\"t\":1760000000000,\"ballId\":\"rattler-big-bite\",\"pattern\":\"house\",\"miss\":\"high\",\"before\":{\"release\":12},\"after\":{\"release\":13}},{\"t\":1760000060000,\"ballId\":\"rattler-big-bite\",\"pattern\":\"house\",\"miss\":\"light\"},{\"t\":1760200000000,\"ballId\":\"hy-road-pearl\",\"pattern\":\"sport\",\"miss\":\"left\"}]",
+ "ap_profile": "{\"hand\":\"right\",\"style\":\"tweener\",\"speed\":15,\"rev\":220,\"pap\":\"5 1/8\",\"tilt\":\"\",\"owned\":[\"rattler-big-bite\",\"ice-storm\"]}",
+ "ap_dels": "[1003,1004]",
+ "ap_state": "{\"ball\":\"rattler-big-bite\"}"
+}

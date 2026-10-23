@@ -9,6 +9,8 @@ BASE = next((a for a in sys.argv[1:] if a.startswith('http')), 'http://127.0.0.1
 SHOTS = sys.argv[sys.argv.index('--shots') + 1] if '--shots' in sys.argv else None
 AXE = open(os.path.join(os.path.dirname(__file__), 'axe.min.js')).read()
 API = '**/arsenal-pro-api.onrender.com/**'
+# wipe = localStorage + the v1 IndexedDB event log (the page closes its connection on versionchange)
+WIPE = "() => { localStorage.clear(); return new Promise(r => { const q = indexedDB.deleteDatabase('arsenal-pro'); q.onsuccess = q.onerror = q.onblocked = () => r(true); setTimeout(() => r(false), 2000); }); }"
 fails, passes = [], []
 def check(cond, name):
     (passes if cond else fails).append(name); print(('PASS ' if cond else 'FAIL ') + name)
@@ -29,13 +31,13 @@ async def shot(p, name):
     if SHOTS: os.makedirs(SHOTS, exist_ok=True); await p.screenshot(path=os.path.join(SHOTS, name + '.png'))
 
 async def seed(p, onboarded=True):
-    await p.goto(BASE); await p.evaluate("localStorage.clear()")
+    await p.goto(BASE); await p.evaluate(WIPE)
     if onboarded: await p.evaluate("localStorage.setItem('ap_prefs', JSON.stringify({onboarded:true}))")
 
 async def run(b, kind):
     errs = []; c = await ctx_for(b, kind); p = await page(c, errs); t = f'[{kind}] '
     # onboarding: first visit -> welcome, skippable, never shown again
-    await p.goto(BASE); await p.evaluate("localStorage.clear()"); await p.goto(BASE + '?fresh'); await p.wait_for_timeout(600)
+    await p.goto(BASE); await p.evaluate(WIPE); await p.goto(BASE + '?fresh'); await p.wait_for_timeout(600)
     check('#/welcome' in p.url, t + 'first visit opens welcome'); await shot(p, f'{kind}-welcome')
     await p.click('#welSkip'); await p.wait_for_selector('#ballBtn')
     check('#/lane' in p.url, t + 'skip lands on lane')
@@ -109,7 +111,7 @@ async def run(b, kind):
     await p.goto(BASE + '#/ball/nope'); await p.wait_for_timeout(500)
     check(await p.locator('.empty a, .empty button').count() >= 1, t + 'unknown ball shows recovery action')
     # axe on every route
-    for r in ['#/lane', '#/arsenal', '#/arsenal/insights', '#/ball/hy-road', '#/compare?ids=hy-road,rattler', '#/patterns', '#/pattern/2024-pba-shark', '#/sessions', '#/more', '#/welcome']:
+    for r in ['#/lane', '#/arsenal', '#/arsenal/insights', '#/ball/hy-road', '#/compare?ids=hy-road,rattler', '#/patterns', '#/pattern/2024-pba-shark', '#/sessions', '#/more', '#/welcome'] + NEW_ROUTES:
         await p.goto(BASE + r); await p.wait_for_timeout(700)
         await p.add_script_tag(url=BASE + 'tests/axe.min.js')
         res = await p.evaluate("axe.run(document,{resultTypes:['violations']}).then(r=>r.violations.filter(v=>['serious','critical'].includes(v.impact)).map(v=>v.id+':'+v.nodes.length))")
@@ -117,8 +119,12 @@ async def run(b, kind):
         w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]')
         check(w[1] <= (390 if kind == 'phone' else 1280), t + f'{r} no horizontal overflow {w}')
     await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ballBtn'); await p.wait_for_timeout(600)  # let the route-enter transform finish before measuring sizes
-    small = await p.evaluate("""[...document.querySelectorAll('button, a[href], input, select, [role=slider]')].filter(e=>{const r=e.getBoundingClientRect(); return r.width>0 && r.height>0 && getComputedStyle(e).visibility!=='hidden' && !e.closest('.sr-only') && (r.width<44||r.height<44) && !(e.type==='range')}).map(e=>(e.id||e.className||e.tagName)+' '+Math.round(e.getBoundingClientRect().width)+'x'+Math.round(e.getBoundingClientRect().height))""")
+    small = await p.evaluate(SMALL)
     check(not small, t + f'lane targets >= 44px {small[:6]}')
+    for r in NEW_ROUTES:
+        await p.goto(BASE + r); await p.wait_for_timeout(800)
+        small = await p.evaluate(SMALL)
+        check(not small, t + f'{r} targets >= 44px {small[:6]}')
     check(not errs, t + f'no page errors {errs[:3]}')
     await c.close()
 
@@ -175,6 +181,42 @@ async def migration(b):
     check('v1 line' in await p.text_content('#lineList'), '[migrate] v1 saved lines listed')
     await c.close()
 
+NEW_ROUTES = ['#/import']
+SMALL = """[...document.querySelectorAll('button, a[href], input:not([type=file]), select, label.btn, [role=slider]')].filter(e=>{const r=e.getBoundingClientRect(); return r.width>0 && r.height>0 && getComputedStyle(e).visibility!=='hidden' && !e.closest('.sr-only') && (r.width<44||r.height<44) && !(e.type==='range')}).map(e=>(e.id||e.className||e.tagName)+' '+Math.round(e.getBoundingClientRect().width)+'x'+Math.round(e.getBoundingClientRect().height))"""
+DATA_READY = "() => window.__apData && window.__apData.events() > 0"
+async def data_cycle(b):
+    # D0: v0 keys -> event log (migration + one-time seed), export v1 backup -> wipe localStorage AND IndexedDB -> restore -> same projection hash
+    errs = []; c = await ctx_for(b, 'phone', accept_downloads=True); p = await page(c, errs)
+    await p.goto(BASE); await p.evaluate(WIPE)
+    await p.evaluate("""localStorage.setItem('ap_prefs', JSON.stringify({onboarded:true})); localStorage.setItem('ap_device','d-test-0001');
+      localStorage.setItem('ap_lines', JSON.stringify([{ballId:'hy-road',name:'league line',release:22,aim:9,speed:16,rev:300,oil:1.2,finish:'2000',pattern:'house',note:'',updatedAt:5,synced:true,id:9}]));
+      localStorage.setItem('ap_notes', JSON.stringify([{lane:'7-8',oil:'fresh',adjustment:'2 left',synced:true}]));""")
+    await p.goto(BASE + '?d0#/more'); await p.wait_for_function(DATA_READY)
+    d = await p.evaluate("({backend: window.__apData.backend, boot: window.__apData.bootMs, n: window.__apData.events(), h: window.__apData.hash()})")
+    check(d['backend'] == 'indexedDB', f"[data] event log on IndexedDB ({d['backend']}, opened+migrated in {d['boot']} ms after first paint)")
+    check(d['n'] >= 2 + 10, f"[data] v0 keys migrated + reported arsenal seeded once ({d['n']} events)")
+    await p.wait_for_function("document.querySelector('#dataInfo').textContent.includes('events on this phone')")
+    check('owned balls' in await p.text_content('#dataInfo'), '[data] More shows the data card')
+    await shot(p, 'phone-more-data')
+    async with p.expect_download() as dl: await p.click('#dlBackup')
+    path = await (await dl.value).path(); bk = json.load(open(path))
+    check(bk.get('format') == 'backup' and len(bk['events']) == d['n'] and bk.get('sha256'), f"[data] v1 backup has every event ({len(bk['events'])})")
+    await p.evaluate(WIPE); await p.goto(BASE + '?wiped#/lane'); await p.wait_for_selector('#ballBtn')
+    await p.wait_for_function("window.__apData")
+    check(await p.evaluate("window.__apData.events()") == 0 and await p.evaluate("localStorage.getItem('ap_lines')") is None, '[data] wipe clears localStorage and IndexedDB')
+    await p.goto(BASE + '#/import'); await p.wait_for_selector('#impPick')
+    await p.set_input_files('#impFile', path); await p.wait_for_selector('#impPreview')
+    check('new on this device' in await p.text_content('#impPreview') and not await p.query_selector('#impWarn'), '[data] restore preview: counts, checksum ok, nothing saved yet')
+    check(await p.evaluate("window.__apData.events()") == 0, '[data] preview persists nothing')
+    await p.click('#impCommit'); await p.wait_for_selector('#impDone')
+    h2 = await p.evaluate("window.__apData.hash()")
+    check(h2 == d['h'], '[data] export -> wipe -> restore gives the identical projection hash')
+    check(await p.evaluate("JSON.parse(localStorage.getItem('ap_lines')||'[]').some(l => l.name === 'league line')"), '[data] restore rebuilds the saved-lines list')
+    await p.set_input_files('#impFile', path); await p.wait_for_selector('#impPreview')
+    check(await p.is_disabled('#impCommit'), '[data] re-importing the same backup adds nothing')
+    check(not errs, '[data] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
 async def offline(b):
     errs = []; c = await ctx_for(b, 'phone', service_workers='allow'); p = await page(c, errs)
     await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ballBtn')
@@ -192,7 +234,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('offline', lambda: offline(b))]
+        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)
