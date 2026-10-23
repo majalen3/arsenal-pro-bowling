@@ -80,7 +80,7 @@ Each cycle: change → test → independent review → commit+push. Scores are 1
 * The cycle-5 note "Left-handed: the model draws a right-hander's lane. Read board numbers mirrored." is gone. The deck caption ends "· Mirrored for left hand.", and the lane's text alternative says the same. The phone lefty miss row sits at 701–757 px, above the tab bar at 780. The compare lanes mirror as well.
 * e2e 118/118 (+5 lefty checks: note gone, mirrored labels, ArrowLeft lowers the release board, the Left miss moves feet −2, a press near the foul line maps screen-left to low boards). axe 0 serious/critical. Personas 20/20. Task times are unchanged: phone 48.2 → 27.7 s (−43%), desktop 45.2 → 26.7 s (−41%), against the −40% target.
 * Screenshots: `ux-shots/c6/phone-lane-lefty.png` and `phone-lane-righty.png` on the box.
-* Test records 1003/1004 in the live API DB: still present (see DECISIONS #13).
+* Test records 1003/1004 in the live API DB: deleted 2026-10-23 and verified gone (see DECISIONS #13).
 * Live check after the c3e5682 deploy (sw v8), phone with a left-hand profile: the lane is mirrored, the lane label and caption say "Mirrored for left hand.", the old note is gone, and there are no page errors. Live Lighthouse (mobile): `#/` 100/100/100/100, `#/lane` 99/100/100/100.
 * Repo note: the arsenal-manager planning docs (`docs/ARSENAL_MANAGER_RESEARCH.md`, `docs/ARSENAL_MANAGER_PLAN.md`, `docs/TEAM_PROMPT_ARSENAL_MANAGER.md`, written by another worker) went in with commit a6e5e34, content unchanged.
 
