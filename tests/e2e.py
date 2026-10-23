@@ -195,14 +195,14 @@ async def data_cycle(b):
     d = await p.evaluate("({backend: window.__apData.backend, boot: window.__apData.bootMs, n: window.__apData.events(), h: window.__apData.hash()})")
     check(d['backend'] == 'indexedDB', f"[data] event log on IndexedDB ({d['backend']}, opened+migrated in {d['boot']} ms after first paint)")
     check(d['n'] >= 2 + 10, f"[data] v0 keys migrated + reported arsenal seeded once ({d['n']} events)")
-    await p.wait_for_function("document.querySelector('#dataInfo').textContent.includes('events on this phone')")
+    await p.wait_for_function("() => document.querySelector('#dataInfo').textContent.includes('events on this phone')")
     check('owned balls' in await p.text_content('#dataInfo'), '[data] More shows the data card')
     await shot(p, 'phone-more-data')
     async with p.expect_download() as dl: await p.click('#dlBackup')
     path = await (await dl.value).path(); bk = json.load(open(path))
     check(bk.get('format') == 'backup' and len(bk['events']) == d['n'] and bk.get('sha256'), f"[data] v1 backup has every event ({len(bk['events'])})")
     await p.evaluate(WIPE); await p.goto(BASE + '?wiped#/lane'); await p.wait_for_selector('#ballBtn')
-    await p.wait_for_function("window.__apData")
+    await p.wait_for_function("() => window.__apData")
     check(await p.evaluate("window.__apData.events()") == 0 and await p.evaluate("localStorage.getItem('ap_lines')") is None, '[data] wipe clears localStorage and IndexedDB')
     await p.goto(BASE + '#/import'); await p.wait_for_selector('#impPick')
     await p.set_input_files('#impFile', path); await p.wait_for_selector('#impPreview')
@@ -230,7 +230,7 @@ async def csv_cycle(b):
     d = tempfile.mkdtemp(); wide = os.path.join(d, 'league-scores.csv'); rel = os.path.join(d, 'release.csv')
     open(wide, 'w').write(CSV_WIDE); open(rel, 'w').write(CSV_REL); await p.set_viewport_size({'width': 360, 'height': 780})
     await p.goto(BASE); await p.evaluate(WIPE); await p.evaluate("localStorage.setItem('ap_prefs', JSON.stringify({onboarded:true}))")
-    await p.goto(BASE + '?csv#/import'); await p.wait_for_selector('#impPick'); await p.wait_for_function("window.__apData")
+    await p.goto(BASE + '?csv#/import'); await p.wait_for_selector('#impPick'); await p.wait_for_function("() => window.__apData")
     n0 = await p.evaluate("window.__apData.events()")
     await p.set_input_files('#impFile', wide); await p.wait_for_selector('#impPreview[data-kind=csv]')
     txt = await p.text_content('#impPreview')
@@ -238,7 +238,7 @@ async def csv_cycle(b):
     check(await p.query_selector('#impWarn li[data-code=BALL_CONFIRM]') is not None and await p.is_disabled('#impCommit'), '[csv] fuzzy "Big Bite" must be confirmed before import')
     check(await p.evaluate("window.__apData.events()") == n0, '[csv] preview persists nothing')
     check(await p.query_selector('#csvRuby') is not None, '[csv] Ruby preset stub shown (needs sample)')
-    await p.click('[data-yes="Big Bite"]'); await p.wait_for_function("!document.querySelector('#impCommit').disabled")
+    await p.click('[data-yes="Big Bite"]'); await p.wait_for_function("() => !document.querySelector('#impCommit').disabled")
     await axe_ok(p, '[csv] preview'); await p.wait_for_timeout(300)
     small = await p.evaluate(SMALL); check(not small, f'[csv] preview targets >= 44px {small[:6]}')
     w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= w[0], f'[csv] preview no horizontal overflow {w}')
@@ -255,7 +255,7 @@ async def csv_cycle(b):
     check(await p.query_selector('#impWarn li[data-code=DUPLICATE]') is None, '[csv] after undo the same file can be imported again')
     await p.set_input_files('#impFile', rel); await p.wait_for_selector('#csvAt')
     check(await p.input_value('#csvUnit') == 'kph' and await p.is_disabled('#impCommit'), '[csv] kph detected from header; speed point required before import')
-    await p.select_option('#csvAt', 'release'); await p.wait_for_function("!document.querySelector('#impCommit').disabled")
+    await p.select_option('#csvAt', 'release'); await p.wait_for_function("() => !document.querySelector('#impCommit').disabled")
     check('2 ready' in await p.text_content('#impPreview'), '[csv] semicolon file with decimal comma parsed (2 rows ready)')
     await p.click('#csvSavePreset'); check(await p.evaluate("Object.keys(JSON.parse(localStorage.getItem('ap_import_presets')||'{}')).length") == 1, '[csv] mapping preset saved by header fingerprint')
     check(not errs, '[csv] no page errors ' + ' | '.join(errs[:2]))
@@ -271,7 +271,7 @@ async def ltx_cycle(b):
     pdf = os.environ.get('LANETRAX_SAMPLE') or synth
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
     await p.goto(BASE); await p.evaluate(WIPE); await p.evaluate("localStorage.setItem('ap_prefs', JSON.stringify({onboarded:true}))")
-    await p.goto(BASE + '?ltx#/import?kind=lanetrax'); await p.wait_for_selector('#impPick'); await p.wait_for_function("window.__apData")
+    await p.goto(BASE + '?ltx#/import?kind=lanetrax'); await p.wait_for_selector('#impPick'); await p.wait_for_function("() => window.__apData")
     check('LaneTrax session report' in await p.text_content('#impPick'), '[ltx] pick button labelled for the user\'s own LaneTrax report')
     n0 = await p.evaluate("window.__apData.events()")
     await p.set_input_files('#impFile', other); await p.wait_for_selector('#impErr')
@@ -296,6 +296,51 @@ async def ltx_cycle(b):
     await p.set_input_files('#impFile', pdf); await p.wait_for_selector('#impPreview')
     check(await p.query_selector('#impWarn li[data-code=DUPLICATE]') is not None and await p.is_disabled('#impCommit') and await p.query_selector('#ltxAgain') is not None, '[ltx] same report again: "Already imported" + option to import as a new session')
     check(not errs, '[ltx] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
+async def tonight_cycle(b):
+    # CC0: Tonight on a fresh phone -> starter offer -> benchmark-first pick with labelled why-lines + model line -> read moves one step
+    # -> pattern sets demand + Rule of 31 -> LaneTrax measurement accept writes device-provenance release -> survives reload.
+    import tempfile, subprocess
+    d = tempfile.mkdtemp(); synth = os.path.join(d, 'session-report.pdf')
+    subprocess.run(['node', '-e', f"""import('{os.path.abspath('tests/data/make_pdf.mjs')}').then(m=>{{const fs=require('fs');const W=JSON.parse(fs.readFileSync('tests/fixtures/lanetrax/session-report.words.json')).words;fs.writeFileSync('{synth}', m.buildPdf(W));}})"""], check=True)
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.goto(BASE + '?tn#/tonight'); await p.wait_for_selector('#noBag')
+    check(await p.query_selector('#tabs a[href="#/tonight"][aria-current=page]') is not None, '[tonight] Tonight tab exists and is current')
+    await p.click('#loadStarter'); await p.wait_for_selector('#tnPick')
+    check('Big Bite' in await p.text_content('#tnPickName') and 'pattern unknown' in await p.text_content('#tnCoach'), '[tonight] unknown pattern -> benchmark (Big Bite) first, reason stated')
+    coach = (await p.text_content('#tnCoach')).strip(); sent = [x for x in coach.replace('e.g.', '').split('. ') if x.strip()]
+    check(len(sent) <= 2 and (coach[0].isdigit() or coach.startswith(('Rattler', 'Ordnance', 'Super', 'Hy-Road', 'Deadly', 'Ice'))), f'[tonight] coach voice: <=2 sentences, starts with a ball name: {coach!r}')
+    why = await p.eval_on_selector_all('#tnWhy li', 'els => els.map(e => !!e.querySelector(".prov"))')
+    check(len(why) >= 2 and all(why), f'[tonight] >=2 why-lines, every one labelled ({len(why)})')
+    m = await p.text_content('#tnModel'); check('2-D model' in m and 'of 6' in m, '[tonight] model line with "holds x of 6"')
+    check('Rule of 31' in await p.text_content('#tnR31'), '[tonight] Rule of 31 shown')
+    ms = await p.evaluate("() => window.__apTonightMs"); check(ms is not None and ms < 1000, f'[tonight] render {ms} ms < 1 s')
+    await axe_ok(p, '[tonight]'); await p.wait_for_timeout(200)
+    small = await p.evaluate(SMALL); check(not small, f'[tonight] targets >= 44px {small[:6]}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= w[0], f'[tonight] no horizontal overflow at 360 {w}')
+    await shot(p, 'phone-tonight')
+    await p.click('[data-read=early]'); await p.wait_for_function("() => !document.querySelector('#tnPickName').textContent.includes('Big Bite')")
+    check('Ordnance C4' in await p.text_content('#tnPickName'), '[tonight] "Too early" -> one step weaker (C4) in 1 tap')
+    await p.fill('#tnPattern', '2026 PBA Badger'); await p.dispatch_event('#tnPattern', 'change'); await p.wait_for_function("() => document.querySelector('#tnR31').textContent.includes('50 ft')")
+    check('Both shown' in await p.text_content('#tnR31'), '[tonight] long pattern: Rule of 31 vs 13-16 band conflict shown')
+    await p.fill('#tnCenter', 'Test Lanes'); await p.dispatch_event('#tnCenter', 'change'); await p.wait_for_timeout(300)
+    await p.click('#tnSetup [role=radio][data-v=synthetic]'); await p.wait_for_timeout(300)
+    t = await p.text_content('#tnPickName'); co = await p.text_content('#tnCoach'); st = await p.text_content('#tnPick [data-alt=Stronger]')
+    check('Big Bite' in t and 'new center' in co and 'Super Nova' in st and 'demand 5' in await p.text_content('#tnPick'), f'[tonight] Badger 50 ft heavy -> demand 5; first visit to a center keeps benchmark first, Super Nova is the stronger move ({t.strip()})')
+    # LaneTrax measurement -> accept on Tonight
+    await p.goto(BASE + '?tn#/import?kind=lanetrax'); await p.wait_for_selector('#impPick'); await p.set_input_files('#impFile', synth)
+    await p.wait_for_selector('#impPreview[data-kind=lanetrax]'); await p.click('#impCommit'); await p.wait_for_selector('#impDone')
+    await p.goto(BASE + '?tn#/tonight'); await p.wait_for_selector('#tnMeas')
+    n = await p.evaluate("() => document.querySelectorAll('#tnMeas [data-accept]').length"); check(n == 4, f'[tonight] 4 LaneTrax measurements waiting ({n})')
+    check('LaneTrax \u00b7 2000-01-01' in await p.text_content('#tnMeas'), '[tonight] measurements labelled "LaneTrax \u00b7 date"')
+    rev_btn = await p.query_selector('#tnMeas div:has-text("Rev rate") [data-accept]'); await rev_btn.click()
+    await p.wait_for_function("() => document.querySelectorAll('#tnMeas [data-accept]').length === 3")
+    rel = await p.text_content('#tnRelease'); check('231.43 rpm' in rel and 'LaneTrax \u00b7 2000-01-01' in rel, '[tonight] accepted rev shows with device provenance')
+    pick0 = await p.text_content('#tnPickName')
+    await p.reload(); await p.wait_for_selector('#tnPick')
+    check(await p.text_content('#tnPickName') == pick0 and '231.43 rpm' in await p.text_content('#tnRelease'), '[tonight] session + accepted release survive reload')
+    check(not errs, '[tonight] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
 class MockEvents:
@@ -379,7 +424,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

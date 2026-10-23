@@ -20,8 +20,9 @@ route(/^\/sessions$/, 'sessions', () => import('./screens/sessions.js'));
 route(/^\/more$/, 'more', () => import('./screens/more.js'));
 route(/^\/welcome$/, null, () => import('./screens/welcome.js'));
 route(/^\/import$/, 'more', () => import('./screens/import.js'));
+route(/^\/tonight$/, 'tonight', () => import('./screens/tonight.js'));
 // tab bar / rail
-const TABS = [['lane', 'Lane'], ['arsenal', 'Arsenal'], ['patterns', 'Patterns'], ['sessions', 'Sessions'], ['more', 'More']];
+const TABS = [['tonight', 'Tonight'], ['lane', 'Lane'], ['arsenal', 'Arsenal'], ['patterns', 'Patterns'], ['sessions', 'Sessions'], ['more', 'More']];
 const nav = $('#tabs');
 nav.innerHTML = TABS.map(([k, l]) => `<a class="tab" href="#/${k}" data-tab="${k}">${icon(k)}<span>${l}</span></a>`).join('');
 function setTab(t) { $$('.tab', nav).forEach(a => { if (a.dataset.tab === t) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }); document.body.dataset.tab = t || 'none'; }

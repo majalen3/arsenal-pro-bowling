@@ -18,6 +18,7 @@ const P = {
   arsenal:'<circle cx="12" cy="12" r="8.5"/><circle cx="10" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="13.5" cy="8.4" r="1" fill="currentColor" stroke="none"/><circle cx="12.4" cy="11.6" r="1" fill="currentColor" stroke="none"/>',
   patterns:'<path d="M4 20V10M9 20V5M14 20v-8M19 20V8"/>',
   sessions:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/>',
+  tonight:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>',
   more:'<circle cx="6" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="18" cy="12" r="1.4" fill="currentColor"/>',
   tune:'<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
   save:'<path d="M6 3h12v18l-6-4-6 4V3z"/>', saved:'<path d="M6 3h12v18l-6-4-6 4V3z" fill="currentColor"/>',
