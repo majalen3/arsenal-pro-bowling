@@ -26,7 +26,9 @@ export const MISSES = {
   light: { label:'Light', move:'Slow down 0.5 mph',          apply:() => ({ speed:S.speed - 0.5 }) },
 };
 export function miss(kind) {
-  const before = snapshot(), m = MISSES[kind]; const ch = m.apply();
+  // buttons are screen directions; on a lefty's mirrored lane a left miss is the model's right miss
+  const lefty = !!(profile() && profile().hand === 'left'), mk = lefty && (kind === 'left' || kind === 'right') ? (kind === 'left' ? 'right' : 'left') : kind;
+  const before = snapshot(), m = MISSES[kind]; const ch = MISSES[mk].apply();
   adjust(ch, { animate:true });
   const after = snapshot(); logShot(kind, before, after);
   const same = ['release','aim','speed'].every(k => before[k] === after[k]);

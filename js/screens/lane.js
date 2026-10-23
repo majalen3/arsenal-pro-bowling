@@ -4,6 +4,9 @@ import { app, on, saveLine, renameLine, linesForBall, applyLine, status } from '
 import { h, icon, toast, sheet } from '../ui.js';
 import { createLane } from '../lane.js';
 import { createDeck, describe } from '../deck.js';
+// left-handers see a mirrored lane, so the engine's right-hander directions are swapped for display
+const isLefty = () => !!(profile() && profile().hand === 'left');
+const mirrorWords = t => t.replace(/\b(left|right|Left|Right)\b/g, w => ({ left:'right', right:'left', Left:'Right', Right:'Left' })[w]);
 const DEFL_DOC = 'https://github.com/majalen3/arsenal-pro-bowling/blob/main/docs/DEFLECTION.md';
 import { adjust, miss, restore, target, MISSES, setBall, quickBalls } from '../ctl.js';
 import { balls } from '../data.js';
@@ -36,7 +39,6 @@ export function render() {
     h('div', { class:'miss-lbl', id:'missLbl', text:'Your ball went' }),
     h('div', { class:'miss-btns' }, ...['left', 'high', 'light', 'right'].map(k => h('button', { class:'miss-btn', 'data-miss':k, 'aria-label':`Missed ${MISSES[k].label}: ${MISSES[k].move}`, onclick:() => doMiss(k) },
       h('span', { class:'miss-ic', html:icon(k === 'left' ? 'left' : k === 'right' ? 'right' : k === 'high' ? 'up' : 'downArrow') }), h('span', { text:MISSES[k].label })))));
-  const p = profile(); const lefty = p && p.hand === 'left';
   const el = h('section', { class:'screen lane-screen' },
     h('header', { class:'appbar' }, h('h1', { class:'sr-only', id:'laneH1' }), ballBtn, h('div', { class:'appbar-actions' }, syncDot, linesBtn, saveBtn)),
     h('div', { class:'ctl-bar' }, qRow,
@@ -47,9 +49,9 @@ export function render() {
       h('section', { class:'deck-card', id:'deckCard', 'aria-labelledby':'deckH' }, h('figure', { class:'deck-fig' }, deckCv), h('div', { class:'deck-side' }, h('h2', { class:'deck-h', id:'deckH', text:'Pin deck' }), callBadge, coach, deckRead, h('p', { class:'deck-cap', id:'deckCap' }))),
       h('div', { class:'read-col' },
         h('div', { class:'tiles' }, tEntry, tAngle, tBp),
-        lineSum, hold, missRow, lefty ? h('p', { class:'note small', text:'Left-handed: the model draws a right-hander’s lane. Read board numbers mirrored.' }) : null, more, inlineTune)));
+        lineSum, hold, missRow, more, inlineTune)));
   let tune = null;
-  const lane = createLane(canvas, { onAdjust:ch => adjust(ch) });
+  const lane = createLane(canvas, { onAdjust:ch => adjust(ch), lefty:isLefty });
   const deck = createDeck(deckCv);
   function setTile(t, val, sub, tone) { t.querySelector('.tile-val').textContent = val; t.querySelector('.tile-sub').textContent = sub; t.dataset.tone = tone; }
   let lastKey = '';
@@ -63,7 +65,7 @@ export function render() {
     oilChip.innerHTML = `<span class="chip-k">Oil</span> ×${(+S.oil).toFixed(1)}`; oilChip.setAttribute('aria-label', `Oil ×${(+S.oil).toFixed(1)}. Change oil volume`);
     tuneChip.innerHTML = `${icon('tune')} ${S.speed} mph · ${S.rev} rpm`; tuneChip.setAttribute('aria-label', `${S.speed} mph · ${S.rev} rpm. Tune shot`);
     const tone = CALL_TONE[a.call]; callBadge.textContent = CALL_LABEL[a.call]; 
-    coach.textContent = coachLine(a);
+    coach.textContent = isLefty() ? mirrorWords(coachLine(a)) : coachLine(a);
     setTile(tEntry, f1(a.entryBoard), 'pocket 17.5', a.entryBoard != null && Math.abs(a.entryBoard - 17.5) <= 0.7 ? 'good' : 'warn');
     setTile(tAngle, a.angle == null ? '\u2014' : f1(a.angle) + '\u00b0', 'need 4\u20136\u00b0', a.angle != null && a.angle >= 4 && a.angle <= 6 ? 'good' : 'warn');
     const r31 = a.bpBoard == null ? null : ruleOf31(S.pattern, a.bpBoard);
@@ -75,7 +77,7 @@ export function render() {
     const ph = a.phases, n0 = v => Math.round(v);
     more.innerHTML = (ph ? `<div><span class="dot" style="background:${C_SKID}"></span>Skid <b>0\u2013${n0(ph.skid)} ft</b> · <span class="dot" style="background:${C_HOOK}"></span>Hook <b>${n0(ph.skid)}\u2013${n0(ph.roll)} ft</b> · <span class="dot" style="background:${C_ROLL}"></span>Roll <b>${n0(ph.roll)}\u2013${n0(ph.end)} ft</b></div>` : '') +
       `<div>Rolls at ~<b>${rollMph(+S.speed).toFixed(1)} mph</b> (est.)${r31 ? ' · ' + r31.text : ''}</div>`;
-    canvas.setAttribute('aria-label', `Lane preview. ${CALL_LABEL[a.call]}. Entry board ${f1(a.entryBoard)}, angle ${f1(a.angle)} degrees, breakpoint board ${f1(a.bpBoard)} at ${a.bpFeet == null ? 'none' : Math.round(a.bpFeet) + ' feet'}. Arrow keys move feet and target.`);
+    canvas.setAttribute('aria-label', `Lane preview. ${CALL_LABEL[a.call]}. Entry board ${f1(a.entryBoard)}, angle ${f1(a.angle)} degrees, breakpoint board ${f1(a.bpBoard)} at ${a.bpFeet == null ? 'none' : Math.round(a.bpFeet) + ' feet'}. ${isLefty() ? 'Mirrored for left hand. ' : ''}Arrow keys move feet and target.`);
     const same = l => l.release === +S.release && l.aim === +S.aim && l.speed === +S.speed && l.rev === +S.rev && l.pattern === S.pattern && l.finish === S.finish && +l.oil === +S.oil;
     const mine = linesForBall(), saved = mine.some(same), bl = backLine(mine);
     backBtn.hidden = !bl || same(bl);

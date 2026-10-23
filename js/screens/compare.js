@@ -3,6 +3,7 @@ import { analyze, readInfo, S, sensitivity } from '../engine.js';
 import { h, icon, sheet, emptyState } from '../ui.js';
 import { createLane } from '../lane.js';
 import { setBall } from '../ctl.js';
+import { profile } from '../store.js';
 import { go } from '../router.js';
 import { backBar } from './ball.js';
 import { readMed, ballRow } from './pickers.js';
@@ -40,5 +41,5 @@ export function render({ query }) {
     h('p', { class:'muted small pad-x', text:`Same line for both: feet ${S.release}, ${S.speed} mph, ${S.rev} rpm on ${PATTERN_LABEL[S.pattern]}, ${FINISH_LABEL[S.finish]}. Highlighted rows differ; gold = closer to a strike.` }),
     h('div', { class:'cmp-body n' + ps.length }, h('div', { class:'cmp-cols n' + ps.length }, ...cols), h('div', { class:'table-wrap' }, table)));
   let ls = [];
-  return { el, title:'Compare', mounted() { ls = lanes.map(([cv, b, r]) => { const l = createLane(cv); l.draw({ ball:b, result:r }, { animate:true }); return l; }); }, destroy() { ls.forEach(l => l.destroy()); } };
+  return { el, title:'Compare', mounted() { ls = lanes.map(([cv, b, r]) => { const l = createLane(cv, { lefty:() => !!(profile() && profile().hand === 'left') }); l.draw({ ball:b, result:r }, { animate:true }); return l; }); }, destroy() { ls.forEach(l => l.destroy()); } };
 }
