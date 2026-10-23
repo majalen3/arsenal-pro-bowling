@@ -4,6 +4,7 @@ import { app, on, saveLine, renameLine, linesForBall, applyLine, status } from '
 import { h, icon, toast, sheet } from '../ui.js';
 import { createLane } from '../lane.js';
 import { createDeck, describe } from '../deck.js';
+const DEFL_DOC = 'https://github.com/majalen3/arsenal-pro-bowling/blob/main/docs/DEFLECTION.md';
 import { adjust, miss, restore, target, MISSES, setBall, quickBalls } from '../ctl.js';
 import { balls } from '../data.js';
 import { openBallSheet, openConditions, openTune, openLines, tunePanel } from './pickers.js';
@@ -89,7 +90,7 @@ export function render() {
     deckCv.setAttribute('aria-label', `Pin deck close-up, ${d.pocket} pocket. ${CALL_LABEL[a.call]}. ${d.text}`);
     deckRead.innerHTML = a.entryBoard == null ? `<p>${d.text}</p>` : `<p class="deck-side-call">${d.side[0].toUpperCase() + d.side.slice(1)}, ${d.ang}.</p><p class="deck-contact">${d.contact}</p><p class="deck-five">${d.five}</p>`;
     el.querySelector('#deckCard').dataset.tone = tone;
-    el.querySelector('#deckCap').textContent = `True 12 in pin spacing; path past contact is projected (no deflection).${lefty ? ' Mirrored for left hand.' : ''}`;
+    el.querySelector('#deckCap').innerHTML = `Pin action: approximate 2-D model, assumed 15 lb ball, no spin. <a href="${DEFL_DOC}" target="_blank" rel="noopener">How it works</a>${lefty ? ' · Mirrored for left hand.' : ''}`;
     lastKey = key;
   }
   let qKey = '';

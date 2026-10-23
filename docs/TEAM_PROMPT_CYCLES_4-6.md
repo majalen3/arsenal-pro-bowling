@@ -24,7 +24,7 @@ Same five-role team, invariants and QA gates as [`TEAM_PROMPT.md`](TEAM_PROMPT.m
 | G5 | Test data cleanup | Lines **1003** and **1004** (written by an early test run) removed from the live DB; nothing else touched; removal verified | Backend |
 
 ## Research brief (G2)
-Read primary or authoritative sources first (USBC Equipment Specifications / research publications on pin carry and ball deflection, published bowling-physics papers). Record each source fetched, what it actually says, and whether it gives usable numbers. If no usable quantitative deflection data is found, use plain 2-D rigid-body collision (equal-mass-ratio impulse along the line of centres, ball ≈ 15 lb vs pin ≈ 3.5 lb — values from USBC specs, cited) as a **labelled approximation**, and say so in the UI caption and `DECISIONS.md`. No fitted numbers without a source.
+Read primary or authoritative sources first (USBC Equipment Specifications / research publications on pin carry and ball deflection, published bowling-physics papers). Record each source fetched, what it actually says, and whether it gives usable numbers. If no usable quantitative deflection data is found, use plain 2-D rigid-body collision (equal-mass-ratio impulse along the line of centres, pin 3 lb 8 oz and COR 0.670 from the USBC spec, cited; ball weight is not known to the app, so an assumed 15 lb (USBC max 16 lb) is labelled as an assumption) as a **labelled approximation**, and say so in the UI caption and `DECISIONS.md`. No fitted numbers without a source.
 
 ## QA gates per cycle (all must pass before commit/push)
 1. `node tests/engine_equivalence.mjs` → 0 mismatches.

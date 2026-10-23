@@ -420,7 +420,7 @@ noscript p{padding:24px}
 .back-chip[hidden]{display:none}
 @media (max-width:420px){.qball-row{padding:0 12px 6px}}
 @media (max-width:420px){
-  .deck-five{display:none}            /* still in the canvas text alternative */
+  .deck-contact{display:none}         /* still in the canvas text alternative */
   .deck-side{gap:4px} .deck-read{gap:4px}
   .cond-row{padding-bottom:10px}
 }
@@ -439,3 +439,5 @@ noscript p{padding:24px}
 @media (max-width:899px){body[data-tab=lane] #toast{top:calc(env(safe-area-inset-top) + 64px);bottom:auto}}
 @media (min-width:900px){body[data-tab=lane] #toast{top:12px;bottom:auto}}
 .toast-act{min-height:44px}
+/* cycle 5: pin-action caption link (44px target without breaking the line) */
+.deck-cap a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;margin:-14px 0;color:var(--gold)}

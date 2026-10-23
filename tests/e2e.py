@@ -45,7 +45,9 @@ async def run(b, kind):
     bb = await (await p.query_selector('#deck')).bounding_box()
     check(bb['width'] >= 180, t + f"pin deck is large enough ({round(bb['width'])}px wide)")
     lbl = await p.get_attribute('#deck', 'aria-label')
-    check('1-3 pocket' in lbl and 'Enters board' in lbl and '5 pin' in lbl, t + 'pin deck has text alternative with 1-3 pocket, entry and 5 pin')
+    check('1-3 pocket' in lbl and 'Enters board' in lbl and 'Model:' in lbl and ('pins down' in lbl or 'leaves the' in lbl), t + 'pin deck has text alternative with 1-3 pocket, entry and model pin action')
+    cap = await p.text_content('#deckCap')
+    check('approximate 2-D model' in cap and await p.query_selector('#deckCap a[href*="DEFLECTION"]') is not None, t + 'pin action labelled as an approximate model with a sources link')
     check(await p.get_attribute('#deckCard', 'data-tone') in ('good', 'warn', 'info', 'bad'), t + 'pin deck coloured by result')
     if SHOTS: await (await p.query_selector('#deckCard')).screenshot(path=os.path.join(SHOTS, f'{kind}-deck.png'))
     # J1 change ball: 2 taps
@@ -114,7 +116,7 @@ async def run(b, kind):
         check(not res, t + f'axe {r} serious/critical=0 {res}')
         w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]')
         check(w[1] <= (390 if kind == 'phone' else 1280), t + f'{r} no horizontal overflow {w}')
-    await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ballBtn')
+    await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ballBtn'); await p.wait_for_timeout(600)  # let the route-enter transform finish before measuring sizes
     small = await p.evaluate("""[...document.querySelectorAll('button, a[href], input, select, [role=slider]')].filter(e=>{const r=e.getBoundingClientRect(); return r.width>0 && r.height>0 && getComputedStyle(e).visibility!=='hidden' && !e.closest('.sr-only') && (r.width<44||r.height<44) && !(e.type==='range')}).map(e=>(e.id||e.className||e.tagName)+' '+Math.round(e.getBoundingClientRect().width)+'x'+Math.round(e.getBoundingClientRect().height))""")
     check(not small, t + f'lane targets >= 44px {small[:6]}')
     check(not errs, t + f'no page errors {errs[:3]}')
@@ -134,6 +136,12 @@ async def deck_cases(b):
     await p.wait_for_timeout(500)
     check(await p.get_attribute('#deckCard', 'data-tone') == 'bad' and 'High' in await p.get_attribute('#deck', 'aria-label'), '[deck] high hit coloured as high')
     if SHOTS: await (await p.query_selector('#deckCard')).screenshot(path=os.path.join(SHOTS, 'phone-deck-high.png'))
+    # pin-action model vs USBC Pin Carry Study (2009) qualitative outcomes, right-hander, 5 deg
+    sim = await p.evaluate("""async()=>{const m=await import('./js/pinsim.js');const f=(b,a)=>{const r=m.simulate(b,a);return {down:r.down.length,byBall:r.byBall,exitX:r.ball.exitX,defl:r.ball.deflect}};return {pocket:f(17.5,5),light:f(16.5,5),high:f(18.5,5)}}""")
+    pk = sim['pocket']
+    check(pk['down'] == 10 and {1, 3, 5} <= set(pk['byBall']) and 0 < pk['exitX'] < 6 and pk['defl'] < 0, f'[deck] pocket hit: model strike, ball takes 1-3-5, deflects right, exits just left of the 9 spot {pk}')
+    check(sim['light']['exitX'] > 6, f"[deck] light hit: ball exits right of the 9 spot {sim['light']}")
+    check(sim['high']['exitX'] < 0, f"[deck] high hit: ball goes left off the deck {sim['high']}")
     check(not errs, '[deck] no page errors')
     await c.close()
 
