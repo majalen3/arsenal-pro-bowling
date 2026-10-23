@@ -113,3 +113,30 @@ Each cycle: change → test → independent review → commit+push. Scores are 1
 - Pick before setup: at the lanes the answer matters more than the form; setup changes re-rank in place and reset the pick.
 - Targets: golden scenarios 26/26 (≥ 20) ✔. 0 model lines for spec-TBD ✔. Render 4–9 ms after the log is open (< 1 s) ✔. e2e +18 `[tonight]` checks at 360 px (axe 0 serious, 44 px, no overflow, read → weaker in 1 tap, long-pattern conflict, accept → device provenance, survives reload) ✔. Engine 7 500/0 ✔. Lighthouse `#/tonight` 99/100/100/100 ✔. sw v13.
 - e2e hardening: 4 remaining expression-string `wait_for_function` calls became arrow functions (CSP blocks eval; one flaked in the full run).
+
+## CC1 — Quick log + spares (2026-10-23)
+- Tonight now has a **Quick log** card under the pick, with these parts:
+  - **Frame strip:** 10 frames with marks and a running score. The current frame has a gold outline, and splits are marked ○.
+  - **Pin deck:** a back-row-first deck of 44 px pins. Only pins still standing can be tapped.
+  - **Buttons:** X Strike or / Spare, "Log n standing", "– Missed all", F Foul.
+  - **Tagging:** an optional first-ball tag (Pocket / High / Light).
+  - **Spare help:** live 3-6-9 help for the leave, with a USBC chip and a split pill.
+  - **Triggers and undo:** a trigger box when 2 of the last 3 first balls go high or light, and an undo button.
+- When a game ends, the card shows "Final n" and "Start game n+1".
+- Targets:
+
+| Target | Result |
+|---|---|
+| Strike | 1 tap ✔ |
+| One-pin spare | 3 taps ✔ |
+| Read → new pick | 1 tap (CC0 e2e) ✔ |
+| Trigger tests (High/Light sequences, window, LH mirror, Plan B) | ✔ |
+| 3-6-9 | USBC table for 10 pins × RH/LH (CC0) plus per-leave key pin ✔ |
+| Splits (Rule 2h, 13 leaves incl. 2-7/3-10 baby splits and sleepers) | ✔ |
+| 10th-frame scoring tests (X 7 2, 7 / X, X X X, X 7 /, open, unearned third ball, 12-pin rack, fouls) | ✔ |
+| 0 throws lost on tab kill (e2e) | ✔ |
+| Unit tests | `cc1` 19/19 |
+| e2e `[quicklog]` | 17/17 (axe 0 serious, 44 px, no overflow at 360) |
+| Engine | 7 500/0 |
+| Lighthouse `#/tonight` | 99/100/100/100 |
+| Service worker | v14 |

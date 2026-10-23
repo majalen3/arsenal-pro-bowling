@@ -4,7 +4,8 @@ import { h, icon, toast, segmented } from '../ui.js';
 import { go } from '../router.js';
 import { ready, proj, add, addMany, loadStarter } from '../hub.js';
 import { on, today, deviceId } from '../store.js';
-import { mkEvent } from '../data/events.js';
+import { mkEvent, voidEvent } from '../data/events.js';
+import * as Q from '../cc/quicklog.js';
 import { balls, specOK } from '../data.js';
 import * as R from '../cc/rank.js';
 import { modelLine } from '../cc/model.js';
@@ -21,6 +22,7 @@ export async function render() {
   const sid = 'tonight-' + today();
   const body = h('div', { class: 'stack', id: 'tonightBody' });
   const el = h('section', { class: 'screen list-screen', id: 'tonight' }, h('header', { class: 'appbar' }, h('h1', { class: 'title', text: 'Tonight' })), body);
+  const ql = { leave: new Set(), foul: false, tag: null };   // quick-log taps not yet written
   let local = {};   // UI state not yet written (avoids re-render churn while typing)
   const sess = () => Object.assign({ kind: 'tonight', patternSlug: null, ft: null, ml: null, ratio: null, centerId: null, surface: 'unknown', stage: 'fresh', bagId: null, game: 1, pickId: null, reads: [] }, (proj().sessions || {})[sid], local);
   async function save(fields) {
@@ -92,6 +94,7 @@ export async function render() {
         h('p', { class: 'small', id: 'tnR31' }, r31.text, provChip('usbc', 'bowl.com'), pat ? null : provChip('assumed', 'length assumed')),
         ml && !ml.none ? h('p', { class: 'muted small', text: `Model runs on the nearest preset (${ml.preset}, ${ml.presetLen} ft) with your ${num(b.speed) || 15} mph and ${num(b.rev) || 220} rpm. An estimate, not a promise.` }) : null,
         h('div', { class: 'alts' }, alt(r.weaker && cur === r.pick ? r.weaker : R.readMove(r, cur.id, 'early'), 'Weaker'), alt(r.stronger && cur === r.pick ? r.stronger : R.readMove(r, cur.id, 'weak'), 'Stronger'))));
+      body.append(quickLog(P, s, cur, b));
       // ---- read buttons
       body.append(h('div', { class: 'card', id: 'tnReads' }, h('h2', { class: 'card-title', text: 'How did it read?' }),
         h('div', { class: 'btn-grid' }, ...Object.entries(R.READS).map(([k, l]) => h('button', { class: 'btn', 'data-read': k, onclick: async () => {
@@ -113,6 +116,58 @@ export async function render() {
       h('p', { class: 'muted small' }, 'Keep the same target; only your feet move.', provChip('usbc', 'USBC'))));
     // ---- release card
     body.append(releaseCard(P, b));
+  }
+  // ---- CC1 quick log: strike 1 tap; a one-pin spare 3 taps (pin, Log leave, /). Each tap is one shot.logged event in
+  // IndexedDB before the screen moves on, so killing the tab loses nothing already shown.
+  function quickLog(P, s, cur, b) {
+    const game = s.game || 1, mine = P.shots.filter(x => x.sessionId === sid && x.frame != null && (x.game || 1) === game);
+    const st = Q.stateOf(mine.map(x => ({ down: x.down, leave: x.leave || [], foul: !!x.foul })));
+    const hand = b.hand === 'left' ? 'left' : 'right', facingLeave = st.standing.length < 10;
+    const log = async kind => {
+      if (st.done) return;
+      const t = Q.throwOf(kind, st.standing, { leave: [...ql.leave], foul: ql.foul });
+      const split = !facingLeave && !t.foul && t.leave.length > 0 && Q.leaveHint(t.leave).split;
+      await add('shot.logged', sid, { sessionId: sid, game, frame: st.frame, roll: st.roll, down: t.down, leave: t.leave, foul: !!t.foul, split: !!split,
+        ballId: cur.id, catalogId: cur.catalogId, miss: !facingLeave ? ql.tag : null });
+      ql.leave.clear(); ql.foul = false; ql.tag = null; draw();
+    };
+    const frames = h('div', { class: 'frames', id: 'qlFrames', role: 'list', 'aria-label': `Game ${game} frames` }, ...Array.from({ length: 10 }, (_, i) => {
+      const fr = st.frames[i], cls = 'fr' + (!st.done && i === st.frame - 1 ? ' cur' : '');
+      const mk = fr ? fr.marks.join(' ') : '';
+      return h('div', { class: cls, role: 'listitem', 'data-f': i + 1, 'aria-label': `Frame ${i + 1}: ${mk || 'not bowled'}${fr && fr.split ? ', split' : ''}${fr && fr.cum != null ? ', ' + fr.cum : ''}` },
+        h('span', { class: 'muted', text: String(i + 1) }), h('b', { text: (fr && fr.split ? '\u25CB' : '') + mk }), h('span', { class: 'num', text: fr && fr.cum != null ? String(fr.cum) : '' }));
+    }));
+    const head = h('div', { class: 'row between' }, h('h2', { class: 'card-title', text: `Quick log \u00b7 game ${game}` }),
+      h('span', { class: 'pill', id: 'qlWhere', text: st.done ? `Final ${st.total}` : `Frame ${st.frame} \u00b7 ball ${st.roll}` }));
+    const card = h('div', { class: 'card', id: 'tnLog' }, head, frames);
+    if (st.done) {
+      card.append(h('p', { class: 'coach', text: `${st.total} in game ${game}.` }), h('button', { class: 'btn primary block', id: 'qlNext', onclick: () => save({ game: game + 1 }) }, `Start game ${game + 1}`));
+    } else {
+      const pins = h('div', { class: 'pins', id: 'qlPins', role: 'group', 'aria-label': facingLeave ? 'Tap the pins still standing' : 'Tap the pins left standing' },
+        ...Q.LAYOUT.map(([pin, col]) => { const up = st.standing.includes(pin);
+          return h('button', { class: 'pin', 'data-pin': pin, 'aria-pressed': String(ql.leave.has(pin)), disabled: !up, 'aria-label': `Pin ${pin}`, style: { gridColumn: String(col + 1), gridRow: String(pin >= 7 ? 1 : pin >= 4 ? 2 : pin >= 2 ? 3 : 4) },
+            onclick: () => { ql.leave.has(pin) ? ql.leave.delete(pin) : ql.leave.add(pin); draw(); } }, String(pin)); }));
+      const n = ql.leave.size;
+      const btns = h('div', { class: 'btn-grid', id: 'qlBtns' },
+        facingLeave ? h('button', { class: 'btn primary', id: 'qlSpare', onclick: () => log('all') }, '/ Spare') : h('button', { class: 'btn primary', id: 'qlStrike', onclick: () => log('all') }, 'X Strike'),
+        h('button', { class: 'btn ghost', id: 'qlLeave', disabled: !n, onclick: () => log('leave') }, n ? `Log ${n} standing` : 'Tap pins standing'),
+        facingLeave ? h('button', { class: 'btn ghost', id: 'qlMiss', onclick: () => log('none') }, '\u2013 Missed all') : null,
+        h('button', { class: 'btn ghost', id: 'qlFoul', 'aria-pressed': String(ql.foul), onclick: () => { ql.foul = !ql.foul; draw(); } }, 'F Foul'));
+      card.append(pins, btns);
+      if (!facingLeave) card.append(h('div', { class: 'fld' }, h('span', { text: 'First ball hit (optional, for triggers)' }),
+        segmented('First ball hit', [['pocket', 'Pocket'], ['high', 'High'], ['light', 'Light']], ql.tag, v => { ql.tag = ql.tag === v ? null : v; draw(); }, 'wide')));
+      const hint = Q.leaveHint(facingLeave ? st.standing : [...ql.leave], 20, hand);
+      if (hint) card.append(h('p', { class: 'small', id: 'qlHint' }, hint.split ? h('span', { class: 'pill', id: 'qlSplit', text: 'Split' }) : null, ' ',
+        `${hint.leave.join('-')}: ` + hint.keys.map(k => `key pin ${k.key} \u2192 stand ${k.board}${k.move === 'none' ? '' : ' (move ' + k.move + ')'}`).join('; or ') + '. Same target.', provChip('usbc', 'USBC 3-6-9')));
+    }
+    // triggers: first balls + reads this session, newest last
+    const seq = P.shots.filter(x => x.sessionId === sid && x.roll === 1 && x.frame != null).map(x => ({ ts: x.ts, miss: x.miss || (x.down === 10 ? 'strike' : null) }))
+      .concat((s.reads || []).map(x => ({ ts: x.ts, read: x.read }))).sort((a, b) => a.ts - b.ts);
+    const tr = R.trigger(seq, { hand: b.hand === 'left' ? 'left' : 'right' });
+    if (tr) card.append(h('div', { class: 'warn-box', id: 'qlTrigger', role: 'status' }, tr.text, provChip('assumed', 'team rule')));
+    const last = mine[mine.length - 1];
+    if (last) card.append(h('button', { class: 'btn ghost block', id: 'qlUndo', onclick: async () => { await addMany([voidEvent(last.id, { deviceId: deviceId(), prov: { kind: 'user' } })]); draw(); } }, `Undo last ball (frame ${last.frame})`));
+    return card;
   }
   function bowlerOf(P) { return P.bowler || {}; }
   function num(f) { const v = f && typeof f === 'object' ? f.v : f; return v === '' || v == null || isNaN(+v) ? null : +v; }

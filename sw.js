@@ -3,7 +3,7 @@
 // Network-first for the app shell (deploys show up on next load), cache fallback when offline. API calls are never cached.
 // Updates: a new worker waits and the page shows "A new version is ready · Refresh" (message 'skip').
 // Exception: upgrading from the v1 single-file app (cache 'arsenal-pro-v2'), which has no update prompt, activates immediately.
-const CACHE = 'arsenal-pro-v13';
+const CACHE = 'arsenal-pro-v14';
 const SHELL = ['./', 'index.html', 'css/app.css', 'manifest.webmanifest', 'icon.svg', 'icons/icon-192.png',
   'js/main.js', 'js/store.js', 'js/ui.js', 'js/router.js', 'js/engine.js', 'js/data.js', 'js/lane.js', 'js/deck.js', 'js/pinsim.js', 'js/ctl.js', 'js/labels.js', 'js/patdata.js',
   'js/screens/lane.js', 'js/screens/pickers.js', 'js/screens/arsenal.js', 'js/screens/insights.js', 'js/screens/ball.js', 'js/screens/compare.js',
@@ -11,7 +11,7 @@ const SHELL = ['./', 'index.html', 'css/app.css', 'manifest.webmanifest', 'icon.
   'js/hub.js', 'js/sync.js', 'js/screens/import.js', 'js/data/schema.js', 'js/data/events.js', 'js/data/project.js', 'js/data/scoring.js', 'js/data/validate.js',
   'js/data/migrate.js', 'js/data/idb.js', 'js/data/db.js', 'js/data/backup.js', 'js/data/seed.js',
   'js/data/csv.js', 'js/data/match.js', 'js/data/importer.js', 'js/data/lanetrax.js', 'js/data/sync.js',
-  'js/cc/rank.js', 'js/cc/model.js', 'js/screens/tonight.js'];
+  'js/cc/rank.js', 'js/cc/model.js', 'js/cc/quicklog.js', 'js/screens/tonight.js'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => caches.has('arsenal-pro-v2')).then((legacy) => { if (legacy) return self.skipWaiting(); }));
 });

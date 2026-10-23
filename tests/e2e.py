@@ -343,6 +343,62 @@ async def tonight_cycle(b):
     check(not errs, '[tonight] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
+async def quicklog_cycle(b):
+    # CC1: strike = 1 tap, one-pin spare = 3 taps, splits flagged with 3-6-9 per leave, triggers, undo, 10th frame,
+    # and 0 throws lost when the tab is killed right after the screen moves on (IndexedDB).
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.goto(BASE + '?ql#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnLog')
+    n0 = await p.evaluate("() => window.__apData.events()")
+    where = lambda: p.text_content('#qlWhere')
+    fr = lambda n: p.text_content(f'#qlFrames [data-f="{n}"] b')
+    taps = 0
+    await p.click('#qlStrike'); taps += 1; await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 2')")
+    check(taps == 1 and (await fr(1)).strip() == 'X', '[quicklog] strike logged in 1 tap')
+    taps = 0
+    await p.click('#qlPins [data-pin="10"]'); taps += 1
+    hint = await p.text_content('#qlHint'); check('stand 29' in hint and 'move 9 left' in hint, f'[quicklog] 3-6-9 for the leave shows before logging ({hint.strip()[:60]})')
+    await p.click('#qlLeave'); taps += 1; await p.wait_for_selector('#qlSpare')
+    await p.click('#qlSpare'); taps += 1; await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 3')")
+    check(taps == 3 and (await fr(2)).strip() == '9 /', f'[quicklog] 10-pin spare in 3 taps ({(await fr(2)).strip()})')
+    check((await p.text_content('#qlFrames [data-f="1"] .num')).strip() == '20', '[quicklog] frame 1 = X + 9/ = 20')
+    await p.click('#qlPins [data-pin="7"]'); await p.click('#qlPins [data-pin="10"]')
+    check(await p.query_selector('#qlSplit') is not None and 'stand 11' in await p.text_content('#qlHint') and 'stand 29' in await p.text_content('#qlHint'), '[quicklog] 7-10 flagged as a split, both key-pin moves shown')
+    await p.click('#qlLeave'); await p.wait_for_selector('#qlMiss')
+    check((await p.query_selector_all('#qlPins .pin:not([disabled])')).__len__() == 2, '[quicklog] second ball: only the 7 and 10 can be tapped')
+    await p.click('#qlMiss'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 4')")
+    check((await fr(3)).strip() == '\u25CB8 -', f'[quicklog] split mark + miss shown ({(await fr(3)).strip()})')
+    await p.click('#qlUndo'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 3 \u00b7 ball 2')")
+    check(True, '[quicklog] undo voids the last ball')
+    await p.click('#qlMiss'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 4')")
+    # triggers: 2 of 3 first balls high
+    for _ in range(2):
+        f0 = await where(); await p.click('#tnLog [role=radio][data-v=high]'); await p.click('#qlPins [data-pin="4"]'); await p.click('#qlLeave'); await p.wait_for_selector('#qlSpare'); await p.click('#qlSpare')
+        await p.wait_for_function(f"() => document.querySelector('#qlWhere').textContent !== {json.dumps(f0)} && document.querySelector('#qlStrike')")
+    tr = await p.text_content('#qlTrigger'); check('2 of 3 high' in tr and 'feet 2 left' in tr, f'[quicklog] trigger: 2 of 3 high -> move left ({tr.strip()[:50]})')
+    await axe_ok(p, '[quicklog]'); small = await p.evaluate(SMALL); check(not small, f'[quicklog] targets >= 44px {small[:6]}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= w[0], f'[quicklog] no horizontal overflow at 360 {w}')
+    await p.eval_on_selector('#tnLog', 'e => e.scrollIntoView()'); await shot(p, 'phone-quicklog')
+    # tab kill: log 3 more balls, kill the page the moment the UI moves on, reopen
+    for _ in range(3):
+        f0 = await where(); await p.click('#qlStrike'); await p.wait_for_function(f"() => document.querySelector('#qlWhere').textContent !== {json.dumps(f0)}")
+    shown = await p.eval_on_selector_all('#qlFrames .fr b', 'els => els.map(e => e.textContent)')
+    await p.close(run_before_unload=False)
+    p = await page(c, errs); await p.goto(BASE + '?ql#/tonight'); await p.wait_for_selector('#tnLog')
+    again = await p.eval_on_selector_all('#qlFrames .fr b', 'els => els.map(e => e.textContent)')
+    check(again == shown and (await p.text_content('#qlWhere')).strip() == 'Frame 9 \u00b7 ball 1', f'[quicklog] tab killed -> 0 throws lost ({again})')
+    # finish: X in 9, 10th X 7 / -> final
+    await p.click('#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 10')")
+    await p.click('#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('ball 2')")
+    await p.click('#qlPins [data-pin="3"]'); await p.click('#qlPins [data-pin="6"]'); await p.click('#qlPins [data-pin="10"]'); await p.click('#qlLeave')
+    await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('ball 3')"); await p.click('#qlSpare'); await p.wait_for_selector('#qlNext')
+    tot = (await p.text_content('#qlWhere')).strip(); check((await fr(10)).strip() == 'X 7 /' and tot.startswith('Final'), f'[quicklog] 10th X 7 / ends the game ({tot})')
+    n1 = await p.evaluate("() => window.__apData.events()")
+    check(n1 - n0 == 18, f'[quicklog] one event per ball: 16 balls + 1 undone + 1 void = 18 ({n1 - n0})')
+    await p.click('#qlNext'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 1')")
+    check('game 2' in await p.text_content('#tnLog'), '[quicklog] next game starts clean')
+    check(not errs, '[quicklog] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
 class MockEvents:
     """In-memory stand-in for /api/events + the v1 endpoints (same contract as arsenal-pro-api). Intercepts the API host,
     so nothing reaches production. online=False makes every request fail like airplane mode."""
@@ -424,7 +480,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)
