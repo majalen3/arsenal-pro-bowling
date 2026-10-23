@@ -1,0 +1,148 @@
+{
+ "kind": "lanetrax-session-report",
+ "parser": "lanetrax-pdf/1",
+ "date": "2000-01-01",
+ "totalShots": 90,
+ "kpis": [
+  {
+   "key": "conversionRate",
+   "label": "Conversion Rate",
+   "metric": "Conversion Rate",
+   "value": 20.5,
+   "unit": "%",
+   "level": 1
+  },
+  {
+   "key": "revRate",
+   "label": "Rev Rate",
+   "metric": "Average Rev Rate",
+   "value": 231.43,
+   "unit": "rpm",
+   "level": 2
+  },
+  {
+   "key": "impactSpeed",
+   "label": "Impact Speed",
+   "metric": "Average Impact Speed",
+   "value": 13.93,
+   "unit": "mph",
+   "level": 1
+  },
+  {
+   "key": "arrowsDifference",
+   "label": "Arrows",
+   "metric": "Average Difference",
+   "value": 1.45,
+   "unit": "bds",
+   "level": 4
+  }
+ ],
+ "outcomes": {
+  "strikes": {
+   "n": 6,
+   "pct": 12.8
+  },
+  "leaves": {
+   "n": 41,
+   "pct": 87.2
+  },
+  "madeSpares": {
+   "n": 8,
+   "pct": 20.5
+  },
+  "missedSpares": {
+   "n": 31,
+   "pct": 79.5
+  }
+ },
+ "summary": {
+  "arrows": {
+   "label": "Arrows",
+   "range": 15.9,
+   "mean": 14.6,
+   "unit": "board"
+  },
+  "averageSpeed": {
+   "label": "Average Speed",
+   "range": 19.6,
+   "mean": 13.5,
+   "unit": "mph"
+  },
+  "breakpointBoard": {
+   "label": "Breakpoint Board",
+   "range": 21.7,
+   "mean": 11.8,
+   "unit": "board"
+  },
+  "breakpointDistance": {
+   "label": "Breakpoint Distance",
+   "range": 50.1,
+   "mean": 30.5,
+   "unit": "ft"
+  },
+  "entryBoard": {
+   "label": "Entry Board",
+   "range": 36.7,
+   "mean": 20.4,
+   "unit": "board"
+  },
+  "impactSpeed": {
+   "label": "Impact Speed",
+   "range": 19.3,
+   "mean": 13,
+   "unit": "mph"
+  },
+  "foulLine": {
+   "label": "Foul Line",
+   "range": 7.5,
+   "mean": 14.5,
+   "unit": "board"
+  },
+  "hookBoards": {
+   "label": "Hook Boards",
+   "range": 28.6,
+   "mean": 10,
+   "unit": "board"
+  },
+  "impactAngle": {
+   "label": "Impact Angle",
+   "range": 13,
+   "mean": 3.4,
+   "unit": "°"
+  },
+  "launchAngle": {
+   "label": "Launch Angle",
+   "range": 2.5,
+   "mean": 0.9,
+   "unit": "°"
+  },
+  "launchSpeed": {
+   "label": "Launch Speed",
+   "range": 19.8,
+   "mean": 14,
+   "unit": "mph"
+  },
+  "shotTime": {
+   "label": "Shot Time",
+   "range": 3.5,
+   "mean": 2.5,
+   "unit": "s"
+  },
+  "speedLoss": {
+   "label": "Speed Loss",
+   "range": 1.4,
+   "mean": 1,
+   "unit": "mph"
+  }
+ },
+ "warnings": [
+  {
+   "code": "SHOT_COUNT_GAP",
+   "detail": "strikes+leaves+made+missed spares = 86, Total Shots = 90"
+  },
+  {
+   "code": "IMPACT_SPEED_KPI_VS_TABLE",
+   "detail": "KPI 13.93 vs summary mean 13"
+  }
+ ]
+}
