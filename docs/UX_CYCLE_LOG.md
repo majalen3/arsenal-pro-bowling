@@ -140,3 +140,32 @@ Each cycle: change → test → independent review → commit+push. Scores are 1
 | Engine | 7 500/0 |
 | Lighthouse `#/tonight` | 99/100/100/100 |
 | Service worker | v14 |
+
+## CC2 — Bag builder + status (2026-10-23)
+- New screen `#/bag`, opened from Tonight's setup card ("Bag builder ›"). It has these parts:
+  - **Status strip:** packed, benched, at pro shop, service due.
+  - **Bag / format / event date.**
+  - **Coverage grid:** 5 levels × smooth/medium/angular. Holes are dashed and overlaps are tinted warn; tap a ball to swap it.
+  - **Swap picker.**
+  - **"Fill bag from my balls"**, which shows an In/Out diff, then "Use this bag" or "Keep mine".
+  - **10 checks**, each with its source chip.
+  - **Your balls:** Lock for balls in the bag, Exclude for balls out of it; pro-shop and retired balls show a pill.
+  - **Pack list:** role → ball → why, then the spare, a "Service before {date}" box and the left-off list.
+  - **Ball status + care:** status segmented control, Log refresh/resurface/detox, and health from the log.
+- Targets:
+
+| Target | Result |
+|---|---|
+| Swap | 2 taps ✔ (e2e: HRP → C4 in League 3 closes the level-3 hole) |
+| Overlap/hole fixtures | 12 ✔ (`cc2` B02–B13) |
+| Health counts = fold(event log) | ✔ (B19: recount from raw events, order-independent fold, reset on service, event lead) |
+| Fill uses owned balls only | ✔ (B17 across league3/league4/tournament6, with lock, exclude, pro shop and retired; e2e League 3 fill) |
+| Unit tests | `cc2` 21/21, all suites 124/0 |
+| e2e `[bag]` | 15/15 (axe 0 serious, 44 px, no overflow at 360) |
+| Full e2e | 219/0 |
+| Engine | 7 500/0 |
+| Lighthouse `#/bag` | 98/100/100/100 |
+| Service worker | v15 |
+
+- Fixed a flaky `[sync]` step: under load, the page globals re-initialise after the import commit, so the test now waits for `__apSync` before reading the outbox.
+- Screenshot: `phone-bag.png`.

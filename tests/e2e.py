@@ -343,6 +343,50 @@ async def tonight_cycle(b):
     check(not errs, '[tonight] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
+async def bag_cycle(b):
+    # CC2: coverage grid (overlap/hole), swap in <= 2 taps, lock/exclude, fill from owned only, pack list, care = fold(log).
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.goto(BASE + '?bag#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnBagLink')
+    await p.click('#tnBagLink'); await p.wait_for_selector('#bagGrid')
+    check(await p.query_selector('#tabs a[href="#/tonight"][aria-current=page]') is not None, '[bag] reached from Tonight; Tonight tab stays current')
+    over = await p.evaluate("() => [...document.querySelectorAll('#bagGrid .cell.over [data-own]')].map(x => x.dataset.own).sort()")
+    check(over == ['own-deadly-rattler', 'own-hy-road-pearl'], f'[bag] T6: HRP + Deadly Rattler flagged as overlap in one cell {over}')
+    check(await p.get_attribute('#bagChecks [data-check="3"]', 'data-warn') == 'true' and await p.get_attribute('#bagChecks [data-check="1"]', 'data-warn') == 'false', '[bag] checks: overlap warns, benchmark in the middle passes')
+    n = await p.evaluate("() => document.querySelectorAll('#bagChecks [data-check]').length"); check(n == 10, f'[bag] 10 checks listed ({n})')
+    await axe_ok(p, '[bag]'); await p.wait_for_timeout(200)
+    small = await p.evaluate(SMALL); check(not small, f'[bag] targets >= 44px {small[:6]}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= w[0], f'[bag] no horizontal overflow at 360 {w}')
+    await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())"); await p.evaluate("() => document.querySelector('#bagCover').scrollIntoView()"); await shot(p, 'phone-bag')
+    await p.click('#bagHead [data-v="bag-league"]'); await p.wait_for_selector('#bagGrid .cell.hole[data-l="3"]')
+    check('level 3' in await p.text_content('#bagChecks [data-check="4"]'), '[bag] League 3: hole at level 3 between Big Bite and HRP')
+    taps = 0
+    await p.click('#bagGrid [data-own="own-hy-road-pearl"]'); taps += 1; await p.wait_for_selector('#bagSwap')
+    await p.click('#bagSwap [data-cand="own-ordnance-c4"]'); taps += 1
+    await p.wait_for_function("() => document.querySelector('#bagGrid [data-own=\"own-ordnance-c4\"]') && !document.querySelector('#bagGrid .cell.hole')")
+    check(taps <= 2, f'[bag] swap HRP -> C4 in {taps} taps; hole closed')
+    await p.click('#bagBalls [data-lock="own-ordnance-c4"]'); await p.wait_for_function("() => document.querySelector('#bagBalls [data-lock=\"own-ordnance-c4\"]').getAttribute('aria-pressed') === 'true'")
+    await p.click('#bagBalls [data-excl="own-hy-road-pearl"]'); await p.wait_for_function("() => document.querySelector('#bagBalls [data-excl=\"own-hy-road-pearl\"]').getAttribute('aria-pressed') === 'true'")
+    await p.reload(); await p.wait_for_selector('#bagGrid')
+    await p.click('#bagHead [data-v="bag-league"]'); await p.wait_for_selector('#bagBalls [data-lock="own-ordnance-c4"][aria-pressed="true"]')
+    check(await p.get_attribute('#bagBalls [data-excl="own-hy-road-pearl"]', 'aria-pressed') == 'true', '[bag] lock + exclude persist across reload (bag.saved events)')
+    # pro shop via status, then fill: owned + available only, locked kept, excluded out
+    await p.select_option('#bagCareBall', 'own-guru-supreme'); await p.click('#bagCare [data-v="proShop"]')
+    await p.wait_for_function("() => document.querySelector('#bagStatus').textContent.includes('1 at pro shop')")
+    await p.click('#bagFill'); await p.wait_for_timeout(150)
+    if await p.query_selector('#bagApply'): await p.click('#bagApply'); await p.wait_for_timeout(150)
+    ids = await p.evaluate("() => [...document.querySelectorAll('#bagGrid [data-own], #bagTbd [data-own]')].map(x => x.dataset.own)")
+    owned = await p.evaluate("() => [...document.querySelectorAll('#bagBalls [data-ball]')].map(x => x.dataset.ball)")
+    check(len(ids) == 2 and 'own-ordnance-c4' in ids and 'own-hy-road-pearl' not in ids and 'own-guru-supreme' not in ids and all(i in owned for i in ids), f'[bag] fill (League 3): owned only, locked kept, excluded + pro shop out {ids}')
+    pk = await p.text_content('#bagPack'); check('Spare' in pk and 'Ice Storm' in pk and 'level' in pk, '[bag] pack list: role -> ball -> why, spare last')
+    await p.click('#bagHead [data-v="bag-tournament"]'); await p.wait_for_selector('#bagGrid')
+    await p.select_option('#bagCareBall', 'own-rattler-big-bite'); await p.click('#bagCare [data-svc="refresh"]')
+    await p.wait_for_function("() => document.querySelector('#bagHealth').textContent.includes('Since refresh: 0')")
+    check(True, '[bag] service logged -> health recomputed from the log (since refresh 0)')
+    await p.fill('#bagDate', '2026-11-07'); await p.dispatch_event('#bagDate', 'change'); await p.wait_for_function("() => document.querySelector('#bagDate').value === '2026-11-07' && !document.querySelector('#bagHead .prov[data-prov=assumed]')")
+    check(True, '[bag] event date saved on the bag')
+    check(not errs, '[bag] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
 async def quicklog_cycle(b):
     # CC1: strike = 1 tap, one-pin spare = 3 taps, splits flagged with 3-6-9 per leave, triggers, undo, 10th frame,
     # and 0 throws lost when the tab is killed right after the screen moves on (IndexedDB).
@@ -437,6 +481,7 @@ async def sync_cycle(b):
     await p.goto(BASE + '?sync1#/import'); await p.wait_for_selector('#impPick'); await p.wait_for_function("() => window.__apData && window.__apSync")
     import tempfile; d = tempfile.mkdtemp(); f = os.path.join(d, 'scores.csv'); open(f, 'w').write("Date,Game 1,Game 2,Game 3\n2026-10-18,201,187,224\n2026-10-19,170,193,\n")
     await p.set_input_files('#impFile', f); await p.wait_for_selector('#impPreview'); await p.click('#impCommit'); await p.wait_for_selector('#impDone')
+    await p.wait_for_function("() => window.__apData && window.__apSync && window.__apSync.outbox() > 0")   # globals can re-init under load
     n = await p.evaluate("window.__apData.events()");
     check(n >= 8 and await p.evaluate("window.__apSync.outbox()") == n, f'[sync] airplane mode: {n} events logged, all waiting in the outbox')
     h0 = await p.evaluate("window.__apData.hash()")
@@ -480,7 +525,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('bag', lambda: bag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)
