@@ -1,0 +1,33 @@
+// Control mutations shared by the lane, tune sheet, miss buttons and lines. Engine is untouched.
+import { S, RANGES } from './engine.js';
+import { app, saveState, emit, logShot, scheduleSync } from './store.js';
+import { balls } from './data.js';
+const clamp = (k, v) => { const [lo, hi, st] = RANGES[k]; return +Math.max(lo, Math.min(hi, Math.round(v / st) * st)).toFixed(2); };
+export const target = () => +(+S.release - +S.aim).toFixed(1);           // board at the arrows (1 board per degree of aim, v1 rule)
+export const snapshot = () => ({ ...S, ball: app.ball.id });
+export function restore(s) { const b = balls.find(x => x.id === s.ball); if (b) app.ball = b; for (const k of Object.keys(S)) if (k in s) S[k] = s[k]; saveState(); emit('state', { animate:true }); }
+export function adjust(ch, { animate = false } = {}) {
+  const t0 = target();
+  if ('release' in ch) { S.release = clamp('release', ch.release); if (ch.keepTarget) S.aim = clamp('aim', S.release - t0); }
+  if ('target' in ch) S.aim = clamp('aim', S.release - ch.target);
+  if ('aim' in ch) S.aim = clamp('aim', ch.aim);
+  for (const k of ['speed', 'rev', 'oil']) if (k in ch) S[k] = clamp(k, ch[k]);
+  if ('finish' in ch) S.finish = ch.finish; if ('pattern' in ch) S.pattern = ch.pattern;
+  saveState(); emit('state', { animate });
+}
+export function setBall(b) { if (!b || b.id === app.ball.id) return; app.ball = b; saveState(); emit('ball'); emit('state', { animate:true }); scheduleSync(); }
+// One-tap miss moves. Left/Right: 2-and-1 rule (feet 2 boards, target 1 board toward the miss -> aim +-1).
+// High/Light: +-0.5 mph (app choice, see docs/DECISIONS.md). Returns {before, label} for the undo toast.
+export const MISSES = {
+  left:  { label:'Left',  move:'Feet 2 left, eyes 1 left',  apply:() => ({ release:S.release + 2, aim:S.aim + 1 }) },
+  right: { label:'Right', move:'Feet 2 right, eyes 1 right', apply:() => ({ release:S.release - 2, aim:S.aim - 1 }) },
+  high:  { label:'High',  move:'Speed up 0.5 mph',           apply:() => ({ speed:S.speed + 0.5 }) },
+  light: { label:'Light', move:'Slow down 0.5 mph',          apply:() => ({ speed:S.speed - 0.5 }) },
+};
+export function miss(kind) {
+  const before = snapshot(), m = MISSES[kind]; const ch = m.apply();
+  adjust(ch, { animate:true });
+  const after = snapshot(); logShot(kind, before, after);
+  const same = ['release','aim','speed'].every(k => before[k] === after[k]);
+  return { before, after, text: same ? `${m.label}: already at the limit` : m.move };
+}
