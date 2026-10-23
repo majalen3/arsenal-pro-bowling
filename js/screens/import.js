@@ -5,6 +5,9 @@ import { ready, addMany, undoImport, proj, hydrateMirror } from '../hub.js';
 import { migrateV0 } from '../data/migrate.js';
 import { deviceId } from '../store.js';
 import { readBackup, restoreBackup } from '../data/backup.js';
+import { planCsv } from '../data/importer.js';
+import { FIELDS, RUBY_PRESET, presetFor, savePreset } from '../data/csv.js';
+import { objGet, lsSet } from '../store.js';
 const MAX = 10 * 1024 * 1024;
 export const handlers = [];
 handlers.push({
@@ -26,6 +29,83 @@ handlers.push({
       commitLabel: r.counts.new ? `Restore ${r.counts.new} events` : 'Nothing new to restore', canCommit: r.counts.new > 0,
       async commit() { const x = await restoreBackup(db, r); hydrateMirror(); return `${x.added} events restored`; },
     };
+  },
+});
+export async function sha256Hex(buf) {
+  if (!(globalThis.crypto && crypto.subtle)) return null;
+  const d = await crypto.subtle.digest('SHA-256', buf); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+const PRESETS = 'ap_import_presets';
+const presetStore = { get: () => objGet(PRESETS) || {}, set: v => lsSet(PRESETS, v) };
+const AT = [['', 'Where was it measured?'], ['release', 'At release'], ['launch', 'At launch (first feet)'], ['average', 'Average down the lane'], ['impact', 'At the pins (impact)'], ['unknown', 'Not sure (kept as unknown)']];
+const SHAPES = { wide: 'Game 1 / Game 2 \u2026 columns', score: 'One score per row', frames: 'Frame-by-frame rows (scored with USBC rules)', plain: 'Plain list of scores' };
+handlers.push({
+  id: 'csv', match: (f, head) => /\.(csv|txt|tsv)$/i.test(f.name) && !/^%PDF/.test(head),
+  async preview(f, ctx) {
+    const db = await ready(); const buf = await f.arrayBuffer();
+    const text = new TextDecoder('utf-8').decode(buf), sha256 = await sha256Hex(buf);
+    const st = { mapping: null, speedUnit: null, speedAt: null, picks: {}, preset: null };
+    const first = planCsv({ text, fileName: f.name, size: f.size, sha256, P: proj(), deviceId: ctx.deviceId });
+    if (!first.headers) return { error: first.errors[0] || 'That CSV has no rows. Nothing was imported.' };
+    st.preset = presetFor(first.headers, presetStore); if (st.preset) st.mapping = Object.assign({}, st.preset.mapping);
+    const pv = { title: 'Import CSV', kind: 'csv' };
+    const build = () => {
+      const plan = planCsv({ text, fileName: f.name, size: f.size, sha256, mapping: st.mapping, speedUnit: st.speedUnit, speedAt: st.speedAt, picks: st.picks, P: proj(), deviceId: ctx.deviceId, importId: first.importId });
+      st.mapping = plan.mapping; st.speedUnit = plan.speedUnit;
+      const c = plan.counts, warns = [];
+      if (plan.dup) warns.push({ code: 'DUPLICATE', text: plan.dup.by === 'file' ? 'You already imported this exact file. Undo the earlier import first if you want to bring it in again.' : 'The same rows are already imported from another file. Importing again would double-count them.' });
+      for (const e of plan.errors.slice(0, 5)) warns.push({ code: 'ROW', text: e });
+      for (const i of plan.issues.slice(0, 5)) warns.push({ code: i.level === 'error' ? 'ROW' : 'CHECK', text: i.text });
+      const more = plan.errors.length + plan.issues.length - 10; if (more > 0) warns.push({ code: 'MORE', text: `${more} more row notes not shown.` });
+      if (plan.needsSpeedAt) warns.push({ code: 'SPEED_AT', text: 'Pick where the speed was measured. Release, launch and impact speeds differ by 1\u20133 mph.' });
+      if (plan.unconfirmed.length) warns.push({ code: 'BALL_CONFIRM', text: `Confirm ${plan.unconfirmed.length} ball name${plan.unconfirmed.length > 1 ? 's' : ''} below.` });
+      Object.assign(pv, {
+        summary: plan.mode === 'release' ? [`${c.rows} rows \u00b7 ${c.accepted} ready \u00b7 ${c.rejected} with errors (skipped)`, 'Release numbers stay as measurements until you accept them on Tonight.']
+          : [`${SHAPES[plan.shape] || plan.shape}`, `${c.games} games in ${c.sessions} session${c.sessions === 1 ? '' : 's'} \u00b7 ${c.rejected} row${c.rejected === 1 ? '' : 's'} skipped`],
+        warnings: warns, canCommit: plan.canCommit, importId: plan.importId,
+        commitLabel: plan.dup ? 'Already imported' : plan.canCommit ? `Import ${plan.mode === 'release' ? c.accepted + ' rows' : c.games + ' games'}` : 'Finish the checks above',
+        async commit() { const a = await addMany(plan.events); return `${a.length - 1} records imported from ${f.name}`; },
+        plan,
+      });
+    };
+    pv.body = repaint => {
+      const plan = pv.plan, wrap = h('div', { class: 'stack', id: 'csvMap' });
+      wrap.append(h('div', { class: 'row between' }, h('h3', { class: 'section-title', text: 'Columns' }), st.preset ? h('span', { class: 'pill', id: 'csvPreset', text: 'Saved mapping applied' }) : null));
+      if (plan.mode === 'scores' && !st.showMap) {
+        wrap.append(h('p', { class: 'small', id: 'csvShape', text: `Read as: ${SHAPES[plan.shape] || plan.shape}. Columns: ${plan.headers.filter(Boolean).join(', ')}.` }),
+          h('button', { class: 'btn sm ghost', id: 'csvShowMap', onclick: () => { st.showMap = true; repaint(); } }, 'These are release numbers, map columns'));
+      } else {
+      const opts = [['', 'Ignore']].concat(Object.entries(FIELDS).map(([k, v]) => [k, v.label]));
+      plan.headers.forEach((hd, i) => {
+        const id = 'csvCol' + i, sel = h('select', { id, 'data-col': i, onchange: () => { const m = Object.assign({}, st.mapping); if (sel.value) m[i] = sel.value; else delete m[i]; st.mapping = m; build(); repaint(); } }, ...opts.map(([v, t]) => h('option', { value: v, text: t, selected: (st.mapping[i] || '') === v })));
+        wrap.append(h('div', { class: 'kv' }, h('label', { for: id, class: 'small', text: hd || `Column ${i + 1}` }), sel));
+      });
+      if (Object.values(st.mapping).includes('speed')) {
+        const u = h('select', { id: 'csvUnit', onchange: () => { st.speedUnit = u.value; build(); repaint(); } }, ...['mph', 'kph', 'm/s'].map(x => h('option', { value: x, text: x, selected: st.speedUnit === x })));
+        const at = h('select', { id: 'csvAt', 'aria-required': 'true', onchange: () => { st.speedAt = at.value || null; build(); repaint(); } }, ...AT.map(([v, t]) => h('option', { value: v, text: t, selected: (st.speedAt || '') === v })));
+        wrap.append(h('div', { class: 'kv' }, h('label', { for: 'csvUnit', class: 'small', text: 'Speed unit' }), u), h('div', { class: 'kv' }, h('label', { for: 'csvAt', class: 'small', text: 'Speed measured' }), at));
+      }
+      }
+      const names = Object.values(plan.balls);
+      if (names.length) {
+        wrap.append(h('h3', { class: 'section-title', text: 'Balls' }));
+        names.forEach((b, i) => {
+          const id = 'csvBall' + i, top = b.candidates[0];
+          const sel = h('select', { id, 'data-ball': b.input, onchange: () => { st.picks[b.input] = sel.value === '-' ? undefined : sel.value; if (st.picks[b.input] === undefined) delete st.picks[b.input]; build(); repaint(); } },
+            b.confirmed ? null : h('option', { value: '-', text: 'Confirm\u2026', selected: true }),
+            ...b.candidates.map(c => h('option', { value: c.id, text: c.label, selected: b.confirmed && b.id === c.id })),
+            h('option', { value: '', text: 'Not in the list (keep the name only)', selected: b.confirmed && !b.id }));
+          const row = h('div', { class: 'stack', 'data-ball-row': b.input }, h('label', { for: id, class: 'small', text: b.confirmed ? `\u201c${b.input}\u201d` : `\u201c${b.input}\u201d \u2014 ${top ? top.label + '?' : 'no match in the catalog'}` }), sel);
+          if (!b.confirmed && top) row.append(h('button', { class: 'btn sm', 'data-yes': b.input, onclick: () => { st.picks[b.input] = top.id; build(); repaint(); } }, `Yes, ${top.label}`));
+          wrap.append(row);
+        });
+      }
+      wrap.append(h('div', { class: 'row wrap' },
+        h('button', { class: 'btn sm ghost', id: 'csvSavePreset', onclick: () => { savePreset(plan.headers, st.mapping, presetStore); st.preset = { mapping: st.mapping }; toast('Mapping saved for files with these columns'); repaint(); } }, 'Save this mapping'),
+        h('span', { class: 'pill', id: 'csvRuby', title: RUBY_PRESET.note, text: 'Ruby preset: needs a sample file' })));
+      return wrap;
+    };
+    build(); return pv;
   },
 });
 export function render({ query }) {

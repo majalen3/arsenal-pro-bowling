@@ -92,3 +92,8 @@ Each cycle: change → test → independent review → commit+push. Scores are 1
 * Fixed in passing: the dark theme's `--info-soft` token was missing its `;`, which voided `--shadow-1`.
 * sw v9 (new files in the shell).
 
+
+## D1 — Import pipeline (2026-10-23)
+- New: `js/data/csv.js` (RFC 4180 parser, delimiter sniff `,`/`;`/tab, BOM, formula-safe export, header auto-map + unit detection, header-fingerprint presets in `ap_import_presets`, HQ-style score shapes, `mapRows` with unit conversion + validators), `js/data/match.js` (normaliser ported from bowling-app-, alias index incl. owned balls, ambiguous aliases dropped), `js/data/importer.js` (plans, dedupe, ball resolution). `game.logged` added to the projection (`P.scores`, counts toward ball health when linked to a ball).
+- Import screen: CSV preview shows the detected shape, row errors, duplicate warning, ball confirmation ("Yes, Radical Rattler Big Bite"), column mapping for release files with speed unit + required measurement point, "Save this mapping", Ruby stub chip.
+- Targets: CSV/data suite 38/38 (28 new: RFC 4180 edges, BOM, `;`/tab, formula cells, 4 score shapes, presets, Ruby stub, matcher, nothing-before-commit, undo exact, re-import by file and by content, privacy grep); 1 000-row plan < 300 ms in Node (budget 1.5 s phone); e2e 150/150 incl. 15 new CSV checks at 360 px (axe 0 serious, 44 px, no overflow); engine equivalence 7 500/0; Lighthouse `#/import` 98/100/100/100.

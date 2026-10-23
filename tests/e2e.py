@@ -217,6 +217,50 @@ async def data_cycle(b):
     check(not errs, '[data] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
+CSV_WIDE = "Date,Ball,Game 1,Game 2,Game 3\r\n2026-10-18,Big Bite,201,188,=SUM(A1)\r\n2026-10-19,Ice Storm,150,,175\r\n"
+CSV_REL = "date;ball;speed (kph);rev rate\n2026-10-18;Hy-Road Pearl;27;240\n2026-10-18;Ice Storm;26,5;250\n"
+async def axe_ok(p, label):
+    await p.add_script_tag(url=BASE + 'tests/axe.min.js')
+    res = await p.evaluate("axe.run(document,{resultTypes:['violations']}).then(r=>r.violations.filter(v=>['serious','critical'].includes(v.impact)).map(v=>v.id+':'+v.nodes.length))")
+    check(not res, f'{label} axe serious/critical=0 {res}')
+async def csv_cycle(b):
+    # D1: CSV -> preview (nothing saved) -> confirm fuzzy ball -> commit -> duplicate detected -> undo -> importable again; release CSV needs speed point
+    import tempfile
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs)
+    d = tempfile.mkdtemp(); wide = os.path.join(d, 'league-scores.csv'); rel = os.path.join(d, 'release.csv')
+    open(wide, 'w').write(CSV_WIDE); open(rel, 'w').write(CSV_REL); await p.set_viewport_size({'width': 360, 'height': 780})
+    await p.goto(BASE); await p.evaluate(WIPE); await p.evaluate("localStorage.setItem('ap_prefs', JSON.stringify({onboarded:true}))")
+    await p.goto(BASE + '?csv#/import'); await p.wait_for_selector('#impPick'); await p.wait_for_function("window.__apData")
+    n0 = await p.evaluate("window.__apData.events()")
+    await p.set_input_files('#impFile', wide); await p.wait_for_selector('#impPreview[data-kind=csv]')
+    txt = await p.text_content('#impPreview')
+    check('4 games in 2 sessions' in txt and '1 row skipped' in txt, '[csv] wide shape detected: 4 games, formula cell skipped as a row error')
+    check(await p.query_selector('#impWarn li[data-code=BALL_CONFIRM]') is not None and await p.is_disabled('#impCommit'), '[csv] fuzzy "Big Bite" must be confirmed before import')
+    check(await p.evaluate("window.__apData.events()") == n0, '[csv] preview persists nothing')
+    check(await p.query_selector('#csvRuby') is not None, '[csv] Ruby preset stub shown (needs sample)')
+    await p.click('[data-yes="Big Bite"]'); await p.wait_for_function("!document.querySelector('#impCommit').disabled")
+    await axe_ok(p, '[csv] preview'); await p.wait_for_timeout(300)
+    small = await p.evaluate(SMALL); check(not small, f'[csv] preview targets >= 44px {small[:6]}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= w[0], f'[csv] preview no horizontal overflow {w}')
+    await shot(p, 'phone-csv-preview')
+    await p.click('#impCommit'); await p.wait_for_selector('#impDone')
+    n1 = await p.evaluate("window.__apData.events()"); check(n1 == n0 + 1 + 2 + 4, f'[csv] commit wrote import + 2 sessions + 4 games ({n1 - n0})')
+    h1 = await p.evaluate("window.__apData.hash()")
+    await p.set_input_files('#impFile', wide); await p.wait_for_selector('#impPreview')
+    check(await p.query_selector('#impWarn li[data-code=DUPLICATE]') is not None and await p.is_disabled('#impCommit'), '[csv] re-import of the same file detected and blocked')
+    await p.goto(BASE + '?u#/import'); await p.wait_for_selector('#impList [data-undo]')
+    await p.click('#impList [data-undo]'); await p.wait_for_timeout(400)
+    check(await p.evaluate("window.__apData.hash()") != h1, '[csv] undo from Past imports changes the projection back')
+    await p.set_input_files('#impFile', wide); await p.wait_for_selector('#impPreview')
+    check(await p.query_selector('#impWarn li[data-code=DUPLICATE]') is None, '[csv] after undo the same file can be imported again')
+    await p.set_input_files('#impFile', rel); await p.wait_for_selector('#csvAt')
+    check(await p.input_value('#csvUnit') == 'kph' and await p.is_disabled('#impCommit'), '[csv] kph detected from header; speed point required before import')
+    await p.select_option('#csvAt', 'release'); await p.wait_for_function("!document.querySelector('#impCommit').disabled")
+    check('2 ready' in await p.text_content('#impPreview'), '[csv] semicolon file with decimal comma parsed (2 rows ready)')
+    await p.click('#csvSavePreset'); check(await p.evaluate("Object.keys(JSON.parse(localStorage.getItem('ap_import_presets')||'{}')).length") == 1, '[csv] mapping preset saved by header fingerprint')
+    check(not errs, '[csv] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
 async def offline(b):
     errs = []; c = await ctx_for(b, 'phone', service_workers='allow'); p = await page(c, errs)
     await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ballBtn')
@@ -234,7 +278,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

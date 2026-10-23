@@ -18,7 +18,7 @@ function lww(target, stamps, fields, e) {
 export function project(events) {
   const evs = events.filter(e => e && e.type).slice().sort(order);
   const { ids: voided, imps } = voidedSet(evs);
-  const P = { bowler: {}, owned: {}, lines: {}, notes: [], surface: [], service: [], shots: [], sessions: {}, centers: {}, bags: {}, aggregates: [], measurements: [], imports: {}, gamesLogged: [] };
+  const P = { bowler: {}, owned: {}, lines: {}, notes: [], surface: [], service: [], shots: [], sessions: {}, centers: {}, bags: {}, aggregates: [], measurements: [], imports: {}, gamesLogged: [], scores: [] };
   const st = { bowler: {}, owned: {}, sessions: {}, centers: {}, bags: {} };
   for (const e of evs) {
     if (voided.has(e.id) || e.type === 'event.voided' || e.type === 'import.voided') continue;
@@ -33,6 +33,7 @@ export function project(events) {
       case 'ball.surfaceLogged': P.surface.push(Object.assign({ id: e.id, ts: e.ts }, d)); break;
       case 'ball.serviced': P.service.push(Object.assign({ id: e.id, ts: e.ts }, d)); break;
       case 'ball.gamesLogged': P.gamesLogged.push(Object.assign({ id: e.id, ts: e.ts }, d)); break;
+      case 'game.logged': P.scores.push(Object.assign({ id: e.id, ts: e.ts, importId: e.importId || null }, d)); break;
       case 'shot.logged': P.shots.push(Object.assign({ id: e.id, ts: e.ts, importId: e.importId || null }, d)); break;
       case 'session.created': if (!P.sessions[id]) { P.sessions[id] = { id, ts: e.ts }; st.sessions[id] = {}; } lww(P.sessions[id], st.sessions[id], d, e); break;
       case 'session.edited': if (P.sessions[id]) lww(P.sessions[id], st.sessions[id], d.fields, e); break;
@@ -61,6 +62,7 @@ export function healthOf(P) {
   const out = {};
   const used = {};   // ballId → [ts of each game]
   for (const g of P.games) for (const b of g.balls) (used[b] = used[b] || []).push(g.ts);
+  for (const x of P.scores) if (x.ballId) (used[x.ballId] = used[x.ballId] || []).push(x.ts);
   for (const x of P.gamesLogged) if (x.ballId) for (let i = 0; i < (x.games | 0); i++) (used[x.ballId] = used[x.ballId] || []).push(x.ts);
   const ids = new Set([...Object.keys(used), ...P.service.map(s => s.ballId).filter(Boolean)]);
   for (const b of ids) {
