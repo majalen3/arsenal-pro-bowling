@@ -178,7 +178,10 @@ export function coachLine(name, benchName, a, dl, own) {
   const s = Math.abs(dl.skid) < 0.5 ? `about the same length as ${benchName}` : dl.skid > 0 ? `${Math.abs(dl.skid)} ft longer than ${benchName}` : `${Math.abs(dl.skid)} ft earlier than ${benchName}`;
   const ang = dl.angle == null || Math.abs(dl.angle) < 0.3 ? '' : dl.angle > 0 ? `, ${dl.angle}\u00b0 more entry angle` : `, ${Math.abs(dl.angle)}\u00b0 less entry angle`;
   const tail = own && !own.none ? ` Its own model line is ${own.feet} at the feet to ${own.target} at the arrows.` : ' No strike line in the model on this preset.';
-  return `${name} reads ${s}${ang} on the same release.` + tail;
+  // Adding the benchmark itself: compare it with the app's reference row instead of "X reads like X".
+  const same = canon(name) === canon(benchName);
+  const sb = same ? s.replace(`than ${benchName}`, 'than the app reference row').replace(`as ${benchName}`, 'as the app reference row') : s;
+  return `${name} ${same ? 'at this weight reads' : 'reads'} ${sb}${ang} on the same release.` + tail;
 }
 // ---- Bag placement: strength × shape cell, overlaps with owned balls, holes it fills or leaves.
 export function placement(cat, items) {
