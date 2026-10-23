@@ -476,3 +476,15 @@ noscript p{padding:24px}
 .checks .st.ok{color:var(--good)} .checks .st.warn{color:var(--warn)} .checks .st.na{color:var(--text-3)}
 .slot{display:flex;align-items:center;gap:var(--s2);min-height:var(--tap)}
 .slot .grow{min-width:0;overflow:hidden;text-overflow:ellipsis}
+/* Add a ball (#/add-ball): phase bars + comparison table + grid tags. Tokens only. */
+.phrow{display:grid;grid-template-columns:minmax(0,7.5em) 1fr;gap:var(--s2);align-items:center;margin:4px 0}
+.phrow>.small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.phbar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--surface-3)}
+.phbar i,.phkey i{display:block;height:100%}
+.phbar .sk,.phkey .sk{background:var(--info)} .phbar .hk,.phkey .hk{background:var(--accent)} .phbar .rl,.phkey .rl{background:var(--good)}
+.phkey i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 8px;vertical-align:middle}
+.abtable th,.abtable td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right}
+.abtable th[scope=row],.abtable thead th:first-child{text-align:left;color:var(--text-2);font-weight:600}
+.grid5 .gtag{display:block;font-size:var(--fs-xs);line-height:1.15;text-align:center;color:var(--text-2)}
+.grid5 .gtag.over{color:var(--warn)} .grid5 .gtag.new{color:var(--accent-ink);font-weight:800}
+.srclink{display:inline-flex;align-items:center;min-height:var(--tap)}

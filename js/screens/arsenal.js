@@ -55,7 +55,7 @@ export function render() {
   search.oninput = () => { st.q = search.value; draw(); };
   drawChips(); draw();
   const el = h('section', { class:'screen list-screen' },
-    h('header', { class:'appbar' }, h('h1', { class:'title', text:'Arsenal' }), h('div', { class:'appbar-actions' }, h('a', { class:'btn ghost sm', href:'#/arsenal/insights' }, 'Insights'))),
+    h('header', { class:'appbar' }, h('h1', { class:'title', text:'Arsenal' }), h('div', { class:'appbar-actions' }, h('a', { class:'btn primary sm', id:'arsAdd', href:'#/add-ball' }, 'Add ball'), h('a', { class:'btn ghost sm', href:'#/arsenal/insights' }, 'Insights'))),
     h('div', { class:'list-tools' }, search, chips, count), sugg, grid, tray);
   return { el, title:'Arsenal' };
 }

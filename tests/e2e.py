@@ -387,6 +387,71 @@ async def bag_cycle(b):
     check(not errs, '[bag] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
+FX = os.path.join(os.path.dirname(__file__), 'data', 'fixtures')
+def fx(n): return open(os.path.join(FX, n)).read()
+async def addball_cycle(b):
+    # Add a ball: name -> maker lookup (mocked from real parsed responses) -> confirm with source chips -> engine card vs
+    # Rattler Big Bite on tonight's pattern -> grid placement -> save as benched. Plus candidates, spec TBD and offline paths.
+    errs = []; c = await ctx_for(b, 'phone'); calls = []; mode = {'off': False}
+    async def look(route):
+        from urllib.parse import urlparse, parse_qs
+        qs = parse_qs(urlparse(route.request.url).query); calls.append(qs)
+        if mode['off']: return await route.abort()
+        name = (qs.get('name') or [''])[0].lower(); url = (qs.get('url') or [''])[0]
+        f = 'lookup-prism-hybrid.json' if url.endswith('prism-hybrid') else 'lookup-phaze-ii.json' if 'phaze' in name else 'lookup-prism.json' if 'prism' in name else 'lookup-rattler-big-bite.json' if 'rattler big bite' in name else None
+        if not f: return await route.fulfill(status=200, content_type='application/json', body=json.dumps({'status': 'not_found', 'why': 'No maker page matched.'}))
+        await route.fulfill(status=200, content_type='application/json', headers={'access-control-allow-origin': '*'}, body=fx(f))
+    await c.route('**/arsenal-pro-api.onrender.com/api/spec-lookup**', look)
+    p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.goto(BASE + '?ab#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnBagLink')
+    await p.goto(BASE + '?ab#/arsenal'); await p.click('#arsAdd'); await p.wait_for_selector('#abQ')
+    check(await p.query_selector('#tabs a[href="#/arsenal"][aria-current=page]') is not None, '[addball] reached from Arsenal (Add ball)')
+    taps = 0
+    await p.fill('#abQ', 'Storm Phaze II'); await p.wait_for_selector('#abNoMatch')
+    check(await p.get_attribute('#abMaker', 'disabled') is None, '[addball] not in catalogue -> maker lookup offered (brand detected)')
+    await p.click('#abMaker'); taps += 1; await p.wait_for_selector('#abConfirm'); await p.wait_for_selector('#abStatus[data-state=found]')
+    q = calls[-1]; check(q.get('brand') == ['Storm'] and q.get('name') == ['Phaze II'], f'[addball] lookup called with brand + model {q}')
+    rg = await p.text_content('#abFields [data-f=rg]'); check('2.480' in rg and 'www.stormbowling.com spec' in rg and 'other weight' in rg, f'[addball] RG from the maker with chip; 15 lb default flags the 16 lb value [{rg}]')
+    check('spec TBD' in await p.text_content('#abFields [data-f=intDiff]'), '[addball] unprinted field reads "spec TBD"')
+    check(await p.get_attribute('#abSource a', 'href') == 'https://www.stormbowling.com/storm-phaze-ii-bowling-ball', '[addball] source URL + read date shown')
+    await p.click('#abConfirm [data-v="16"]'); taps += 1; await p.wait_for_function("() => !document.querySelector('#abFields [data-f=rg]').textContent.includes('other weight')")
+    check('16 lb' in await p.text_content('#abFields [data-f=rg]'), '[addball] weight 16 -> weight-specific value, no mismatch flag')
+    ms = float(await p.text_content('#abMs')); coach = await p.text_content('#abCoach')
+    check(ms < 1000, f'[addball] engine card in {ms} ms (< 1 s on a phone profile)')
+    check(coach.startswith('Phaze II') and coach.count('. ') <= 1, f'[addball] coach line starts with the ball name, <= 2 sentences [{coach}]')
+    t = await p.text_content('#abTable'); check(all(k in t for k in ['Skid', 'Hook', 'Roll', 'Breakpoint', 'Entry angle']), '[addball] skid/hook/roll, breakpoint, entry angle vs bench')
+    check('Rattler Big Bite' in await p.text_content('#abEngine'), '[addball] compared against Rattler Big Bite')
+    await p.wait_for_selector('#abLevel'); await p.click('#abLevel [data-v="5"]'); taps += 1; await p.wait_for_selector('#abNew')
+    why = await p.text_content('#abWhy'); check('Phaze II' in why, f'[addball] grid placement + overlap/hole note [{why}]')
+    await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())")
+    await axe_ok(p, '[addball] confirm + engine'); await p.wait_for_timeout(200)
+    small = await p.evaluate(SMALL); check(not small, f'[addball] targets >= 44px {small[:6]}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= w[0], f'[addball] no horizontal overflow at 360 {w}')
+    await p.evaluate("() => window.scrollTo(0, 0)"); await shot(p, 'phone-addball-confirm')
+    await p.evaluate("() => document.querySelector('#abEngine').scrollIntoView()"); await shot(p, 'phone-addball-engine')
+    await p.evaluate("() => document.querySelector('#abPlace').scrollIntoView()"); await shot(p, 'phone-addball-grid')
+    await p.click('#abSave'); taps += 1; await p.wait_for_selector('#bagGrid')
+    check(taps <= 4, f'[addball] type + {taps} taps to a saved ball')
+    n = await p.evaluate("() => [...document.querySelectorAll('#bagBalls [data-ball]')].filter(x => x.dataset.ball.startsWith('own-add-storm-phaze-ii')).length")
+    check(n == 1, f'[addball] saved as an owned (benched) ball; Bag lists it ({n})')
+    await p.reload(); await p.wait_for_selector('#bagGrid')
+    n = await p.evaluate("() => [...document.querySelectorAll('#bagBalls [data-ball]')].filter(x => x.dataset.ball.startsWith('own-add-storm-phaze-ii')).length"); check(n == 1, '[addball] persists across reload (ownedBall.created event)')
+    # candidates on the maker site -> pick -> spec TBD (no engine run)
+    await p.click('#bagAdd'); await p.wait_for_selector('#abQ'); await p.fill('#abQ', 'Brunswick Prism'); await p.click('#abMaker'); await p.wait_for_selector('#abMakerCands')
+    await p.click('#abMakerCands [data-url$="prism-hybrid"]'); await p.wait_for_selector('#abStatus[data-state=found]')
+    check(await p.query_selector('#abNoEngine') is not None and 'spec TBD' in await p.text_content('#abFields [data-f=rg]'), '[addball] maker page without RG/diff -> "spec TBD", no engine run')
+    # exact catalogue match -> lookup -> 16 lb shows the catalogue/maker conflict
+    await p.fill('#abQ', 'Rattler Big Bite'); await p.click('#abList [data-pick="rattler-big-bite"]'); await p.wait_for_selector('#abStatus[data-state=found]')
+    check(await p.query_selector('#abConflicts') is None, '[addball] Big Bite at 15 lb: app catalogue = maker 15 lb row (no conflict)')
+    await p.click('#abConfirm [data-v="16"]'); await p.wait_for_selector('#abConflicts [data-conflict=rg]')
+    check('2.493' in await p.text_content('#abConflicts'), '[addball] 16 lb: maker 2.493 vs catalogue 2.480 shown, maker used')
+    await axe_ok(p, '[addball] conflict'); await p.wait_for_timeout(200)
+    # offline: catalogue values + Retry
+    mode['off'] = True; await p.fill('#abQ', 'Hammer Blacklist'); await p.click('#abList [data-pick="sc-hammer-blacklist"]'); await p.wait_for_selector('#abRetry')
+    check('catalog' in await p.text_content('#abFields [data-f=rg]') and 'Offline' in await p.text_content('#abStatus'), '[addball] offline: catalogue values with "catalog" chip + Retry')
+    check(not errs, '[addball] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
 async def quicklog_cycle(b):
     # CC1: strike = 1 tap, one-pin spare = 3 taps, splits flagged with 3-6-9 per leave, triggers, undo, 10th frame,
     # and 0 throws lost when the tab is killed right after the screen moves on (IndexedDB).
@@ -525,7 +590,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('bag', lambda: bag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

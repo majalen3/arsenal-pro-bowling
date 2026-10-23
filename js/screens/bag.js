@@ -17,7 +17,7 @@ export async function render() {
   await ready();
   const body = h('div', { class: 'stack', id: 'bagBody' });
   const el = h('section', { class: 'screen list-screen', id: 'bag' },
-    h('header', { class: 'appbar' }, h('button', { class: 'btn ghost', id: 'bagBack', 'aria-label': 'Back to Tonight', onclick: () => go('#/tonight') }, '\u2039 Tonight'), h('h1', { class: 'title', text: 'Bag' })), body);
+    h('header', { class: 'appbar' }, h('button', { class: 'btn ghost', id: 'bagBack', 'aria-label': 'Back to Tonight', onclick: () => go('#/tonight') }, '\u2039 Tonight'), h('h1', { class: 'title', text: 'Bag' }), h('div', { class: 'appbar-actions' }, h('a', { class: 'btn ghost sm', id: 'bagAdd', href: '#/add-ball' }, 'Add ball'))), body);
   let bagId = null, swapFrom = null, proposal = null, careId = null;
   const itemOf = (P, id) => { const o = P.owned[id]; if (!o) return null; const c = catOf(o.catalogId);
     return { ownedId: id, catalogId: o.catalogId || null, name: short(o.name || (c && c.name)), benchmark: !!o.benchmark, status: o.status || 'inBag', note: o.note || null }; };

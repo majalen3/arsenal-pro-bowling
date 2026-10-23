@@ -169,3 +169,24 @@ Each cycle: change → test → independent review → commit+push. Scores are 1
 
 - Fixed a flaky `[sync]` step: under load, the page globals re-initialise after the import commit, so the test now waits for `__apSync` before reading the outbox.
 - Screenshot: `phone-bag.png`.
+
+## AB — Add a ball + auto spec lookup + engine card (2026-10-23)
+- Flow (`#/add-ball`, 360 px first): type a name → catalogue match (or "Look up on the {brand} site") → confirm spec with a source chip on every field ("spec TBD" for gaps; maker vs catalogue conflicts listed) → engine card vs Rattler Big Bite on tonight's pattern and release → bag-grid placement with overlap/hole notes → Save (benched, owned).
+- Targets:
+
+| Target | Result |
+|---|---|
+| Match rate, 50 real names | 50/50 top-1, 50/50 top-6, 0 false "exact" (`addball.test.mjs`; not a blind set) |
+| Lookup time (live API) | cold 0.6–2.1 s, cached 0.02–0.12 s |
+| Invented specs | 0 (every value traced to the parsed source in fixtures) |
+| Engine card | 6–8 ms in e2e at the phone profile (< 1 s) |
+| Taps | type + 4 taps to a saved ball (lookup, weight, level, save) |
+| Full e2e | 243/0 |
+| e2e `[addball]` | 24/24 (axe 0 serious ×2, 44 px, no overflow at 360, persists across reload, offline path) |
+| Unit tests | all suites 131/0 (addball 7/7) |
+| Engine | 7 500/0 |
+| Lighthouse `#/add-ball` | 99/100/100/100 |
+| Service worker | v16 |
+
+- Fixes during the cycle: brand-word false matches (see DECISIONS 24); the typed model name keeps its case ("Phaze II", not "Phaze Ii"); the source link gets a 44 px target; the weight picker always offers 12–16 lb.
+- Screenshots: `phone-addball-confirm.png`, `phone-addball-engine.png`, `phone-addball-grid.png`.
