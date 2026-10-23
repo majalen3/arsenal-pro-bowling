@@ -2,16 +2,17 @@
 // Strength = app oil tag (rank.js levelOf). Shape = cover + core + diff proxy (rank.js angularity), an ESTIMATE (A).
 import { balls, coverKind } from '../data.js';
 import { levelOf, angularity, demandOf, bandOf, SRC } from './rank.js';
-const catOf = id => (id ? balls.find(b => b.id === id) || null : null);
+import { catOf } from './cats.js';
 export const SHAPES = ['smooth', 'medium', 'angular'];
 export const LEVEL_NAME = { 5: 'Heavy', 4: 'Med-heavy', 3: 'Medium', 2: 'Med-light', 1: 'Light' };
 export const SIZE = { league3: 2, league4: 3, tournament6: 5, custom: null };   // balls besides the spare
-export function cellOf(catalogId) {
-  const cat = catOf(catalogId), level = levelOf(cat), a = angularity(cat);
+export const cellOf = catalogId => cellOfCat(catOf(catalogId));
+export function cellOfCat(cat) {
+  const level = levelOf(cat), a = angularity(cat);
   return { cat, level, shape: a == null ? null : a <= 1 ? 'smooth' : a === 2 ? 'medium' : 'angular', tbd: level == null };
 }
 // item: {ownedId, catalogId, name, benchmark, status}
-const decorate = it => Object.assign({}, it, cellOf(it.catalogId));
+const decorate = it => Object.assign({}, it, it.cat ? cellOfCat(it.cat) : cellOf(it.catalogId));   // it.cat: a not-yet-saved ball (add-ball preview)
 export function overlaps(items) {
   const xs = items.map(decorate).filter(x => !x.tbd), out = [];
   for (let i = 0; i < xs.length; i++) for (let j = i + 1; j < xs.length; j++) {

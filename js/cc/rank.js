@@ -5,7 +5,7 @@ export const SRC = {
   bowl: 'bowl.com (F)', motiv: 'Motiv (F)', btm: 'BTM (F)', storm: 'Storm (F)', br: "Bowler's Review (F)", usbc: 'USBC (F)',
   tag: 'app tag', spec: 'maker spec', team: 'team rule (A)', you: 'you reported', model: '2-D model estimate', assumed: 'assumed',
 };
-const catOf = id => (id ? balls.find(b => b.id === id) || null : null);
+import { catOf } from './cats.js';
 // ---- Step 3: ball strength 1-5 from the app oil tag (no manufacturer condition field is held for these balls).
 const TAG_LEVEL = { heavy: 5, 'heavy/medium': 4, 'medium/heavy': 4, medium: 3, 'medium/light': 2, 'light/medium': 2, light: 1 };
 export function levelOf(cat) {

@@ -6,7 +6,7 @@ import { ready, proj, add } from '../hub.js';
 import { balls } from '../data.js';
 import * as G from '../cc/bag.js';
 import { SRC } from '../cc/rank.js';
-const catOf = id => (id ? balls.find(b => b.id === id) || null : null);
+import { catOf } from '../cc/cats.js';
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
 const prov = (p, t) => h('span', { class: 'prov', 'data-prov': p || null, text: t });
 const SRC_PROV = { [SRC.assumed]: 'assumed', [SRC.usbc]: 'usbc', [SRC.tag]: 'catalog', [SRC.you]: null };

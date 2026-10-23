@@ -1,0 +1,22 @@
+{
+  "_about": "50 real ball names as a bowler would type them. expect: catalog id | [ids in a colourway family, no exact allowed] | null (not in the catalogue: no exact allowed, go to maker lookup).",
+  "names": [
+    ["Rattler Big Bite", "rattler-big-bite"], ["radical rattler big bite 15 lb", "rattler-big-bite"], ["Deadly Rattler", "deadly-rattler"],
+    ["Radical Rattler", "rattler"], ["Rattler NU", "rattler-nu"], ["Storm Super Nova", "super-nova"], ["Supernova", "super-nova"],
+    ["Hy-Road Pearl", "hy-road-pearl"], ["hyroad pearl", "hy-road-pearl"], ["Original Hy-Road", "hy-road"], ["Hy Road Solid", "hy-road-solid"],
+    ["Hy-Road X", "hy-road-x"], ["Hy Road 40", "hy-road-40"], ["Astrophysix", "astrophysix"], ["Storm Ice Storm", "ice-storm"],
+    ["Radical Innovator", "innovator"], ["Bigfoot Hybrid", "bigfoot-hybrid"], ["900 Global Ordnance C4", "ordnance-c4"], ["Ordnance C-4", "ordnance-c4"],
+    ["Guru Supreme", "guru-supreme"], ["Counter Attack Solid", "counter-attack"], ["Trail Blazer", "trailblazer"], ["Conspiracy Pearl", "conspiracy-pearl"],
+    ["Scout Reactive", "green-scout"], ["Raw Hammer Black", "raw-hammer"],
+    ["Brunswick Combat Solid", "sc-brunswick-combat-solid"], ["DV8 Smooth Criminal", "sc-dv8-smooth-criminal"], ["Hammer Blacklist", "sc-hammer-blacklist"],
+    ["Hamer Blacklist", "sc-hammer-blacklist"], ["Hammer Zero Mercy Tour", "sc-hammer-zero-mercy-tour"], ["Storm Typhoon", "sc-storm-typhoon"],
+    ["Roto Grip Wicked Gremlin", "sc-roto-grip-wicked-gremlin"], ["rotogrip perfect gem", "sc-roto-grip-perfect-gem"], ["Track Theorem Delta", "sc-track-theorem-delta"],
+    ["Ebonite The Great One", "sc-ebonite-the-great-one"], ["Radical Intel Tour", "sc-radical-intel-tour"], ["Motiv Jackal Ghost V2", "sc-motiv-jackal-ghost-v2"],
+    ["Storm Equinox Hybrid", "sc-storm-equinox-hybrid"], ["SWAG Fusion Pearl", "sc-swag-fusion-pearl"], ["Storm Ion Pro Pearl", "sc-storm-ion-pro-pearl"],
+    ["900 Global Portal", "sc-900-global-portal"],
+    ["Raw Hammer", ["raw-hammer", "sc-hammer-raw-hammer-black-grey", "sc-hammer-raw-hammer-black-purple-teal", "sc-hammer-raw-hammer-blue-black-orange", "sc-hammer-raw-hammer-red-smoke-black", "sc-hammer-raw-hammer-red-white-purple", "sc-hammer-raw-hammer-smoke-blue-gold"]],
+    ["Storm Tropical Surge", ["sc-storm-tropical-surge-apple-kiwi-avocado", "sc-storm-tropical-surge-black-blue-pink", "sc-storm-tropical-surge-black-cherry", "sc-storm-tropical-surge-emerald-charcoal", "sc-storm-tropical-surge-gold-bronze-medallion", "sc-storm-tropical-surge-purple", "sc-storm-tropical-surge-teal-blue"]],
+    ["Storm Phaze II", null], ["Roto Grip Attention Star", null], ["Hammer Black Widow Black Gold", null], ["DV8 Hater", null],
+    ["Track Kinetic Emerald", null], ["Ebonite Game Breaker 4", null], ["Brunswick Prism", null]
+  ]
+}

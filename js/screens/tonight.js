@@ -10,7 +10,7 @@ import { balls, specOK } from '../data.js';
 import * as R from '../cc/rank.js';
 import { modelLine } from '../cc/model.js';
 import { loadIndex } from '../patdata.js';
-const catOf = id => balls.find(b => b.id === id) || null;
+import { catOf } from '../cc/cats.js';
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
 const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
 const provChip = (prov, label) => h('span', { class: 'prov', 'data-prov': prov || null, text: label });

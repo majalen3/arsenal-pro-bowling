@@ -6,10 +6,11 @@ import { bestBackend, memoryBackend } from './data/idb.js';
 import { mkEvent, voidImport } from './data/events.js';
 import { seedEvents, SEED_ID } from './data/seed.js';
 import { LEGACY_KEYS } from './data/migrate.js';
+import { registerOwned } from './cc/cats.js';
 export let db = null;
 let readyP = null;
 export const ready = () => readyP || (readyP = init());
-export const proj = () => (db ? db.projection() : null);
+export const proj = () => { const P = db ? db.projection() : null; if (P) registerOwned(P); return P; };   // added balls resolve via cats.catOf
 async function init() {
   const t0 = performance.now();
   let be; try { be = await bestBackend(); } catch (e) { be = memoryBackend(); }
