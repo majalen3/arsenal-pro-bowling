@@ -26,7 +26,7 @@ export function render({ params }) {
       const W = r.width, H = r.height, L = 28, B = 18, cw = (W - L) / 39, rh = (H - B) / 60; c.fillStyle = lane; c.fillRect(L, 0, W - L, H - B);
       g.forEach((row, y) => { for (let x = 1; x <= 39; x++) if (row[x]) { c.globalAlpha = 0.15 + 0.85 * row[x] / max; c.fillStyle = oil; c.fillRect(L + (39 - x) * cw, H - B - (y + 1) * rh, cw + 0.5, rh + 0.5); } });
       c.globalAlpha = 1; c.fillStyle = ink; c.font = '10px system-ui'; c.textAlign = 'right';
-      [0, 15, 30, 45, 60].forEach(f => c.fillText(f + '\u2032', L - 4, H - B - f * rh + 3));
+      [0, 15, 30, 45, 60].forEach(f => c.fillText(f + '\u2032', L - 4, Math.max(10, H - B - f * rh + 3)));
       c.textAlign = 'center'; [5, 10, 15, 20, 25, 30, 35].forEach(b => c.fillText(String(b), L + (39 - b + 0.5) * cw, H - 4));
       c.strokeStyle = ink; c.setLineDash([4, 3]); c.beginPath(); c.moveTo(L, H - B - ft * rh); c.lineTo(W, H - B - ft * rh); c.stroke(); c.setLineDash([]); }
     { const r = cb.getBoundingClientRect(), d = Math.min(3, devicePixelRatio || 1); cb.width = r.width * d; cb.height = r.height * d; const c = cb.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0);
@@ -42,14 +42,14 @@ export function render({ params }) {
       const steps = await loadSteps(slug); ft = p.ft || 0; g = grid(steps, ft);
       el.querySelector('.title').textContent = p.name; document.title = p.name + ' \u00b7 Arsenal Pro';
       const pre = nearestPreset(ft);
-      hm.setAttribute('aria-label', `Oil graph for ${p.name}: ${ft} feet, boards 1 to 39, brighter means more oil.`);
+      hm.setAttribute('aria-label', `Oil graph for ${p.name}: ${ft} feet, boards 1 to 39, brighter means more oil loads applied.`);
       cb.setAttribute('aria-label', 'Crossboard oil totals by board.');
       const stat = (k, v) => h('div', { class:'spec' }, h('div', { class:'spec-k', text:k }), h('div', { class:'spec-v num', text:v }));
       body.innerHTML = '';
       body.append(
         h('div', { class:'muted small', text:p.series || '\u00a0' }),
         h('div', { class:'spec-grid four' }, stat('Length', ft + ' ft'), stat('Ratio', p.ratio ? p.ratio + ':1' : '\u2014'), stat('Volume', p.ml ? p.ml + ' ml' : '\u2014'), stat('Rule of 31', ft ? `board ${Math.max(1, Math.round(ft - 31))}` : '\u2014')),
-        h('div', { class:'card' }, h('h2', { class:'card-title', text:'Oil graph' }), h('div', { class:'heat-wrap' }, hm), h('p', { class:'muted small', text:'Bowler\u2019s view: foul line at the bottom, board 1 on the right. Brighter = more oil. Dashed line = pattern end.' })),
+        h('div', { class:'card' }, h('h2', { class:'card-title', text:'Oil graph' }), h('div', { class:'heat-wrap' }, hm), h('p', { class:'muted small', text:'Bowler\u2019s view: foul line at the bottom, board 1 on the right. Brighter = more oil loads applied. Zero-load (buff) sections still get oil carried by the machine’s brush, so the oil runs out to the dashed pattern-end line.' })),
         h('div', { class:'card' }, h('h2', { class:'card-title', text:'Crossboard' }), h('div', { class:'cross-wrap' }, cb)),
         h('div', { class:'card' }, h('h2', { class:'card-title', text:'Bowl it' }),
           h('p', { text:`The lane model has six presets. Closest by length: ${PATTERN_LABEL[pre]} (${OIL_LEN[pre]} ft). This is an approximation, not this exact pattern.` }),

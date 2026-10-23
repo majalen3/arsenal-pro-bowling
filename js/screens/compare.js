@@ -35,7 +35,7 @@ export function render({ query }) {
   const table = h('table', { class:'cmp-table' }, h('caption', { class:'sr-only', text:'Ball comparison' }),
     h('thead', {}, h('tr', {}, h('th', { scope:'col' }, h('span', { class:'sr-only', text:'Spec' })), ...ps.map(b => h('th', { scope:'col', text:b.name })))),
     h('tbody', {}, ...rows.map(([k, fn, score]) => { const vals = ps.map((b, i) => fn(b, i)); const sc = score ? ps.map((b, i) => score(b, i)) : null; const min = sc ? Math.min(...sc) : null; const diff = new Set(vals).size > 1;
-      return h('tr', { class:diff ? 'differs' : 'same' }, h('th', { scope:'row', text:k }), ...vals.map((v, i) => h('td', { class:sc && sc[i] === min && diff ? 'best' : '' , text:v })); })));
+      return h('tr', { class:diff ? 'differs' : 'same' }, h('th', { scope:'row', text:k }), ...vals.map((v, i) => h('td', { class:sc && sc[i] === min && diff ? 'best' : '' , text:v }))); })));
   const el = h('section', { class:'screen compare' }, backBar('Compare', '#/arsenal'),
     h('p', { class:'muted small pad-x', text:`Same line for both: feet ${S.release}, ${S.speed} mph, ${S.rev} rpm on ${PATTERN_LABEL[S.pattern]}, ${FINISH_LABEL[S.finish]}. Highlighted rows differ; gold = closer to a strike.` }),
     h('div', { class:'cmp-cols n' + ps.length }, ...cols), h('div', { class:'table-wrap' }, table));

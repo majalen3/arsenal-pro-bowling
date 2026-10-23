@@ -67,6 +67,7 @@ body[data-tab=none] #view{padding-bottom:var(--s4)}
 
 /* ---- screen + app bar */
 .screen{animation:in var(--t-med) var(--ease)}
+@media (min-width:900px){.screen:not(.lane-screen):not(.compare){max-width:880px;margin-inline:auto}.screen.compare{max-width:1100px;margin-inline:auto}}
 @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .appbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:var(--s2);min-height:60px;padding:calc(var(--s2) + env(safe-area-inset-top)) var(--s4) var(--s2);background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 .appbar .title{font-size:var(--fs-xl);font-weight:800;letter-spacing:-.01em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

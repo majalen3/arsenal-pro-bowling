@@ -16,7 +16,7 @@ export function createLane(canvas, { onAdjust } = {}) {
   function resize() {
     const r = canvas.getBoundingClientRect(); if (!r.width || !r.height) return false;
     dpr = Math.min(window.devicePixelRatio || 1, 3); W = r.width; H = r.height;
-    pad.t = Math.max(10, Math.min(46, W * 0.17));
+    pad.t = Math.max(10, Math.min(46, W * 0.17)); pad.l = W < 180 ? 22 : 30;
     const cw = Math.round(W * dpr), ch = Math.round(H * dpr);
     if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
     return true;
