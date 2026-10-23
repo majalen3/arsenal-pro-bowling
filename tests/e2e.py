@@ -55,6 +55,15 @@ async def run(b, kind):
     await p.click('#ballSheet .brow:nth-child(4) .brow-main'); await p.wait_for_timeout(400)
     after = await p.text_content('.ball-btn-name')
     check(after != before and not await p.is_visible('#ballSheet'), t + f'J1 ball switch in 2 taps ({before} -> {after})')
+    # G1a quick-ball strip: 1 tap, current ball never listed, previous ball offered back
+    qn = await p.locator('#qballs .qball[data-ball]').count(); cur = await p.evaluate("JSON.parse(localStorage.getItem('ap_state')||'{}').ball")
+    ids = await p.eval_on_selector_all('#qballs .qball[data-ball]', 'es=>es.map(e=>e.dataset.ball)')
+    check(qn >= 3 and cur not in ids, t + f'quick-ball strip lists {qn} other balls, not the current one')
+    q0 = await p.text_content('#qballs .qball[data-ball] .qball-name'); await p.click('#qballs .qball[data-ball]'); await p.wait_for_timeout(400)
+    check((await p.text_content('.ball-btn-name')) == q0, t + f'1-tap ball switch from strip ({q0})')
+    check(after in await p.eval_on_selector_all('#qballs .qball[data-ball] .qball-name', 'es=>es.map(e=>e.textContent)'), t + 'previous ball offered first in strip')
+    await p.click('#qballs .qball[data-ball]'); await p.wait_for_timeout(300)
+    check((await p.text_content('.ball-btn-name')) == after, t + 'strip switches back in 1 tap')
     # J2 miss left: 1 tap, 2-and-1 rule, undo
     s0 = await p.evaluate("JSON.parse(localStorage.getItem('ap_state')||'null')") or {}
     rel0 = int(await p.text_content('#lineSum b')); await p.click('[data-miss=left]'); await p.wait_for_timeout(500)
@@ -67,6 +76,13 @@ async def run(b, kind):
     await p.click('#saveBtn'); await p.wait_for_timeout(600)
     lines = await p.evaluate("JSON.parse(localStorage.getItem('ap_lines')||'[]')")
     check(len(lines) == 1 and lines[0].get('synced') is False, t + 'J3 save line stored locally + queued')
+    # G1b back to saved line: hidden on the line, appears after a miss, 1 tap restores
+    check(not await p.is_visible('#backBtn'), t + 'back-to-saved hidden while on the saved line')
+    await p.click('[data-miss=right]'); await p.wait_for_timeout(400)
+    check(await p.is_visible('#backBtn') and lines[0]['name'] in (await p.get_attribute('#backBtn', 'aria-label')), t + 'back-to-saved appears after a change, named')
+    await p.click('#backBtn'); await p.wait_for_timeout(400)
+    st = await p.evaluate("JSON.parse(localStorage.getItem('ap_state')||'{}')")
+    check(float(st.get('release')) == lines[0]['release'] and float(st.get('aim')) == lines[0]['aim'] and not await p.is_visible('#backBtn'), t + 'J3 back to saved line in 1 tap (save, miss, back = 3 taps)')
     await p.click('#tabs a[href="#/sessions"]'); await p.wait_for_selector('.line-card')
     check(await p.locator('.line-card').count() == 1, t + 'saved line visible in Sessions'); await shot(p, f'{kind}-sessions')
     # load line from sessions -> lane

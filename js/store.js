@@ -21,7 +21,7 @@ export const status = { text: '', cls: '' };
 function setStatus(text, cls) { status.text = text; status.cls = cls || ''; emit('status', status); }
 
 // --- app state (ball + controls), persisted to ap_state exactly like v1 (string values)
-export const app = { ball: balls[0] };
+export const app = { ball: balls[0], lastLine: null };   // lastLine: {ballId,name} most recently saved/loaded (for 'Back to saved line')
 let stateT = null;
 export function saveState() { clearTimeout(stateT); stateT = setTimeout(() => { rawSet('ap_state', JSON.stringify({ ball:app.ball.id, speed:String(S.speed), rev:String(S.rev), release:String(S.release), aim:String(S.aim), oil:String(S.oil), finish:S.finish, pattern:S.pattern })); }, 300); }
 export function restoreState() {
@@ -65,6 +65,7 @@ export function applyLine(l) {
   const b = balls.find(x => x.id === l.ballId); if (b) app.ball = b;
   ['release','aim','speed','rev','oil'].forEach(k => { const v = +l[k]; if (Number.isFinite(v) && v >= RANGES[k][0] && v <= RANGES[k][1]) S[k] = v; });
   if (FINISHES.includes(l.finish)) S.finish = l.finish; if (PATTERNS.includes(l.pattern)) S.pattern = l.pattern;
+  app.lastLine = { ballId:l.ballId, name:l.name };
   saveState(); emit('state');
 }
 async function pushLine(l) {
@@ -76,7 +77,7 @@ async function pushLine(l) {
 export async function saveLine(name, note) {
   name = String(name || '').trim(); if (!name) return null;
   const l = { ...currentLine(name, note), updatedAt:Date.now(), synced:false };
-  const all = lsGet(LS.lines).filter(x => !(x.ballId === l.ballId && x.name === l.name)); all.push(l); lsSet(LS.lines, all);
+  const all = lsGet(LS.lines).filter(x => !(x.ballId === l.ballId && x.name === l.name)); all.push(l); lsSet(LS.lines, all); app.lastLine = { ballId:l.ballId, name:l.name };
   emit('lines'); setStatus('Saving\u2026');
   pushLine(l).then(() => { setStatus(memMode ? 'Saved (browser storage blocked: kept until this tab closes)' : 'Synced', 'ok'); retryN = 0; emit('lines'); })
     .catch(e => { setStatus(failStatus(e), 'off'); retryLater(e); });

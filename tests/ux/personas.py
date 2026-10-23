@@ -1,9 +1,12 @@
 """20-persona simulation for Arsenal Pro 2.0 (scripted agents, not real users). API blocked.
 Each persona: device/viewport, settings (hand, theme, reduced motion, text zoom, keyboard-only), one goal job.
 Pass = goal reached in <=3 taps (job core), no page errors, no horizontal overflow, every visited screen offers a way out."""
-import json, sys
+import json, sys, os
+from pathlib import Path
+HERE = Path(__file__).resolve().parent
+OUTD = Path(os.environ.get('AP_UX_OUT', HERE / 'out')); OUTD.mkdir(parents=True, exist_ok=True)
 from playwright.sync_api import sync_playwright
-BASE = sys.argv[1] if len(sys.argv) > 1 else 'http://127.0.0.1:8300/'
+BASE = sys.argv[1] if len(sys.argv) > 1 else os.environ.get('AP_BASE', 'http://127.0.0.1:8300/')
 P = [  # name, (w,h,mobile), prefs, goal
  ('League bowler, iPhone', (390,844,1), {}, 'miss'), ('New bowler, first launch', (390,844,1), {'fresh':1}, 'onboard'),
  ('Lefty tweener', (390,844,1), {'hand':'left'}, 'deck'), ('Two-hander, small phone', (360,740,1), {}, 'switch'),
@@ -82,5 +85,5 @@ with sync_playwright() as pw:
         out.append(dict(persona=name, goal=goal, ok=ok, taps=taps, note=note)); print(('PASS' if ok else 'FAIL'), name, goal, taps, note)
         c.close()
     br.close()
-json.dump(out, open('/workspace/ux/personas.json', 'w'), indent=1)
+json.dump(out, open(OUTD / 'personas.json', 'w'), indent=1)
 print(sum(o['ok'] for o in out), '/', len(out), 'personas passed')

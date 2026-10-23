@@ -1,0 +1,106 @@
+{
+ "phone": [
+  {
+   "job": "1 pick ball, see line",
+   "taps": 1,
+   "scrolls": 1,
+   "chars": 0,
+   "drags": 0,
+   "klm_s": 3.7,
+   "wall_s": 0.2,
+   "notes": []
+  },
+  {
+   "job": "2 adjust after miss",
+   "taps": 1,
+   "scrolls": 1,
+   "chars": 0,
+   "drags": 1,
+   "klm_s": 5.2,
+   "wall_s": 0.3,
+   "notes": []
+  },
+  {
+   "job": "3 save + recall line",
+   "taps": 4,
+   "scrolls": 1,
+   "chars": 13,
+   "drags": 1,
+   "klm_s": 16.7,
+   "wall_s": 0.7,
+   "notes": []
+  },
+  {
+   "job": "4 compare two balls",
+   "taps": 4,
+   "scrolls": 3,
+   "chars": 0,
+   "drags": 0,
+   "klm_s": 13.6,
+   "wall_s": 0.8,
+   "notes": []
+  },
+  {
+   "job": "5 pick next ball (light oil)",
+   "taps": 3,
+   "scrolls": 1,
+   "chars": 0,
+   "drags": 0,
+   "klm_s": 9.0,
+   "wall_s": 0.6,
+   "notes": []
+  }
+ ],
+ "desktop": [
+  {
+   "job": "1 pick ball, see line",
+   "taps": 1,
+   "scrolls": 1,
+   "chars": 0,
+   "drags": 0,
+   "klm_s": 3.7,
+   "wall_s": 0.2,
+   "notes": []
+  },
+  {
+   "job": "2 adjust after miss",
+   "taps": 1,
+   "scrolls": 1,
+   "chars": 0,
+   "drags": 1,
+   "klm_s": 5.2,
+   "wall_s": 0.2,
+   "notes": []
+  },
+  {
+   "job": "3 save + recall line",
+   "taps": 4,
+   "scrolls": 0,
+   "chars": 13,
+   "drags": 1,
+   "klm_s": 15.7,
+   "wall_s": 0.7,
+   "notes": []
+  },
+  {
+   "job": "4 compare two balls",
+   "taps": 4,
+   "scrolls": 1,
+   "chars": 0,
+   "drags": 0,
+   "klm_s": 11.6,
+   "wall_s": 0.7,
+   "notes": []
+  },
+  {
+   "job": "5 pick next ball (light oil)",
+   "taps": 3,
+   "scrolls": 1,
+   "chars": 0,
+   "drags": 0,
+   "klm_s": 9.0,
+   "wall_s": 0.6,
+   "notes": []
+  }
+ ]
+}

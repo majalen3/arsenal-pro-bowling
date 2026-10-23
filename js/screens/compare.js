@@ -38,7 +38,7 @@ export function render({ query }) {
       return h('tr', { class:diff ? 'differs' : 'same' }, h('th', { scope:'row', text:k }), ...vals.map((v, i) => h('td', { class:sc && sc[i] === min && diff ? 'best' : '' , text:v }))); })));
   const el = h('section', { class:'screen compare' }, backBar('Compare', '#/arsenal'),
     h('p', { class:'muted small pad-x', text:`Same line for both: feet ${S.release}, ${S.speed} mph, ${S.rev} rpm on ${PATTERN_LABEL[S.pattern]}, ${FINISH_LABEL[S.finish]}. Highlighted rows differ; gold = closer to a strike.` }),
-    h('div', { class:'cmp-cols n' + ps.length }, ...cols), h('div', { class:'table-wrap' }, table));
+    h('div', { class:'cmp-body n' + ps.length }, h('div', { class:'cmp-cols n' + ps.length }, ...cols), h('div', { class:'table-wrap' }, table)));
   let ls = [];
   return { el, title:'Compare', mounted() { ls = lanes.map(([cv, b, r]) => { const l = createLane(cv); l.draw({ ball:b, result:r }, { animate:true }); return l; }); }, destroy() { ls.forEach(l => l.destroy()); } };
 }

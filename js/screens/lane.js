@@ -1,10 +1,11 @@
 import { analyze, coachLine, sensitivity, ruleOf31, rollMph, S, C_SKID, C_HOOK, C_ROLL } from '../engine.js';
 import { rgTxt, coverKind } from '../data.js';
-import { app, on, saveLine, renameLine, linesForBall, status } from '../store.js';
+import { app, on, saveLine, renameLine, linesForBall, applyLine, status } from '../store.js';
 import { h, icon, toast, sheet } from '../ui.js';
 import { createLane } from '../lane.js';
 import { createDeck, describe } from '../deck.js';
-import { adjust, miss, restore, target, MISSES } from '../ctl.js';
+import { adjust, miss, restore, target, MISSES, setBall, quickBalls } from '../ctl.js';
+import { balls } from '../data.js';
 import { openBallSheet, openConditions, openTune, openLines, tunePanel } from './pickers.js';
 import { PATTERN_LABEL, FINISH_LABEL, CALL_LABEL, CALL_TONE, f1, fmtBoard } from '../labels.js';
 import { profile } from '../store.js';
@@ -17,6 +18,8 @@ export function render() {
   const surfChip = h('button', { class:'chip cond', id:'surfChip', onclick:openConditions, 'aria-haspopup':'dialog' });
   const oilChip = h('button', { class:'chip cond', id:'oilChip', onclick:openConditions, 'aria-haspopup':'dialog' });
   const tuneChip = h('button', { class:'chip cond tune-chip', id:'tuneChip', 'aria-haspopup':'dialog', onclick:() => { tune = openTune(); } });
+  const qRow = h('div', { class:'qball-row', id:'qballs', role:'group', 'aria-label':'Quick switch ball' });
+  const backBtn = h('button', { class:'chip back-chip', id:'backBtn', hidden:true, onclick:backToSaved });
   const canvas = h('canvas', { id:'lane', class:'lane-canvas', tabindex:'0', role:'img' });
   const callBadge = h('div', { class:'call-badge', id:'callBadge' });
   const coach = h('p', { class:'coach', id:'coach', 'aria-live':'polite' });
@@ -35,7 +38,8 @@ export function render() {
   const p = profile(); const lefty = p && p.hand === 'left';
   const el = h('section', { class:'screen lane-screen' },
     h('header', { class:'appbar' }, h('h1', { class:'sr-only', id:'laneH1' }), ballBtn, h('div', { class:'appbar-actions' }, syncDot, linesBtn, saveBtn)),
-    h('div', { class:'cond-row', role:'group', 'aria-label':'Lane conditions' }, patChip, surfChip, oilChip, tuneChip),
+    h('div', { class:'ctl-bar' }, qRow,
+    h('div', { class:'cond-row' }, backBtn, h('div', { class:'cond-grp', role:'group', 'aria-label':'Lane conditions' }, patChip, surfChip, oilChip, tuneChip))),
     h('div', { class:'lane-grid' },
       h('div', { class:'lane-col' }, canvas,
         h('div', { class:'legend', 'aria-hidden':'true' }, h('span', { html:`<i style="background:${C_SKID}"></i>Skid` }), h('span', { html:`<i style="background:${C_HOOK}"></i>Hook` }), h('span', { html:`<i style="background:${C_ROLL}"></i>Roll` }), h('span', { html:'<i class="bp"></i>Breakpoint' }))),
@@ -71,7 +75,11 @@ export function render() {
     more.innerHTML = (ph ? `<div><span class="dot" style="background:${C_SKID}"></span>Skid <b>0\u2013${n0(ph.skid)} ft</b> · <span class="dot" style="background:${C_HOOK}"></span>Hook <b>${n0(ph.skid)}\u2013${n0(ph.roll)} ft</b> · <span class="dot" style="background:${C_ROLL}"></span>Roll <b>${n0(ph.roll)}\u2013${n0(ph.end)} ft</b></div>` : '') +
       `<div>Rolls at ~<b>${rollMph(+S.speed).toFixed(1)} mph</b> (est.)${r31 ? ' · ' + r31.text : ''}</div>`;
     canvas.setAttribute('aria-label', `Lane preview. ${CALL_LABEL[a.call]}. Entry board ${f1(a.entryBoard)}, angle ${f1(a.angle)} degrees, breakpoint board ${f1(a.bpBoard)} at ${a.bpFeet == null ? 'none' : Math.round(a.bpFeet) + ' feet'}. Arrow keys move feet and target.`);
-    const saved = linesForBall().some(l => l.release === +S.release && l.aim === +S.aim && l.speed === +S.speed && l.rev === +S.rev && l.pattern === S.pattern && l.finish === S.finish && +l.oil === +S.oil);
+    const same = l => l.release === +S.release && l.aim === +S.aim && l.speed === +S.speed && l.rev === +S.rev && l.pattern === S.pattern && l.finish === S.finish && +l.oil === +S.oil;
+    const mine = linesForBall(), saved = mine.some(same), bl = backLine(mine);
+    backBtn.hidden = !bl || same(bl);
+    if (bl) { backBtn.innerHTML = `${icon('undo')} <span>Back to saved</span>`; backBtn.setAttribute('aria-label', `Back to saved line ${bl.name}`); backBtn.title = `Back to \u201c${bl.name}\u201d`; }
+    if (qKey !== b.id) { qKey = b.id; drawQuick(); }
     saveBtn.innerHTML = icon(saved ? 'saved' : 'save'); saveBtn.setAttribute('aria-pressed', String(saved)); saveBtn.classList.toggle('on', saved);
     inlineTune.sync(); tune && tune.p && document.contains(tune.p) && tune.p.sync();
     const key = b.id + S.pattern + S.finish;
@@ -84,6 +92,16 @@ export function render() {
     el.querySelector('#deckCap').textContent = `True 12 in pin spacing; path past contact is projected (no deflection).${lefty ? ' Mirrored for left hand.' : ''}`;
     lastKey = key;
   }
+  let qKey = '';
+  function drawQuick() {
+    const list = quickBalls(5);
+    qRow.replaceChildren(...list.map(x => h('button', { class:'qball', 'data-ball':x.id, title:`${x.brand} ${x.name}`, onclick:() => setBall(x) },
+      h('span', { class:'ball-orb xs', style:`--c:${x.color}`, 'aria-hidden':'true' }), h('span', { class:'qball-name', text:x.name }))),
+      h('button', { class:'qball all', id:'qballAll', 'aria-haspopup':'dialog', onclick:openBallSheet }, h('span', { html:icon('arsenal') }), h('span', { class:'qball-name', text:`All ${balls.length}` })));
+  }
+  // 'Back to saved line': the line most recently saved or loaded for this ball, else this ball's newest saved line
+  function backLine(mine) { const ll = app.lastLine; return (ll && ll.ballId === app.ball.id && mine.find(l => l.name === ll.name)) || mine[0] || null; }
+  function backToSaved() { const l = backLine(linesForBall()); if (!l) return; applyLine(l); toast(`Back on \u201c${l.name}\u201d`); }
   function drawSync() { syncDot.dataset.state = status.cls || 'idle'; syncDot.setAttribute('aria-label', status.text || 'Not synced yet'); syncDot.title = status.text || ''; }
   function quickSave() {
     const name = `${PATTERN_LABEL[S.pattern]} ${S.release}\u2192${fmtBoard(target())}`;
@@ -97,6 +115,6 @@ export function render() {
   function doMiss(k) { const r = miss(k); toast(r.text, { action:{ label:'Undo', run:() => restore(r.before) } }); }
   let rq = 0, ranim = false;
   const queue = d => { ranim = ranim || !!(d && d.animate); if (rq) return; rq = requestAnimationFrame(() => { rq = 0; const a = ranim; ranim = false; update({ animate:a }); }); };
-  const offs = [on('state', queue), on('lines', () => update()), on('status', drawSync)];
+  const offs = [on('state', queue), on('lines', () => update()), on('prefs', () => { qKey = ''; queue(); }), on('status', drawSync)];
   return { el, title:'Lane', mounted() { update({ animate:true }); drawSync(); }, destroy() { cancelAnimationFrame(rq); offs.forEach(f => f()); lane.destroy(); deck.destroy(); } };
 }

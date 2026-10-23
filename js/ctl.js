@@ -1,6 +1,6 @@
 // Control mutations shared by the lane, tune sheet, miss buttons and lines. Engine is untouched.
 import { S, RANGES } from './engine.js';
-import { app, saveState, emit, logShot, scheduleSync } from './store.js';
+import { app, saveState, emit, logShot, scheduleSync, prefs, setPrefs, profile } from './store.js';
 import { balls } from './data.js';
 const clamp = (k, v) => { const [lo, hi, st] = RANGES[k]; return +Math.max(lo, Math.min(hi, Math.round(v / st) * st)).toFixed(2); };
 export const target = () => +(+S.release - +S.aim).toFixed(1);           // board at the arrows (1 board per degree of aim, v1 rule)
@@ -15,7 +15,8 @@ export function adjust(ch, { animate = false } = {}) {
   if ('finish' in ch) S.finish = ch.finish; if ('pattern' in ch) S.pattern = ch.pattern;
   saveState(); emit('state', { animate });
 }
-export function setBall(b) { if (!b || b.id === app.ball.id) return; app.ball = b; saveState(); emit('ball'); emit('state', { animate:true }); scheduleSync(); }
+export function setBall(b) { if (!b || b.id === app.ball.id) return; const prev = app.ball.id; app.ball = b;
+  setPrefs({ recent:[b.id, prev, ...(prefs().recent || []).filter(x => x !== b.id && x !== prev)].slice(0, 8) }); saveState(); emit('ball'); emit('state', { animate:true }); scheduleSync(); }
 // One-tap miss moves. Left/Right: 2-and-1 rule (feet 2 boards, target 1 board toward the miss -> aim +-1).
 // High/Light: +-0.5 mph (app choice, see docs/DECISIONS.md). Returns {before, label} for the undo toast.
 export const MISSES = {
@@ -30,4 +31,12 @@ export function miss(kind) {
   const after = snapshot(); logShot(kind, before, after);
   const same = ['release','aim','speed'].every(k => before[k] === after[k]);
   return { before, after, text: same ? `${m.label}: already at the limit` : m.move };
+}
+// Quick-switch strip: most recently used balls first, then the bowler's bag, then catalogue order (current ball excluded)
+export function quickBalls(n = 5) {
+  const p = profile(), own = p && Array.isArray(p.owned) ? p.owned : [], seen = new Set([app.ball.id]), out = [];
+  for (const id of [...(prefs().recent || []), ...own, ...balls.map(b => b.id)]) {
+    if (seen.has(id)) continue; const b = balls.find(x => x.id === id); if (!b) continue; seen.add(id); out.push(b); if (out.length >= n) break;
+  }
+  return out;
 }
