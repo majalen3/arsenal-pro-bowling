@@ -5,7 +5,8 @@ import { ready, addMany, undoImport, proj, hydrateMirror } from '../hub.js';
 import { migrateV0 } from '../data/migrate.js';
 import { deviceId } from '../store.js';
 import { readBackup, restoreBackup } from '../data/backup.js';
-import { planCsv } from '../data/importer.js';
+import { planCsv, planLaneTrax } from '../data/importer.js';
+import { parseLaneTrax, BOARD_KEYS } from '../data/lanetrax.js';
 import { FIELDS, RUBY_PRESET, presetFor, savePreset } from '../data/csv.js';
 import { objGet, lsSet } from '../store.js';
 const MAX = 10 * 1024 * 1024;
@@ -103,6 +104,42 @@ handlers.push({
       wrap.append(h('div', { class: 'row wrap' },
         h('button', { class: 'btn sm ghost', id: 'csvSavePreset', onclick: () => { savePreset(plan.headers, st.mapping, presetStore); st.preset = { mapping: st.mapping }; toast('Mapping saved for files with these columns'); repaint(); } }, 'Save this mapping'),
         h('span', { class: 'pill', id: 'csvRuby', title: RUBY_PRESET.note, text: 'Ruby preset: needs a sample file' })));
+      return wrap;
+    };
+    build(); return pv;
+  },
+});
+const LTX_TEXT = {
+  SHOT_COUNT_GAP: d => `Shot count: ${d.replace(/^strikes\+leaves\+made\+missed spares = (\d+), Total Shots = (\d+)$/, 'strikes, leaves and spares add up to $1 but the report says $2 total shots')}. Both numbers are kept.`,
+  IMPACT_SPEED_KPI_VS_TABLE: d => `Impact speed: ${d.replace(/^KPI ([\d.]+) vs summary mean ([\d.]+)$/, '$1 mph in Key Stats vs $2 mph in the Summary table')}. Both are kept; the Key Stats number may cover strike shots only.`,
+};
+const fmt = (v, u) => u === 'board' ? `bd ${v}` : u === '%' || u === '\u00b0' ? `${v}${u}` : `${v} ${u || ''}`.trim();
+handlers.push({
+  id: 'lanetrax', match: (f, head) => /\.pdf$/i.test(f.name) || /^%PDF-/.test(head),
+  async preview(f, ctx) {
+    await ready(); const buf = await f.arrayBuffer();
+    const r = await parseLaneTrax(new Uint8Array(buf)); if (!r.ok) return { error: r.error };
+    const sha256 = await sha256Hex(buf), st = { flip: false, allowDup: false }, pv = { title: 'LaneTrax session report', kind: 'lanetrax' };
+    let importId = null;
+    const build = () => {
+      const plan = planLaneTrax({ record: r.record, fileName: f.name, size: f.size, sha256, flip: st.flip, allowDup: st.allowDup, P: proj(), deviceId: ctx.deviceId, importId });
+      importId = plan.importId; const rec = plan.record, o = rec.outcomes;
+      const warns = rec.warnings.map(w => ({ code: w.code, text: LTX_TEXT[w.code] ? LTX_TEXT[w.code](w.detail) : w.detail }));
+      if (plan.dup) warns.unshift({ code: 'DUPLICATE', text: `Already imported on ${new Date(plan.dup.import.ts).toLocaleDateString()}.` });
+      Object.assign(pv, { plan, importId: plan.importId, warnings: warns, canCommit: plan.canCommit,
+        summary: [`Session ${rec.date} \u00b7 ${rec.totalShots} shots`, o.strikes ? `${o.strikes.n} strikes \u00b7 ${o.leaves.n} leaves \u00b7 ${o.madeSpares.n} made spares \u00b7 ${o.missedSpares.n} missed spares` : '', 'Session averages only. The per-shot charts in the PDF are pictures and are not read.'].filter(Boolean),
+        commitLabel: plan.dup ? 'Already imported' : 'Import session averages',
+        async commit() { await addMany(plan.events); return `LaneTrax session ${rec.date} imported (${plan.measurements.length} measurements waiting for you on Tonight)`; } });
+    };
+    pv.body = repaint => {
+      const plan = pv.plan, rec = plan.record, wrap = h('div', { class: 'stack', id: 'ltxBody' });
+      wrap.append(h('div', { class: 'row between' }, h('span', { class: 'prov', 'data-prov': 'device', text: `LaneTrax \u00b7 ${rec.date} \u00b7 n=?` }),
+        h('button', { class: 'btn sm ghost', id: 'ltxFlip', 'aria-pressed': String(st.flip), onclick: () => { st.flip = !st.flip; build(); repaint(); } }, st.flip ? 'Boards flipped (40 \u2212 b)' : 'Flip boards')));
+      wrap.append(h('p', { class: 'small muted', text: st.flip ? 'Board positions shown as 40 \u2212 board. Hook boards and ranges are not flipped.' : 'Boards read as right-handed, as printed. Flip them if this report is from the left side.' }));
+      wrap.append(h('h3', { class: 'section-title', text: 'Key stats' }), h('div', { class: 'kv', id: 'ltxKpis' }, ...rec.kpis.flatMap(k => [h('span', { class: 'small', text: k.metric }), h('strong', { text: `${fmt(k.value, k.unit)} \u00b7 Level ${k.level}` })])));
+      wrap.append(h('h3', { class: 'section-title', text: 'Session averages' }), h('div', { class: 'kv', id: 'ltxSummary' }, ...Object.entries(rec.summary).flatMap(([key, v]) => [h('span', { class: 'small', text: v.label + (st.flip && BOARD_KEYS.includes(key) ? ' (flipped)' : '') }), h('strong', { 'data-key': key, text: `${fmt(v.mean, v.unit)} \u00b7 range ${v.unit === 'board' ? v.range + ' boards' : fmt(v.range, v.unit)}` })])));
+      wrap.append(h('h3', { class: 'section-title', text: 'Release numbers to review' }), h('ul', { class: 'plain small', id: 'ltxMeas' }, ...plan.measurements.map(m => h('li', { text: `${m.label}: ${m.data.speed ? m.data.speed.v + ' mph' : m.data.rev.v + ' rpm'}, waits for you to accept on Tonight` }))));
+      if (plan.dup && !st.allowDup) wrap.append(h('button', { class: 'btn ghost block', id: 'ltxAgain', onclick: () => { st.allowDup = true; build(); repaint(); } }, 'Import again as a new session'));
       return wrap;
     };
     build(); return pv;

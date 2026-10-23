@@ -261,6 +261,43 @@ async def csv_cycle(b):
     check(not errs, '[csv] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
+async def ltx_cycle(b):
+    # D2: LaneTrax PDF -> on-device parse -> preview with both warnings + flip toggle -> commit -> duplicate; non-LaneTrax PDF refused.
+    # Uses a synthetic PDF built from the derived fixture; the private real report is used only if LANETRAX_SAMPLE is set (never in git).
+    import tempfile, subprocess
+    d = tempfile.mkdtemp(); synth = os.path.join(d, 'session-report.pdf'); other = os.path.join(d, 'invoice.pdf')
+    subprocess.run(['node', '-e', f"""import('{os.path.abspath('tests/data/make_pdf.mjs')}').then(m=>{{const fs=require('fs');const W=JSON.parse(fs.readFileSync('tests/fixtures/lanetrax/session-report.words.json')).words;
+      fs.writeFileSync('{synth}', m.buildPdf(W)); fs.writeFileSync('{other}', m.buildPdf([{{p:1,x:40,y:700,t:'Invoice 42'}}]));}})"""], check=True)
+    pdf = os.environ.get('LANETRAX_SAMPLE') or synth
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await p.goto(BASE); await p.evaluate(WIPE); await p.evaluate("localStorage.setItem('ap_prefs', JSON.stringify({onboarded:true}))")
+    await p.goto(BASE + '?ltx#/import?kind=lanetrax'); await p.wait_for_selector('#impPick'); await p.wait_for_function("window.__apData")
+    check('LaneTrax session report' in await p.text_content('#impPick'), '[ltx] pick button labelled for the user\'s own LaneTrax report')
+    n0 = await p.evaluate("window.__apData.events()")
+    await p.set_input_files('#impFile', other); await p.wait_for_selector('#impErr')
+    check('doesn\u2019t look like a LaneTrax' in await p.text_content('#impErr') and await p.evaluate("window.__apData.events()") == n0, '[ltx] non-LaneTrax PDF refused, nothing written')
+    await p.set_input_files('#impFile', pdf); await p.wait_for_selector('#impPreview[data-kind=lanetrax]')
+    codes = await p.eval_on_selector_all('#impWarn li', 'els => els.map(e => e.dataset.code)')
+    check('SHOT_COUNT_GAP' in codes and 'IMPACT_SPEED_KPI_VS_TABLE' in codes, f'[ltx] preview shows both warnings {codes}')
+    t = await p.text_content('#impPreview')
+    check('13.93 mph' in t and '13 mph' in t and '90 shots' in t and '86' in t, '[ltx] both impact speeds and both shot counts visible')
+    check(await p.evaluate("window.__apData.events()") == n0, '[ltx] preview persists nothing')
+    e0 = await p.text_content('#ltxSummary [data-key=entryBoard]'); h0 = await p.text_content('#ltxSummary [data-key=hookBoards]')
+    await p.click('#ltxFlip'); await p.wait_for_selector('#ltxFlip[aria-pressed=true]')
+    e1 = await p.text_content('#ltxSummary [data-key=entryBoard]'); h1 = await p.text_content('#ltxSummary [data-key=hookBoards]')
+    check(e0.startswith('bd 20.4') and e1.startswith('bd 19.6') and h0 == h1, f'[ltx] flip boards: entry {e0} -> {e1}, hook boards unchanged')
+    await p.click('#ltxFlip'); await p.wait_for_selector('#ltxFlip[aria-pressed=false]')
+    await axe_ok(p, '[ltx] preview'); await p.wait_for_timeout(300)
+    small = await p.evaluate(SMALL); check(not small, f'[ltx] preview targets >= 44px {small[:6]}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= w[0], f'[ltx] preview no horizontal overflow {w}')
+    await shot(p, 'phone-lanetrax-preview'); await p.evaluate("document.querySelector('#ltxKpis').scrollIntoView()"); await shot(p, 'phone-lanetrax-preview-details')
+    await p.click('#impCommit'); await p.wait_for_selector('#impDone')
+    check(await p.evaluate("window.__apData.events()") == n0 + 7, '[ltx] commit: import + session + aggregate + 4 pending measurements (0 per-shot)')
+    await p.set_input_files('#impFile', pdf); await p.wait_for_selector('#impPreview')
+    check(await p.query_selector('#impWarn li[data-code=DUPLICATE]') is not None and await p.is_disabled('#impCommit') and await p.query_selector('#ltxAgain') is not None, '[ltx] same report again: "Already imported" + option to import as a new session')
+    check(not errs, '[ltx] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
 async def offline(b):
     errs = []; c = await ctx_for(b, 'phone', service_workers='allow'); p = await page(c, errs)
     await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ballBtn')
@@ -278,7 +315,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

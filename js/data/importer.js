@@ -1,7 +1,8 @@
 // Import plans: parse → validate → match → dedupe → PREVIEW. A plan is pure data; nothing is written until the caller
 // appends plan.events (commit). Undo = import.voided (events.js). The raw file is never stored: sha256, name and size only.
 import { mkEvent } from './events.js';
-import { fnv, uuid } from './schema.js';
+import { fnv, uuid, stable } from './schema.js';
+import { flipBoards, unitsOf } from './lanetrax.js';
 import { parseCSV, autoMap, mapRows, parseScores, scoreShape, semanticKey, headerFingerprint, parseDate } from './csv.js';
 import { matchBall, aliasIndex } from './match.js';
 import { balls } from '../data.js';
@@ -60,4 +61,28 @@ export function planCsv({ text, fileName = null, size = null, sha256 = null, map
   plan.events.unshift(mkEvent('import.created', importId, { kind: 'csv', label, fileName, size, sha256, semKey: plan.semKey, mode: plan.mode, shape: plan.shape || null, fingerprint: plan.fingerprint, counts: plan.counts }, Object.assign({ seq: 1, prov: { kind: 'user', method: 'csv-import', importId } }, base)));
   plan.canCommit = !plan.dup && !plan.needsSpeedAt && !plan.unconfirmed.length && plan.events.length > 1;
   return plan;
+}
+// ---- LaneTrax session report → one session + one sessionAggregate (device provenance) + pending releaseMeasurement rows.
+// Never per-shot values; never writes the bowler profile (the user accepts measurements on Tonight).
+export function planLaneTrax({ record, fileName = null, size = null, sha256 = null, flip = false, allowDup = false, P = null, deviceId = null, now = Date.now(), importId = null }) {
+  const rec = flip ? flipBoards(record) : record;
+  const semKey = fnv(stable({ source: 'LaneTrax', date: record.date, totalShots: record.totalShots, summary: record.summary }));
+  importId = importId || 'imp-ltx-' + (sha256 ? sha256.slice(0, 16) : semKey) + '-' + uuid().slice(0, 8);
+  const pv = { kind: 'device', device: 'LaneTrax', method: 'session-report-pdf', date: record.date, n: null, importId };
+  const base = { deviceId, ts: now, importId, prov: pv }; let seq = 1;
+  const ev = (type, ent, data) => mkEvent(type, ent, data, Object.assign({ seq: seq++ }, base));
+  const sessionId = importId + '-s', units = unitsOf(record), S = rec.summary, K = k => rec.kpis.find(x => x.key === k);
+  const rows = [];
+  const sp = (m, at, label) => { if (S[m] && S[m].unit === 'mph') rows.push({ label, data: { date: record.date, sessionId, ballId: null, speed: { v: S[m].mean, unit: 'mph', at, orig: S[m].orig ? { v: S[m].orig.mean, unit: S[m].orig.unit } : null }, stat: 'mean', n: null, source: 'lanetrax', accepted: false } }); };
+  sp('launchSpeed', 'launch', 'Launch speed (mean)'); sp('averageSpeed', 'average', 'Average speed (mean)'); sp('impactSpeed', 'impact', 'Impact speed (table mean)');
+  const rev = K('revRate'); if (rev && rev.unit === 'rpm') rows.push({ label: 'Rev rate (KPI mean)', data: { date: record.date, sessionId, ballId: null, rev: { v: rev.value, unit: 'rpm' }, stat: 'mean', n: null, source: 'lanetrax', accepted: false } });
+  const dup = allowDup ? null : findDuplicate(P, { sha256, semKey });
+  const events = [
+    ev('import.created', importId, { kind: 'lanetrax', label: `LaneTrax session \u00b7 ${record.date}`, fileName, size, sha256, semKey, parser: record.parser, counts: { aggregates: 1, measurements: rows.length, perShot: 0 } }),
+    ev('session.created', sessionId, { date: record.date, kind: null, source: 'LaneTrax', label: 'LaneTrax session', center: null, lane: null, pattern: null }),
+    ev('sessionAggregate.created', sessionId, { sessionId, date: record.date, source: 'LaneTrax', parser: record.parser, totalShots: record.totalShots, kpis: rec.kpis, outcomes: rec.outcomes, summary: rec.summary, extra: rec.extra || null,
+      warnings: record.warnings, boardsReadAs: 'RH', boardsFlipped: !!flip, units, n: null }),
+    ...rows.map((r, i) => ev('releaseMeasurement.created', sessionId + '#m' + i, r.data)),
+  ];
+  return { kind: 'lanetrax', importId, record: rec, units, semKey, dup, measurements: rows, events, canCommit: !dup };
 }

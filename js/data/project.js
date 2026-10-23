@@ -19,7 +19,7 @@ export function project(events) {
   const evs = events.filter(e => e && e.type).slice().sort(order);
   const { ids: voided, imps } = voidedSet(evs);
   const P = { bowler: {}, owned: {}, lines: {}, notes: [], surface: [], service: [], shots: [], sessions: {}, centers: {}, bags: {}, aggregates: [], measurements: [], imports: {}, gamesLogged: [], scores: [] };
-  const st = { bowler: {}, owned: {}, sessions: {}, centers: {}, bags: {} };
+  const st = { bowler: {}, owned: {}, sessions: {}, centers: {}, bags: {} }, accepted = new Map();
   for (const e of evs) {
     if (voided.has(e.id) || e.type === 'event.voided' || e.type === 'import.voided') continue;
     const d = e.data || {}, id = e.entityId;
@@ -42,11 +42,13 @@ export function project(events) {
       case 'bag.deleted': delete P.bags[id]; break;
       case 'sessionAggregate.created': P.aggregates.push(Object.assign({ id: e.id, ts: e.ts, prov: e.prov || null, importId: e.importId || null }, d)); break;
       case 'releaseMeasurement.created': P.measurements.push(Object.assign({ id: e.id, ts: e.ts, prov: e.prov || null, importId: e.importId || null }, d)); break;
+      case 'releaseMeasurement.accepted': accepted.set(d.measurementId, { ts: e.ts, fields: d.fields || null }); break;
       case 'import.created': P.imports[id] = Object.assign({ id, ts: e.ts, undone: false }, d); break;
       default: break;   // unknown types are kept in the log, ignored here (forward compatible)
     }
   }
   for (const i of imps) if (P.imports[i]) P.imports[i].undone = true;
+  for (const m of P.measurements) if (accepted.has(m.id)) { m.accepted = true; m.acceptedTs = accepted.get(m.id).ts; }
   P.games = gamesOf(P.shots);
   P.health = healthOf(P);
   return P;
