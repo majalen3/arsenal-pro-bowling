@@ -338,7 +338,8 @@ thead th{font-size:var(--fs-xs);color:var(--text-2);text-transform:uppercase;let
 .cmp-cols.n3{grid-template-columns:repeat(3,1fr)}
 .cmp-col{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .cmp-head{display:flex;align-items:center;gap:8px;min-width:0}.cmp-head .ball-orb{width:36px;height:36px}.cmp-head .ball-orb::after{display:none}
-.cmp-head>div{flex:1;min-width:0}.cmp-name{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmp-head>div{flex:1;min-width:0}.cmp-name{font-weight:800;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
+@media (max-width:520px){.cmp-head .ball-orb{width:24px;height:24px}}
 .mini-lane{display:block;width:100%;height:300px;border-radius:var(--r-sm);background:var(--lane-gutter)}
 @media (min-width:900px){.mini-lane{height:440px}}
 .compare .table-wrap{margin:var(--s4)}
