@@ -29,7 +29,13 @@ export function render() {
   function paintData() {
     const db = hub.db; if (!db) return; const P = db.projection(), m = db.meta;
     const unsynced = db.events().filter(e => !e.synced).length;
-    dataInfo.textContent = `${db.events().length} events on this phone (${db.backend.kind}). ${Object.keys(P.owned).length} owned balls, ${P.games.length} games, ${P.aggregates.length} tracker sessions. ${unsynced ? unsynced + ' waiting to sync.' : 'All synced.'}${m.backupDownloadedAt ? '' : ' No v1 backup downloaded yet: your pre-2.1 data is kept as a snapshot until you download one.'}`;
+    dataInfo.textContent = `${db.events().length} events on this phone (${db.backend.kind}). ${Object.keys(P.owned).length} owned balls, ${P.games.length} games, ${P.aggregates.length} tracker sessions. ${syncLine(m.sync, unsynced)}${m.backupDownloadedAt ? '' : ' No v1 backup downloaded yet: your pre-2.1 data is kept as a snapshot until you download one.'}`;
+  }
+  // Server sync of the event log (D3). The quota message comes from the server; the phone keeps everything regardless.
+  function syncLine(st, unsynced) {
+    if (st && st.quota && st.quota.full) return `Server backup is full (${st.quota.limit} events); ${unsynced} newer events are kept only on this phone. Download a backup below.`;
+    if (!unsynced) return st && st.lastPushAt ? 'All synced.' : 'Nothing to sync.';
+    return `${unsynced} waiting to sync${st && st.lastError ? ' (offline, will retry)' : ''}.`;
   }
   ready().then(paintData);
   function draw() {
@@ -55,7 +61,7 @@ export function render() {
     paintStat();
   }
   draw();
-  const off = on('status', paintStat), offD = on('data', paintData);
+  const off = on('status', paintStat), offD = on('data', paintData), offS = on('sync', paintData);
   const el = h('section', { class:'screen list-screen' }, h('header', { class:'appbar' }, h('h1', { class:'title', text:'More' })), body);
-  return { el, title:'More', destroy:() => { off(); offD(); } };
+  return { el, title:'More', destroy:() => { off(); offD(); offS(); } };
 }

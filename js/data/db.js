@@ -23,6 +23,7 @@ export function createDB(backend, { deviceId = null } = {}) {
       return add;
     },
     async markSynced(ids) { const ch = []; for (const id of ids) { const e = ev.get(id); if (e && !e.synced) { e.synced = true; ch.push(e); } } if (ch.length) await backend.put(ch); },
+    async markUnsynced() { const ch = []; for (const e of ev.values()) if (e.synced) { e.synced = false; ch.push(e); } if (ch.length) await backend.put(ch); return ch.length; },
     projection() { if (!P) P = project(api.events()); return P; },
     hash() { return projectionHash(api.projection()); },
     on(fn) { subs.add(fn); return () => subs.delete(fn); },

@@ -298,6 +298,70 @@ async def ltx_cycle(b):
     check(not errs, '[ltx] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
+class MockEvents:
+    """In-memory stand-in for /api/events + the v1 endpoints (same contract as arsenal-pro-api). Intercepts the API host,
+    so nothing reaches production. online=False makes every request fail like airplane mode."""
+    def __init__(self): self.rows, self.seq, self.online, self.quota, self.posts = [], 0, True, 5000, 0
+    def mine(self, dev): return [r for r in self.rows if r[0] == dev]
+    async def handle(self, route):
+        req = route.request
+        if not self.online: return await route.abort('internetdisconnected')
+        from urllib.parse import urlparse, parse_qs
+        u = urlparse(req.url); dev = req.headers.get('x-device-id'); hdr = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, X-Device-Id', 'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS', 'Access-Control-Expose-Headers': 'Retry-After'}
+        if req.method == 'OPTIONS': return await route.fulfill(status=204, headers=hdr)
+        def js(st, body): return route.fulfill(status=st, headers=hdr, content_type='application/json', body=json.dumps(body))
+        if u.path == '/api/events' and req.method == 'POST':
+            self.posts += 1
+            if len(req.post_data or '') > 20480: return await js(413, {'error': 'body too large'})
+            evs = json.loads(req.post_data)['events']; known = {r[2]['id'] for r in self.mine(dev)}; fresh = {e['id'] for e in evs} - known
+            if fresh and len(known) + len(fresh) > self.quota: return await js(429, {'error': f'event quota reached: this backup code can store {self.quota} events on the server ({len(known)} stored).', 'quota': self.quota, 'stored': len(known)})
+            acc = 0
+            for e in evs:
+                if e['id'] not in known: self.seq += 1; self.rows.append((dev, self.seq, e)); known.add(e['id']); acc += 1
+            return await js(200, {'accepted': acc, 'duplicates': len(evs) - acc, 'cursor': str(self.seq), 'stored': len(known), 'quota': self.quota})
+        if u.path == '/api/events':
+            q = parse_qs(u.query); after = int(q.get('after', ['0'])[0]); lim = int(q.get('limit', ['500'])[0])
+            page = [r for r in self.mine(dev) if r[1] > after][:lim + 1]; more = len(page) > lim; page = page[:lim]
+            return await js(200, {'events': [dict(r[2], serverSeq=str(r[1])) for r in page], 'cursor': str(page[-1][1] if page else after), 'more': more})
+        if req.method == 'GET': return await js(200, [])
+        return await js(201, {'id': 1})
+
+async def sync_cycle(b):
+    # D3: airplane mode -> log (CSV import) -> kill the tab -> reopen (outbox intact) -> online -> flush -> wipe phone -> same code -> pull -> identical projection
+    errs = []; m = MockEvents(); c = await b.new_context(viewport={'width': 360, 'height': 780}, is_mobile=True, has_touch=True); c.set_default_timeout(10000)
+    await c.route(API, m.handle); p = await page(c, errs)
+    await p.goto(BASE); await p.evaluate(WIPE)
+    await p.evaluate("localStorage.setItem('ap_prefs', JSON.stringify({onboarded:true})); localStorage.setItem('ap_device', 'd-e2e-sync-0001')")
+    m.online = False
+    await p.goto(BASE + '?sync1#/import'); await p.wait_for_selector('#impPick'); await p.wait_for_function("() => window.__apData && window.__apSync")
+    import tempfile; d = tempfile.mkdtemp(); f = os.path.join(d, 'scores.csv'); open(f, 'w').write("Date,Game 1,Game 2,Game 3\n2026-10-18,201,187,224\n2026-10-19,170,193,\n")
+    await p.set_input_files('#impFile', f); await p.wait_for_selector('#impPreview'); await p.click('#impCommit'); await p.wait_for_selector('#impDone')
+    n = await p.evaluate("window.__apData.events()");
+    check(n >= 8 and await p.evaluate("window.__apSync.outbox()") == n, f'[sync] airplane mode: {n} events logged, all waiting in the outbox')
+    h0 = await p.evaluate("window.__apData.hash()")
+    await p.close()  # tab killed while offline
+    p = await page(c, errs); await p.goto(BASE + '?sync2#/more'); await p.wait_for_function("() => window.__apData && window.__apSync && window.__apData.events() > 0")
+    check(await p.evaluate("window.__apData.events()") == n and await p.evaluate("window.__apSync.outbox()") == n, '[sync] after the kill: 0 events lost, outbox intact')
+    await p.wait_for_function("() => document.querySelector('#dataInfo').textContent.includes('waiting to sync')")
+    m.online = True; await p.evaluate("window.__apSync.run()")
+    await p.wait_for_function("() => window.__apSync.outbox() === 0", timeout=15000)
+    srv = {r[2]['id'] for r in m.mine('d-e2e-sync-0001')}
+    check(len(srv) == n, f'[sync] back online: all {n} events on the server ({len(srv)}), in <=15 kB batches')
+    await p.wait_for_function("() => document.querySelector('#dataInfo').textContent.includes('All synced')"); await shot(p, 'phone-more-synced')
+    await p.evaluate(WIPE); await p.evaluate("localStorage.setItem('ap_prefs', JSON.stringify({onboarded:true})); localStorage.setItem('ap_device', 'd-e2e-sync-0001')")
+    await p.goto(BASE + '?sync3#/more'); await p.wait_for_function(f"() => window.__apData && window.__apData.events() === {n}", timeout=15000)
+    check(await p.evaluate("window.__apData.hash()") == h0, '[sync] wiped phone + same backup code: pull restores the identical projection')
+    check(await p.evaluate("window.__apSync.outbox()") == 0, '[sync] pulled events are not pushed back')
+    posts = m.posts; m.quota = n
+    f2 = os.path.join(d, 'scores2.csv'); open(f2, 'w').write("Date,Game 1\n2026-10-20,210\n")
+    await p.goto(BASE + '?sync4#/import'); await p.wait_for_selector('#impPick'); await p.wait_for_function("() => window.__apSync")
+    await p.set_input_files('#impFile', f2); await p.wait_for_selector('#impPreview'); await p.click('#impCommit'); await p.wait_for_selector('#impDone')
+    await p.evaluate("window.__apSync.run()"); await p.goto(BASE + '?sync5#/more')
+    await p.wait_for_function("() => document.querySelector('#dataInfo') && document.querySelector('#dataInfo').textContent.includes('Server backup is full')")
+    check(await p.evaluate("window.__apSync.outbox()") > 0, '[sync] quota 429: newer events kept on the phone, More explains it')
+    check(not errs, '[sync] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
 async def offline(b):
     errs = []; c = await ctx_for(b, 'phone', service_workers='allow'); p = await page(c, errs)
     await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ballBtn')
@@ -315,7 +379,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

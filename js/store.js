@@ -163,7 +163,7 @@ export function backupBlob() { const data = { app:'arsenal-pro', code:deviceId()
 export function useCode(v) {
   v = String(v || '').trim(); if (!/^[A-Za-z0-9_-]{8,64}$/.test(v)) return false;
   rawSet('ap_device', v); _dev = v;
-  lsSet(LS.lines, lsGet(LS.lines).map(x => Object.assign(x, {synced:false}))); setStatus('Code set. Syncing\u2026'); syncLines(); syncAlley(); return true;
+  lsSet(LS.lines, lsGet(LS.lines).map(x => Object.assign(x, {synced:false}))); setStatus('Code set. Syncing\u2026'); syncLines(); syncAlley(); emit('code', v); return true;
 }
 export function startSync() {
   syncLines(); syncAlley();
