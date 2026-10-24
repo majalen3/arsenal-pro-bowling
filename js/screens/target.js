@@ -87,7 +87,7 @@ export async function render({ query } = {}) {
         h('p', { class: 'coach', id: 'tgFindLine', text: w.line }),
         h('p', { class: 'small', id: 'tgFindWhy', text: w.why }),
         h('p', { class: 'muted small', id: 'tgFindLimit', text: T.bookLineFor((profile() || {}).style || b.style) }),
-        h('div', { class: 'row' }, h('button', { class: 'btn primary', id: 'tgFindApply', onclick: use(res.best, w.feet, w.eye, 'Strike line') }, `Use stand ${w.feet}, aim ${w.eye}`)),
+        h('div', { class: 'row' }, h('button', { class: 'btn primary', id: 'tgFindApply', onclick: use(res.best, w.feet, w.eye, 'Strike line') }, `Use stand ${w.feet}, aim ${fmtHalf(w.eye)}`)),
         w.alt ? h('p', { class: 'small', id: 'tgFindAlt' }, w.alt, ' ', h('button', { class: 'btn ghost sm', id: 'tgFindAltApply', onclick: use(res.alt, w.altFeet, w.altEye, res.alt.kind === 'higher' ? 'Higher pocket %' : res.alt.kind === 'room' ? 'More room' : 'Next best') }, 'Use it')) : '',
         h('details', { class: 'small', id: 'tgFindInputs' }, h('summary', { text: 'Inputs and method' }),
           h('ul', {},
@@ -133,7 +133,7 @@ export async function render({ query } = {}) {
     row.paint = txt => { val.textContent = txt; }; return row;
   };
   const feetRow = ctlRow('tgFeet', 'Feet', () => t.feet, v => { t.feet = Math.max(1, Math.min(45, v)); });   // feet and eyes are independent (owner bug 2026-10-24)
-  const eyesRow = ctlRow('tgEyes', 'Eyes', () => t.eyes, v => { t.eyes = Math.max(1, Math.min(39, Math.round(v * 10) / 10)); }, 0.5);   // ½-board steps: the model's whole launch range is ±0.8 board
+  const eyesRow = ctlRow('tgEyes', 'Eyes', () => t.eyes, v => { t.eyes = Math.max(1, Math.min(39, Math.round(v * 2) / 2)); }, 0.5);   // ½-board steps: the model's whole launch range is ±0.8 board
   const driftRow = ctlRow('tgDrift', 'Drift', () => t.drift, v => { t.drift = Math.max(-8, Math.min(8, v)); });
   const offRow = ctlRow('tgOffset', 'Ball from foot', () => t.offset, v => { t.offset = Math.max(0, Math.min(12, v)); });
   const bpbRow = ctlRow('tgBpB', 'Box board', () => t.bpBoard ?? (box ? Math.round(box.board) : 10), v => { t.bpBoard = Math.max(1, Math.min(30, v)); t.bpFt = t.bpFt ?? (box ? box.ft : ft); });
@@ -179,7 +179,7 @@ export async function render({ query } = {}) {
     boxPill.textContent = r.box.ok ? 'In the box' : r.box.dB == null ? 'No breakpoint' : `Box missed ${Math.abs(r.box.dB) > T.BOX_HALF_BOARDS ? Math.abs(r.box.dB) + ' bd ' + (r.box.dB > 0 ? 'inside' : 'outside') : Math.abs(r.box.dF) + ' ft ' + (r.box.dF > 0 ? 'long' : 'short')}`;
     boxPill.dataset.tone = r.box.ok ? 'good' : 'warn';
     const dirB = n => n === 0 ? '' : ` ${Math.abs(n)} ${T.dirWord(n, L)}`;
-    feetRow.paint(`${t.feet}`); eyesRow.paint(`${t.eyes}`); driftRow.paint(t.drift ? dirB(t.drift).trim() : 'none'); offRow.paint(`${t.offset}`);
+    feetRow.paint(`${t.feet}`); eyesRow.paint(fmtHalf(t.eyes)); driftRow.paint(t.drift ? dirB(t.drift).trim() : 'none'); offRow.paint(`${t.offset}`);
     bpbRow.paint(`${box.board}`); el.querySelector('#tgBpFVal').textContent = `${box.ft} ft`;
     modeSeg.querySelectorAll('button').forEach(x => { const on = x.dataset.v === t.mode; x.setAttribute('aria-checked', String(on)); x.tabIndex = on ? 0 : -1; });
     sum.replaceChildren(...[['Feet', t.feet], ['Laydown', r.lay], [t.mode === 'dots' ? 'Dots' : 'Arrows', fmtHalf(t.eyes)], ['Break', r.bpBoard == null ? '\u2014' : `${r.bpBoard} @ ${r.bpFt}`], ['Entry', r.entry == null ? '\u2014' : `${r.entry} \u00b7 ${r.angle}\u00b0`]]
@@ -203,7 +203,7 @@ export async function render({ query } = {}) {
     aimWhy.hidden = aimPill.dataset.state !== 'beyond'; aimWhy.textContent = aimPill.dataset.why || '';
     lane.draw({ ball: cat, result: r.a }, { animate });
     deck.draw({ res: r.a, lefty: L, tone: CALL[r.call][1], color: cat.color }, { animate });
-    canvas.setAttribute('aria-label', `Lane: feet ${t.feet}, laydown ${r.lay}, eyes ${t.eyes} at the ${t.mode}. ${coach.textContent}`);
+    canvas.setAttribute('aria-label', `Lane: feet ${t.feet}, laydown ${r.lay}, eyes ${fmtHalf(t.eyes)} at the ${t.mode}. ${coach.textContent}`);
     deckCv.setAttribute('aria-label', d.text);
     setPrefs({ target: Object.assign({}, prefs().target, { t, ball: cat.id, ft, tv: 2 }) });
   }

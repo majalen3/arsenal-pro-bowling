@@ -275,3 +275,7 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - **Tap counts:** ≈38 taps + 8 scrolls → ≈31 taps + 0 scrolls (KLM estimate).
 - **No code touched.** Another worker owns js/, css and sw.js.
 - **Needs owner approval:** the plan proposes overriding DECISIONS #31 and #32 in P2.
+
+## Aim follow-up: half boards everywhere the bowler reads an aim (2026-10-24)
+- Tonight (stand line, now-line, advisor "Start with"), Targeting (Eyes stepper, Find line, "Use stand" button, canvas label) and the strike-line text now show whole or half boards ("10½"), the same as Lane. The model values underneath keep tenths. The Targeting Eyes stepper snaps to halves.
+- e2e: assertions compare half boards via `hb()`. The data step's IndexedDB wait is now 30 s; it timed out at 10 s only under the full-suite load and passed alone. Full e2e: 541 passed, 0 failed. Unit tests 230/0. sw v42.

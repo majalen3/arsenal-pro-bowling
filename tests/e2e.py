@@ -12,6 +12,9 @@ API = '**/arsenal-pro-api.onrender.com/**'
 # wipe = localStorage + the v1 IndexedDB event log (the page closes its connection on versionchange)
 WIPE = "() => { localStorage.clear(); return new Promise(r => { const q = indexedDB.deleteDatabase('arsenal-pro'); q.onsuccess = q.onerror = q.onblocked = () => r(true); setTimeout(() => r(false), 2000); }); }"
 fails, passes = [], []
+def hb(s):   # "10\u00bd" -> 10.5 (bowler half boards, owner aim fix 2026-10-24)
+    s = str(s).strip(); return float(s.replace("\u00bd", "")) + (0.5 if s.endswith("\u00bd") else 0)
+
 def check(cond, name):
     (passes if cond else fails).append(name); print(('PASS ' if cond else 'FAIL ') + name)
 
@@ -198,7 +201,7 @@ async def data_cycle(b):
     await p.evaluate("""localStorage.setItem('ap_prefs', JSON.stringify({onboarded:true})); localStorage.setItem('ap_device','d-test-0001');
       localStorage.setItem('ap_lines', JSON.stringify([{ballId:'hy-road',name:'league line',release:22,aim:9,speed:16,rev:300,oil:1.2,finish:'2000',pattern:'house',note:'',updatedAt:5,synced:true,id:9}]));
       localStorage.setItem('ap_notes', JSON.stringify([{lane:'7-8',oil:'fresh',adjustment:'2 left',synced:true}]));""")
-    await p.goto(BASE + '?d0#/more'); await p.wait_for_function("() => window.__apData && window.__apData.events() >= 12")
+    await p.goto(BASE + '?d0#/more'); await p.wait_for_function("() => window.__apData && window.__apData.events() >= 12", timeout=30000)
     d = await p.evaluate("({backend: window.__apData.backend, boot: window.__apData.bootMs, n: window.__apData.events(), h: window.__apData.hash()})")
     check(d['backend'] == 'indexedDB', f"[data] event log on IndexedDB ({d['backend']}, opened+migrated in {d['boot']} ms after first paint)")
     check(d['n'] >= 2 + 10, f"[data] v0 keys migrated + reported arsenal seeded once ({d['n']} events)")
@@ -437,12 +440,12 @@ async def targeting_cycle(b):
     check('House-shot rule: move toward the miss' in sg, f'[target] direction = cited rule (model read shown, disagreement disclosed when it worsens) [{sg[:120]}]')
     await shot(p, 'phone-target-high-move')
     await p.click('#tgApply'); await p.wait_for_timeout(250)
-    check(await p.text_content('#tgFeetVal') == '25' and await p.text_content('#tgEyesVal') == '17.7', '[target] one tap applies the move (feet 25, eyes 17.7) and re-runs')
+    check(await p.text_content('#tgFeetVal') == '25' and await p.text_content('#tgEyesVal') == '17\u00bd', '[target] one tap applies the move (feet 25, eyes 17.7 shown as 17\u00bd) and re-runs')
     await p.click('#tgBack'); await p.wait_for_timeout(250)
-    check(await p.text_content('#tgFeetVal') == '17' and await p.text_content('#tgEyesVal') == '10.7', '[target] back to saved line restores feet/eyes')
+    check(await p.text_content('#tgFeetVal') == '17' and await p.text_content('#tgEyesVal') == '10\u00bd', '[target] back to saved line restores feet/eyes')
     # dots mode keeps the same line
     await p.click('.tg-mode [data-v=dots]'); await p.wait_for_timeout(200)
-    check(await p.text_content('#tgEyesVal') == '10.4' and (await p.text_content('#tgCall')).startswith('Pocket'), f'[target] dots (7.5 ft) aim converts on the same straight line [{await p.text_content("#tgEyesVal")}]')
+    check(await p.text_content('#tgEyesVal') == '10\u00bd' and (await p.text_content('#tgCall')).startswith('Pocket'), f'[target] dots (7.5 ft) aim converts on the same straight line [{await p.text_content("#tgEyesVal")}]')
     await p.click('.tg-mode [data-v=arrows]')
     # Find my strike line from Tonight: stand / aim / Pocket % with basis, apply -> lane + box; phone-speed budget
     cdp = None
@@ -451,16 +454,16 @@ async def targeting_cycle(b):
     await p.goto(BASE + '?tg#/tonight'); await p.wait_for_selector('#tnFind'); await p.click('#tnFind'); await p.wait_for_selector('#tgFindLine', timeout=15000)
     fl = (await p.text_content('#tgFindLine')).strip(); ms = int(await p.get_attribute('#tgFindOut', 'data-ms') or 99999)
     if cdp: await cdp.send('Emulation.setCPUThrottlingRate', {'rate': 1})
-    check('find=1' in p.url and re.match(r'^Your starting line with [^(]+ \(same as Tonight\): stand \d+, aim [\d.]+ at the arrows\. Pocket \d+% \(model estimate, assumed accuracy \u00b11\.5 bds, no LaneTrax import; 200 simulated shots\)\.$', fl) is not None, f'[find] Tonight -> stand, aim, Pocket % with basis + n [{fl}]')
+    check('find=1' in p.url and re.match(r'^Your starting line with [^(]+ \(same as Tonight\): stand \d+, aim [\d.\u00bd]+ at the arrows\. Pocket \d+% \(model estimate, assumed accuracy \u00b11\.5 bds, no LaneTrax import; 200 simulated shots\)\.$', fl) is not None, f'[find] Tonight -> stand, aim, Pocket % with basis + n [{fl}]')
     check(ms < 1500, f'[find] search under 1.5 s at 4x CPU throttle ({ms} ms{"" if cdp else ", no throttle"})')
     allf = await p.text_content('#tgFindCard'); check('strike' not in fl.lower() and 'No strike % shown' in allf and 'Not higher' in allf or 'High because' in allf, '[find] no strike %, says why; why-lower/higher note')
     check('17\u201318' in allf and 'nationalbowlingacademy.com' in (await p.inner_html('#tgFindInputs')) and 'not a guarantee' in allf, '[find] window + source + inputs + "not a guarantee"')
     alt = await p.query_selector('#tgFindAlt'); check(alt is None or (await alt.text_content()).startswith('Higher model pocket %'), '[find] sim2 #1: headline is the starting line; a search line shows only when >3 points higher, labelled')
     await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())"); await p.evaluate("() => window.scrollTo(0, 0)"); await shot(p, 'phone-target-find')
     await axe_ok(p, '[find] result')
-    m = re.search(r'stand (\d+), aim ([\d.]+)', fl); await p.click('#tgFindApply'); await p.wait_for_timeout(300)
+    m = re.search(r'stand (\d+), aim ([\d.\u00bd]+)', fl); await p.click('#tgFindApply'); await p.wait_for_timeout(300)
     fv, ev = await p.text_content('#tgFeetVal'), await p.text_content('#tgEyesVal')
-    check(fv == m.group(1) and float(ev) == float(m.group(2)), f'[find] one tap applies stand/aim to the lane ({fv}/{ev})')
+    check(fv == m.group(1) and hb(ev) == hb(m.group(2)), f'[find] one tap applies stand/aim to the lane ({fv}/{ev})')
     check((await p.text_content('#tgBox')) == 'In the box' and (await p.text_content('#tgCall')).startswith('Pocket'), f'[find] applied line: through the box, pocket [{await p.text_content("#tgCall")}]')
     await shot(p, 'phone-target-find-applied')
     await p.evaluate("() => document.querySelector('#tgBoxReset').click()")
@@ -693,7 +696,7 @@ async def advisor_cycle(b):
     first = await p.evaluate("document.querySelector('#tonightBody').firstElementChild.id"); check(first == 'tnAdvisor', f'[advisor] event selector is the first thing on Tonight ({first})')
     labels = await p.eval_on_selector_all('#advEvent [data-event]', 'e=>e.map(x=>x.textContent)'); check(labels == ['League', 'Tournament', 'Practice', 'New center', 'Sport'], f'[advisor] 5 events {labels}')
     await p.click('[data-event=league]'); await p.wait_for_selector('#advStart')
-    st = await p.text_content('#advStart'); check(st.startswith('Start with: Rattler Big Bite, from feet 17, aim 10.7'), f'[advisor] 1 tap -> start line with stand feet (laydown 10 + offset 7), not the laydown: {st!r}')
+    st = await p.text_content('#advStart'); check(st.startswith('Start with: Rattler Big Bite, from feet 17, aim 10\u00bd'), f'[advisor] 1 tap -> start line with stand feet (laydown 10 + offset 7), not the laydown: {st!r}')
     rows = await p.eval_on_selector_all('.adv-row', 'e=>e.map(x=>[x.dataset.owned, x.dataset.role, !!x.querySelector(".prov"), x.querySelector("p").textContent.length>5])')
     check(len(rows) == 3 and rows[-1][1] == 'spare' and all(r[2] and r[3] for r in rows), f'[advisor] league = 2 + spare, each with role, reason, confidence {rows}')
     check(all(r[0] not in ('own-guru-supreme', 'own-raw-hammer', 'own-green-scout', 'own-rack-attack') for r in rows), '[advisor] benched balls never packed')
@@ -815,7 +818,7 @@ async def sim_cycle(b):
     await c.set_offline(False); await p.evaluate("() => window.dispatchEvent(new Event('online'))"); await p.wait_for_selector('#netChip', state='hidden')
     await p.goto(BASE + '?sim#/lane'); await p.wait_for_selector('#lineSum[data-stand]'); await p.wait_for_timeout(400)
     ls = await p.text_content('#lineSum'); st = await p.get_attribute('#lineSum', 'data-stand')
-    ah = round(float(aim) * 2) / 2; ahs = (str(int(ah)) if ah == int(ah) else f'{int(ah)}\u00bd')   # Lane shows whole/half boards (owner aim fix); Tonight keeps the model's tenth
+    ah = hb(aim); ahs = (str(int(ah)) if ah == int(ah) else f'{int(ah)}\u00bd')   # Lane shows whole/half boards (owner aim fix); Tonight shows the same
     check(int(st) == feet and ahs in ls, f'[sim] Lane shows the same stand/aim as Tonight (lane {st}/{ls!r}, tonight {feet}/{aim})')
     check(not errs, '[sim] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
@@ -1258,23 +1261,23 @@ async def oneline_cycle(b):
             await p.click('[data-event=sport]'); await p.wait_for_timeout(400)
             if patn: await p.wait_for_selector('#tnPattern'); await p.fill('#tnPattern', patn); await p.press('#tnPattern', 'Enter'); await p.wait_for_timeout(600)
             await p.wait_for_selector('#tnStand')
-            m = re.search(r'Feet (\d+) \u00b7 eyes ([\d.]+)', await p.text_content('#tnStand')); tn = (int(m[1]), float(m[2]))
-            pick = await p.text_content('#tnPickName'); ma = re.search(r'Start with: (.+?), from feet (\d+), aim ([\d.]+)', await p.text_content('#advStart'))
+            m = re.search(r'Feet (\d+) \u00b7 eyes ([\d.\u00bd]+)', await p.text_content('#tnStand')); tn = (int(m[1]), hb(m[2]))
+            pick = await p.text_content('#tnPickName'); ma = re.search(r'Start with: (.+?), from feet (\d+), aim ([\d.\u00bd]+)', await p.text_content('#advStart'))
             await p.click('#tnFind'); await p.wait_for_selector('#tgFindLine', timeout=20000)
-            tg = (int(await p.text_content('#tgFeetVal')), float(await p.text_content('#tgEyesVal'))); fl = await p.text_content('#tgFindLine')
-            mf = re.search(r'stand (\d+), aim ([\d.]+)', fl); fd = (int(mf[1]), float(mf[2]))
+            tg = (int(await p.text_content('#tgFeetVal')), hb(await p.text_content('#tgEyesVal'))); fl = await p.text_content('#tgFindLine')
+            mf = re.search(r'stand (\d+), aim ([\d.\u00bd]+)', fl); fd = (int(mf[1]), hb(mf[2]))
             check(tn == tg == fd and pick in fl and 'same as Tonight' in fl, f'{tag} pick {pick}: Tonight {tn} = Targeting {tg} = Find {fd}')
             alt = await p.query_selector('#tgFindAlt')
             if alt: check((await alt.text_content()).startswith('Higher model pocket %'), f'{tag} a different search line is labelled as the model\'s alternative')
             if ma:
                 await p.select_option('#tgBall', label=ma[1]); await p.wait_for_timeout(300)
-                tg2 = (int(await p.text_content('#tgFeetVal')), float(await p.text_content('#tgEyesVal')))
+                tg2 = (int(await p.text_content('#tgFeetVal')), hb(await p.text_content('#tgEyesVal')))
                 await p.click('#tgFind')
                 for _ in range(80):
                     if ma[1] in ((await p.text_content('#tgFindLine')) or ''): break
                     await p.wait_for_timeout(100)
-                mf = re.search(r'stand (\d+), aim ([\d.]+)', await p.text_content('#tgFindLine')); fd2 = (int(mf[1]), float(mf[2]))
-                check((int(ma[2]), float(ma[3])) == tg2 == fd2, f'{tag} advisor ball {ma[1]}: Tonight {ma[2]}/{ma[3]} = Targeting {tg2} = Find {fd2}')
+                mf = re.search(r'stand (\d+), aim ([\d.\u00bd]+)', await p.text_content('#tgFindLine')); fd2 = (int(mf[1]), hb(mf[2]))
+                check((int(ma[2]), hb(ma[3])) == tg2 == fd2, f'{tag} advisor ball {ma[1]}: Tonight {ma[2]}/{ma[3]} = Targeting {tg2} = Find {fd2}')
                 await p.select_option('#tgBall', label=pick); await p.wait_for_timeout(300)
             # Aim Box on (house preset) -> Targeting's pill for the recommended line
             await p.click('#tgOvBtn'); await p.wait_for_selector('#ovSheet'); await p.click('#ovSheet [aria-label="Aim Box"] [data-v="on"]'); await p.wait_for_timeout(200)

@@ -2,6 +2,7 @@
 // scores the best candidates by Monte Carlo with the bowler's variability (measured where we have it, labelled assumed otherwise).
 // Pocket window = entry board 17–18: USBC "I Left What Where?" (via National Bowling Academy): the entry board, regardless of
 // angle, decides strike vs. leave; 17–18 → strike or single pin 70–85%. No strike % is shown: no cited carry curve by board+angle.
+import { fmtHalf } from '../labels.js';
 import { S, analyze } from '../engine.js';
 import { specOK } from '../data.js';
 import { presetFor } from './model.js';
@@ -105,7 +106,7 @@ const fmt = c => ({ kind: c.kind || 'best', lay: c.lay, arrows: c.arr, entry: r1
 // coach voice, numbers first. feet = laydown + ball offset − drift (Breakdown Bowling); dots = straight line laydown → arrows.
 export function say(res, { offset = 7, drift = 0, mode = 'arrows', ball = '' } = {}) {
   if (res.none) return { line: res.reason, alt: '', why: '' };
-  const where = c => { const feet = Math.round(c.lay + offset - drift), eye = mode === 'dots' ? r1(c.lay + (c.arrows - c.lay) * 0.5) : c.arrows; return { feet, eye, txt: `Stand ${feet}, aim ${eye} at the ${mode}` }; };
+  const where = c => { const feet = Math.round(c.lay + offset - drift), eye = mode === 'dots' ? r1(c.lay + (c.arrows - c.lay) * 0.5) : c.arrows; return { feet, eye, txt: `Stand ${feet}, aim ${fmtHalf(eye)} at the ${mode}` }; };
   const b = where(res.best), a = res.alt && where(res.alt), sd = res.spread.arrows;
   const basis = sd.src === 'device' ? `your accuracy \u00b1${sd.mean} bds${sd.n ? `, n=${sd.n}` : ''}` : `assumed accuracy \u00b1${sd.v} bds, no LaneTrax import`;
   return {

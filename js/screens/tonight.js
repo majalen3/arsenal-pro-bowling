@@ -2,6 +2,7 @@
 // js/cc/rank.js (pure); the line check is the unchanged engine via js/cc/model.js. Every number shows its source.
 // Sim fixes (docs/user-simulations.md): one line source (cc/line.js), nights not days (cc/night.js), the bowler's own hand
 // and stand for spare hints, 400 ms double-tap guard, and a game-open layout that shows only what you need mid-game.
+import { fmtHalf } from '../labels.js';
 import { h, icon, toast, segmented } from '../ui.js';
 import { go } from '../router.js';
 import { ready, proj, add, addMany, loadStarter } from '../hub.js';
@@ -94,7 +95,7 @@ export async function render() {
     WK.keepAwake(WK.shouldHold(gameOpen, prefs().wakeLock));
     // ---- coach line (≤ 2 sentences, starts with a ball name)
     const coach = !cur ? 'Add balls to a bag to get a pick.' : cur === r.pick && bf && cur.benchmark ? `${cur.name} first: ${bf}, so start with your benchmark and read it.`
-      : `${cur.name} for demand ${d.demand} of 5${cur.level != null ? ' (level ' + cur.level + ')' : ''}.` + (stand ? ` Stand ${stand.feet}, eyes ${ml.target} at the arrows.` : '');
+      : `${cur.name} for demand ${d.demand} of 5${cur.level != null ? ' (level ' + cur.level + ')' : ''}.` + (stand ? ` Stand ${stand.feet}, eyes ${fmtHalf(ml.target)} at the arrows.` : '');
     // ---- setup
     const patIn = h('input', { id: 'tnPattern', type: 'search', list: 'tnPatList', autocomplete: 'off', placeholder: 'House shot (assumed 38 ft)', 'aria-label': 'Pattern', value: pat ? pat.name : s.patternOwn ? s.patternName || '' : '' });
     const dl = h('datalist', { id: 'tnPatList' }, ...(IDX || []).map(x => h('option', { value: x.name })));
@@ -143,7 +144,7 @@ export async function render() {
           h('dt', { text: 'Holds' }), h('dd', { text: `${ml.holds} of ${ml.of} small misses (\u00b10.5 mph, \u00b120 rpm, \u00b11 board)` }));
       pick = h('div', { class: 'card pick', id: 'tnPick' },
         h('div', { class: 'row between' }, h('span', { class: 'ball-name', id: 'tnPickName', text: cur.name })),
-        stand ? h('p', { class: 'tn-line', id: 'tnStand', text: `Feet ${stand.feet} \u00b7 eyes ${ml.target} at the arrows` }) : null,
+        stand ? h('p', { class: 'tn-line', id: 'tnStand', text: `Feet ${stand.feet} \u00b7 eyes ${fmtHalf(ml.target)} at the arrows` }) : null,
         stand ? h('button', { class: 'btn primary block', id: 'tnFind', onclick: () => go('#/target?find=1&ball=' + encodeURIComponent(cur.catalogId || '')) }, 'Find my strike line \u203a') : null,
         gameOpen ? null : alts,
         h('details', { class: 'tn-more', id: 'tnPickMore' }, h('summary', { text: 'Why this ball, specs and model' }),
@@ -163,7 +164,7 @@ export async function render() {
     if (gameOpen) {
       // ---- game open (sim bug 4): ball \u00b7 feet \u00b7 aim, the ball-change line, the scoring card, Weaker/Stronger. The rest behind one tap.
       body.append(h('div', { class: 'card tn-now', id: 'tnNow' },
-        h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: cur ? cur.name : 'No ball' }), stand ? ` \u00b7 feet ${stand.feet} \u00b7 aim ${ml.target}` : ''),
+        h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: cur ? cur.name : 'No ball' }), stand ? ` \u00b7 feet ${stand.feet} \u00b7 aim ${fmtHalf(ml.target)}` : ''),
         thenLine), quickLog(P, s, cur, b, hand, stand, g, team), alts || '',
         h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: 'Bag, lanes and line details' }),
           advisorCard(P, s, b), h('p', { class: 'coach', id: 'tnCoach', text: coach }), pick || '', reads || '', setup));
@@ -463,7 +464,7 @@ export async function render() {
       line: c => lineFor(c, { speed: num(b.speed), rev: num(b.rev), ft: pat ? pat.ft : null }).ml });
     if (a.none) { card.append(h('p', { class: 'muted', text: a.reason }), h('button', { class: 'btn block', onclick: () => go('#/arsenal') }, 'Open Arsenal \u203a')); return card; }
     const ml = a.line, st = ml && !ml.none ? standOf(ml.feet) : null;
-    card.append(h('p', { class: 'coach', id: 'advStart', role: 'status', text: st ? `Start with: ${a.A.name}, from feet ${st.feet}, aim ${ml.target} at the arrows.` : `Start with: ${a.A.name}. ${(ml && ml.reason) || 'spec TBD: no model line'}, so set feet and eyes on Targeting.` },
+    card.append(h('p', { class: 'coach', id: 'advStart', role: 'status', text: st ? `Start with: ${a.A.name}, from feet ${st.feet}, aim ${fmtHalf(ml.target)} at the arrows.` : `Start with: ${a.A.name}. ${(ml && ml.reason) || 'spec TBD: no model line'}, so set feet and eyes on Targeting.` },
       st ? provChip('model', st.assumed ? '2-D model \u00b7 offset 7 assumed' : '2-D model') : null));
     const packed = mem.packedTs && P.bags['bag-adv-' + ev];
     const list = h('ul', { class: 'adv-list', id: 'advList' }, ...a.rows.map(r => {
