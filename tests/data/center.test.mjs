@@ -30,7 +30,7 @@ test('last visit: newest night at this center, setup + games/avg + most thrown b
   assert.equal(v.id, 'test-n2'); assert.equal(v.lanePair, '15-16'); assert.equal(v.games, 1); assert.equal(v.avg, 190); assert.equal(v.ballId, 'own-a');
   assert.equal(M.visitsOf(P, C, 'test-now').length, 2);
   assert.equal(M.lineOf(v, id => id === 'own-a' ? 'Phaze II' : null), 'Oct 20 \u00b7 lanes 15-16 \u00b7 2026 PBA Shark 48 ft \u00b7 1 game, 190 avg \u00b7 mostly Phaze II');
-  assert.deepEqual(M.setupOf(v), { pickId: null, patternSlug: 'shark', patternName: '2026 PBA Shark', ft: 48, ml: 22, ratio: null, surface: 'synthetic', bagId: 'bag-x', lanePair: '15-16' });
+  assert.deepEqual(M.setupOf(v), { pickId: null, patternSlug: 'shark', patternName: '2026 PBA Shark', ft: 48, ml: 22, ratio: null, patternOwn: false, surface: 'synthetic', bagId: 'bag-x', lanePair: '15-16' });
   assert.equal(M.lastVisit(P, 'center-elsewhere'), null);
 });
 test('practice nights are listed but never averaged; a note round-trips through center.edited', () => {
@@ -41,4 +41,10 @@ test('practice nights are listed but never averaged; a note round-trips through 
   const P = project(ev), v = M.lastVisit(P, C);
   assert.equal(v.practice, true); assert.equal(v.avg, null); assert.match(M.lineOf(v), /1 practice game/); assert.match(M.lineOf(v), /house shot \(not entered\)/);
   assert.equal(M.noteOf(P, C), '2 boards left after game 1'); assert.equal(M.noteOf(P, 'center-none'), null);
+});
+test('M2: an own pattern is remembered per center as your own entry', () => {
+  const ev = seedEvents({ now: 1000 });
+  ev.push(mkEvent('session.created', 'test-own', { kind: 'tonight', date: '2026-10-19', centerId: 'center-x', patternSlug: 'own-fridays', patternName: 'Fridays', ft: null, ml: null, ratio: null, patternOwn: true }, { ts: 2000 }));
+  const v = M.lastVisit(project(ev), 'center-x'); assert.equal(v.pattern.own, true); assert.equal(M.setupOf(v).patternOwn, true); assert.equal(M.setupOf(v).patternName, 'Fridays');
+  assert.match(M.lineOf(v), /Fridays/);
 });

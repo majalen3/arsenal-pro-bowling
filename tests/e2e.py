@@ -1113,6 +1113,27 @@ async def center_cycle(b):
     nt = await p.text_content('#tnLastNote'); check(nt == 'Your note: 3rd arrow hooked early', f'[center] note from the session page shows next time ({nt})')
     check(not errs, f'[center] no page errors {errs[:3]}'); await c.close()
 
+async def ownpat_cycle(b):
+    # M2 (Sim2 #9): a pattern not in the Kegel list is kept as your own (no "pick from the list" dead end); length, volume and
+    # ratio are optional behind one tap; an unknown length says 38 ft is assumed; a known one drives the pick; the library still works.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.goto(BASE + '?op#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnSetup')
+    await p.fill('#tnPattern', 'Fridays house'); await p.dispatch_event('#tnPattern', 'change'); await p.wait_for_selector('#tnOwnPat')
+    chip = await p.text_content('#tnSetup .fld .prov'); check(await p.input_value('#tnPattern') == 'Fridays house' and 'length not entered, 38 ft assumed' in chip, f'[ownpat] any name kept; unknown length labelled ({chip})')
+    check(await p.eval_on_selector('#tnOwnPat', 'e => !e.open'), '[ownpat] details behind one tap')
+    lv0 = await p.text_content('#tnLevel')
+    await p.click('#tnOwnPat summary'); await p.fill('#tnOwnFt', '50'); await p.fill('#tnOwnMl', '35'); await p.fill('#tnOwnRatio', '3:1'); await p.click('#tnOwnSave')
+    await p.wait_for_function("() => document.querySelector('#tnSetup .fld .prov').textContent.includes('50 ft')")
+    lv = await p.text_content('#tnLevel'); check('demand 5' in lv and lv != lv0, f'[ownpat] entered length drives the demand ({lv0.strip()} -> {lv.strip()})')
+    sv = await p.evaluate("async () => { const m = await import('./js/hub.js'); return Object.values(m.proj().sessions).map(x => [x.patternName, x.ft, x.ml, x.ratio, x.patternOwn]).find(x => x[4]); }")
+    check(sv == ['Fridays house', 50, 35, 3, True], f'[ownpat] saved on the night as your entry {sv}')
+    await axe_ok(p, '[ownpat]'); small = await p.evaluate(SMALL); check(not small, f'[ownpat] targets >= 44px {small[:6]}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[ownpat] no horizontal overflow at 360 {w}')
+    await shot(p, 'phone-own-pattern')
+    await p.fill('#tnPattern', '2026 PBA Badger'); await p.dispatch_event('#tnPattern', 'change'); await p.wait_for_function("() => !document.querySelector('#tnOwnPat')")
+    check('Kegel library' in await p.text_content('#tnSetup .fld .prov'), '[ownpat] picking from the library clears the own entry')
+    check(not errs, f'[ownpat] no page errors {errs[:3]}'); await c.close()
+
 async def aimbox_cycle(b):
     # Aim Box: default off (lane pixels unchanged, no pill); Overlays sheet turns it on; House = Baker 4.5-9.5 at 45 ft;
     # through/outside pill; Custom edges persist after reload; lefty mirror keeps the same read; Targeting + Compare show it.
@@ -1167,7 +1188,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('center', lambda: center_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

@@ -237,3 +237,8 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - **Setup:** lane pair is optional and cleaned ("21 - 22" → "21-22"), and your centers are offered in a datalist.
 - **Session page:** Details has "Note for next time at <center>".
 - **Tests:** unit +3 (center.test); new e2e step `center` 13/0. tonight/quicklog/scoring/help/advisor are 16/17/53/17/20, all green.
+
+## M2: own-pattern entry (Sim2 #9) (2026-10-24)
+- **Tonight:** typing a pattern that isn't in the list now saves it as "your entry" instead of erroring. "Add details" (length / volume / ratio) sits behind one tap, and an entered length drives demand. Picking a library pattern clears the own entry, and "Use last setup" carries it per center.
+- **Tests:** unit +3 (ownpat 2, center +1), now 224 incl. another session's oneline.test. New e2e step `ownpat` 9/0; center/tonight/advisor 13/16/20.
+- **sw:** bumped to v37 (center.js and ownpat.js are now precached).

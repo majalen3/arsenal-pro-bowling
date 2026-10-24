@@ -22,6 +22,7 @@ import * as LG from '../cc/league.js';
 import * as PR from '../cc/protect.js';
 import * as WK from '../cc/wake.js';
 import * as CM from '../cc/center.js';
+import * as OP from '../cc/ownpat.js';
 import * as hub from '../hub.js';
 export { standOf };
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
@@ -94,10 +95,17 @@ export async function render() {
     const coach = !cur ? 'Add balls to a bag to get a pick.' : cur === r.pick && bf && cur.benchmark ? `${cur.name} first: ${bf}, so start with your benchmark and read it.`
       : `${cur.name} for demand ${d.demand} of 5${cur.level != null ? ' (level ' + cur.level + ')' : ''}.` + (stand ? ` Stand ${stand.feet}, eyes ${ml.target} at the arrows.` : '');
     // ---- setup
-    const patIn = h('input', { id: 'tnPattern', type: 'search', list: 'tnPatList', autocomplete: 'off', placeholder: 'House shot (assumed 38 ft)', 'aria-label': 'Pattern', value: pat ? pat.name : '' });
+    const patIn = h('input', { id: 'tnPattern', type: 'search', list: 'tnPatList', autocomplete: 'off', placeholder: 'House shot (assumed 38 ft)', 'aria-label': 'Pattern', value: pat ? pat.name : s.patternOwn ? s.patternName || '' : '' });
     const dl = h('datalist', { id: 'tnPatList' }, ...(IDX || []).map(x => h('option', { value: x.name })));
     patIn.onchange = async () => { const v = patIn.value.trim(), row = IDX && IDX.find(x => x.name.toLowerCase() === v.toLowerCase());
-      if (!v) await save({ pickId: null, patternSlug: null, patternName: null, ft: null, ml: null, ratio: null }); else if (row) await save({ pickId: null, patternSlug: row.slug, patternName: row.name, ft: row.ft, ml: row.ml, ratio: row.ratio }); else toast('Pick a pattern from the list', { kind: 'bad' }); };
+      if (!v) await save({ pickId: null, patternOwn: false, patternSlug: null, patternName: null, ft: null, ml: null, ratio: null }); else if (row) await save({ pickId: null, patternOwn: false, patternSlug: row.slug, patternName: row.name, ft: row.ft, ml: row.ml, ratio: row.ratio }); else { const o = OP.ownPattern(v); if (!o) return toast('Type a pattern name', { kind: 'bad' }); await save(o); toast(`Saved as your own pattern. Length not entered, so 38 ft is assumed: add details if you know them.`); } };
+    // M2 (Sim2 #9): your own / house pattern. Any name is kept; length, volume and ratio are optional, behind one tap.
+    const ownDet = s.patternOwn ? (() => { const f = (id, lbl, val, ph) => h('label', { class: 'fld' }, h('span', { text: lbl }), h('input', { id, autocomplete: 'off', inputmode: 'decimal', placeholder: ph, value: val == null ? '' : String(val) }));
+      const d = h('details', { class: 'tn-more', id: 'tnOwnPat' }, h('summary', { text: s.ft != null ? 'Pattern details' : 'Add details (length, volume, ratio)' }),
+        f('tnOwnFt', 'Length (ft)', s.ft, 'e.g. 41'), f('tnOwnMl', 'Volume (mL, optional)', s.ml, 'e.g. 24'), f('tnOwnRatio', 'Ratio (optional)', s.ratio, 'e.g. 3:1'),
+        h('button', { class: 'btn block', id: 'tnOwnSave', onclick: async () => { const q = id => d.querySelector('#' + id).value; const o = OP.ownPattern(s.patternName, { ft: q('tnOwnFt'), ml: q('tnOwnMl'), ratio: q('tnOwnRatio') });
+          if (q('tnOwnFt').trim() && o.ft == null) return toast('Length as feet, e.g. 41', { kind: 'bad' }); await save(o); toast(o.ft != null ? `${o.patternName}: ${o.ft} ft, used for the pick and line.` : 'Saved. Length still assumed 38 ft.'); } }, 'Save details'));
+      return d; })() : null;
     const cIn = h('input', { id: 'tnCenter', autocomplete: 'off', placeholder: 'Center name', 'aria-label': 'Center', value: center ? center.name : '' });
     cIn.onchange = async () => { const v = cIn.value.trim(); if (!v) return save({ centerId: null }); const id = 'center-' + slug(v);
       if (!P.centers[id]) await add('center.created', id, { fields: { name: v, surface: s.surface } }); await save({ centerId: id }); };
@@ -107,7 +115,8 @@ export async function render() {
     const lpIn = h('input', { id: 'tnLanes', autocomplete: 'off', placeholder: 'e.g. 15-16', 'aria-label': 'Lane pair (optional)', value: s.lanePair || '' });
     lpIn.onchange = async () => { const v = lpIn.value.trim(), c = CM.cleanPair(v); if (v && !c) return toast('Lane pair like 15-16', { kind: 'bad' }); await save({ lanePair: c }); };
     const setup = h('div', { class: 'card', id: 'tnSetup' }, h('h2', { class: 'card-title', text: 'Lanes tonight' }),
-        h('label', { class: 'fld' }, h('span', {}, 'Pattern ', pat ? provChip('usbc', 'Kegel library') : provChip('assumed', 'assumed house 38 ft')), patIn, dl),
+        h('label', { class: 'fld' }, h('span', {}, 'Pattern ', s.patternOwn ? provChip(s.ft != null ? 'user' : 'assumed', OP.ownLabel(s)) : pat ? provChip('usbc', 'Kegel library') : provChip('assumed', 'assumed house 38 ft')), patIn, dl),
+        ownDet,
         h('label', { class: 'fld' }, h('span', { text: 'Center' }), cIn, cList),
         center ? h('label', { class: 'fld' }, h('span', { text: 'Lane pair (optional)' }), lpIn) : null,
         h('div', { class: 'fld' }, h('span', {}, 'Lane surface ', s.surface === 'unknown' ? provChip('assumed', 'unknown') : null), segmented('Lane surface', [['unknown', 'Unknown'], ['wood', 'Wood'], ['synthetic', 'Synthetic']], s.surface, v => { save({ surface: v, pickId: null }); if (center) add('center.edited', center.id, { fields: { surface: v } }); })),

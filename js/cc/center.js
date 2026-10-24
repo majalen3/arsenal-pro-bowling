@@ -14,7 +14,7 @@ export function visitsOf(P, centerId, excludeSid = null) {
     .map(s => { const st = stats[s.id] || {}, bb = byBall[s.id] || {}, top = Object.entries(bb).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
       const practice = s.event === 'practice';
       return { id: s.id, date: s.date || null, ts: s.editTs || s.ts || 0, lanePair: cleanPair(s.lanePair), practice,
-        pattern: s.patternName ? { slug: s.patternSlug || null, name: s.patternName, ft: s.ft != null ? +s.ft : null, ml: s.ml ?? null, ratio: s.ratio ?? null } : null,
+        pattern: s.patternName ? { slug: s.patternSlug || null, name: s.patternName, ft: s.ft != null ? +s.ft : null, ml: s.ml ?? null, ratio: s.ratio ?? null, own: !!s.patternOwn } : null,
         surface: s.surface || null, bagId: s.bagId || null, ballId: top ? top[0] : null, games: st.games || 0, avg: practice ? null : st.avg ?? null }; })
     .sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.ts - a.ts);
 }
@@ -33,7 +33,7 @@ export function lineOf(v, nameOf = () => null) {
 export function setupOf(v) {
   if (!v) return null;
   const f = { pickId: null };
-  if (v.pattern) Object.assign(f, { patternSlug: v.pattern.slug, patternName: v.pattern.name, ft: v.pattern.ft, ml: v.pattern.ml, ratio: v.pattern.ratio });
+  if (v.pattern) Object.assign(f, { patternSlug: v.pattern.slug, patternName: v.pattern.name, ft: v.pattern.ft, ml: v.pattern.ml, ratio: v.pattern.ratio, patternOwn: !!v.pattern.own });
   if (v.surface && v.surface !== 'unknown') f.surface = v.surface;
   if (v.bagId) f.bagId = v.bagId;
   if (v.lanePair) f.lanePair = v.lanePair;

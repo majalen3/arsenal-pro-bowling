@@ -141,3 +141,9 @@ Short ADR-style notes. Each: decision · why · consequence.
 - **Shown before the first ball only.** The card disappears once the night has a logged ball, so nothing is added to the scoring layout.
 - **"Use last setup" copies only what was entered** (pattern, surface, bag, lane pair). The ball pick is never copied. It's recomputed for the copied lanes, so the advice stays the ranker's.
 - **Practice is shown but never averaged.**
+
+## M2 Own-pattern entry (2026-10-24)
+- **A name not in the Kegel index is saved as your own pattern.** Saved fields are `patternSlug 'own-<slug>'`, `patternName`, `patternOwn: true`. ft, ml and ratio are optional (`js/cc/ownpat.js`). They're checked against sanity ranges only (20–70 ft, 5–50 mL, 1–15 ratio). Those ranges make no claim about real patterns.
+- **Unknown length** keeps the existing house-38 ft assumption, now labelled on the chip. A known length is used like a library pattern's.
+- **Picking a library pattern or clearing the field** resets `patternOwn`. M1's `setupOf` carries `patternOwn`, so an own pattern is remembered per center.
+- **sw v37** precaches center.js and ownpat.js.

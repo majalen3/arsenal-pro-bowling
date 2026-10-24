@@ -168,3 +168,13 @@
   - **Usability:** one card with one line and at most one button. Older visits are behind "All N visits", and the lane pair is optional and only asked once a center is set. Your centers are offered as you type. Targets are ≥44 px, 360 px with no overflow, axe 0.
   - **Applicability:** shown only before the first ball of a night at a center visited before. It's gone once a ball is logged (nothing new during scoring). Practice nights are listed but never averaged (USBC averages are certified play).
 - **3-second beginner check:** "last time here I bowled on 15-16 on Badger, and I can copy that."
+
+## M2 Own-pattern entry (Sim2 #9) (2026-10-24)
+- **SDT:**
+  - **Autonomy:** the bowler's own name for the shot ("Fridays house") is kept as typed. There's no "pick from the list" dead end, and length, volume and ratio are optional.
+  - **Competence:** the chip says exactly what the pick runs on: "your entry · length not entered, 38 ft assumed", or "your entry · 50 ft" once entered. A known length visibly changes the demand.
+  - **Relatedness:** a league's own house shot counts as much as a Kegel pattern, and it's remembered per center through "Use last setup".
+- **U/A:**
+  - **Usability:** one field (the same one as before). Details are behind "Add details". Targets are ≥44 px, 360 px with no overflow, axe 0.
+  - **Applicability:** set before or between games in Lanes tonight. Nothing changes on the scoring pad.
+- **3-second beginner check:** "I typed our house shot and it kept it, and it says it's guessing 38 ft."
