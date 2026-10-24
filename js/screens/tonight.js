@@ -23,6 +23,7 @@ import * as PR from '../cc/protect.js';
 import * as WK from '../cc/wake.js';
 import * as CM from '../cc/center.js';
 import * as OP from '../cc/ownpat.js';
+import * as DR from '../cc/drill.js';
 import * as hub from '../hub.js';
 export { standOf };
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
@@ -45,7 +46,7 @@ export async function render() {
   const setNet = () => { net.hidden = navigator.onLine; };
   window.addEventListener('online', setNet); window.addEventListener('offline', setNet);
   const ql = { leave: new Set(), foul: false, tag: null };   // quick-log taps not yet written
-  let swapOpen = null, lastTap = 0, busy = false, moreOpen = false, savedMsg = '', frameT0 = 0, edit = null, lastEdit = null, pickFix = false, ballOpen = false, teamOpen = null;
+  let drillOpen = false, swapOpen = null, lastTap = 0, busy = false, moreOpen = false, savedMsg = '', frameT0 = 0, edit = null, lastEdit = null, pickFix = false, ballOpen = false, teamOpen = null;
   let local = {};   // UI state not yet written (avoids re-render churn while typing)
   const sess = () => Object.assign({ kind: 'tonight', patternSlug: null, ft: null, ml: null, ratio: null, centerId: null, surface: 'unknown', stage: 'fresh', bagId: null, game: 1, pickId: null, reads: [] }, (proj().sessions || {})[curSid()], local);
   async function save(fields) {
@@ -125,6 +126,7 @@ export async function render() {
         h('div', { class: 'fld' }, h('span', { text: 'Game' }), segmented('Game', [[1, '1'], [2, '2'], [3, '3'], [4, '4+']], s.game || 1, v => save({ game: +v }), 'wide')),
         h('div', { class: 'fld' }, h('span', { text: 'Scoring' }), segmented('Scoring', [['solo', 'Just me'], ['league', 'League team'], ['baker', 'Baker']], s.mode || 'solo', v => save({ mode: v }), 'wide')),
         (s.mode || 'solo') !== 'solo' ? teamSetup(s) : null,
+        goalField(s),
         h('button', { class: 'btn ghost block', id: 'tnBagLink', onclick: () => go('#/bag') }, 'Bag builder \u203a'));
     const alt = (x, lbl) => x ? h('button', { class: 'alt btn', 'data-alt': lbl, onclick: () => save({ pickId: x.id, throwId: null }) }, h('small', { class: 'muted', text: lbl + ' ' }), h('b', { text: x.name })) : h('div', { class: 'alt muted', text: `No ${lbl.toLowerCase()} ball in this bag` });
     const alts = cur ? h('div', { class: 'alts' }, alt(r.weaker && cur === r.pick ? r.weaker : R.readMove(r, cur.id, 'early'), 'Weaker'), alt(r.stronger && cur === r.pick ? r.stronger : R.readMove(r, cur.id, 'weak'), 'Stronger')) : null;
@@ -177,10 +179,34 @@ export async function render() {
     body.append(h('p', { class: 'coach', id: 'tnCoach', role: 'status', text: coach }));
     if (thenLine) body.append(thenLine);
     if (pick) body.append(pick);
+    if (s.event === 'practice') body.append(drillCard(P, s));
     body.append(quickLog(P, s, cur, b, hand, stand, g, team));
     if (reads) body.append(reads);
     body.append(setup);
     if (measNudge) body.append(measNudge);
+  }
+  // ---- M3 spare drill (practice nights, no game open): your most-missed leaves, Made / Missed per try, one line of totals.
+  // Attempts sit on the night (session.edited {drill}); they never touch a score or an average.
+  function drillCard(P, s) {
+    const L = DR.drillLeaves(P), st = DR.drillStats(s.drill), by = Object.fromEntries(st.byLeave.map(x => [x.leave, x]));
+    const tap = (leave, made) => async () => { if (Date.now() - lastTap < TAP_GUARD_MS) return; lastTap = Date.now(); drillOpen = true; await save({ drill: DR.addAttempt(s.drill, leave, made) }); };
+    const d = h('details', { class: 'card tn-more', id: 'tnDrill', open: drillOpen, ontoggle: e => { drillOpen = e.target.open; } },
+      h('summary', { text: st.n ? `Spare drill · ${st.made} of ${st.n} made` : 'Spare drill' }),
+      h('p', { class: 'small muted', id: 'tnDrillFrom', text: L.from === 'your misses' ? 'Your most-missed leaves from your scored games.' : 'No misses logged yet, so the two corner pins.' }),
+      ...L.list.map(x => { const b = by[x.leave]; return h('div', { class: 'drill-row', 'data-leave': x.leave },
+        h('p', { class: 'small' }, h('b', { text: x.leave.includes('-') ? x.leave : x.leave + ' pin' }), ` · ${x.why}` + (b ? ` · tonight ${b.made} of ${b.n}` : '')),
+        h('div', { class: 'btn-grid' }, h('button', { class: 'btn', 'data-drill': 'made', onclick: tap(x.leave, true) }, 'Made'), h('button', { class: 'btn', 'data-drill': 'miss', onclick: tap(x.leave, false) }, 'Missed'))); }),
+      h('p', { class: 'muted small', text: 'Practice only: drill tries never count in a score or your average.' }));
+    return d;
+  }
+  // ---- M3 one process goal (optional, chosen before a game; read on the recap with its n). Spares made, never a score.
+  function goalField(s) {
+    const g = DR.cleanGoal(s.goal), k = g ? g.k : 'none';
+    const tgt = h('select', { id: 'tnGoalN', 'aria-label': 'Goal: how many of 10' }, ...Array.from({ length: 10 }, (_, i) => h('option', { value: String(i + 1), text: `${i + 1} of 10`, selected: g ? g.target === i + 1 : i === 7 })));
+    tgt.onchange = () => save({ goal: { k, target: +tgt.value } });
+    return h('div', { class: 'fld', id: 'tnGoal' }, h('span', { text: 'One goal for tonight (optional)' }),
+      segmented('Goal', [['none', 'None'], ['single', 'Single-pin spares'], ['drill', 'Drill spares']], k, v => save({ goal: v === 'none' ? null : { k: v, target: g ? g.target : 8 } }), 'wide'),
+      g ? tgt : null);
   }
   // ---- M1 center memory: before the first ball of a night only. One line (numbers first), the note you left, one button;
   // older visits behind a tap. Nothing here is a recommendation: it is what you did last time.
@@ -417,6 +443,7 @@ export async function render() {
     if (r.focus) { const fc = prefs().focus, set = fc && fc.from === sid && fc.text === r.focus.text;
       box.append(h('p', { class: 'bc-focus', id: 'tnRecapFocus', text: r.focus.text }),
         h('button', { class: 'btn ghost block', id: 'tnSetFocus', 'aria-pressed': String(!!set), onclick: () => { setPrefs({ focus: set ? null : { text: r.focus.text, from: sid, ts: Date.now() } }); toast(set ? 'Focus cleared.' : 'Saved. It shows on Tonight next time.'); draw(); } }, set ? 'Next-time focus saved \u2713' : 'Make this my next focus')); }
+    const gr = DR.goalResult(P, sid, (P.sessions[sid] || {}).goal); if (gr) box.append(h('p', { class: 'small', id: 'tnGoalResult', text: 'Your goal: ' + gr.text }));
     box.append(h('a', { class: 'btn ghost block', id: 'tnRecapAll', href: '#/session/' + encodeURIComponent(sid) }, 'Whole night, game by game \u203a'));
     return box;
   }

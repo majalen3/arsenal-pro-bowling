@@ -8,6 +8,7 @@ import { catOf } from '../cc/cats.js';
 import * as C from '../cc/card.js';
 import { fixState, fixPanel } from './fixgame.js';
 import * as CM from '../cc/center.js';
+import * as DR from '../cc/drill.js';
 export const ballName = (P, id) => { const o = id && P.owned && P.owned[id]; return o ? (o.name || (catOf(o.catalogId) || {}).name || 'Ball') : id ? ((catOf(id) || {}).name || id) : null; };
 const fmtDate = d => { if (!d) return 'Undated'; const t = new Date(d + 'T12:00:00'); return isNaN(t) ? d : t.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }); };
 export const backBar = (title, fallback) => h('header', { class: 'appbar' }, h('button', { class: 'icon-btn', 'aria-label': 'Back', html: icon('back'), onclick: () => back(fallback) }), h('h1', { class: 'title', text: title }));
@@ -27,6 +28,7 @@ export async function render({ params }) {
     body.append(h('p', { class: 'bc-sub muted', id: 'sessWhen', text: `${fmtDate(s.date)} \u00b7 ${s.source}${s.ballId ? ' \u00b7 ' + ballName(P, s.ballId) : ''}` }),
       h('div', { class: 'card bc-head', id: 'sessRecap' }, h('p', { class: 'bc-headline', id: 'sessHead', text: r.head }),
         r.support.length ? h('dl', { class: 'bc-figs' }, ...r.support.map(x => h('div', { class: 'bc-fig', 'data-k': x.k }, h('dt', { text: x.label }), h('dd', { text: x.text })))) : null,
+        (() => { const gr = DR.goalResult(P, id, (P.sessions[id] || {}).goal); return gr ? h('p', { class: 'small', id: 'sessGoal', text: 'Your goal: ' + gr.text }) : null; })(),
         r.focus ? h('p', { class: 'bc-focus', id: 'sessFocus', text: r.focus.text }) : null,
         r.focus ? (() => { const fc = prefs().focus, set = !!(fc && fc.from === id && fc.text === r.focus.text);
           return h('button', { class: 'btn ghost block', id: 'sessSetFocus', 'aria-pressed': String(set), onclick: () => { setPrefs({ focus: set ? null : { text: r.focus.text, from: id, ts: Date.now() } }); toast(set ? 'Focus cleared.' : 'Saved. It shows on Tonight next time.'); draw(); } }, set ? 'Next-time focus saved \u2713' : 'Make this my next focus'); })() : null));
@@ -75,6 +77,9 @@ export async function render({ params }) {
       det.append(h('label', { class: 'fld' }, h('span', { text: 'Ball used (feeds Bag Advisor)' }), sel));
       if (L.warnings && L.warnings.length) det.append(h('h3', { class: 'section-title', text: `Import notes (${L.warnings.length})` }), h('ul', { class: 'plain small', id: 'sessWarn' }, ...L.warnings.map(w => h('li', { text: typeof w === 'string' ? w : `${String(w.code || '').replace(/_/g, ' ').toLowerCase()}${w.detail ? ': ' + w.detail : ''}` }))));
     }
+    // M3: spare drill tries on this night (practice only; never in a score or average).
+    const dr = DR.drillStats((P.sessions[id] || {}).drill);
+    if (dr.n) det.append(h('h3', { class: 'section-title', text: 'Spare drill' }), h('ul', { class: 'plain small', id: 'sessDrill' }, ...dr.byLeave.map(x => h('li', { text: `${x.leave.includes('-') ? x.leave : x.leave + ' pin'}: ${x.made} of ${x.n} made` }))));
     // M1: a note for next time at this center (shown on Tonight before the first ball there). Behind Details; plain text.
     const raw = P.sessions[id] || {}, ctr = raw.centerId && P.centers[raw.centerId];
     if (ctr) { const ta = h('input', { id: 'sessCenterNote', maxlength: '140', autocomplete: 'off', placeholder: 'e.g. 3rd arrow hooked early on 15', value: CM.noteOf(P, ctr.id) || '' });

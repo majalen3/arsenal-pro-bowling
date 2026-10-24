@@ -451,14 +451,14 @@ async def targeting_cycle(b):
     await p.goto(BASE + '?tg#/tonight'); await p.wait_for_selector('#tnFind'); await p.click('#tnFind'); await p.wait_for_selector('#tgFindLine', timeout=15000)
     fl = (await p.text_content('#tgFindLine')).strip(); ms = int(await p.get_attribute('#tgFindOut', 'data-ms') or 99999)
     if cdp: await cdp.send('Emulation.setCPUThrottlingRate', {'rate': 1})
-    check('find=1' in p.url and re.match(r'^Stand \d+, aim [\d.]+ at the arrows\. Pocket \d+% \(model estimate, assumed accuracy \u00b11\.5 bds, no LaneTrax import; 200 simulated shots\)\.$', fl) is not None, f'[find] Tonight -> stand, aim, Pocket % with basis + n [{fl}]')
+    check('find=1' in p.url and re.match(r'^Your starting line with [^(]+ \(same as Tonight\): stand \d+, aim [\d.]+ at the arrows\. Pocket \d+% \(model estimate, assumed accuracy \u00b11\.5 bds, no LaneTrax import; 200 simulated shots\)\.$', fl) is not None, f'[find] Tonight -> stand, aim, Pocket % with basis + n [{fl}]')
     check(ms < 1500, f'[find] search under 1.5 s at 4x CPU throttle ({ms} ms{"" if cdp else ", no throttle"})')
     allf = await p.text_content('#tgFindCard'); check('strike' not in fl.lower() and 'No strike % shown' in allf and 'Not higher' in allf or 'High because' in allf, '[find] no strike %, says why; why-lower/higher note')
     check('17\u201318' in allf and 'nationalbowlingacademy.com' in (await p.inner_html('#tgFindInputs')) and 'not a guarantee' in allf, '[find] window + source + inputs + "not a guarantee"')
-    check(await p.query_selector('#tgFindAlt') is not None, '[find] second option (more room / next best)')
+    alt = await p.query_selector('#tgFindAlt'); check(alt is None or (await alt.text_content()).startswith('Higher model pocket %'), '[find] sim2 #1: headline is the starting line; a search line shows only when >3 points higher, labelled')
     await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())"); await p.evaluate("() => window.scrollTo(0, 0)"); await shot(p, 'phone-target-find')
     await axe_ok(p, '[find] result')
-    m = re.match(r'^Stand (\d+), aim ([\d.]+)', fl); await p.click('#tgFindApply'); await p.wait_for_timeout(300)
+    m = re.search(r'stand (\d+), aim ([\d.]+)', fl); await p.click('#tgFindApply'); await p.wait_for_timeout(300)
     fv, ev = await p.text_content('#tgFeetVal'), await p.text_content('#tgEyesVal')
     check(fv == m.group(1) and float(ev) == float(m.group(2)), f'[find] one tap applies stand/aim to the lane ({fv}/{ev})')
     check((await p.text_content('#tgBox')) == 'In the box' and (await p.text_content('#tgCall')).startswith('Pocket'), f'[find] applied line: through the box, pocket [{await p.text_content("#tgCall")}]')
@@ -1134,6 +1134,36 @@ async def ownpat_cycle(b):
     check('Kegel library' in await p.text_content('#tnSetup .fld .prov'), '[ownpat] picking from the library clears the own entry')
     check(not errs, f'[ownpat] no page errors {errs[:3]}'); await c.close()
 
+async def drill_cycle(b):
+    # M3: spare drill on practice nights (most-missed leaves, Made/Missed, never in a score), one optional process goal read
+    # on the recap with its n ("10 of 10 single-pin spares made (100%) · goal 7 of 10"), never a "good job".
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.goto(BASE + '?dr#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnSetup')
+    check(await p.query_selector('#tnDrill') is None, '[drill] not shown unless the night is practice')
+    await p.click('#advEvent [data-event=practice]'); await p.wait_for_selector('#tnDrill')
+    check(await p.eval_on_selector('#tnDrill', 'e => !e.open') and 'corner pins' in await p.text_content('#tnDrillFrom'), '[drill] behind one tap; no misses yet -> corner pins, said so')
+    await p.click('#tnDrill summary'); await p.click('#tnDrill .drill-row[data-leave="10"] [data-drill=made]'); await p.wait_for_function("() => document.querySelector('#tnDrill summary').textContent.includes('1 of 1')")
+    await p.wait_for_timeout(450); await p.click('#tnDrill .drill-row[data-leave="10"] [data-drill=miss]'); await p.wait_for_function("() => document.querySelector('#tnDrill summary').textContent.includes('1 of 2 made')")
+    check(await p.eval_on_selector('#tnDrill', 'e => e.open') and 'tonight 1 of 2' in await p.text_content('#tnDrill .drill-row[data-leave="10"]'), '[drill] Made/Missed logged, card stays open, per-leave n shown')
+    await axe_ok(p, '[drill]'); small = await p.evaluate(SMALL); check(not small, f'[drill] targets >= 44px {small[:6]}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[drill] no horizontal overflow at 360 {w}')
+    await shot(p, 'phone-drill')
+    await p.click('#tnGoal [data-v=single]'); await p.wait_for_selector('#tnGoalN'); await p.select_option('#tnGoalN', '7'); await p.wait_for_timeout(300)
+    g = await p.evaluate("async () => { const m = await import('./js/hub.js'); const nw = await import('./js/cc/night.js'); return m.proj().sessions[nw.openNight(m.proj())].goal; }")
+    check(g == {'k': 'single', 'target': 7}, f'[drill] one process goal saved on the night {g}')
+    await p.evaluate("""async () => { const m = await import('./js/hub.js'); const nw = await import('./js/cc/night.js'); const sid = nw.openNight(m.proj()); let n = 0;
+      for (let f = 1; f <= 10; f++) { await m.add('shot.logged', 'test-dr-' + n++, { sessionId: sid, game: 1, frame: f, roll: 1, down: 9, leave: [10] }); await m.add('shot.logged', 'test-dr-' + n++, { sessionId: sid, game: 1, frame: f, roll: 2, down: 1, leave: [] }); }
+      await m.add('shot.logged', 'test-dr-' + n++, { sessionId: sid, game: 1, frame: 10, roll: 3, down: 9, leave: [10] }); }""")
+    await p.goto(BASE + '?dr2#/tonight'); await p.wait_for_selector('#tnGoalResult')
+    gt = await p.text_content('#tnGoalResult'); check(gt == 'Your goal: 10 of 10 single-pin spares made (100%) · goal 7 of 10 (70%).', f'[drill] goal read on the recap with its n ({gt})')
+    check(not any(x in gt.lower() for x in ['good', 'great', 'well done', 'nice']), '[drill] informational, no praise words')
+    sid = await p.evaluate("async () => { const m = await import('./js/hub.js'); const nw = await import('./js/cc/night.js'); return nw.openNight(m.proj()); }")
+    await p.goto(BASE + '?dr3#/session/' + sid); await p.wait_for_selector('#sessGoal'); await p.click('#sessDetails summary')
+    check('10 pin: 1 of 2 made' in await p.text_content('#sessDrill'), '[drill] session page lists the drill tries in Details')
+    avg = await p.evaluate("async () => { const m = await import('./js/hub.js'); const c = await import('./js/cc/card.js'); const s = c.sessionsOf(m.proj())[0]; return s.games.length; }")
+    check(avg == 1, f'[drill] drill tries add no game ({avg})')
+    check(not errs, f'[drill] no page errors {errs[:3]}'); await c.close()
+
 async def aimbox_cycle(b):
     # Aim Box: default off (lane pixels unchanged, no pill); Overlays sheet turns it on; House = Baker 4.5-9.5 at 45 ft;
     # through/outside pill; Custom edges persist after reload; lefty mirror keeps the same read; Targeting + Compare show it.
@@ -1151,7 +1181,7 @@ async def aimbox_cycle(b):
     await shot(p, 'phone-aimbox-sheet')
     await p.keyboard.press('Escape'); await p.wait_for_timeout(700)
     on1 = await px(); check(on1 != off0, '[aimbox] on: box drawn on the lane')
-    pill = await p.text_content('#aimPill'); check(pill in ('Through zone', 'Outside zone') and not await p.eval_on_selector('#aimPill', 'e => e.hidden'), f'[aimbox] pill shows the read ({pill})')
+    pill = await p.text_content('#aimPill'); check(pill in ('Through zone', 'Outside zone', 'Beyond model') and not await p.eval_on_selector('#aimPill', 'e => e.hidden'), f'[aimbox] pill shows the read ({pill})')
     lbl = await p.get_attribute('#lane', 'aria-label'); check('Aim Box 4.5' in lbl, '[aimbox] canvas label includes the box')
     await shot(p, 'phone-aimbox-lane')
     # Custom: edges persist across reload
@@ -1184,11 +1214,52 @@ async def aimbox_cycle(b):
     check(not errs, '[aimbox] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
+async def oneline_cycle(b):
+    # sim2 #1: ONE answer to "where do I stand / aim". For the bowler's pick and the Bag Advisor's start ball, on the house shot
+    # and on 2026 PBA Shark, righty and lefty: Tonight's line == Targeting's first feet/eyes == Find's headline (js/cc/line.js).
+    # The Aim Box never calls that line "Outside zone": Baker's 45 ft box is past the model's reach -> "Beyond model", explained.
+    import re
+    for hand in ('right', 'left'):
+        for patn in (None, '2026 PBA Shark'):
+            errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); tag = f'[oneline] {hand} {patn or "house"}:'
+            await seed(p); await p.evaluate(f"localStorage.setItem('ap_profile', JSON.stringify({{hand: '{hand}'}}))")
+            await p.goto(BASE + '?ol#/tonight'); await p.wait_for_timeout(600)
+            if await p.query_selector('#loadStarter'): await p.click('#loadStarter'); await p.wait_for_timeout(600)
+            await p.click('[data-event=sport]'); await p.wait_for_timeout(400)
+            if patn: await p.wait_for_selector('#tnPattern'); await p.fill('#tnPattern', patn); await p.press('#tnPattern', 'Enter'); await p.wait_for_timeout(600)
+            await p.wait_for_selector('#tnStand')
+            m = re.search(r'Feet (\d+) \u00b7 eyes ([\d.]+)', await p.text_content('#tnStand')); tn = (int(m[1]), float(m[2]))
+            pick = await p.text_content('#tnPickName'); ma = re.search(r'Start with: (.+?), from feet (\d+), aim ([\d.]+)', await p.text_content('#advStart'))
+            await p.click('#tnFind'); await p.wait_for_selector('#tgFindLine', timeout=20000)
+            tg = (int(await p.text_content('#tgFeetVal')), float(await p.text_content('#tgEyesVal'))); fl = await p.text_content('#tgFindLine')
+            mf = re.search(r'stand (\d+), aim ([\d.]+)', fl); fd = (int(mf[1]), float(mf[2]))
+            check(tn == tg == fd and pick in fl and 'same as Tonight' in fl, f'{tag} pick {pick}: Tonight {tn} = Targeting {tg} = Find {fd}')
+            alt = await p.query_selector('#tgFindAlt')
+            if alt: check((await alt.text_content()).startswith('Higher model pocket %'), f'{tag} a different search line is labelled as the model\'s alternative')
+            if ma:
+                await p.select_option('#tgBall', label=ma[1]); await p.wait_for_timeout(300)
+                tg2 = (int(await p.text_content('#tgFeetVal')), float(await p.text_content('#tgEyesVal')))
+                await p.click('#tgFind')
+                for _ in range(80):
+                    if ma[1] in ((await p.text_content('#tgFindLine')) or ''): break
+                    await p.wait_for_timeout(100)
+                mf = re.search(r'stand (\d+), aim ([\d.]+)', await p.text_content('#tgFindLine')); fd2 = (int(mf[1]), float(mf[2]))
+                check((int(ma[2]), float(ma[3])) == tg2 == fd2, f'{tag} advisor ball {ma[1]}: Tonight {ma[2]}/{ma[3]} = Targeting {tg2} = Find {fd2}')
+                await p.select_option('#tgBall', label=pick); await p.wait_for_timeout(300)
+            # Aim Box on (house preset) -> Targeting's pill for the recommended line
+            await p.click('#tgOvBtn'); await p.wait_for_selector('#ovSheet'); await p.click('#ovSheet [aria-label="Aim Box"] [data-v="on"]'); await p.wait_for_timeout(200)
+            await p.keyboard.press('Escape'); await p.wait_for_timeout(500)
+            st, why = await p.eval_on_selector('#tgAimPill', 'e => [e.dataset.state, document.querySelector("#tgAimWhy").hidden ? "" : document.querySelector("#tgAimWhy").textContent]')
+            check(st in ('through', 'beyond') and (st != 'beyond' or 'No modelled strike line reaches this box' in why), f'{tag} recommended line is never "Outside zone" unexplained ({st}; {why[:70]})')
+            if hand == 'right' and not patn: await axe_ok(p, '[oneline] Targeting with Beyond model'); await shot(p, 'phone-oneline-beyond')
+            check(not errs, f'{tag} no page errors ' + ' | '.join(errs[:2]))
+            await c.close()
+
 async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

@@ -147,3 +147,9 @@ Short ADR-style notes. Each: decision · why · consequence.
 - **Unknown length** keeps the existing house-38 ft assumption, now labelled on the chip. A known length is used like a library pattern's.
 - **Picking a library pattern or clearing the field** resets `patternOwn`. M1's `setupOf` carries `patternOwn`, so an own pattern is remembered per center.
 - **sw v37** precaches center.js and ownpat.js.
+
+## M3 Spare drills + one process goal (2026-10-24)
+- **Pure core** in `js/cc/drill.js`. `drillLeaves` takes the top 3 leaves by misses from your scored games (practice included, since it's skill data). If nothing has been missed yet, it falls back to the two corner pins, labelled as such. It also exports `addAttempt` (last 200 tries), `drillStats`, `cleanGoal` and `goalResult`.
+- **No new table.** Tries are `session.drill [{leave, made, ts}]` and the goal is `session.goal {k:'single'|'drill', target 1..10}`, both via session.edited. /api/me export and delete already cover them.
+- **Goal kinds are process-only** (single-pin spares made, drill spares made), as a share of 10. Never a score goal. The result line always carries n and makes no praise or judgement words (unit and e2e both check this).
+- **sw v38** precaches drill.js.

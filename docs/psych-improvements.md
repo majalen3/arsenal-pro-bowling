@@ -178,3 +178,13 @@
   - **Usability:** one field (the same one as before). Details are behind "Add details". Targets are ≥44 px, 360 px with no overflow, axe 0.
   - **Applicability:** set before or between games in Lanes tonight. Nothing changes on the scoring pad.
 - **3-second beginner check:** "I typed our house shot and it kept it, and it says it's guessing 38 ft."
+
+## M3 Spare drills + one process goal (2026-10-24)
+- **SDT:**
+  - **Competence:** the drill uses the bowler's own most-missed leaves ("10 pin · missed 4 of 10"). Each try is one tap (Made / Missed), and the totals carry their n ("1 of 2 made"). The goal is a process goal (spares made), never a score, and it's read back with its n: "10 of 10 single-pin spares made (100%) · goal 7 of 10 (70%)." That's informational, never "good job".
+  - **Autonomy:** the goal is optional, and the bowler chooses its kind and number. The drill is behind one tap and only on practice nights.
+  - **Relatedness:** spare shooting is what league teammates talk about. The goal matches the USBC spare-system focus (3-6-9, already shown on Tonight) without ranking anyone.
+- **U/A:**
+  - **Usability:** one collapsed card, with each leave as a row of 2 buttons (44 px). The goal is one segmented control plus one select inside Lanes tonight, which is already behind a tap while a game is open. The result is one line on the recap, and drill tries are listed in session Details. 360 px with no overflow, axe 0.
+  - **Applicability:** the drill shows only when the night is set to Practice and no game is open, so nothing is added to the scoring pad. Drill tries never become a game, a score or an average.
+- **3-second beginner check:** "these are the spares I miss; I tap Made or Missed."

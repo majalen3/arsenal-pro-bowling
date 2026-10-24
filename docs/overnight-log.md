@@ -242,3 +242,10 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - **Tonight:** typing a pattern that isn't in the list now saves it as "your entry" instead of erroring. "Add details" (length / volume / ratio) sits behind one tap, and an entered length drives demand. Picking a library pattern clears the own entry, and "Use last setup" carries it per center.
 - **Tests:** unit +3 (ownpat 2, center +1), now 224 incl. another session's oneline.test. New e2e step `ownpat` 9/0; center/tonight/advisor 13/16/20.
 - **sw:** bumped to v37 (center.js and ownpat.js are now precached).
+
+## M3: spare drills + one process goal (2026-10-24)
+- **Tonight (Practice night, no game open):** a collapsed "Spare drill" card lists your 3 most-missed leaves, each with Made / Missed buttons and a per-leave count for tonight. If nothing has been missed yet, it shows the corner pins.
+- **Lanes tonight:** "One goal for tonight (optional)" offers None / Single-pin spares / Drill spares, plus "N of 10".
+- **Results:** the recap and the session page show "Your goal: 10 of 10 single-pin spares made (100%) · goal 7 of 10 (70%)." Session Details lists drill tries.
+- **Tests:** unit +3 (drill.test). New e2e step `drill` 12/0. Regression: tonight 16, quicklog 17, scoring 53, advisor 20, center 13, ownpat 9, card 24, help 17, phone 57, offline 5, all 0 failures.
+- **sw:** bumped to v38.
