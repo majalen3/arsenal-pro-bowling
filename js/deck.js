@@ -36,7 +36,7 @@ export function describe(res, lefty) {
   if (res.entryBoard == null || res.call === 'GUTTER') return { pocket, text:'The ball does not reach the pins on this line.', five:'', contact:'' };
   const cs = contacts(res.entryBoard, res.angle), by = n => cs.find(c => c.pin.n === n);
   const off = res.entryBoard - 17.5, side = Math.abs(off) <= 0.25 ? 'right in the pocket' : off > 0 ? `${Math.abs(off).toFixed(1)} boards high` : `${Math.abs(off).toFixed(1)} boards light`;
-  const ang = res.angle == null ? '' : `${res.angle.toFixed(1)}°` + (res.angle < 4 ? ' (flatter than 4–6°)' : res.angle > 6 ? ' (steeper than 4–6°)' : ' (inside 4–6°)');
+  const ang = res.angle == null ? '' : `${res.angle.toFixed(1)}° model` + (res.angle < 4 ? ' (flatter than 4–6°)' : res.angle > 6 ? ' (steeper than 4–6°)' : ' (inside 4–6°)');
   const one = by(1), three = by(3);
   // where on the head pin: angle of the contact point from the pin's front (0 = full on the nose)
   const phi = one && one.hit ? Math.abs(Math.atan2(one.at.x, -one.at.y) * 180 / Math.PI) : null;

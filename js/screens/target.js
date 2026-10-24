@@ -52,7 +52,7 @@ export async function render({ query } = {}) {
   const B = T.BOOK;
   const limits = h('details', { class: 'tg-limits small', id: 'tgLimits' },
     h('summary', { text: 'Model limit: straighter line, smaller hook than a real house shot' }),
-    h('ul', {}, h('li', { text: T.LIMITS.reach }), h('li', { text: T.LIMITS.hook }), h('li', { text: T.LIMITS.oil })),
+    h('ul', {}, h('li', { text: T.LIMITS.reach }), h('li', { text: T.LIMITS.hook }), h('li', { text: T.LIMITS.oil }), h('li', { text: T.LIMITS.angle })),
     h('p', { id: 'tgBook' }, 'Book starts on a house shot, all crossing the 2nd arrow (board 10): ',
       B.lines.map(l => `${l.style.toLowerCase()} laydown ${l.lay}`).join(', '), '; breakpoint ', B.bp, ' at ', B.bpFt, ' ft. Sources: ',
       h('a', { href: B.src, target: '_blank', rel: 'noopener', class: 'srclink' }, B.label), ', ',
@@ -165,7 +165,7 @@ export async function render({ query } = {}) {
     r = T.read(cat, t, ctx, box); sug = T.suggest(cat, t, ctx, box, r);
     const L = lefty();
     coach.textContent = T.coach(r, sug, L);
-    const [cl, tone] = CALL[r.call]; callPill.textContent = r.call === 'gutter' ? cl : `${cl} ${r.entry} \u00b7 ${r.angle}\u00b0`; callPill.dataset.tone = tone;
+    const [cl, tone] = CALL[r.call]; callPill.textContent = r.call === 'gutter' ? cl : `${cl} ${r.entry} \u00b7 ${r.angle}\u00b0 model`; callPill.dataset.tone = tone;
     boxPill.textContent = r.box.ok ? 'In the box' : r.box.dB == null ? 'No breakpoint' : `Box missed ${Math.abs(r.box.dB) > T.BOX_HALF_BOARDS ? Math.abs(r.box.dB) + ' bd ' + (r.box.dB > 0 ? 'inside' : 'outside') : Math.abs(r.box.dF) + ' ft ' + (r.box.dF > 0 ? 'long' : 'short')}`;
     boxPill.dataset.tone = r.box.ok ? 'good' : 'warn';
     const dirB = n => n === 0 ? '' : ` ${Math.abs(n)} ${T.dirWord(n, L)}`;

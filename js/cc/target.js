@@ -40,6 +40,7 @@ export { REACH };
 export const LIMITS = {
   reach: `The model launches at most ${Math.round(REACH * 10) / 10} board off your laydown by the arrows; real tweener lines swing 3\u20135 (bowlingball.com).`,
   hook: 'The model\u2019s 4\u20136\u00b0 pocket lines break inside board 10 and hook 7 boards or less; a real house line breaks at board 8\u201310 near 40 ft (NBA). No model line does that.',
+  angle: 'Angles are measured on the model\u2019s drawn lane, not in real degrees: a drawn 4\u20136\u00b0 is about 1\u00b0 real (docs/ENGINE_VERIFICATION_REPORT.md 5b). Use them to compare lines, not as a real entry angle.',
   oil: 'The model\u2019s house oil has 3 flat zones, so a feet move mostly slides the whole line; it can\u2019t show why moving toward the miss works on a real house shot.',
 };
 export const BOOK = { src: 'https://www.bowlingball.com/BowlVersity/bowling-ball-delivery-angle', label: 'bowlingball.com', nba: 'https://www.nationalbowlingacademy.com/post/understanding-the-house-shot',
@@ -111,7 +112,7 @@ export function moveWords(s, lefty) {
 // Coach line, numbers first, ≤ 2 sentences.
 export function coach(r, s, lefty) {
   if (r.call === 'gutter') return s ? `Gutter before the pins. ${moveWords(s, lefty)}` : 'Gutter before the pins. Move your eyes toward the middle.';
-  const deg = `${r.angle}\u00b0`;
+  const deg = `${r.angle}\u00b0 model`;   // drawn-lane units, not real degrees (LIMITS.angle)
   const boxTxt = r.box.ok ? `Through the box at ${r.bpFt} ft, board ${r.bpBoard}.`
     : r.bpBoard == null ? 'No breakpoint on this line.' : `Box missed: breakpoint board ${r.bpBoard} at ${r.bpFt} ft.`;
   if (r.call === 'pocket') return s && !r.box.ok ? `${boxTxt.replace(/\.$/, '')}, pocket ${deg}. ${moveWords(s, lefty)}` : `${boxTxt} Pocket, ${deg}${r.angleOK ? '' : ' (outside 4\u20136\u00b0)'}.`;

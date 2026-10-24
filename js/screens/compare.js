@@ -26,7 +26,7 @@ export function render({ query }) {
   const best = (vals, fn) => { const nums = vals.map(fn); return nums; };
   const rows = [
     ['Entry board', b => f1(analyze(b).entryBoard), (b, i) => Math.abs(res[i].entryBoard - 17.5)],
-    ['Entry angle', (b, i) => res[i].angle == null ? '\u2014' : f1(res[i].angle) + '\u00b0', (b, i) => res[i].angle == null ? 99 : Math.abs(res[i].angle - 5)],
+    ['Entry angle (model)', (b, i) => res[i].angle == null ? '\u2014' : f1(res[i].angle) + '\u00b0', (b, i) => res[i].angle == null ? 99 : Math.abs(res[i].angle - 5)],
     ['Breakpoint', (b, i) => res[i].bpBoard == null ? '\u2014' : `${f1(res[i].bpBoard)} @ ${Math.round(res[i].bpFeet)} ft`],
     ['Margin', b => sensitivity(b), b => -(+sensitivity(b).split(' ')[0])],
     ['RG', b => String(rgTxt(b))], ['Differential', b => String(diffTxt(b))], ['Cover', b => b.cover + (b.coverName ? ' (' + b.coverName + ')' : '')],

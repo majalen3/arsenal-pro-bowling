@@ -22,7 +22,7 @@ export function render({ params }) {
           onLane ? h('span', { class:'pill gold', text:'On lane' }) : h('button', { class:'btn primary', id:'putOnLane', onclick:() => { setBall(b); go('#/lane'); } }, 'Put on lane'),
           onLane ? null : h('a', { class:'btn ghost', id:'cmpOnLane', href:`#/compare?ids=${app.ball.id},${b.id}` }, h('span', { html:icon('compare') }), `Compare with ${app.ball.name}`)))),
     h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { text:`On ${PATTERN_LABEL[S.pattern]}, your line` })),
-      h('div', { class:'mini-read', 'data-tone':CALL_TONE[a.call] }, h('b', { text:CALL_LABEL[a.call] }), h('span', { class:'num', text:` entry ${f1(a.entryBoard)} · ${f1(a.angle)}° · breakpoint ${f1(a.bpBoard)}${a.bpFeet != null ? ' @ ' + Math.round(a.bpFeet) + ' ft' : ''}` }))),
+      h('div', { class:'mini-read', 'data-tone':CALL_TONE[a.call] }, h('b', { text:CALL_LABEL[a.call] }), h('span', { class:'num', text:` entry ${f1(a.entryBoard)} · ${f1(a.angle)}° model · breakpoint ${f1(a.bpBoard)}${a.bpFeet != null ? ' @ ' + Math.round(a.bpFeet) + ' ft' : ''}` }))),
     h('div', { class:'spec-grid' }, spec('RG', String(rgTxt(b))), spec('Differential', String(diffTxt(b))), spec('Core', esc(b.core) + (b.coreName ? '<small>' + esc(b.coreName) + '</small>' : '') + (b.est ? ' <i class="est">est.</i>' : '')),
       spec('Cover', esc(b.cover) + (b.coverName ? '<small>' + esc(b.coverName) + '</small>' : '')), spec('Factory finish', esc(b.finish || '\u2014')), spec('Reads', r ? `${r.tag}<small>skids ~${Math.round(r.f)} ft</small>` : '\u2014')),
     h('div', { class:'card' }, h('h2', { class:'card-title', text:'How it rolls' }), h('p', { text:b.motion }), b.note ? h('p', { class:'muted small', text:b.note }) : null),

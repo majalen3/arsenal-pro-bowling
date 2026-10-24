@@ -97,7 +97,7 @@ export function say(res, { offset = 7, drift = 0, mode = 'arrows' } = {}) {
   const basis = sd.src === 'device' ? `your accuracy \u00b1${sd.mean} bds${sd.n ? `, n=${sd.n}` : ''}` : `assumed accuracy \u00b1${sd.v} bds, no LaneTrax import`;
   return {
     line: `${b.txt}. Pocket ${res.best.pocket}% (model estimate, ${basis}; ${res.n} simulated shots).`,
-    window: res.angleWin ? 'Pocket = entry board 17\u201318 at 4\u20136\u00b0.' : `Pocket = entry board 17\u201318 only: no line reaches 4\u20136\u00b0 with this ball here (best ${res.best.angle}\u00b0).`,
+    window: res.angleWin ? 'Pocket = entry board 17\u201318 at 4\u20136\u00b0 (model angle, drawn units).' : `Pocket = entry board 17\u201318 only: no line reaches 4\u20136\u00b0 with this ball here (best ${res.best.angle}\u00b0).`,
     alt: a ? `${res.alt.kind === 'room' ? 'More room' : 'Next best'}: ${a.txt.charAt(0).toLowerCase() + a.txt.slice(1)}, ${res.alt.pocket}% (${res.alt.room ? `still in the window for a ${res.alt.room}-board miss at the arrows${res.alt.kind === 'room' ? `, vs ${res.best.room}` : ''}` : 'less room for a miss'}).` : '',
     why: (() => { const top = res.sens[0], W = { arrows: `a ${res.spread.arrows.v}-board miss at the arrows`, laydown: `a ${res.spread.laydown.v}-board laydown miss`, speed: `${res.spread.speed.v} mph of speed change`, rev: `${res.spread.rev.v} rpm of rev change` };
       return res.best.pocket >= 85 ? `High because this line keeps the entry in 17\u201318 ${res.angleWin ? ' at 4\u20136\u00b0' : ''} for a ${res.best.room}-board miss either way at the arrows.`

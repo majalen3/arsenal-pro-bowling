@@ -33,7 +33,7 @@ export function render() {
   const deckCv = h('canvas', { class:'deck', id:'deck', role:'img' });
   const deckRead = h('div', { class:'deck-read', id:'deckRead' });
   const tile = (id, label) => h('div', { class:'tile', id }, h('div', { class:'tile-label', text:label }), h('div', { class:'tile-val num' }), h('div', { class:'tile-sub' }));
-  const tEntry = tile('tEntry', 'Entry'), tAngle = tile('tAngle', 'Angle'), tBp = tile('tBp', 'Break pt');
+  const tEntry = tile('tEntry', 'Entry'), tAngle = tile('tAngle', 'Angle (model)'), tBp = tile('tBp', 'Break pt');
   const lineSum = h('button', { class:'line-sum', id:'lineSum', onclick:() => { tune = openTune(); } });
   const hold = h('div', { class:'hold', id:'hold' });
   const more = h('div', { class:'more-read', id:'moreRead' });
@@ -71,7 +71,7 @@ export function render() {
     const cl = houseRule(coachLine(a));
     coach.textContent = isLefty() ? mirrorWords(cl) : cl;
     setTile(tEntry, f1(a.entryBoard), 'pocket 17.5', a.entryBoard != null && Math.abs(a.entryBoard - 17.5) <= 0.7 ? 'good' : 'warn');
-    setTile(tAngle, a.angle == null ? '\u2014' : f1(a.angle) + '\u00b0', 'need 4\u20136\u00b0', a.angle != null && a.angle >= 4 && a.angle <= 6 ? 'good' : 'warn');
+    setTile(tAngle, a.angle == null ? '\u2014' : f1(a.angle) + '\u00b0', 'need 4\u20136\u00b0 drawn', a.angle != null && a.angle >= 4 && a.angle <= 6 ? 'good' : 'warn');
     const r31 = a.bpBoard == null ? null : ruleOf31(S.pattern, a.bpBoard);
     setTile(tBp, a.bpBoard == null ? '\u2014' : f1(a.bpBoard), a.bpFeet == null ? 'no hook' : `@ ${Math.round(a.bpFeet)} ft`, r31 && Math.abs(r31.d) <= 2 ? 'good' : 'warn');
     lineSum.innerHTML = `<span class="sr-only">Tune shot. </span><span><b class="num">${S.release}</b><small>Feet</small></span><span class="arrow" aria-hidden="true">→</span><span><b class="num">${fmtBoard(target())}</b><small>Target</small></span><span><b class="num">${S.speed}</b><small>mph</small></span><span><b class="num">${S.rev}</b><small>rpm</small></span>${icon('tune', 'ls-ic')}`;

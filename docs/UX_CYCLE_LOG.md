@@ -232,3 +232,7 @@ Each cycle: change → test → independent review → commit+push. Scores are 1
 | Unit | 145/0 (targeting 14) |
 | Lighthouse `#/target` | 98/100/100/100 |
 | Service worker | v19 |
+- **Follow-up:**
+  - Find arrows = path crossing is now unit-tested.
+  - Angles are labelled as model/drawn units on Lane, Targeting, Find, Deck, Compare, Ball and Add-ball (ENGINE_VERIFICATION_REPORT 5b).
+  - Service worker v20; e2e 279/0; Lighthouse 98/100/100/100 for `#/target` and 97/100/100/100 for `#/lane`.

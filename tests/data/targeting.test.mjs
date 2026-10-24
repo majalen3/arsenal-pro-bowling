@@ -117,3 +117,18 @@ test('coach text: model estimate, basis, sample size; never a strike %', () => {
   const d = F.say(F.find(cat, ctx), { mode: 'dots' }); assert.match(d.line, /at the dots/);
 });
 test('spec-TBD ball returns none', () => { assert.equal(F.find({ name: 'x' }).none, true); });
+test('Find: the reported arrows board is where the engine path actually crosses 15 ft (ENGINE_VERIFICATION_REPORT 5b: HEAD said 18, path crossed 11.7)', () => {
+  const cross = pts => { for (let i = 1; i < pts.length; i++) if (yToFeet(pts[i].y) >= 15) { const p0 = pts[i - 1], p1 = pts[i], f = (15 - yToFeet(p0.y)) / (yToFeet(p1.y) - yToFeet(p0.y)); return xToBoard(p0.x + (p1.x - p0.x) * f); } return null; };
+  let n = 0;
+  for (const b of balls.filter(specOK).slice(0, 6)) for (const [speed, rev] of [[15, 220], [17, 300], [13, 350]]) {
+    const r = F.find(b, { speed, rev, ft: 38, n: 40 }); if (r.none || !r.best) continue;
+    const s = F.say(r), { lay, arrows } = r.best, f = G.aimFor(lay, arrows);
+    const rel = f.clamped ? lay + (arrows - f.got) : lay;                      // same rule as strikeline shot()
+    const x = cross(analyze(b, { speed, rev, release: rel, aim: f.aim }).points);
+    assert.ok(Math.abs(x - arrows) < 0.1, `${b.name} ${speed}/${rev}: reported arrows ${arrows}, path crosses ${x}`);
+    assert.ok(Math.abs(x - s.eye) <= 0.3, `${b.name}: "aim ${s.eye} at the arrows" but the path crosses ${x}`);
+    assert.ok(Math.abs(s.eye - (lay)) <= G.REACH + 0.5 || f.clamped, 'eye within the model reach of the laydown');
+    n++;
+  }
+  assert.ok(n >= 6, `checked ${n}`);
+});

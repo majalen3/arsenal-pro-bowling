@@ -80,3 +80,6 @@ Short ADR-style notes. Each: decision · why · consequence.
     - Lane's coach sentence goes through `houseRule()` in the screen layer, because `coachLine` in engine.js is frozen. Lane's Left/Right miss buttons stay 2-and-1 toward the miss, now on the correct geometry (often clamped at the model's reach).
     - Targeting shows a "Model limit" panel with the cited book lines.
     - Recommended next step, needing owner approval: engine v2 with a real launch angle and an oil gradient.
+    - **Independent check, and angles:** the independent engine verification (docs/ENGINE_VERIFICATION_REPORT.md 5a/5b) agrees with this verdict.
+      - A unit test now asserts that Find's reported arrows board equals the engine path's crossing at 15 ft (< 0.1 board) for 6 balls × 3 speed/rev profiles.
+      - Engine angles are drawn-lane units (a drawn 4–6° is about 1° real, per the report), so every user-facing angle now reads "° model" or "(model)", and Targeting's Model limit panel explains this (`LIMITS.angle`). The strike rule itself is unchanged.

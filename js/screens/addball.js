@@ -137,7 +137,7 @@ export async function render() {
           h('p', { class: 'muted small phkey' }, h('i', { class: 'sk' }), 'skid ', h('i', { class: 'hk' }), 'hook ', h('i', { class: 'rl' }), 'roll'),
           h('table', { class: 'abtable small', id: 'abTable' }, h('thead', {}, h('tr', {}, h('th', { scope: 'col', text: '' }), h('th', { scope: 'col', text: 'New' }), h('th', { scope: 'col', text: 'Bench' }), h('th', { scope: 'col', text: '\u0394' }))),
             h('tbody', {}, tr('Skid', v(c.ball.skid, ' ft'), v(c.bench.skid, ' ft'), c.delta.skid), tr('Hook', v(c.ball.hook, ' ft'), v(c.bench.hook, ' ft'), c.delta.hook), tr('Roll', v(c.ball.roll, ' ft'), v(c.bench.roll, ' ft'), null),
-              tr('Breakpoint', `${v(c.ball.bpFt, ' ft')} / ${v(c.ball.bpBoard)}`, `${v(c.bench.bpFt, ' ft')} / ${v(c.bench.bpBoard)}`, c.delta.bpBoard), tr('Entry angle', v(c.ball.angle, '\u00b0'), v(c.bench.angle, '\u00b0'), c.delta.angle),
+              tr('Breakpoint', `${v(c.ball.bpFt, ' ft')} / ${v(c.ball.bpBoard)}`, `${v(c.bench.bpFt, ' ft')} / ${v(c.bench.bpBoard)}`, c.delta.bpBoard), tr('Entry angle (model)', v(c.ball.angle, '\u00b0'), v(c.bench.angle, '\u00b0'), c.delta.angle),
               tr('Model call', c.ball.call || '\u2014', c.bench.call || '\u2014', null))),
           h('p', { class: 'muted small' }, prov('model', 'estimate'), ` 2-D engine, same release for both \u00b7 ${c.ms} ms`, h('span', { id: 'abMs', hidden: true, text: String(c.ms) })));
       }
