@@ -26,6 +26,7 @@ import * as CM from '../cc/center.js';
 import * as OP from '../cc/ownpat.js';
 import * as DR from '../cc/drill.js';
 import * as hub from '../hub.js';
+import * as ST from '../cc/status.js';
 import { helpDot, withHelp } from './help.js';
 import * as HAND from '../cc/hand.js';
 import { handAsk, handLine } from './hand.js';
@@ -62,9 +63,9 @@ export async function render() {
   }
   function bagOf(P, s) {
     const bags = Object.values(P.bags), bag = bags.find(b => b.id === s.bagId) || bags[0] || null;
-    const owned = Object.values(P.owned).filter(o => !['proShop', 'retired'].includes(o.status));
-    const ids = bag ? bag.slots.map(x => x.owned) : owned.filter(o => o.status !== 'benched').map(o => o.id);
-    const spare = bag ? bag.spare : null;
+    // P1.3: only what is actually packed (status.js) — a ball moved to At home / the pro shop / Retired drops out at once.
+    const ids = bag ? ST.packedIds(P, bag) : Object.values(P.owned).filter(ST.inMyBag).map(o => o.id);
+    const spare = bag && ids.includes(bag.spare) ? bag.spare : null;
     const list = ids.filter(id => id !== spare && P.owned[id]).map(id => { const o = P.owned[id]; const c = catOf(o.catalogId);
       return { ownedId: id, catalogId: o.catalogId || null, name: short(o.name || (c && c.name)), benchmark: !!o.benchmark, finish: o.finish || 'factory' }; });
     return { bag, bags, list, spare: spare && P.owned[spare] ? P.owned[spare] : null };
@@ -479,19 +480,21 @@ export async function render() {
         r.evidence ? h('p', { class: 'small', 'data-evidence': '' }, r.evidence) : null,
         r.warning ? h('p', { class: 'small adv-warn', 'data-warn': '' }, '\u26a0 ' + r.warning) : null);
       if (r.role !== 'spare') li.append(h('button', { class: 'btn sm ghost', 'data-swap': r.ownedId, 'aria-expanded': String(swapOpen === r.ownedId), 'aria-label': `Swap ${r.name}`, onclick: () => {
-        if (!a.bench.length) { toast('No other available ball. Mark one \u201cin bag\u201d on Arsenal.'); return; } swapOpen = swapOpen === r.ownedId ? null : r.ownedId; draw(); } }, 'Swap'));
+        if (!a.bench.length) { toast('No other ball in your bag or at home. Change a ball\u2019s Status on its page.'); return; } swapOpen = swapOpen === r.ownedId ? null : r.ownedId; draw(); } }, 'Swap'));
       if (swapOpen === r.ownedId) li.append(h('div', { class: 'chips', role: 'group', 'aria-label': `Swap ${r.name} for` }, ...a.bench.map(x => h('button', { class: 'btn sm', 'data-swap-to': x.ownedId, onclick: () => {
         const m = Object.assign({}, prefs().advisor), e2 = Object.assign({}, m[ev]); e2.swaps = Object.assign({}, e2.swaps); for (const [k, v] of Object.entries(e2.swaps)) if (v === r.ownedId) delete e2.swaps[k];
-        e2.swaps[r.ownedId] = x.ownedId; m[ev] = e2; swapOpen = null; setPrefs({ advisor: m }); draw(); toast(`${x.name} in for ${r.name}.`); } }, x.name))));
+        e2.swaps[r.ownedId] = x.ownedId; m[ev] = e2; swapOpen = null; setPrefs({ advisor: m }); draw(); toast(`${x.name} in for ${r.name}.`); } }, x.home ? `${x.name} \u00b7 ${ST.HOME_TAG}` : x.name))));
       return li; }));
     card.append(list);
     const id = 'bag-adv-' + ev;
     card.append(h('div', { class: 'btn-grid' }, h('button', { class: 'btn primary', id: 'advPack', onclick: async () => {
-      const slots = a.slots.concat(a.spare ? [a.spare] : []).map(o => ({ owned: o, locked: false }));
+      const slots = a.slots.concat(a.spare ? [a.spare] : []).map(o => Object.assign({ owned: o, locked: false }, a.fromHome.includes(o) ? { fromHome: true } : {}));
       await add('bag.saved', id, { name: `${A.EVENTS[ev].label} (advisor)`, format: A.EVENTS[ev].format, slots, spare: a.spare || null, excluded: [], eventDate: today(), source: 'advisor', event: ev });
       setPrefs({ advisor: Object.assign({}, prefs().advisor, { [ev]: Object.assign({}, (prefs().advisor || {})[ev], { packedTs: Date.now(), slots: a.slots, spare: a.spare }) }) });
       await save({ bagId: id, pickId: a.A.ownedId }); toast(`Packed: ${a.rows.map(r => r.name).join(', ')}.`); } }, packed ? 'Packed \u2713 Pack again' : 'Pack this'),
       h('button', { class: 'btn ghost', id: 'advBuilder', onclick: () => go('#/bag') }, 'Full bag builder \u203a')));
+    if (a.left.length) card.append(h('details', { class: 'why-not-list', id: 'advLeft' }, h('summary', { text: `Why not the others? (${a.left.length})` }),
+      h('ul', { class: 'plain' }, ...a.left.map(x => h('li', { class: 'small', 'data-why-not': x.ownedId, 'data-why': x.key }, h('b', { text: x.name + ': ' }), x.text)))));
     if (a.plan.length) card.append(h('p', { class: 'small', id: 'advPlan' }, h('b', { text: 'Then: ' }), a.plan.map(x => `${x.k} ${x.name} (${x.when})`).join(' \u2192 ')));
     card.append(h('p', { class: 'small', id: 'advWhy' }, h('b', { text: 'Why this bag: ' }), a.why),
       h('p', { class: 'small muted', id: 'advChange' }, h('b', { text: 'What would change it: ' }), a.change, ' ', h('a', { class: 'srclink', href: A.MIN_SRC.url, target: '_blank', rel: 'noopener', text: A.MIN_SRC.label })));

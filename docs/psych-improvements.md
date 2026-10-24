@@ -200,3 +200,13 @@
 - **3-second beginner check:**
   - "Tap ? to see what this number means."
   - "Tonight says Right-handed; I can change it."
+
+## One Status per ball + "Why not this ball?" (D / P1.3, 2026-10-24)
+- **SDT:**
+  - **Competence:** each ball left out gets one plain reason ("At the pro shop", "Weaker than tonight needs") from the same source on every screen, so the bowler learns how the builder decides instead of guessing.
+  - **Autonomy:** the bowler sets where a ball is. 📌 Always bring overrides the builder, and Swap can still bring an At home ball, marked "grab from home". Nothing is hidden or ranked.
+  - **Relatedness:** the words match how bowlers talk ("it's at the pro shop", "it's at home"), and nothing is judged.
+- **U/A:**
+  - **Usability:** one 4-way control on the ball page and a 2-tap sheet in Bag. The why-not line sits under the ball. Every target is 44 px, with no overflow at 360 and axe 0.
+  - **Applicability:** applies to every bowler with more than one ball. Nothing is added during scoring, and the ball chip just stops offering balls that aren't in the bag.
+- **3-second beginner check:** "My Ice Storm is at the pro shop, so it's not in tonight's bag, and the app says so."

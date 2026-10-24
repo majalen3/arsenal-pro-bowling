@@ -1,5 +1,6 @@
 // Bag Advisor (TEAM_PROMPT_BAG_ADVISOR.md). Pure: projection + event type in, a packed bag with roles, reasons,
 // evidence and a start line out. Reuses rank.js (spec fit) and bag.js (fill / checks); never invents a number.
+import * as ST from './status.js';
 import { rank, demandOf, benchFirstReason, levelOf, SRC, HOUSE_ASSUMED } from './rank.js';
 import { fill, dueOf, overlaps, SIZE } from './bag.js';
 import { catOf } from './cats.js';
@@ -16,7 +17,8 @@ export const EVENTS = {
 // "Recent rule changes", search excerpt). Below it, results are shown but labelled "app estimate".
 export const MIN_GAMES = 21;
 export const MIN_SRC = { label: 'USBC Rule 319a: 21 games', url: 'https://bowl.com/welcome/recent-rule-changes' };
-export const AVAILABLE = o => !!o && o.status !== 'benched' && o.status !== 'proShop' && o.status !== 'retired';
+// P1.3: the advisor picks from In my bag; Swap also offers At home (tagged "grab from home"). Labels live in status.js.
+export const AVAILABLE = o => ST.inMyBag(o);
 const pct = (a, b) => (b ? Math.round((a / b) * 100) : null);
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
 // Per-ball results from the log: quick-log throws (shot.logged with frame), scores (game.logged with ballId) and
@@ -59,19 +61,20 @@ function warningFor(item, all, health) {
 // opts: { event, pattern, tert, surface, style, speed, rev, health, swaps: {ownedId: replacementId}, line: fn(cat) → model line }
 export function advise(P, opts = {}) {
   const E = EVENTS[opts.event] || EVENTS.league;
-  const owned = Object.values(P.owned || {}).filter(AVAILABLE).map(o => { const c = catOf(o.catalogId);
-    return { ownedId: o.id, catalogId: o.catalogId || null, name: o.name || (c && c.name) || 'Unknown ball', benchmark: !!o.benchmark, status: o.status, note: o.note || '', finish: o.finish || 'factory', cat: c }; });
-  if (!owned.length) return { none: true, reason: 'No available balls: mark balls "in bag" on Arsenal (benched, pro shop and retired are left out).' };
+  const itemOf = o => { const c = catOf(o.catalogId);
+    return { ownedId: o.id, catalogId: o.catalogId || null, name: o.name || (c && c.name) || 'Unknown ball', benchmark: !!o.benchmark, status: ST.statusOf(o), note: o.note || '', finish: o.finish || 'factory', cat: c }; };
+  const pool = Object.values(P.owned || {}).filter(ST.offered).map(itemOf), owned = pool.filter(AVAILABLE);
+  if (!owned.length) return { none: true, reason: 'No ball is In my bag yet. Set a ball\u2019s Status to In my bag on its page (At home, pro shop and retired balls are left out).' };
   const pat = opts.pattern || null, stage = 'fresh';
   const d = demandOf({ pattern: pat, tert: opts.tert, surface: opts.surface || 'unknown', stage });
   // spec/engine fit order (rank.js) + results: a ball with ≥ MIN_GAMES games and a higher strike % moves ahead of a
   // ball at the same distance from tonight's demand. Fewer games never re-order (shown, labelled app estimate).
-  const ev = Object.fromEntries(owned.map(o => [o.ownedId, evidenceOf(P, o.ownedId, o.catalogId)]));
+  const ev = Object.fromEntries(pool.map(o => [o.ownedId, evidenceOf(P, o.ownedId, o.catalogId)]));
   const bf = E.benchFirst || benchFirstReason({ patternKnown: !!pat, centerKnown: true, centerNew: false, tournamentFirstGame: opts.event === 'tournament' });
   const f = fill(owned, { format: E.format, size: E.size, current: opts.current || [], ctx: { format: E.format, pattern: pat, tert: opts.tert, surface: opts.surface, style: opts.style } });
   let ids = f.slots.map(s => s.owned); const spareId = f.spare;
-  for (const [from, to] of Object.entries(opts.swaps || {})) { const i = ids.indexOf(from); if (i >= 0 && to && !ids.includes(to) && owned.some(o => o.ownedId === to)) ids[i] = to; }
-  const strike = ids.map(id => owned.find(o => o.ownedId === id)).filter(Boolean);
+  for (const [from, to] of Object.entries(opts.swaps || {})) { const i = ids.indexOf(from); if (i >= 0 && to && !ids.includes(to) && pool.some(o => o.ownedId === to)) ids[i] = to; }
+  const strike = ids.map(id => pool.find(o => o.ownedId === id)).filter(Boolean);
   const r = rank(strike, { demand: d.demand, benchFirst: bf, style: opts.style || 'tweener' });
   const order = r.order.slice();
   for (let pass = 0; pass < order.length; pass++) for (let i = 0; i + 1 < order.length; i++) {
@@ -102,5 +105,9 @@ export function advise(P, opts = {}) {
   const why = `${strike.length} strike ball${strike.length === 1 ? '' : 's'} covering level${levels.length === 1 ? '' : 's'} ${levels.join('\u2013') || 'unknown'} around demand ${d.demand}${spareId ? ', plus a spare ball' : ''}; ${anyEnough ? 'order uses your results.' : anyData ? `results shown, but under ${MIN_GAMES} games they don\u2019t re-order the bag.` : 'based on specs + your release, no results logged yet.'}`;
   const change = pat ? `${MIN_GAMES}+ logged games with a ball, a lane-condition change, or a ball at the pro shop.` : `Setting the pattern (now an assumed ${HOUSE_ASSUMED.ft} ft house shot), ${MIN_GAMES}+ logged games with a ball, or a ball at the pro shop.`;
   return { event: opts.event || 'league', E, demand: d, rows, plan, A: A ? { ownedId: A.id, catalogId: A.catalogId, name: short(A.name), cat: A.cat } : null, line: ml, slots: strike.map(x => x.ownedId), spare: spareId,
-    why, change, noData: !anyData, bench: owned.filter(o => !ids.includes(o.ownedId) && o.ownedId !== spareId).map(o => ({ ownedId: o.ownedId, name: short(o.name), level: levelOf(o.cat) })), src: { min: MIN_SRC, tag: SRC.tag } };
+    why, change, noData: !anyData, fromHome: strike.filter(x => x.status === 'benched').map(x => x.ownedId),
+    bench: pool.filter(o => !ids.includes(o.ownedId) && o.ownedId !== spareId).map(o => ({ ownedId: o.ownedId, name: short(o.name), level: levelOf(o.cat), home: o.status === 'benched' })),
+    // "Why not this ball?" for every owned ball left out (status.js, the same words as the ball page and the builder).
+    left: Object.values(P.owned || {}).filter(o => !ids.includes(o.id) && o.id !== spareId).map(itemOf).map(o => Object.assign({ ownedId: o.ownedId, name: short(o.name), status: o.status },
+      ST.whyNot(o, { bag: strike, demand: d.demand, health: opts.health, size: strike.length + (spareId ? 1 : 0) }))), src: { min: MIN_SRC, tag: SRC.tag } };
 }

@@ -54,13 +54,18 @@ test('under the 21-game minimum results never re-order; at 21+ a better strike %
   assert.ok(o2.indexOf(second) < o2.indexOf(first), '21+ games and a better strike %: moves ahead');
   assert.equal(a2.rows.find(r => r.ownedId === second).confidence.key, 'measured');
 });
-test('swap replaces one ball; benched / pro shop / retired never offered or packed', () => {
+test('swap replaces one ball; At home is offered (grab from home); pro shop / retired never offered or packed', () => {
   const a = A.advise(P0, { event: 'league' }), from = a.rows[1].ownedId;
-  assert.ok(a.bench.every(b => P0.owned[b.ownedId].status === 'inBag'));
+  assert.ok(a.bench.every(b => ['inBag', 'benched'].includes(P0.owned[b.ownedId].status)));
+  assert.ok(a.bench.filter(b => b.home).every(b => P0.owned[b.ownedId].status === 'benched'));
   const to = a.bench[0].ownedId, b = A.advise(P0, { event: 'league', swaps: { [from]: to } });
   assert.ok(b.slots.includes(to) && !b.slots.includes(from));
-  const bad = A.advise(P0, { event: 'league', swaps: { [from]: 'own-guru-supreme' } });   // benched: ignored
-  assert.ok(!bad.slots.includes('own-guru-supreme'));
+  const home = A.advise(P0, { event: 'league', swaps: { [from]: 'own-guru-supreme' } });   // At home: allowed, marked fromHome
+  assert.ok(home.slots.includes('own-guru-supreme') && home.fromHome.includes('own-guru-supreme'));
+  const P1 = project(base().concat([mkEvent('ownedBall.edited', 'own-guru-supreme', { fields: { status: 'proShop' } }, { ts: 9999 })]));
+  const ps = A.advise(P1, { event: 'league', swaps: { [from]: 'own-guru-supreme' } });
+  assert.ok(!ps.slots.includes('own-guru-supreme') && !ps.bench.some(x => x.ownedId === 'own-guru-supreme'));
+  assert.equal(ps.left.find(x => x.ownedId === 'own-guru-supreme').key, 'proShop');
 });
 test('start line comes from the model line callback; deterministic', () => {
   const line = () => ({ none: false, feet: 10, target: 10.7 });
@@ -70,5 +75,5 @@ test('start line comes from the model line callback; deterministic', () => {
 });
 test('no available balls → a reason, not a bag', () => {
   const evs = base().concat(Object.keys(P0.owned).map((id, i) => mkEvent('ownedBall.edited', id, { fields: { status: 'benched' } }, { ts: 9000 + i })));
-  const a = A.advise(project(evs), { event: 'league' }); assert.ok(a.none); assert.match(a.reason, /in bag/);
+  const a = A.advise(project(evs), { event: 'league' }); assert.ok(a.none); assert.match(a.reason, /In my bag/);
 });

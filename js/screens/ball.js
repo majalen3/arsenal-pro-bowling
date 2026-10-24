@@ -8,14 +8,22 @@ import { readMed } from './pickers.js';
 import { PATTERN_LABEL, FINISH_LABEL, CALL_LABEL, CALL_TONE, f1, fmtBoard } from '../labels.js';
 import { arrowsBoard } from '../cc/geom.js';
 import { helpDot, withHelp } from './help.js';
+import { ready, proj } from '../hub.js';
+import { statusField, whyNotLine } from './status.js';
+import { demandOf } from '../cc/rank.js';
 export function backBar(title, fallback) {
   return h('header', { class:'appbar' }, h('button', { class:'icon-btn', 'aria-label':'Back', html:icon('back'), onclick:() => back(fallback) }), h('h1', { class:'title', text:title }));
 }
-export function render({ params }) {
+export async function render({ params }) {
   const b = balls.find(x => x.id === params[0]);
   if (!b) return { el:h('section', { class:'screen' }, backBar('Ball', '#/arsenal'), emptyState('Ball not found', 'That ball is not in this arsenal.', { label:'Back to Arsenal', run:() => go('#/arsenal') })), title:'Ball' };
   const r = readInfo(b, readMed()), a = analyze(b), onLane = b.id === app.ball.id;
   const spec = (k, v, hid) => h('div', { class:'spec' }, h('div', { class:'spec-k' }, k, hid ? helpDot(hid, k) : null), h('div', { class:'spec-v', html:v }));
+  await ready();
+  // P1.3: an owned ball shows where it is (one Status) and, when it isn't in tonight's bag, the shared "why not".
+  const P = proj(), own = P ? Object.values(P.owned).find(o => o.catalogId === b.id) : null;
+  const ownCard = own ? h('div', { class:'card', id:'ballOwned' }, withHelp(h('h2', { class:'card-title', text:'Your ball' }), 'ap-status', 'Ball status'),
+    statusField(P, own.id), whyNotLine(P, own.id, { demand: demandOf({ pattern: null }).demand, idAttr: 'ballWhyNot' })) : null;
   const lines = linesForBall(b.id), surf = lsGet(LS.surface).filter(x => x.ballId === b.id).slice(-5).reverse();
   const el = h('section', { class:'screen detail' }, backBar(b.name, '#/arsenal'),
     h('div', { class:'hero' }, h('span', { class:'ball-orb xl', style:{ '--c':b.color }, 'aria-hidden':'true' }),
@@ -23,6 +31,7 @@ export function render({ params }) {
         h('div', { class:'row gap wrap' },
           onLane ? h('span', { class:'pill gold', text:'On lane' }) : h('button', { class:'btn primary', id:'putOnLane', onclick:() => { setBall(b); go('#/lane'); } }, 'Put on lane'),
           onLane ? null : h('a', { class:'btn ghost', id:'cmpOnLane', href:`#/compare?ids=${app.ball.id},${b.id}` }, h('span', { html:icon('compare') }), `Compare with ${app.ball.name}`), onLane ? null : helpDot('ap-compare', 'Compare')))),
+    ownCard,
     h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { text:`On ${PATTERN_LABEL[S.pattern]}, your line` })),
       h('div', { class:'mini-read', id:'ballRead', 'data-tone':CALL_TONE[a.call] }, h('b', { text:CALL_LABEL[a.call] }), helpDot('tg-hit', 'High, light and solid hits'),
         h('span', { class:'num', text:` entry ${f1(a.entryBoard)}` }), helpDot('bm-entry-angle', 'Entry'), h('span', { class:'num', text:` · ${f1(a.angle)}° model` }), helpDot('ap-model', 'Model estimate'),

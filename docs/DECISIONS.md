@@ -162,3 +162,9 @@ The owner's target is a board (1–39, halves allowed), not an engine angle. We 
 - `js/cc/hand.js` is the only reader. It treats a hand as set only when it is left/right and the welcome field was touched.
 - Unset reads boards right-handed (USBC convention; boards are read as RH) and says so, then asks once. "Not now" is final (prefs.handAsked); the bowler can change it any time from Tonight or the Bowler profile.
 - Help dots get a top-bar "?" toggle on every screen. Help stays **off by default**: changing the default is P2 and waits for the owner.
+
+## One Status per ball (D / P1.3, 2026-10-24)
+- There are four visible words (In my bag / At home / At the pro shop / Retired) and one control on the ball page, with a 2-tap sheet in Bag. The stored keys stay v1 for API and backup compatibility.
+- The bag's `excluded` list is retired: excluded balls migrate to At home (unless they are at the pro shop or retired), and the list is always saved empty.
+- Swap may bring an At home ball, which is marked "grab from home". Pro shop and Retired balls are never offered.
+- "Why not this ball?" comes from one function (`cc/status.js whyNotFor`), so the ball page, Arsenal, Tonight and Bag can never disagree.

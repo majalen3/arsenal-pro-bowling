@@ -22,8 +22,9 @@ async function init() {
   // The reported arsenal auto-loads once only on a phone that already has history (the owner's); fresh phones get a
   // one-tap "Load starter arsenal" offer instead, so a stranger never inherits someone else's bag (DECISIONS 2026-10-23).
   if (!db.meta.seeded) { if (r.ran && r.added > 0 && !Object.keys(db.projection().owned).length) await db.append(seedEvents({ deviceId: deviceId() }), { silent: true }); await db.setMeta('seeded', Date.now()); }
+  await migrateStatus();
   on('profile', syncOwnedFromProfile);
-  db.on(() => emit('data'));
+  db.on(() => { emit('data'); setTimeout(migrateStatus, 0); });   // a restored or synced old backup can bring `excluded` back
   window.__apData = { backend: be.kind, bootMs: Math.round(performance.now() - t0), events: () => db.events().length, hash: () => db.hash(), projection: () => db.projection() };
   emit('data');
   import('./sync.js').then(m => m.startOutbox(db)).catch(() => {});
@@ -35,6 +36,15 @@ function syncOwnedFromProfile() {
   const P = db.projection(), have = new Set(Object.values(P.owned).map(o => o.catalogId).filter(Boolean));
   const add = p.owned.filter(id => typeof id === 'string' && !have.has(id)).map(id => mkEvent('ownedBall.created', 'own-' + id, { catalogId: id, name: null, status: 'inBag' }, { deviceId: deviceId(), prov: { kind: 'user' } }));
   if (add.length) db.append(add);
+}
+// P1.3: Exclude is gone. Any bag still carrying `excluded` moves those balls to At home (unless at the pro shop or
+// retired) and clears the list. Idempotent, so it is safe on every change. status.js loads only when needed (fast boot).
+let migrating = false;
+async function migrateStatus() {
+  if (!db || migrating) return; const P = db.projection(); if (!Object.values(P.bags || {}).some(b => (b.excluded || []).length)) return;
+  const ev = (await import('./cc/status.js')).migrateExcluded(P); if (!ev.length) return;
+  migrating = true;
+  try { await db.append(ev.map(([t, id, d]) => mkEvent(t, id, d, { deviceId: deviceId(), prov: { kind: 'app', ref: 'status-migration-2026-10-24' } }))); } finally { migrating = false; }
 }
 export async function add(type, entityId, data, o = {}) { await ready(); return db.append([mkEvent(type, entityId, data, Object.assign({ deviceId: deviceId(), prov: { kind: 'user' } }, o))]); }
 export async function addMany(list) { await ready(); return db.append(list); }

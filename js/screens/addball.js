@@ -1,6 +1,6 @@
 // #/add-ball (docs/TEAM_PROMPT_ADD_BALL.md). Type a name → catalogue match → maker-site lookup (server, allowlisted,
 // cached) → confirm every field with its source chip → engine card vs the benchmark on tonight's pattern → grid placement
-// → save as a benched owned ball. Nothing is saved until the user taps Add. Unknown fields read "spec TBD".
+// → save as an owned ball At home (status key `benched`). Nothing is saved until the user taps Add. Unknown fields read "spec TBD".
 import { h, toast, segmented } from '../ui.js';
 import { go } from '../router.js';
 import { ready, proj, add } from '../hub.js';
@@ -173,7 +173,7 @@ export async function render() {
     const dup = Object.values(P.owned).some(o => o.catalogId === cat.id);
     detail.append(h('div', { class: 'card', id: 'abSaveCard' },
       h('button', { class: 'btn primary block', id: 'abSave', disabled: st.saving ? true : null, onclick: () => save(fields, conflicts, cat, made) }, dup ? `Add another ${e.name}` : `Add ${e.name} to my arsenal`),
-      h('p', { class: 'muted small', text: 'Saved as benched with the values above and their sources. Edit status in Bag.' })));
+      h('p', { class: 'muted small', text: 'Saved as At home with the values above and their sources. Change its Status on its page or in Bag.' })));
   }
   async function save(fields, conflicts, cat, made) {
     st.saving = true;
@@ -182,7 +182,7 @@ export async function render() {
     if (JSON.stringify(data).length > 7800) { delete data.spec.fields; }
     const id = 'own-' + slug(cat.id) + '-' + Date.now().toString(36);
     await add('ownedBall.created', id, data, { prov: made ? { kind: 'manufacturer', ref: made.source.ref, url: made.source.url } : { kind: 'user' } });
-    toast(`${e.name} added to your arsenal (benched).`); go('#/bag');
+    toast(`${e.name} added to your arsenal (At home).`); go('#/bag');
   }
   drawResults();
   const pre = new URLSearchParams((location.hash.split('?')[1] || '')).get('q');

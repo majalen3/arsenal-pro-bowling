@@ -371,19 +371,21 @@ async def bag_cycle(b):
     await p.click('#bagSwap [data-cand="own-ordnance-c4"]'); taps += 1
     await p.wait_for_function("() => document.querySelector('#bagGrid [data-own=\"own-ordnance-c4\"]') && !document.querySelector('#bagGrid .cell.hole')")
     check(taps <= 2, f'[bag] swap HRP -> C4 in {taps} taps; hole closed')
-    await p.click('#bagBalls [data-lock="own-ordnance-c4"]'); await p.wait_for_function("() => document.querySelector('#bagBalls [data-lock=\"own-ordnance-c4\"]').getAttribute('aria-pressed') === 'true'")
-    await p.click('#bagBalls [data-excl="own-hy-road-pearl"]'); await p.wait_for_function("() => document.querySelector('#bagBalls [data-excl=\"own-hy-road-pearl\"]').getAttribute('aria-pressed') === 'true'")
+    await p.click('#bagBalls [data-pin="own-ordnance-c4"]'); await p.wait_for_function("() => document.querySelector('#bagBalls [data-pin=\"own-ordnance-c4\"]').getAttribute('aria-pressed') === 'true'")
+    check((await p.text_content('#bagBalls [data-pin="own-ordnance-c4"]')).strip() == '\U0001F4CC Always bring', '[bag] pin reads "📌 Always bring"')
+    await p.click('#bagBalls [data-status-of="own-hy-road-pearl"]'); await p.click('#statusSheet [data-set-status="benched"]')
+    await p.wait_for_function("() => (document.querySelector('#bagBalls [data-status-of=\"own-hy-road-pearl\"]') || {}).textContent?.startsWith('At home')")
     await p.reload(); await p.wait_for_selector('#bagGrid')
-    await p.click('#bagHead [data-v="bag-league"]'); await p.wait_for_selector('#bagBalls [data-lock="own-ordnance-c4"][aria-pressed="true"]')
-    check(await p.get_attribute('#bagBalls [data-excl="own-hy-road-pearl"]', 'aria-pressed') == 'true', '[bag] lock + exclude persist across reload (bag.saved events)')
-    # pro shop via status, then fill: owned + available only, locked kept, excluded out
+    await p.click('#bagHead [data-v="bag-league"]'); await p.wait_for_selector('#bagBalls [data-pin="own-ordnance-c4"][aria-pressed="true"]')
+    check((await p.text_content('#bagBalls [data-status-of="own-hy-road-pearl"]')).startswith('At home'), '[bag] Always bring + Status persist across reload (events)')
+    # pro shop via status, then fill: In my bag only, pinned kept, At home + pro shop out
     await p.select_option('#bagCareBall', 'own-guru-supreme'); await p.click('#bagCare [data-v="proShop"]')
-    await p.wait_for_function("() => document.querySelector('#bagStatus').textContent.includes('1 at pro shop')")
+    await p.wait_for_function("() => document.querySelector('#bagStatus').textContent.includes('1 at the pro shop')")
     await p.click('#bagFill'); await p.wait_for_timeout(150)
     if await p.query_selector('#bagApply'): await p.click('#bagApply'); await p.wait_for_timeout(150)
     ids = await p.evaluate("() => [...document.querySelectorAll('#bagGrid [data-own], #bagTbd [data-own]')].map(x => x.dataset.own)")
     owned = await p.evaluate("() => [...document.querySelectorAll('#bagBalls [data-ball]')].map(x => x.dataset.ball)")
-    check(len(ids) == 2 and 'own-ordnance-c4' in ids and 'own-hy-road-pearl' not in ids and 'own-guru-supreme' not in ids and all(i in owned for i in ids), f'[bag] fill (League 3): owned only, locked kept, excluded + pro shop out {ids}')
+    check(len(ids) == 2 and 'own-ordnance-c4' in ids and 'own-hy-road-pearl' not in ids and 'own-guru-supreme' not in ids and all(i in owned for i in ids), f'[bag] fill (League 3): In my bag only, pinned kept, At home + pro shop out {ids}')
     pk = await p.text_content('#bagPack'); check('Spare' in pk and 'Ice Storm' in pk and 'level' in pk, '[bag] pack list: role -> ball -> why, spare last')
     await p.click('#bagHead [data-v="bag-tournament"]'); await p.wait_for_selector('#bagGrid')
     check('Rule 18' in await p.text_content('#bagRule18') and 'throws a ball for score' in await p.text_content('#bagRule18'), '[bag] care card states USBC Rule 18 (no surface changes once competition starts)')
@@ -1115,7 +1117,7 @@ async def guide_cycle(b):
     await p.click('#goGuide'); await p.wait_for_selector('#glTrees')
     title = await p.text_content('.appbar .title'); check(title.strip() == 'Bowling Guide', f'[guide] title ({title})')
     chips = await p.evaluate("() => document.querySelectorAll('#glTrees [data-tree]').length"); check(chips == 8, f'[guide] All + 7 topic chips ({chips})')
-    tot = await p.text_content('#glCount'); n = int(re.search(r'of (\d+) terms', tot).group(1)); check(n >= 112, f'[guide] all terms ({tot})')
+    tot = await p.text_content('#glCount'); n = int(re.search(r'of (\d+) terms', tot).group(1)); check(n >= 113, f'[guide] all terms ({tot})')
     await p.click('#glTrees [data-tree="Lane & Oil"]'); cnt = await p.text_content('#glCount')
     trees = await p.evaluate("() => [...new Set([...document.querySelectorAll('#glList .group-h')].map(e => e.textContent))]"); check(trees == ['Lane & Oil'], f'[guide] browse by topic {trees} ({cnt})')
     await p.click('#glTrees [data-tree=""]'); await p.fill('#glSearch', 'handicap'); await p.wait_for_selector('#gl-sc-handicap')
@@ -1155,6 +1157,57 @@ async def hand_cycle(b):
     check('Hand not set' in t, f'[hand] "Not now": quiet line, boards read right-handed ({t})')
     await p.goto(BASE + '?hn2#/target'); await p.wait_for_selector('#tgCall'); check(await p.query_selector('#handAsk') is None, '[hand] "Not now" is final (Targeting)')
     check(not errs, f'[hand] no page errors {errs[:3]}'); await c.close()
+
+async def status_cycle(b):
+    # P1.3 / D: one Status per ball, the same words everywhere. Set C4 to "At the pro shop" on its ball page -> gone from the
+    # ball chip, Tonight's Swap and the builder's Swap; present in every "Why not". No reload anywhere (hash navigation only).
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 740})
+    await seed(p); await p.goto(BASE + '?st#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnAdvisor')
+    words = await p.evaluate("""async () => { const m = await import('./js/cc/status.js'); return m.STATUS.map(x => x[1]); }""")
+    check(words == ['In my bag', 'At home', 'At the pro shop', 'Retired'], f'[status] four words {words}')
+    await p.evaluate("async () => { const s = await import('./js/store.js'); s.setPrefs({ help: true }); }")   # show the "?" dots
+    await p.evaluate("location.hash = '#/ball/ordnance-c4'"); await p.wait_for_selector('#ballStatus')
+    opts = await p.eval_on_selector_all('#ballStatus [data-v]', 'e => e.map(x => x.textContent)'); check(opts == words, f'[status] ball page: one Status control with the four words {opts}')
+    check(await p.query_selector('#ballOwned .help-dot, #ballOwned [data-help]') is not None, '[status] ball page Status has a "?"')
+    await axe_ok(p, '[status] ball page'); small = await p.evaluate(SMALL); check(not small, f'[status] ball page targets >= 44px {small[:6]}')
+    await p.click('#ballStatus [data-v="proShop"]'); await p.wait_for_selector('#ballWhyNot[data-why="proShop"]')
+    check('pro shop' in await p.text_content('#ballWhyNot'), '[status] ball page: "Why not this ball?" says at the pro shop')
+    await p.evaluate("location.hash = '#/tonight'"); await p.wait_for_selector('#tnAdvisor')
+    await p.click('[data-event=tournament]'); await p.wait_for_selector('#advStart')
+    rows = await p.eval_on_selector_all('.adv-row', 'e => e.map(x => x.dataset.owned)'); check('own-ordnance-c4' not in rows, f'[status] advisor never packs a pro-shop ball {rows}')
+    await p.click('.adv-row [data-swap]'); await p.wait_for_selector('[data-swap-to]')
+    sw = await p.eval_on_selector_all('[data-swap-to]', 'e => e.map(x => [x.dataset.swapTo, x.textContent])')
+    check(sw and all(x[0] != 'own-ordnance-c4' for x in sw), f'[status] absent from Tonight Swap {[x[0] for x in sw]}')
+    check(all(('grab from home' in x[1]) == (x[0] in ('own-guru-supreme', 'own-raw-hammer', 'own-green-scout', 'own-rack-attack')) for x in sw), '[status] At home balls offered in Swap, tagged "grab from home"')
+    left = await p.get_attribute('#advLeft [data-why-not="own-ordnance-c4"]', 'data-why'); check(left == 'proShop', f'[status] present in Tonight\'s Why not ({left})')
+    if await p.query_selector('#qlBall') is None:
+        await p.evaluate("location.hash = '#/bag'"); await p.wait_for_selector('#bagGrid')
+    else:
+        await p.click('#qlBall'); await p.wait_for_selector('#qlBallPick')
+        chip = await p.eval_on_selector_all('#qlBallPick [data-ball]', 'e => e.map(x => x.dataset.ball)'); check('own-ordnance-c4' not in chip, f'[status] absent from the ball chip {chip}')
+        await p.evaluate("location.hash = '#/bag'"); await p.wait_for_selector('#bagGrid')
+    grid = await p.eval_on_selector_all('#bagGrid [data-own], #bagTbd [data-own]', 'e => e.map(x => x.dataset.own)')
+    check('own-ordnance-c4' not in grid, f'[status] builder: a pro-shop ball is not packed {grid}')
+    chipIds = await p.evaluate("""async () => { const h = await import('./js/hub.js'), S = await import('./js/cc/status.js'); await h.ready(); const P = h.proj(); return S.packedIds(P, S.currentBag(P)); }""")
+    check('own-ordnance-c4' not in chipIds, f'[status] ball chip source (packed ids of the one bag) has no pro-shop ball {chipIds}')
+    w = await p.get_attribute('#bagBalls [data-why-not="own-ordnance-c4"]', 'data-why'); check(w == 'proShop', f'[status] builder Why not: pro shop ({w})')
+    check(await p.query_selector('#bagBalls [data-help="ap-why-not"], #bagBalls .help-dot') is not None, '[status] builder has a "?"')
+    first = await p.eval_on_selector('#bagGrid [data-own]', 'e => e.dataset.own'); await p.click(f'#bagGrid [data-own="{first}"]'); await p.wait_for_selector('#bagSwap')
+    cands = await p.eval_on_selector_all('#bagSwap [data-cand]', 'e => e.map(x => x.dataset.cand)'); check('own-ordnance-c4' not in cands, f'[status] absent from the builder Swap {cands}')
+    await p.click('#bagSwapCancel')
+    # change it back on the builder (2 taps): the builder and Swap update at once
+    await p.click('#bagBalls [data-status-of="own-ordnance-c4"]'); await p.wait_for_selector('#statusSheet'); await p.click('#statusSheet [data-set-status="inBag"]')
+    await p.wait_for_function("() => !document.querySelector('#bagBalls [data-why-not=\"own-ordnance-c4\"][data-why=\"proShop\"]')")
+    check(True, '[status] Status changed on the builder updates it without a reload')
+    ui = await p.evaluate("() => document.body.innerText"); check(not re.search(r'\b(Exclude|Excluded|Benched|Lock|Locked)\b', ui), '[status] no Exclude / Benched / Lock on screen')
+    await axe_ok(p, '[status] builder'); small = await p.evaluate(SMALL); check(not small, f'[status] builder targets >= 44px {small[:6]}')
+    wd = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(wd[1] <= 360, f'[status] no horizontal overflow {wd}')
+    # an old bag with an `excluded` list (old backup / other device): migrated at once -> At home, list cleared
+    mg = await p.evaluate("""async () => { const h = await import('./js/hub.js'); await h.ready(); const b = Object.assign({}, h.proj().bags['bag-league']); delete b.id; delete b.ts;
+      await h.add('bag.saved', 'bag-league', Object.assign(b, { excluded: ['own-super-nova'] })); for (let i = 0; i < 40 && (h.proj().bags['bag-league'].excluded || []).length; i++) await new Promise(r => setTimeout(r, 50));
+      const P = h.proj(); return [P.owned['own-super-nova'].status, P.bags['bag-league'].excluded.length]; }""")
+    check(mg == ['benched', 0], f'[status] migration: excluded -> At home, list cleared ({mg})')
+    check(not errs, f'[status] no page errors {errs[:3]}'); await c.close()
 
 async def center_cycle(b):
     # M1 center memory: "Last time at <center>" before the first ball only (never while scoring), one line + your note,
@@ -1363,7 +1416,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

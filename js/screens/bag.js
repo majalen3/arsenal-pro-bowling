@@ -1,4 +1,4 @@
-// Bag builder (CC2, COMMAND_CENTER_PLAN §3). Coverage grid, 10 checks (warnings only), swap in 2 taps, lock/exclude,
+// Bag builder (CC2, COMMAND_CENTER_PLAN §3). Coverage grid, 10 checks (warnings only), swap in 2 taps, 📌 Always bring,
 // "Fill bag" from owned balls only, pack list and ball status. Rules live in js/cc/bag.js (pure); health = fold(events).
 import { h, toast, segmented } from '../ui.js';
 import { go } from '../router.js';
@@ -8,11 +8,13 @@ import * as G from '../cc/bag.js';
 import { SRC } from '../cc/rank.js';
 import { catOf } from '../cc/cats.js';
 import { helpDot } from './help.js';
+import * as ST from '../cc/status.js';
+import { statusButton } from './status.js';
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
 const prov = (p, t) => h('span', { class: 'prov', 'data-prov': p || null, text: t });
 const SRC_PROV = { [SRC.assumed]: 'assumed', [SRC.usbc]: 'usbc', [SRC.tag]: 'catalog', [SRC.you]: null };
 const FORMATS = [['league3', 'League 3'], ['league4', 'League 4'], ['tournament6', 'Tourn. 6'], ['custom', 'Custom']];
-const STATUS = [['inBag', 'In bag'], ['benched', 'Benched'], ['proShop', 'Pro shop'], ['retired', 'Retired']];
+const STATUS = ST.STATUS;   // P1.3: one Status per ball, the same words on every screen
 const SVC = [['refresh', 'Refresh'], ['resurface', 'Resurface'], ['detox', 'Detox']];
 export async function render() {
   await ready();
@@ -25,7 +27,7 @@ export async function render() {
   const ownedItems = P => Object.keys(P.owned).sort().map(id => itemOf(P, id));
   const cur = P => { const bags = Object.values(P.bags).sort((a, b) => a.id < b.id ? 1 : -1); return { bags, bag: bags.find(b => b.id === bagId) || bags[0] || null }; };
   async function saveBag(bag, patch) {
-    const nb = Object.assign({ name: bag.name, format: bag.format, slots: bag.slots, spare: bag.spare || null, excluded: bag.excluded || [], eventDate: bag.eventDate || null }, patch);
+    const nb = Object.assign({ name: bag.name, format: bag.format, slots: bag.slots, spare: bag.spare || null, excluded: [], eventDate: bag.eventDate || null }, patch);
     if (nb.spare && !nb.slots.some(s => s.owned === nb.spare)) nb.slots = nb.slots.concat([{ owned: nb.spare, locked: false }]);
     await add('bag.saved', bag.id, nb); draw();
   }
@@ -34,8 +36,8 @@ export async function render() {
     body.innerHTML = '';
     if (!bag) { body.append(h('div', { class: 'card', id: 'bagNone' }, h('h2', { class: 'card-title', text: 'No bag yet' }), h('p', { class: 'muted', text: 'Load your reported arsenal on Tonight first.' }), h('button', { class: 'btn primary block', onclick: () => go('#/tonight') }, 'Go to Tonight'))); return; }
     bagId = bag.id;
-    const all = ownedItems(P), excl = bag.excluded || [], spare = bag.spare ? itemOf(P, bag.spare) : null;
-    const inIds = bag.slots.map(s => s.owned).filter(id => id !== bag.spare && P.owned[id]), items = inIds.map(id => itemOf(P, id));
+    const all = ownedItems(P), excl = [], spare = bag.spare && ST.packedIds(P, bag).includes(bag.spare) ? itemOf(P, bag.spare) : null;
+    const packed = ST.packedIds(P, bag), inIds = packed.filter(id => id !== bag.spare), items = inIds.map(id => itemOf(P, id));
     const locked = bag.slots.filter(s => s.locked).map(s => s.owned);
     const ctx = { format: bag.format, style: (P.bowler || {}).style || 'tweener', health: P.health, eventDate: bag.eventDate || null };
     const ch = G.checks(items, spare, ctx), pack = G.packList(items, spare, ctx);
@@ -43,8 +45,8 @@ export async function render() {
     // ---- status strip
     const n = st => all.filter(x => x.status === st).length, dueN = pack.service.length;
     body.append(h('div', { class: 'chips', id: 'bagStatus', role: 'status' },
-      h('span', { class: 'pill gold', text: `${items.length + (spare ? 1 : 0)} packed` }), h('span', { class: 'pill', text: `${n('benched')} benched` }),
-      n('proShop') ? h('span', { class: 'pill', text: `${n('proShop')} at pro shop` }) : null,
+      h('span', { class: 'pill gold', text: `${items.length + (spare ? 1 : 0)} packed` }), h('span', { class: 'pill', text: `${n('benched')} at home` }),
+      n('proShop') ? h('span', { class: 'pill', text: `${n('proShop')} at the pro shop` }) : null,
       h('span', { class: 'pill', 'data-due': dueN, text: dueN ? `${dueN} service due` : 'no service due' })));
     // ---- which bag / format / event date
     const dateIn = h('input', { type: 'date', id: 'bagDate', value: bag.eventDate || '', 'aria-label': 'Event date', onchange: e => saveBag(bag, { eventDate: e.target.value || null }) });
@@ -70,23 +72,23 @@ export async function render() {
     // ---- swap picker (tap 2)
     if (swapFrom && items.concat(tbd).some(x => x.ownedId === swapFrom)) {
       const from = G.cellOf(itemOf(P, swapFrom).catalogId), fromName = itemOf(P, swapFrom).name;
-      const cands = all.filter(x => !inIds.includes(x.ownedId) && x.ownedId !== bag.spare && !['proShop', 'retired'].includes(x.status) && !excl.includes(x.ownedId))
+      const cands = all.filter(x => !inIds.includes(x.ownedId) && x.ownedId !== bag.spare && ST.offered(x))
         .map(x => Object.assign({}, x, G.cellOf(x.catalogId))).sort((a, b) => (Math.abs((a.level ?? 9) - (from.level ?? 0)) - Math.abs((b.level ?? 9) - (from.level ?? 0))) || (a.name < b.name ? -1 : 1));
       body.append(h('div', { class: 'card', id: 'bagSwap' }, h('h2', { class: 'card-title', text: `Swap ${fromName} for\u2026` }),
         cands.length ? h('div', { class: 'stack' }, ...cands.map(x => h('button', { class: 'btn ghost block', 'data-cand': x.ownedId, onclick: async () => {
-          const slots = bag.slots.map(s => s.owned === swapFrom ? { owned: x.ownedId, locked: false } : s); const was = fromName; swapFrom = null;
-          await saveBag(bag, { slots }); toast(`${x.name} in, ${was} out.`); } }, `${x.name} \u00b7 ${x.tbd ? 'spec TBD' : 'L' + x.level + ' ' + x.shape}`)))
-          : h('p', { class: 'muted', text: 'No other available ball. Change a ball\u2019s status below.' }),
+          const slots = bag.slots.map(s => s.owned === swapFrom ? Object.assign({ owned: x.ownedId, locked: false }, x.status === 'benched' ? { fromHome: true } : {}) : s); const was = fromName; swapFrom = null;
+          await saveBag(bag, { slots }); toast(`${x.name} in, ${was} out.`); } }, `${x.name} \u00b7 ${x.tbd ? 'spec TBD' : 'L' + x.level + ' ' + x.shape}${x.status === 'benched' ? ' \u00b7 ' + ST.HOME_TAG : ''}`)))
+          : h('p', { class: 'muted', text: 'No other ball in your bag or at home. Change a ball\u2019s status below.' }),
         h('button', { class: 'btn ghost block', id: 'bagSwapCancel', onclick: () => { swapFrom = null; draw(); } }, 'Cancel')));
     }
     // ---- fill
     const fillCard = h('div', { class: 'card', id: 'bagFillCard' }, h('button', { class: 'btn primary block', id: 'bagFill', onclick: () => {
-      const owned = all.map(x => Object.assign({}, x, { note: x.note }));
+      const owned = all.filter(x => ST.inMyBag(x) || inIds.includes(x.ownedId) || x.ownedId === bag.spare).map(x => Object.assign({}, x, { note: x.note }));
       const r = G.fill(owned, { format: bag.format, size: bag.format === 'custom' ? Math.max(1, items.length) : null, locked, excluded: excl, spare: bag.spare, current: inIds, ctx: { format: bag.format, style: ctx.style } });
       const d = G.diffBags({ slots: inIds.map(owned => ({ owned })), spare: bag.spare }, r);
       proposal = d.in.length || d.out.length || d.spare !== undefined ? { r, d } : null;
       if (!proposal) toast('Your bag is already the best fit from the balls you own.'); draw(); } }, 'Fill bag from my balls'),
-      h('p', { class: 'muted small', text: 'Uses only balls you own. Locked balls stay; excluded, pro-shop and retired balls never go in.' }));
+      h('p', { class: 'muted small', text: 'Uses only balls marked In my bag. \ud83d\udccc Always bring keeps a ball in; at home, pro shop and retired balls stay out.' }));
     if (proposal) { const nm = id => itemOf(P, id).name;
       fillCard.append(h('div', { class: 'warn-box', id: 'bagDiff' },
         h('div', {}, h('b', { text: 'In: ' }), proposal.d.in.length ? proposal.d.in.map(nm).join(', ') : 'none'),
@@ -98,15 +100,15 @@ export async function render() {
     // ---- checks
     body.append(h('div', { class: 'card', id: 'bagChecks' }, h('h2', { class: 'card-title', text: `Checks \u00b7 ${ch.filter(c => c.warn).length} to look at` }),
       h('ul', { class: 'why' }, ...ch.map(c => h('li', { 'data-check': c.n, 'data-warn': String(c.warn) }, h('b', { text: c.warn ? '\u26a0 ' : '\u2713 ' }), c.text, prov(SRC_PROV[c.src] || null, c.src))))));
-    // ---- balls: lock (in bag) / exclude (out)
-    const rowOf = x => { const inB = inIds.includes(x.ownedId) || x.ownedId === bag.spare, c = G.cellOf(x.catalogId), blocked = ['proShop', 'retired'].includes(x.status);
-      return h('div', { class: 'row between', 'data-ball': x.ownedId },
-        h('div', {}, h('b', { text: x.name }), h('div', { class: 'muted small', text: [x.ownedId === bag.spare ? 'spare' : null, c.tbd ? 'spec TBD' : `L${c.level} ${c.shape}`, x.status !== 'inBag' ? STATUS.find(s => s[0] === x.status)[1] : null].filter(Boolean).join(' \u00b7 ') })),
-        inB ? h('button', { class: 'btn ghost', 'data-lock': x.ownedId, 'aria-pressed': String(locked.includes(x.ownedId)), onclick: () => saveBag(bag, { slots: bag.slots.map(s => s.owned === x.ownedId ? { owned: s.owned, locked: !s.locked } : s) }) }, locked.includes(x.ownedId) ? 'Locked' : 'Lock')
-          : blocked ? h('span', { class: 'pill', text: x.status === 'proShop' ? 'at pro shop' : 'retired' })
-          : h('button', { class: 'btn ghost', 'data-excl': x.ownedId, 'aria-pressed': String(excl.includes(x.ownedId)), onclick: () => saveBag(bag, { excluded: excl.includes(x.ownedId) ? excl.filter(i => i !== x.ownedId) : excl.concat([x.ownedId]) }) }, excl.includes(x.ownedId) ? 'Excluded' : 'Exclude')); };
-    body.append(h('div', { class: 'card', id: 'bagBalls' }, h('h2', { class: 'card-title', text: 'Your balls' }),
-      h('p', { class: 'muted small', text: 'Lock keeps a ball in when you fill. Exclude keeps it out.' }), h('div', { class: 'stack' }, ...all.map(rowOf))));
+    // ---- balls: 📌 Always bring (in the bag) / Status + "Why not this ball?" (left out). No Exclude: Status says where a ball is.
+    const rowOf = x => { const inB = packed.includes(x.ownedId), c = G.cellOf(x.catalogId), w = inB ? null : ST.whyNotFor(P, x.ownedId, { bag });
+      return h('div', { class: 'ball-row', 'data-ball': x.ownedId },
+        h('div', { class: 'row between' }, h('div', {}, h('b', { text: x.name }), h('div', { class: 'muted small', text: [x.ownedId === bag.spare ? 'spare' : null, c.tbd ? 'spec TBD' : `L${c.level} ${c.shape}`].filter(Boolean).join(' \u00b7 ') })),
+          inB ? h('button', { class: 'btn ghost', 'data-pin': x.ownedId, 'aria-pressed': String(locked.includes(x.ownedId)), onclick: () => saveBag(bag, { slots: bag.slots.map(s => s.owned === x.ownedId ? { owned: s.owned, locked: !s.locked } : s) }) }, ST.ALWAYS)
+            : statusButton(P, x.ownedId, { onDone: draw })),
+        w ? h('p', { class: 'small muted why-not', 'data-why-not': x.ownedId, 'data-why': w.key }, h('b', { text: 'Why not this ball? ' }), w.text) : null); };
+    body.append(h('div', { class: 'card', id: 'bagBalls' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: 'Your balls' }), helpDot('ap-why-not', 'Why not this ball?')),
+      h('p', { class: 'muted small', text: '\ud83d\udccc Always bring keeps a ball in when you fill. Status says where a ball is.' }), h('div', { class: 'stack' }, ...all.map(rowOf))));
     // ---- pack list
     body.append(h('div', { class: 'card', id: 'bagPack' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: 'Pack list' }), helpDot('eq-spareball', 'Spare ball')),
       h('dl', { class: 'kv' }, ...pack.rows.flatMap(r => [h('dt', { text: r.role }), h('dd', {}, h('b', { text: r.name }), h('div', { class: 'muted small', text: r.why }))])),
@@ -117,7 +119,7 @@ export async function render() {
     careId = careId && P.owned[careId] ? careId : (items[0] || all[0]).ownedId;
     const cx = itemOf(P, careId), hl = P.health[careId] || (cx.catalogId && P.health[cx.catalogId]) || null, care = G.careOf(catOf(cx.catalogId));
     const sel = h('select', { id: 'bagCareBall', 'aria-label': 'Ball', onchange: e => { careId = e.target.value; draw(); } }, ...all.map(x => h('option', { value: x.ownedId, selected: x.ownedId === careId ? '' : null, text: x.name })));
-    body.append(h('div', { class: 'card', id: 'bagCare' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: 'Ball status and care' }), helpDot('eq-cleaning', 'Cleaning')),
+    body.append(h('div', { class: 'card', id: 'bagCare' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: 'Ball status and care' }), helpDot('ap-status', 'Ball status'), helpDot('eq-cleaning', 'Cleaning')),
       h('label', { class: 'fld' }, h('span', { text: 'Ball' }), sel),
       h('p', { class: 'small', id: 'bagHealth' }, hl ? `${hl.games} games logged. Since refresh: ${hl.since.refresh ?? 'not logged'}; resurface: ${hl.since.resurface ?? 'not logged'}.` : 'No games logged with this ball yet.', prov(null, 'from your log')),
       h('p', { class: 'muted small' }, `Targets (${care.family === 'none' ? 'no brand guidance' : care.family}): ${SVC.filter(([t]) => care[t]).map(([t, l]) => `${l.toLowerCase()} ${care[t]}`).join(', ')} games.`, prov(null, care.src)),

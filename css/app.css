@@ -620,7 +620,11 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .ped.onlane .ball-orb{box-shadow:0 0 0 3px var(--gold),0 6px 16px rgba(0,0,0,.35)}
 .plate{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;width:100%;padding:var(--s2);background:var(--surface-2);border:1px solid var(--line);border-top:2px solid var(--gold);border-radius:var(--r-sm)}
 .plate-name{font-weight:800;color:var(--accent-ink);font-size:var(--fs-sm)}
-.plate-role,.plate-spec{font-size:var(--fs-xs);color:var(--text-2)}
+.plate-role,.plate-spec,.plate-why{font-size:var(--fs-xs);color:var(--text-2)}
+.plate-why{display:block;margin-top:2px;line-height:1.3}
+.why-not{margin:4px 0 0}
+.ball-row+.ball-row{border-top:1px solid var(--line);padding-top:8px}
+.why-not-list summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
 .ped-marks{display:flex;flex-wrap:wrap;gap:var(--s1);justify-content:center}
 .ped-empty{align-items:center;min-height:var(--tap)}.ped-empty .plate{border-top-style:dashed}
 .arm-fold summary{display:flex;justify-content:space-between;align-items:center;min-height:var(--tap);cursor:pointer;font-weight:700}

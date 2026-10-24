@@ -21,14 +21,14 @@
   ],
   "counts": {
    "Scoring & League Basics": 13,
-   "Equipment — Balls": 25,
+   "Equipment — Balls": 26,
    "Equipment — Shoes, Approach & Accessories": 19,
    "Styles & Approaches": 15,
    "Lane & Oil": 12,
    "Ball Motion": 17,
    "Targeting & Spares": 11
   },
-  "added_2026_10_24": "Terms added in the help-bubbles pass (owner approved adding sourced, neutral terms): eq-core, tg-hit, ap-model, ap-use-when, ap-compare, ap-status"
+  "added_2026_10_24": "Terms added in the help-bubbles pass (owner approved adding sourced, neutral terms): eq-core, tg-hit, ap-model, ap-use-when, ap-compare, ap-status, ap-why-not"
  },
  "terms": [
   {
@@ -3419,8 +3419,8 @@
    "tree": "Equipment — Balls",
    "term": "Ball status",
    "level": "Beginner",
-   "bubble": "Where a ball is: In my bag (tonight's suggestion can pick it), At home, At the pro shop, or Retired (Hall of Fame). Its history is always kept.",
-   "glossary": "Status is one setting per ball. In my bag: the bag builder can pick it. At home: you own it, but the builder won't pick it tonight. At the pro shop: never picked; a return reminder shows only if you set one. Retired: moves to the Hall of Fame; never picked. Changing status never deletes games or lines.",
+   "bubble": "Where a ball is: In my bag (tonight's bag can pick it), At home, At the pro shop, or Retired (Hall of Fame). Its history is always kept.",
+   "glossary": "Status is one setting per ball. In my bag: the bag builder can pick it. At home: you own it; the builder won't pick it on its own, but Swap offers it, tagged \"grab from home\". At the pro shop: never picked until you set it back. Retired: moves to the Hall of Fame; never picked. Changing status never deletes games or lines.",
    "placement": "Bubble (Ball page › Status; Bag builder) + Guide",
    "priority": "High",
    "sources": [
@@ -3436,6 +3436,35 @@
    "weak_evidence": false,
    "v1_rank": null,
    "added": "2026-10-24 (help bubbles pass; owner: '?' on the ball page)"
+  },
+  {
+   "id": "ap-why-not",
+   "tree": "Equipment — Balls",
+   "term": "Why not this ball?",
+   "level": "Beginner",
+   "bubble": "Tonight's bag is built only from balls In my bag. A ball you own is left out for one plain reason: its Status, service due, too close to a ball you're bringing, or stronger/weaker than tonight's lanes need.",
+   "glossary": "The builder fills the bag from balls marked In my bag, covering strength from heavy oil to dry and avoiding two balls that do the same job. 📌 Always bring keeps a ball in. Every ball left out shows one reason, in this order: Retired, At the pro shop, At home, service due, overlap with a ball you're bringing, no oil tag yet (spec TBD), stronger or weaker than tonight's lanes (app oil-tag level vs the pattern's demand), or the bag is full. Strength levels are this app's tags, not a measurement.",
+   "placement": "Bubble (Bag builder) + Guide",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "repo",
+     "url": "docs/IA_PLAN.md",
+     "label": "repo",
+     "title": "IA plan P1.3/P1.4: one Status, why-not list (this app)"
+    },
+    {
+     "key": "repo",
+     "url": "docs/COMMAND_CENTER_PLAN.md",
+     "label": "repo",
+     "title": "Command center plan §3: bag builder rules (this app)"
+    }
+   ],
+   "level_why": "Owner: every left-out ball needs a reason the bowler can read.",
+   "evidence": "Repo docs (repo).",
+   "weak_evidence": false,
+   "v1_rank": null,
+   "added": "2026-10-24 (P1.3 status pass)"
   }
  ]
 }

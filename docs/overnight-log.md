@@ -300,3 +300,11 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
   - Updated: help.test (112 terms); night.test (the seed sets no hand).
 - **Commit.** A, B and C went into one commit because the C edits share render hunks with the A dots in tonight, target, lane, more and compare.
 - **Also fixed.** A segmented control with nothing selected is now reachable by Tab, and the ball-page Compare button no longer overflows at 360.
+
+## 2026-10-24 · D / P1.3: one Status per ball (sw v44)
+- **One word per ball:** In my bag / At home / At the pro shop / Retired, from `js/cc/status.js`. The stored keys are still v1 (`inBag`/`benched`/`proShop`/`retired`), so the API and old backups don't change. The UI no longer says "Exclude", "Benched" or "Lock". Lock is now "📌 Always bring".
+- **Migration:** `migrateExcluded(P)` runs on start and after every data change (covering a restored backup or a sync from an old device). A ball in a bag's `excluded` list becomes At home unless it is at the pro shop or retired. Then the list is cleared. It is idempotent, and its provenance is `status-migration-2026-10-24`.
+- **One shared "Why not this ball?" source:** `whyNotFor()` / `whyNot()`, checked in this order: retired, pro shop, at home, service due, overlap, specs TBD, too strong or too weak for tonight, bag full. The ball page, Arsenal, Tonight ("Why not the others?") and the bag builder all show it, along with a "?" (`ap-why-not`, glossary 113).
+- **Swap:** offers only balls that are In my bag or At home. At home balls are tagged "grab from home" and stay packed (`slot.fromHome`). Pro shop and retired balls never appear. When a Status changes, packedIds (the builder and the ball chip) update with no reload.
+- **Tests:** unit `status.test.mjs` (labels, migration and idempotence, packedIds, why-not order, currentBag, and a scan that finds no Exclude/Benched/Lock strings). e2e `status`: set C4 to At the pro shop; it is then missing from the Tonight Swap, the builder Swap, the ball chip and the pack, and present in every Why not. Setting it back from the builder works without a reload. The step also covers migration, axe, 44 px targets and 360 px width. `bag_cycle` is updated (pin, Status sheet).
+- **Screenshots:** before at `/workspace/shots/before-D-{bag,arsenal,ball}.png`, after at `/workspace/shots/after-D-{bag,arsenal,ball}.png`.

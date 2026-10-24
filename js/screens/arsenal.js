@@ -10,6 +10,7 @@ import { ready, proj } from '../hub.js';
 import { catOf } from '../cc/cats.js';
 import * as A from '../cc/armory.js';
 import { helpDot, withHelp } from './help.js';
+import * as ST from '../cc/status.js';
 const st = { q:'', f:'all', picked:[] };
 const PAT_OIL = { house:'medium', cheetah:'medium', sport:'heavy', scorpion:'heavy', shark:'heavy', dry:'light' };
 const short = c => c.split(' / ')[0].replace('Strong ', 'Str. ').replace('Medium ', 'Med. ').replace('Asymmetrical', 'Asym').replace('Symmetrical', 'Sym');
@@ -26,28 +27,30 @@ export function tile(b, { onCompareToggle, picked }) {
   return t;
 }
 // Armory (owner brief 2026-10-24): owned balls on lit shelves with gold nameplates; retired balls in the Hall of Fame.
-// One takeaway: what is in your bag. Bench and Hall of Fame sit behind a tap; the full catalog stays below.
-function pedestal(it) {
+// One takeaway: what is in your bag. At home / pro shop and Hall of Fame sit behind a tap; the full catalog stays below.
+function pedestal(it, why) {
   const c = it.cat, inCatalog = c && balls.some(b => b.id === c.id), onLane = c && c.id === app.ball.id;
   const specs = c && c.rg != null ? `RG ${rgTxt(c)} \u00b7 Diff ${diffTxt(c)}` : 'Specs not entered';
   return h('article', { class:'ped' + (onLane ? ' onlane' : ''), 'data-own':it.id },
     h('a', { class:'ped-link', href:inCatalog ? `#/ball/${c.id}` : '#/bag' },
       h('span', { class:'ped-lit', 'aria-hidden':'true' }, h('span', { class:'ball-orb', style:{ '--c':it.color || 'var(--text-3)' } })),
       h('span', { class:'plate' }, h('span', { class:'plate-name', text:(it.benchmark ? '\u2605 ' : '') + it.name }),
-        it.role ? h('span', { class:'plate-role', text:it.role }) : null, h('span', { class:'plate-spec num', text:specs }), onLane ? h('span', { class:'sr-only', text:'on lane' }) : null)),
+        it.status !== 'inBag' ? h('span', { class:'plate-role', 'data-status':it.status, text:ST.LABEL[it.status] || it.status }) : it.role ? h('span', { class:'plate-role', text:it.role }) : null, h('span', { class:'plate-spec num', text:specs }), why && it.status !== 'retired' ? h('span', { class:'plate-why', 'data-why-not':it.id, 'data-why':why.key, text:'Why not: ' + why.text }) : null, onLane ? h('span', { class:'sr-only', text:'on lane' }) : null)),
     it.earned.length || onLane ? h('div', { class:'ped-marks' }, onLane ? h('span', { class:'pill gold', text:'On lane' }) : null, ...it.earned.map(m => h('span', { class:'pill', 'data-m':m.id, text:m.text }))) : null);
 }
 function armory(P) {
   const sh = A.shelves(P, catOf);
-  const shelf = (items, id, label, extra) => h('div', { class:'shelf', id, role:'list', 'aria-label':label }, ...items.map(it => h('div', { role:'listitem' }, pedestal(it))), extra || null);
+  // P1.3: the same "why not" as the ball page and the builder, for any ball not in tonight's bag (status.js).
+  const why = it => ST.whyNotFor(P, it.id);
+  const shelf = (items, id, label, extra) => h('div', { class:'shelf', id, role:'list', 'aria-label':label }, ...items.map(it => h('div', { role:'listitem' }, pedestal(it, why(it)))), extra || null);
   const empty = h('div', { role:'listitem' }, h('a', { class:'ped ped-empty', id:'armEmpty', href:'#/add-ball' }, h('span', { class:'ped-lit', 'aria-hidden':'true' }, h('span', { class:'ped-slot' })), h('span', { class:'plate' }, h('span', { class:'plate-name', text:'Add ball' }), h('span', { class:'plate-role', text:'Empty pedestal' }))));
   const fold = (id, label, n, body) => h('details', { class:'card arm-fold', id }, h('summary', {}, h('span', { text:label }), h('span', { class:'pill', text:String(n) })), body);
   return h('section', { class:'armory', id:'armory', 'aria-labelledby':'armBagH' },
-    withHelp(h('h2', { class:'group-h', id:'armBagH', text:`In the bag \u00b7 ${sh.bag.length}` }), 'ap-status', 'Ball status'),
-    shelf(sh.bag, 'armBag', 'In the bag', empty),
-    sh.bench.length ? fold('armBench', 'Bench and pro shop', sh.bench.length, shelf(sh.bench, 'armBenchShelf', 'Bench and pro shop')) : null,
+    withHelp(h('h2', { class:'group-h', id:'armBagH', text:`In my bag \u00b7 ${sh.bag.length}` }), 'ap-status', 'Ball status'),
+    shelf(sh.bag, 'armBag', 'In my bag', empty),
+    sh.bench.length ? fold('armBench', 'At home and at the pro shop', sh.bench.length, shelf(sh.bench, 'armBenchShelf', 'At home and at the pro shop')) : null,
     fold('armHall', 'Hall of Fame', sh.hall.length, sh.hall.length ? shelf(sh.hall, 'armHallShelf', 'Hall of Fame')
-      : h('div', { class:'stack', id:'armHallNone' }, h('p', { class:'muted small', text:'Retired balls rest here with their record. Set a ball to Retired in Bag.' }), h('a', { class:'btn ghost sm', href:'#/bag' }, 'Open Bag'))),
+      : h('div', { class:'stack', id:'armHallNone' }, h('p', { class:'muted small', text:'Retired balls rest here with their record. Set a ball\u2019s Status to Retired on its page or in Bag.' }), h('a', { class:'btn ghost sm', href:'#/bag' }, 'Open Bag'))),
     h('p', { class:'muted small', id:'armNote', text:'Marks appear only from games you log with frames.' }));
 }
 export async function render() {
