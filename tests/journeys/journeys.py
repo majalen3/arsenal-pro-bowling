@@ -632,3 +632,186 @@ async def j12_coach(j):
         s.check('#/card' in j.page.url, f'on the Card ({j.page.url.split("#")[-1]})')
     async with j.step('Share the Bowler Card', task='share', target_taps=1) as s:
         s.check(await j.visible('#bcShare'), 'Share button visible')
+
+
+# ---------- J13-J15: IA_PLAN.md §7 P1 acceptance criteria, written before they ship ----------
+# These steps are listed as "PENDING P1.x" in known_issues.json until the build lands; when one starts passing the run
+# prints it under "Known issues now passing" and the entry is deleted so the step guards from then on. Selectors are
+# by visible bowler words (IA_PLAN §4 glossary) and the event store, not by ids that do not exist yet.
+STATUS_WORDS = ['In my bag', 'At home', 'At the pro shop', 'Retired']
+OLD_WORDS = re.compile(r'\b(Exclude[ds]?|Benched|Bench & pro shop|Bench and pro shop|Lock(ed)?|Hall of Fame)\b')
+ROLES = re.compile(r'Start ball|If it hooks early|If it stops hooking|For heavy oil|Spares?', re.I)
+
+def name_in(n, t):
+    """Catalogue names carry the brand ("Radical Rattler Big Bite"); screens often drop it ("Rattler Big Bite")."""
+    if not n or not t: return False
+    w = n.split()
+    return any(len(' '.join(w[k:])) >= 5 and ' '.join(w[k:]) in t for k in range(len(w)))
+
+async def owned(j):
+    return await j.data("() => Object.entries(window.__apData.projection().owned || {}).filter(([k, o]) => !o.removed)"
+                        ".map(([k, o]) => ({ id: k, status: o.status || 'inBag', name: o.name || '' }))")
+
+async def ball_names(j):
+    """Owned id -> display name, as the app renders it (catalogue name when the owned record has none)."""
+    return await j.data("async () => { const P = window.__apData.projection(); const m = await import('./js/cc/cats.js').catch(() => null);"
+                        " const out = {}; for (const [k, o] of Object.entries(P.owned || {})) { if (o.removed) continue;"
+                        " const c = m && m.catOf ? m.catOf(o.catalogId) : null; out[k] = o.name || (c && c.name) || o.catalogId || k; } return out; }")
+
+async def visible_text(j):
+    return await j.ev("() => document.querySelector('.screen, main, body').innerText")
+
+async def first_viewport(j, sel_or_text, limit=740):
+    """Bottom edge (px) of the first visible element whose text matches, or None."""
+    return await j.ev("([q, lim]) => { const re = new RegExp(q, 'i'); const el = [...document.querySelectorAll('button, a, summary, [role=button], input, label, h1, h2, h3')]"
+                      ".find(e => re.test(e.textContent + ' ' + (e.value || '') + ' ' + (e.getAttribute('aria-label') || '')) && e.getBoundingClientRect().height > 0);"
+                      " return el ? Math.round(el.getBoundingClientRect().bottom) : null; }", [sel_or_text, limit])
+
+async def click_text(j, s, pattern, scope='body'):
+    loc = j.page.locator(f'{scope} button, {scope} a, {scope} [role=radio], {scope} [role=button], {scope} label').filter(has_text=re.compile(pattern, re.I))
+    if not await loc.count(): return False
+    await loc.first.scroll_into_view_if_needed(); await loc.first.click(); s.taps += 1; await j.settle(400); return True
+
+
+async def j13_status(j):
+    await boot(j, 'righty')
+    dialogs = []
+    async def on_dialog(d):
+        dialogs.append(d.message); await d.dismiss()
+    j.page.on('dialog', on_dialog)
+    balls = await owned(j); names = await ball_names(j); j.state['owned'] = len(balls)
+    tgt = next((b for b in balls if b['status'] == 'inBag'), None); j.state['ps'] = tgt and tgt['id']; j.state['psName'] = tgt and names.get(tgt['id'], '')
+    async with j.step('Status uses the four bowler words everywhere (no Exclude / Benched / Lock)') as s:
+        bad = {}
+        for r in ('/arsenal', '/bag', '/tonight'):
+            await j.nav(r); await j.settle(400); t = await visible_text(j)
+            m = sorted({x.group(0) for x in OLD_WORDS.finditer(t)})
+            if m: bad[r] = m
+        if tgt:
+            await j.goto('/ball/' + tgt['id'].replace('own-', '')); await j.settle(500); t = await visible_text(j)
+            m = sorted({x.group(0) for x in OLD_WORDS.finditer(t)}); s.check(all(w in t for w in STATUS_WORDS), 'ball page offers In my bag / At home / At the pro shop / Retired')
+            if m: bad['/ball'] = m
+        s.check(not bad, f'no old Status words on screen ({bad})')
+    async with j.step('Set a ball to "At the pro shop" on its page in <= 2 taps', task='status', target_taps=2) as s:
+        ok = tgt and await click_text(j, s, r'^\s*At the pro shop\s*$')
+        st = next((b['status'] for b in await owned(j) if tgt and b['id'] == tgt['id']), None)
+        s.check(ok and st == 'proShop', f'{j.state["psName"]} stored as proShop ({st})')
+    async with j.step('Without a reload, the builder leaves it out and says why ("At the pro shop")', carry='status=proShop') as s:
+        await j.nav('/bag'); await j.settle(500); t = await visible_text(j)
+        why = await j.ev("n => { const re = /why not|left out/i; const sec = [...document.querySelectorAll('section, details, div')].find(e => re.test((e.querySelector('h2,h3,summary') || {}).textContent || ''));"
+                         " return sec ? sec.innerText : ''; }", j.state['psName'])
+        s.check(bool(why), 'a "Why not" / "Left out" section exists')
+        s.check(name_in(j.state['psName'], why) and re.search(r'pro shop', why, re.I), f'{j.state["psName"]} is listed there with "pro shop"')
+        swap = await click_text(j, s, r'^\s*Swap\b')
+        s.check(swap, 'a Swap button opens the eligible balls')
+        offer = await j.ev("() => { const d = document.querySelector('.sheet, [role=dialog]'); return d ? d.innerText : ''; }") if swap else ''
+        s.check(swap and not name_in(j.state['psName'], offer), 'Swap does not offer it')
+    async with j.step('Tonight and the score pad ball chip never offer it', carry='status=proShop') as s:
+        await j.nav('/tonight'); await j.settle(400)
+        pick = (await tonight_line(j)).get('ball', '')
+        s.check(not same_ball(pick, j.state['psName']), f'Tonight does not pick it ({pick})')
+        try:
+            await start_game(j); await j.tap('#qlBall'); await j.wait('#qlBallPick', timeout=3000)
+            chip = await j.text('#qlBallPick'); s.check(not name_in(j.state['psName'], chip), 'not in the ball chip list')
+            if await j.visible('#qlBallDone'): await j.tap('#qlBallDone')
+        except Exception as e:
+            s.check(False, f'ball chip list opened ({str(e)[:80]})')
+    async with j.step('"At home" balls are offered but tagged "grab from home"', carry='status=atHome') as s:
+        b2 = next((b for b in await owned(j) if b['status'] == 'inBag'), None); n2 = b2 and names.get(b2['id'], '')
+        ok = False
+        if b2:
+            await j.goto('/ball/' + b2['id'].replace('own-', '')); await j.settle(400); ok = await click_text(j, s, r'^\s*At home\s*$')
+        st = next((b['status'] for b in await owned(j) if b2 and b['id'] == b2['id']), None)
+        s.check(ok and st == 'benched', f'{n2} stored as At home (benched) ({st})')
+        await j.nav('/bag'); await j.settle(400); t = await visible_text(j)
+        s.check(re.search(r'grab from home', t, re.I), 'the builder tags it "grab from home"')
+    async with j.step('Retired: never offered, history kept') as s:
+        b3 = next((b for b in await owned(j) if b['status'] == 'inBag'), None); n3 = b3 and names.get(b3['id'], '')
+        if b3:
+            await j.goto('/ball/' + b3['id'].replace('own-', '')); await j.settle(400); await click_text(j, s, r'^\s*Retired\s*$')
+        st = next((b['status'] for b in await owned(j) if b3 and b['id'] == b3['id']), None)
+        s.check(st == 'retired', f'{n3} stored as retired ({st})')
+        await j.nav('/tonight'); await j.settle(400); s.check(not same_ball((await tonight_line(j)).get('ball', ''), n3), 'Tonight does not pick it')
+        if b3:
+            await j.goto('/ball/' + b3['id'].replace('own-', '')); await j.settle(400); s.check(name_in(n3, await visible_text(j)), 'its ball page still opens')
+    async with j.step('Status changes never ask "are you sure"') as s:
+        s.check(not dialogs, f'no confirm dialogs ({dialogs[:2]})')
+
+
+async def j14_bag(j):
+    await boot(j, 'righty')
+    balls = await owned(j); names = await ball_names(j); j.state['owned'] = len(balls)
+    async with j.step('Exactly one "Bring: N" size control across Tonight and the Bag', task='bag') as s:
+        await j.nav('/tonight'); await j.settle(400)
+        t1 = await visible_text(j); n1 = len(re.findall(r'\bBring\s*:?\s*\d+', t1))
+        old = re.findall(r'Tournament 6|League 3|Tourn\. 6|\bFormat\b', t1)
+        await j.nav('/bag'); await j.settle(400); t2 = await visible_text(j)
+        n2 = len(re.findall(r'\bBring\s*:?\s*\d+', t2)); old += re.findall(r'Tournament 6|League 3|Tourn\. 6|\bFormat\b', t2)
+        s.check(n1 + n2 >= 1 and n2 <= 1 and n1 <= 1, f'one Bring: N control (Tonight {n1}, Bag {n2})')
+        s.check(not old, f'old size chips gone ({sorted(set(old))})')
+    async with j.step('"Other" takes 7', task='bag', target_taps=3) as s:
+        ok = await click_text(j, s, r'^\s*Other\s*$')
+        inp = j.page.locator('input[type=number], input[inputmode=numeric]')
+        if ok and await inp.count():
+            await inp.first.fill('7'); await inp.first.press('Enter'); s.taps += 1; await j.settle(500)
+        t = await visible_text(j); s.check(re.search(r'Bring\s*:?\s*7\b', t), 'Bring: 7 accepted')
+        await j.nav('/tonight'); await j.settle(300); await j.nav('/bag'); await j.settle(400)
+    async with j.step('Builder reads as 3 steps: where, your bag for tonight, left out (why not)') as s:
+        t = await visible_text(j)
+        for w in (r'Where|lanes', r'Your bag for tonight|Tonight.s bag', r'Left out|Why not'):
+            s.check(re.search(w, t, re.I), f'step heading /{w}/')
+    async with j.step('Every pick has a role in bowler words and one "why"') as s:
+        rows = await j.ev("() => [...document.querySelectorAll('[data-role], .bag-pick, .bb-row')].map(r => r.innerText)")
+        s.check(len(rows) >= 1, f'{len(rows)} picks found')
+        s.check(rows and all(ROLES.search(r) for r in rows), 'each pick has a role (Start ball / If it hooks early / ...)')
+        s.check(rows and all(len(re.findall(r'[a-z]{3,}', r)) >= 6 for r in rows), 'each pick has a sentence of why')
+    async with j.step('Every owned ball is either in the bag or in Why not, with a reason') as s:
+        inbag = await j.ev("() => [...document.querySelectorAll('[data-role], .bag-pick, .bb-row')].map(r => r.innerText)")
+        whyn = await j.ev("() => { const re = /why not|left out/i; const sec = [...document.querySelectorAll('section, details, div')].find(e => re.test((e.querySelector('h2,h3,summary') || {}).textContent || ''));"
+                          " return sec ? [...sec.querySelectorAll('li, .row, [data-why]')].map(r => r.innerText) : []; }")
+        missing = [n for n in names.values() if not any(name_in(n, r) for r in inbag + whyn)]
+        s.check(len(inbag) + len(whyn) >= len(names), f'bag {len(inbag)} + why not {len(whyn)} covers {len(names)} owned')
+        s.check(not missing, f'every ball accounted for (missing: {missing[:4]})')
+        s.check(whyn and all(len(r.strip().split()) >= 4 for r in whyn), 'each Why not row has a reason')
+    async with j.step('"Pack these N" is visible without scrolling') as s:
+        b = await first_viewport(j, r'Pack these \d+')
+        s.check(b is not None and b <= 740, f'Pack button bottom at {b} px (<= 740)')
+    async with j.step('Pack saves THE bag: Tonight, the Bag header and the ball chip show the same balls', task='bag', target_taps=1, carry='bag') as s:
+        ok = await click_text(j, s, r'Pack these \d+')
+        saved = await j.data("() => { const B = Object.values(window.__apData.projection().bags || {}).sort((a, b) => (b.ts || 0) - (a.ts || 0))[0]; return B ? (B.items || B.balls || B.owned || []).map(x => typeof x === 'string' ? x : (x.ownedId || x.id)) : []; }")
+        sn = [names.get(i, i) for i in saved]; j.state['bag'] = sn
+        s.check(ok and sn, f'a bag is saved ({sn})')
+        await j.page.reload(); await j.settle(500); await j.nav('/bag'); await j.settle(400); t = await visible_text(j)
+        s.check(re.search(rf'\b{len(sn)} packed\b', t), f'Bag header says "{len(sn)} packed"')
+        await j.nav('/tonight'); await j.settle(400); t = await visible_text(j)
+        s.check(sn and all(name_in(n, t) for n in sn), 'Tonight names the same balls')
+        try:
+            await start_game(j); await j.tap('#qlBall'); await j.wait('#qlBallPick', timeout=3000)
+            chip = await j.text('#qlBallPick'); s.check(sn and all(name_in(n, chip) for n in sn), 'the ball chip offers the same balls')
+        except Exception as e:
+            s.check(False, f'ball chip list opened ({str(e)[:80]})')
+
+
+async def j15_front(j):
+    await boot(j, 'righty')
+    async with j.step('Tonight shows "Right-handed · change"; Left in <= 3 taps', task='hand', target_taps=3, carry='hand=left') as s:
+        await j.nav('/tonight'); await j.settle(400); t = await visible_text(j)
+        s.check(re.search(r'Right-handed\s*·\s*change', t), 'hand chip on the Tonight start line')
+        ok = await click_text(j, s, r'^\s*change\s*$', scope='.hand-line') and await click_text(j, s, r'^\s*Left\s*$', scope='.sheet, [role=dialog], #handSheet')
+        hand = await j.ev("() => import('./js/cc/hand.js').then(m => m.hand()).catch(() => '')")
+        s.check(ok and hand == 'left', f'profile hand = {hand}')
+    async with j.step('Lane mirrors the new hand at once', carry='hand=left') as s:
+        await j.nav('/lane'); await j.settle(500); lab = await lefty_mirrored(j)
+        s.check(re.search(r'left', lab, re.I), f'Lane draws a left-handed line ("{lab[:60]}")')
+    async with j.step('Tonight (League) fits in 1.5 screens; Start bowling and Add a bowler in the first viewport') as s:
+        await j.nav('/tonight'); await j.settle(300)
+        if await j.page.locator('#advEvent [data-event="league"]').count(): await j.page.click('#advEvent [data-event="league"]'); await j.settle(400)
+        h = await j.ev("() => document.scrollingElement.scrollHeight")
+        s.check(h <= 1110, f'scrollHeight {h} <= 1110')
+        sb = await first_viewport(j, r'Start bowling'); s.check(sb is not None and sb <= 740, f'Start bowling bottom {sb} px')
+        ab = await first_viewport(j, r'Add a bowler'); s.check(ab is not None and ab <= 740, f'Add a bowler bottom {ab} px')
+    async with j.step('More: Learn card first; Glossary in <= 2 taps with no scroll', task='learn', target_taps=2) as s:
+        await j.nav('/more'); s.taps += 1; await j.settle(400)
+        g = await first_viewport(j, r'Glossary'); s.check(g is not None and g <= 740, f'Glossary link bottom {g} px')
+        first = await j.ev("() => { const c = [...document.querySelectorAll('.screen section, .screen .card, .screen details')].find(e => e.getBoundingClientRect().height > 0); return c ? c.innerText.slice(0, 80) : ''; }")
+        s.check(re.search(r'^\s*Learn', first), f'first card is Learn ("{first[:40]}")')

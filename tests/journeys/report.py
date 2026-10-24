@@ -10,7 +10,7 @@ def probes(run):
     out, seen = [], set()
     for r in run.screens:
         for kind, bad, detail in (('axe', r.get('axe'), r.get('axe')), ('dead-end', r.get('deadEnd'), 'no tab bar and no Back'),
-                                  ('targets', r.get('small'), r.get('small')), ('truncation', r.get('trunc'), r.get('trunc'))):
+                                  ('targets', r.get('small'), r.get('small')), ('truncation', r.get('trunc'), r.get('trunc')), ('hscroll', r.get('hscroll'), r.get('hscroll'))):
             key = f"probe/{r['screen']}/{kind}"
             if bad and key not in seen:
                 seen.add(key); out.append(dict(key=key, journey=r['journey'], detail=detail if isinstance(detail, list) else [detail], known=run.known.get(key)))

@@ -20,5 +20,20 @@
   "probe/glossary/targets": "F11",
   "probe/lane/truncation": "F12",
   "J09/Every screen has a \"?\" when Help is on": "F13",
-  "J01/The search box example is a ball the catalogue knows": "F14"
+  "J01/The search box example is a ball the catalogue knows": "F14",
+  "J13/Status uses the four bowler words everywhere (no Exclude / Benched / Lock)": "PENDING P1.3 (ball Status)",
+  "J13/Set a ball to \"At the pro shop\" on its page in <= 2 taps": "PENDING P1.3 (ball Status)",
+  "J13/Without a reload, the builder leaves it out and says why (\"At the pro shop\")": "PENDING P1.3 (ball Status)",
+  "J13/Tonight and the score pad ball chip never offer it": "PENDING P1.3 (ball Status)",
+  "J13/\"At home\" balls are offered but tagged \"grab from home\"": "PENDING P1.3 (ball Status)",
+  "J13/Retired: never offered, history kept": "PENDING P1.3 (ball Status)",
+  "J14/Exactly one \"Bring: N\" size control across Tonight and the Bag": "PENDING P1.2 (Bring: N)",
+  "J14/\"Other\" takes 7": "PENDING P1.2 (Bring: N)",
+  "J14/Builder reads as 3 steps: where, your bag for tonight, left out (why not)": "PENDING P1.4 (builder 3 steps + why not)",
+  "J14/Every pick has a role in bowler words and one \"why\"": "PENDING P1.4 (builder 3 steps + why not)",
+  "J14/Every owned ball is either in the bag or in Why not, with a reason": "PENDING P1.4 (builder 3 steps + why not)",
+  "J14/\"Pack these N\" is visible without scrolling": "PENDING P1.4 (builder 3 steps + why not)",
+  "J14/Pack saves THE bag: Tonight, the Bag header and the ball chip show the same balls": "PENDING P1.1 (one saved bag)",
+  "J15/Tonight (League) fits in 1.5 screens; Start bowling and Add a bowler in the first viewport": "PENDING P1.5 (Tonight trimmed)",
+  "_note_pending": "Entries starting PENDING are IA_PLAN.md §7 P1 acceptance criteria written before the build ships (J13-J15). They are expected to fail; when one passes the run lists it under 'Known issues now passing': delete the entry so the step becomes a guard."
 }

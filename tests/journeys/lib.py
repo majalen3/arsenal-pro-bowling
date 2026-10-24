@@ -280,6 +280,7 @@ class Journey:
             r.update(await p.evaluate(SCREEN))
             r['small'] = await p.evaluate(SMALL)
             r['trunc'] = await p.evaluate(TRUNC)
+            r['hscroll'] = await p.evaluate("() => { const w = document.scrollingElement.scrollWidth; return w > innerWidth + 1 ? `page is ${w}px wide in a ${innerWidth}px screen` : ''; }")   # IA_PLAN §7: no horizontal scroll
             if axe:
                 if not await p.evaluate("() => !!window.axe"):
                     await p.add_script_tag(url=self.run.base + 'tests/axe.min.js')
@@ -287,7 +288,7 @@ class Journey:
             r['scoring'] = scoring
             r['deadEnd'] = r['tabs'] == 0 and r['back'] == 0 and screen != 'welcome'   # Welcome is the one-way entry: its only exit is forward (Get started)
             # usability/applicability heuristic (0-10, automated proxy; see docs/QA_PLAN.md §4.12)
-            u = [bool(r['h1']), r['actionsAboveFold'] > 0, r['fontMin'] >= 12, not r['small'], not r['trunc']]
+            u = [bool(r['h1']), r['actionsAboveFold'] > 0, r['fontMin'] >= 12, not r['small'], not (r['trunc'] or r['hscroll'])]
             a = [r['imperative'], r['numbersAboveFold'] <= 12, r['numbersAboveFold'] == 0 or r['provs'] > 0, not r['deadEnd'], (not scoring) or r['numbersAboveFold'] <= 24]
             r['usability'], r['applicability'] = sum(u), sum(a); r['score'] = sum(u) + sum(a)
             r['why'] = [n for n, ok in zip(['heading', 'action above fold', 'text >= 12px', 'targets >= 44px', 'no truncation'], u) if not ok] + \

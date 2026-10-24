@@ -23,6 +23,9 @@ JOURNEYS = [
     ('J10', 'Practice night spare drill', 'righty', J.j10_practice),
     ('J11', 'Data trust: offline, reload, sync, backup, CSV, restore, re-import', 'righty', J.j11_data_trust),
     ('J12', 'Coach review from a backup', 'coach', J.j12_coach),
+    ('J13', 'Ball Status: four words, one source, pro shop never offered (IA P1.3, pending)', 'righty', J.j13_status),
+    ('J14', 'Bag builder: one bag, Bring: N, 3 steps with why-not (IA P1.1/P1.2/P1.4, pending)', 'righty', J.j14_bag),
+    ('J15', 'Front page: hand chip, Tonight fold, Learn first (IA P1.5-P1.7, pending)', 'righty', J.j15_front),
 ]
 
 
