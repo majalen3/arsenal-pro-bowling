@@ -231,3 +231,9 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 
 ## Sim2 #11: untouched defaults are labelled as defaults (2026-10-24)
 - Welcome now tracks which fields the bowler touched (`p.entered`). An untouched speed or rev saves as `prov {kind:'user', ref:'default'}`. This is backward compatible, because PROV_KINDS is unchanged. The Card shows "default (not entered)" in the speed/rev rows and the Speed · revs figure. Targeting's chip shows "assumed · default (not entered)", and schema `chip()` matches. Profiles saved before this change, and any value the bowler edits, still read "you reported". Unit +1 (208); e2e phone/target/card 117/0; an ad-hoc welcome run (accept defaults → Card) showed the new label. No sw bump.
+
+## M1: center / lane-pair memory (2026-10-24)
+- **Tonight:** once a known center is set, the "Last time at <center>" card shows one line (date · lanes · pattern · games/avg · main ball), your note, and a "Use last setup" button. Older visits are behind a tap. The card shows before the first ball only.
+- **Setup:** lane pair is optional and cleaned ("21 - 22" → "21-22"), and your centers are offered in a datalist.
+- **Session page:** Details has "Note for next time at <center>".
+- **Tests:** unit +3 (center.test); new e2e step `center` 13/0. tonight/quicklog/scoring/help/advisor are 16/17/53/17/20, all green.

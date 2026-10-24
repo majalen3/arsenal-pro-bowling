@@ -134,3 +134,10 @@ Short ADR-style notes. Each: decision · why · consequence.
 - **Glossary screen** `#/glossary` sits under the More tab (no new tab). It has search over term, id and text (accent-insensitive), groups in glossary tree order, a level pill, and each term's sources with the F/S/A/repo labels from `_meta.labels`. `?t=<id>` opens and scrolls to the entry, and each bubble's "Glossary ›" link uses it.
 - **Read-only data.** data/glossary.json and HELP_BUBBLES_V1.md are not edited; the app only reads them (same-origin fetch, CSP-safe) and the SW precaches the file for offline use.
 - **No AI chat, no medical advice, no style ranking.** The glossary is shown as written, and the keep-out topics stay out.
+
+## M1 Center / lane-pair memory (2026-10-24)
+- **No new table.** Lane pair is a session field (`lanePair`, cleaned to "15-16"). The note is a center field (`center.edited {note}`, 140 chars). Visits come from `session.*` and `shot.*` events, so /api/me export and delete already cover them.
+- **Pure core** in `js/cc/center.js` (visitsOf, lineOf, setupOf, cleanPair, noteOf), with unit tests in tests/data/center.test.mjs.
+- **Shown before the first ball only.** The card disappears once the night has a logged ball, so nothing is added to the scoring layout.
+- **"Use last setup" copies only what was entered** (pattern, surface, bag, lane pair). The ball pick is never copied. It's recomputed for the copied lanes, so the advice stays the ranker's.
+- **Practice is shown but never averaged.**

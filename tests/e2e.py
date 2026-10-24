@@ -1081,6 +1081,38 @@ async def help_cycle(b):
     await p.goto(BASE + '?hp6#/lane'); await p.wait_for_selector('.lane-tools'); check(await p.query_selector('.help-dot') is None, '[help] off again: gone')
     check(not errs, f'[help] no page errors {errs[:3]}'); await c.close()
 
+async def center_cycle(b):
+    # M1 center memory: "Last time at <center>" before the first ball only (never while scoring), one line + your note,
+    # "Use last setup" copies pattern / surface / lane pair, older visits behind a tap, note written from the session page.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.goto(BASE + '?cm#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnSetup')
+    await p.evaluate("""async () => { const m = await import('./js/hub.js'); await m.ready();
+      await m.add('center.created', 'center-test-lanes', { fields: { name: 'Test Lanes', surface: 'synthetic' } });
+      for (const [id, d] of [['test-cm-1', '2026-10-10'], ['test-cm-2', '2026-10-17']]) { await m.add('session.created', id, { kind: 'tonight', date: d, centerId: 'center-test-lanes', patternSlug: 'test', patternName: '2026 PBA Badger', ft: 52, ml: null, ratio: null, surface: 'synthetic', lanePair: '15-16', ended: true }); await m.add('shot.logged', id + '-s1', { sessionId: id, game: 1, frame: 1, roll: 1, down: 10, leave: [] }); } }""")
+    await p.goto(BASE + '?cm2#/tonight'); await p.wait_for_selector('#tnCenter')
+    check(await p.query_selector('#tnLast') is None, '[center] nothing until a center is chosen')
+    check(await p.evaluate("() => [...document.querySelectorAll('#tnCenterList option')].some(o => o.value === 'Test Lanes')"), '[center] your centers are offered as you type')
+    await p.fill('#tnCenter', 'Test Lanes'); await p.dispatch_event('#tnCenter', 'change'); await p.wait_for_selector('#tnLast')
+    ln = await p.text_content('#tnLastLine'); check(ln.startswith('Oct 17') and 'lanes 15-16' in ln and '2026 PBA Badger 52 ft' in ln, f'[center] last visit in one line, date first ({ln})')
+    check(await p.eval_on_selector('#tnLastAll', 'e => !e.open') and '2 visits' in await p.text_content('#tnLastAll summary'), '[center] older visits behind one tap')
+    await p.click('#tnUseLast'); await p.wait_for_function("() => document.querySelector('#tnPattern').value === '2026 PBA Badger'")
+    check(await p.input_value('#tnLanes') == '15-16' and await p.get_attribute('#tnSetup [role=radio][data-v=synthetic]', 'aria-checked') == 'true', '[center] Use last setup copies pattern, lane pair and surface')
+    check(await p.query_selector('#tnUseLast') is None, '[center] button gone once the setup matches')
+    await p.fill('#tnLanes', 'abc'); await p.dispatch_event('#tnLanes', 'change'); await p.wait_for_timeout(200)
+    await p.fill('#tnLanes', '21 - 22'); await p.dispatch_event('#tnLanes', 'change'); await p.wait_for_function("() => document.querySelector('#tnLanes').value === '21-22'")
+    check(True, '[center] lane pair cleaned to 21-22')
+    await axe_ok(p, '[center] last time'); small = await p.evaluate(SMALL); check(not small, f'[center] targets >= 44px {small[:6]}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[center] no horizontal overflow at 360 {w}')
+    await shot(p, 'phone-center-last')
+    await qtap(p, '#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 2')")
+    check(await p.query_selector('#tnLast') is None, '[center] gone once the night has a ball logged (nothing new during scoring)')
+    await p.goto(BASE + '?cm3#/session/test-cm-2'); await p.wait_for_selector('#sessDetails'); await p.click('#sessDetails summary')
+    await p.fill('#sessCenterNote', '  3rd arrow   hooked early  '); await p.dispatch_event('#sessCenterNote', 'change'); await p.wait_for_timeout(300)
+    await p.evaluate("async () => { const m = await import('./js/hub.js'); const nw = await import('./js/cc/night.js'); await m.add('session.edited', nw.openNight(m.proj()), { fields: { ended: true } }); }")
+    await p.goto(BASE + '?cm4#/tonight'); await p.wait_for_selector('#tnCenter'); await p.fill('#tnCenter', 'Test Lanes'); await p.dispatch_event('#tnCenter', 'change'); await p.wait_for_selector('#tnLastNote')
+    nt = await p.text_content('#tnLastNote'); check(nt == 'Your note: 3rd arrow hooked early', f'[center] note from the session page shows next time ({nt})')
+    check(not errs, f'[center] no page errors {errs[:3]}'); await c.close()
+
 async def aimbox_cycle(b):
     # Aim Box: default off (lane pixels unchanged, no pill); Overlays sheet turns it on; House = Baker 4.5-9.5 at 45 ft;
     # through/outside pill; Custom edges persist after reload; lefty mirror keeps the same read; Targeting + Compare show it.
@@ -1135,7 +1167,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('center', lambda: center_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

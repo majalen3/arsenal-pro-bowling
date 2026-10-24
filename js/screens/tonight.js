@@ -21,6 +21,7 @@ import { sessionsOf, recapOf } from '../cc/card.js';
 import * as LG from '../cc/league.js';
 import * as PR from '../cc/protect.js';
 import * as WK from '../cc/wake.js';
+import * as CM from '../cc/center.js';
 import * as hub from '../hub.js';
 export { standOf };
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
@@ -100,9 +101,15 @@ export async function render() {
     const cIn = h('input', { id: 'tnCenter', autocomplete: 'off', placeholder: 'Center name', 'aria-label': 'Center', value: center ? center.name : '' });
     cIn.onchange = async () => { const v = cIn.value.trim(); if (!v) return save({ centerId: null }); const id = 'center-' + slug(v);
       if (!P.centers[id]) await add('center.created', id, { fields: { name: v, surface: s.surface } }); await save({ centerId: id }); };
+    const cList = h('datalist', { id: 'tnCenterList' }, ...Object.values(P.centers).filter(c => c.name).map(c => h('option', { value: c.name })));
+    cIn.setAttribute('list', 'tnCenterList');
+    // M1: optional lane pair (kept on the night; shown next time at this center).
+    const lpIn = h('input', { id: 'tnLanes', autocomplete: 'off', placeholder: 'e.g. 15-16', 'aria-label': 'Lane pair (optional)', value: s.lanePair || '' });
+    lpIn.onchange = async () => { const v = lpIn.value.trim(), c = CM.cleanPair(v); if (v && !c) return toast('Lane pair like 15-16', { kind: 'bad' }); await save({ lanePair: c }); };
     const setup = h('div', { class: 'card', id: 'tnSetup' }, h('h2', { class: 'card-title', text: 'Lanes tonight' }),
         h('label', { class: 'fld' }, h('span', {}, 'Pattern ', pat ? provChip('usbc', 'Kegel library') : provChip('assumed', 'assumed house 38 ft')), patIn, dl),
-        h('label', { class: 'fld' }, h('span', { text: 'Center' }), cIn),
+        h('label', { class: 'fld' }, h('span', { text: 'Center' }), cIn, cList),
+        center ? h('label', { class: 'fld' }, h('span', { text: 'Lane pair (optional)' }), lpIn) : null,
         h('div', { class: 'fld' }, h('span', {}, 'Lane surface ', s.surface === 'unknown' ? provChip('assumed', 'unknown') : null), segmented('Lane surface', [['unknown', 'Unknown'], ['wood', 'Wood'], ['synthetic', 'Synthetic']], s.surface, v => { save({ surface: v, pickId: null }); if (center) add('center.edited', center.id, { fields: { surface: v } }); })),
         h('div', { class: 'fld' }, h('span', { text: 'Lane condition' }), segmented('Lane condition', [['fresh', 'Fresh'], ['transition', 'Transition'], ['burn', 'Burned']], s.stage, v => save({ stage: v, pickId: null }))),
         bags.length > 1 ? h('div', { class: 'fld' }, h('span', { text: 'Bag' }), segmented('Bag', bags.map(x => [x.id, x.name]), bag.id, v => save({ bagId: v, pickId: null }))) : null,
@@ -154,6 +161,7 @@ export async function render() {
     }
     // ---- before a game / between games
     body.append(advisorCard(P, s, b));
+    const lastCard = lastTimeCard(P, s, center); if (lastCard) body.append(lastCard);
     const fc = prefs().focus;
     if (fc && fc.text && fc.from !== curSid()) body.append(h('div', { class: 'row between tn-focus', id: 'tnFocus' }, h('p', { class: 'small', text: fc.text.replace(/^Next focus: /, 'Your focus: ') }),
       h('button', { class: 'icon-btn', 'aria-label': 'Clear focus', html: icon('close'), onclick: () => { setPrefs({ focus: null }); draw(); } })));
@@ -165,6 +173,20 @@ export async function render() {
     body.append(setup);
     if (measNudge) body.append(measNudge);
   }
+  // ---- M1 center memory: before the first ball of a night only. One line (numbers first), the note you left, one button;
+  // older visits behind a tap. Nothing here is a recommendation: it is what you did last time.
+  function lastTimeCard(P, s, center) {
+    if (!center || g0(P)) return null;
+    const vs = CM.visitsOf(P, center.id, curSid()), note = CM.noteOf(P, center.id); if (!vs.length && !note) return null;
+    const nameOf = id => { const o = P.owned[id]; return o ? short(o.name || (catOf(o.catalogId) || {}).name) : null; };
+    const v = vs[0], f = v ? CM.setupOf(v) : null, same = f && Object.keys(f).every(k => k === 'pickId' || (s[k] ?? null) === (f[k] ?? null));
+    return h('div', { class: 'card', id: 'tnLast' }, h('h2', { class: 'card-title', text: `Last time at ${center.name}` }),
+      v ? h('p', { class: 'small', id: 'tnLastLine', text: CM.lineOf(v, nameOf) }) : null,
+      note ? h('p', { class: 'small', id: 'tnLastNote' }, h('b', { text: 'Your note: ' }), note) : null,
+      f && !same ? h('button', { class: 'btn block', id: 'tnUseLast', onclick: async () => { await save(f); toast('Last setup copied. The pick is worked out again for it.'); } }, 'Use last setup') : null,
+      vs.length > 1 ? h('details', { class: 'tn-more', id: 'tnLastAll' }, h('summary', { text: `All ${vs.length} visits` }), h('ul', { class: 'plain small' }, ...vs.slice(0, 10).map(x => h('li', { text: CM.lineOf(x, nameOf) })))) : null);
+  }
+  const g0 = P => P.shots.some(x => x.sessionId === curSid()) || (P.teamShots || []).some(x => x.sessionId === curSid());
   // ---- CC1 quick log: strike 1 tap; a one-pin spare 3 taps (pin, Log leave, /). Each tap is one shot.logged event in
   // IndexedDB before the screen moves on, so killing the tab loses nothing already shown.
   function teamOf(P, s) {

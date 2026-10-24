@@ -7,6 +7,7 @@ import { on, prefs, setPrefs } from '../store.js';
 import { catOf } from '../cc/cats.js';
 import * as C from '../cc/card.js';
 import { fixState, fixPanel } from './fixgame.js';
+import * as CM from '../cc/center.js';
 export const ballName = (P, id) => { const o = id && P.owned && P.owned[id]; return o ? (o.name || (catOf(o.catalogId) || {}).name || 'Ball') : id ? ((catOf(id) || {}).name || id) : null; };
 const fmtDate = d => { if (!d) return 'Undated'; const t = new Date(d + 'T12:00:00'); return isNaN(t) ? d : t.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }); };
 export const backBar = (title, fallback) => h('header', { class: 'appbar' }, h('button', { class: 'icon-btn', 'aria-label': 'Back', html: icon('back'), onclick: () => back(fallback) }), h('h1', { class: 'title', text: title }));
@@ -74,6 +75,11 @@ export async function render({ params }) {
       det.append(h('label', { class: 'fld' }, h('span', { text: 'Ball used (feeds Bag Advisor)' }), sel));
       if (L.warnings && L.warnings.length) det.append(h('h3', { class: 'section-title', text: `Import notes (${L.warnings.length})` }), h('ul', { class: 'plain small', id: 'sessWarn' }, ...L.warnings.map(w => h('li', { text: typeof w === 'string' ? w : `${String(w.code || '').replace(/_/g, ' ').toLowerCase()}${w.detail ? ': ' + w.detail : ''}` }))));
     }
+    // M1: a note for next time at this center (shown on Tonight before the first ball there). Behind Details; plain text.
+    const raw = P.sessions[id] || {}, ctr = raw.centerId && P.centers[raw.centerId];
+    if (ctr) { const ta = h('input', { id: 'sessCenterNote', maxlength: '140', autocomplete: 'off', placeholder: 'e.g. 3rd arrow hooked early on 15', value: CM.noteOf(P, ctr.id) || '' });
+      ta.onchange = async () => { await add('center.edited', ctr.id, { fields: { note: CM.cleanNote(ta.value) } }); toast(`Saved. It shows on Tonight next time at ${ctr.name}.`); };
+      det.append(h('label', { class: 'fld' }, h('span', { text: `Note for next time at ${ctr.name}` }), ta)); }
     if (det.children.length > 1) body.append(det);
     body.append(h('a', { class: 'btn ghost block', href: '#/card', id: 'sessToCard' }, 'My Bowler Card'));
   }

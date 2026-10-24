@@ -158,3 +158,13 @@
   - **Usability:** one "?" per card at most, and a 44 px round target in the card header. A tap opens a sheet with one takeaway, and details are one more tap away. The glossary has search plus a count ("2 of 106 terms").
   - **Applicability:** placed only where a beginner gets stuck while choosing or planning: the lane drawing, targeting, ball care, the spare ball, the cover on add-ball. Never on the scoring pad.
 - **3-second beginner check:** "the ? tells me what this card's word means."
+
+## M1 Center / lane-pair memory (2026-10-24)
+- **SDT:**
+  - **Competence:** "Last time at Test Lanes: Oct 17 · lanes 15-16 · 2026 PBA Badger 52 ft · 2 games, 185 avg · mostly Phaze II". These are the bowler's own numbers with the date first, so the bowler starts from what they already know about the house. It isn't a verdict.
+  - **Autonomy:** the bowler chooses whether to copy last time's setup ("Use last setup"), and the pick is worked out again from it. The note for next time is the bowler's own words, written from the session page.
+  - **Relatedness:** the memory is tied to the bowler's own center and pair, the place they bowl with their league.
+- **U/A:**
+  - **Usability:** one card with one line and at most one button. Older visits are behind "All N visits", and the lane pair is optional and only asked once a center is set. Your centers are offered as you type. Targets are ≥44 px, 360 px with no overflow, axe 0.
+  - **Applicability:** shown only before the first ball of a night at a center visited before. It's gone once a ball is logged (nothing new during scoring). Practice nights are listed but never averaged (USBC averages are certified play).
+- **3-second beginner check:** "last time here I bowled on 15-16 on Badger, and I can copy that."
