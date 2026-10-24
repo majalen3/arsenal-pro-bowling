@@ -24,7 +24,7 @@ export async function render({ params }) {
   function draw() {
     const P = proj(), list = C.sessionsOf(P), s = list.find(x => x.id === id); body.innerHTML = '';
     if (!s) { body.append(emptyState('Session not found', 'It may have been undone. Your sessions are listed on Sessions.', { label: 'Open Sessions', run: () => go('#/sessions') })); return; }
-    const r = C.recapOf(list, id), st = s.stats;
+    const r = C.recapOf(list, id, { myAvg: (P.sessions[id] || {}).event === 'league' ? (prefs().league || {}).myAvg : null }), st = s.stats;   // sim2 #8, same as Tonight's recap
     body.append(h('p', { class: 'bc-sub muted', id: 'sessWhen', text: `${fmtDate(s.date)} \u00b7 ${s.source}${s.ballId ? ' \u00b7 ' + ballName(P, s.ballId) : ''}` }),
       h('div', { class: 'card bc-head', id: 'sessRecap' }, h('p', { class: 'bc-headline', id: 'sessHead', text: r.head }),
         r.support.length ? h('dl', { class: 'bc-figs' }, ...r.support.map(x => h('div', { class: 'bc-fig', 'data-k': x.k }, h('dt', { text: x.label }), h('dd', { text: x.text })))) : null,

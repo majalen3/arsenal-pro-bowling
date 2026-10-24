@@ -1162,6 +1162,9 @@ async def drill_cycle(b):
     check('10 pin: 1 of 2 made' in await p.text_content('#sessDrill'), '[drill] session page lists the drill tries in Details')
     avg = await p.evaluate("async () => { const m = await import('./js/hub.js'); const c = await import('./js/cc/card.js'); const s = c.sessionsOf(m.proj())[0]; return s.games.length; }")
     check(avg == 1, f'[drill] drill tries add no game ({avg})')
+    await p.evaluate("async () => { const m = await import('./js/hub.js'); const nw = await import('./js/cc/night.js'); const st = await import('./js/store.js'); st.setPrefs({ league: Object.assign({}, st.prefs().league, { myAvg: 180 }) }); await m.add('session.edited', nw.openNight(m.proj()), { fields: { event: 'league' } }); }")
+    await p.goto(BASE + '?dr4#/session/' + sid); await p.wait_for_selector('#sessHead'); hd = await p.text_content('#sessHead')
+    check('your 180 league average' in hd, f'[drill] session page recap uses the typed league average like Tonight (sim2 #8) ({hd})')
     check(not errs, f'[drill] no page errors {errs[:3]}'); await c.close()
 
 async def aimbox_cycle(b):

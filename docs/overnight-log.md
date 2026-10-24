@@ -249,3 +249,8 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - **Results:** the recap and the session page show "Your goal: 10 of 10 single-pin spares made (100%) · goal 7 of 10 (70%)." Session Details lists drill tries.
 - **Tests:** unit +3 (drill.test). New e2e step `drill` 12/0. Regression: tonight 16, quicklog 17, scoring 53, advisor 20, center 13, ownpat 9, card 24, help 17, phone 57, offline 5, all 0 failures.
 - **sw:** bumped to v38.
+
+## Sim2 #8 follow-up: the session page matches Tonight's recap (2026-10-24)
+- **What changed:** the other session's 1563504 compares Tonight's recap with the league average typed in Team setup. The session page (`#/session/<id>`) now does the same for league nights: "190 game: 10 pins over your 180 league average (typed in Team setup)."
+- **Already shipped elsewhere:** Sim2 #15 (the spare chip now reads "3-6-9 spare system", no "USBC") was already in. Sim2 #13 is already split: More says "offline" only when navigator.onLine is false, otherwise "server not reached".
+- **Tests:** e2e drill +1 (13/0); card 24/0, scoring 53/0. sw v39.
