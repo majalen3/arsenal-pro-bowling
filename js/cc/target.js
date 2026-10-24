@@ -45,6 +45,14 @@ export const LIMITS = {
 };
 export const BOOK = { src: 'https://www.bowlingball.com/BowlVersity/bowling-ball-delivery-angle', label: 'bowlingball.com', nba: 'https://www.nationalbowlingacademy.com/post/understanding-the-house-shot',
   lines: [{ style: 'Stroker', lay: 13, arrows: 10 }, { style: 'Tweener', lay: 14.5, arrows: 10 }, { style: 'Power', lay: 18, arrows: 10 }], bp: '8\u201310', bpFt: '39\u201341' };
+// Sim2 #12: the Find card's "real house line" note follows the bowler's style (cranker = the book's Power line);
+// unknown or two-handed shows the whole stroker-to-power range instead of assuming tweener.
+export function bookLineFor(style) {
+  const v = String(style && typeof style === 'object' ? style.v : style || '').toLowerCase(), key = v === 'cranker' ? 'Power' : v === 'stroker' ? 'Stroker' : v === 'tweener' ? 'Tweener' : null;
+  const l = key && BOOK.lines.find(x => x.style === key), lay = x => String(x).replace('.5', '\u00bd');
+  return l ? `Model line. A real ${v} house line usually starts wider: laydown ${lay(l.lay)} to board ${l.arrows} at the arrows (${BOOK.label}). See Model limit above.`
+    : `Model line. A real house line usually starts wider: laydown ${BOOK.lines[0].lay}\u2013${BOOK.lines[2].lay} (stroker to power) to board 10 at the arrows (${BOOK.label}). See Model limit above.`;
+}
 export const dirWord = (boards, lefty) => (boards > 0) === !lefty ? 'left' : 'right';   // + boards = left for RH, right for LH
 
 // Break box: centred on tonight's model strike line for this ball (or the user's own target), 3 boards × 2 ft.

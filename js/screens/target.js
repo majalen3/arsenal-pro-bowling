@@ -81,7 +81,7 @@ export async function render({ query } = {}) {
       findOut.replaceChildren(h('div', { class: 'card tg-find', id: 'tgFindCard' },
         h('p', { class: 'coach', id: 'tgFindLine', text: w.line }),
         h('p', { class: 'small', id: 'tgFindWhy', text: w.why }),
-        h('p', { class: 'muted small', id: 'tgFindLimit', text: 'Model line. A real tweener house line usually starts wider: laydown 14\u201315 to board 10 at the arrows (bowlingball.com). See Model limit above.' }),
+        h('p', { class: 'muted small', id: 'tgFindLimit', text: T.bookLineFor((profile() || {}).style || b.style) }),
         h('div', { class: 'row' }, h('button', { class: 'btn primary', id: 'tgFindApply', onclick: use(res.best, w.feet, w.eye, 'Strike line') }, `Use stand ${w.feet}, aim ${w.eye}`)),
         w.alt ? h('p', { class: 'small', id: 'tgFindAlt' }, w.alt, ' ', h('button', { class: 'btn ghost sm', id: 'tgFindAltApply', onclick: use(res.alt, w.altFeet, w.altEye, res.alt.kind === 'room' ? 'More room' : 'Next best') }, 'Use it')) : '',
         h('details', { class: 'small', id: 'tgFindInputs' }, h('summary', { text: 'Inputs and method' }),

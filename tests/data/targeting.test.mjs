@@ -132,3 +132,10 @@ test('Find: the reported arrows board is where the engine path actually crosses 
   }
   assert.ok(n >= 6, `checked ${n}`);
 });
+
+test('Sim2 #12: the Find card book note follows the bowler style, range when unknown', () => {
+  assert.match(T.bookLineFor('stroker'), /real stroker house line .*laydown 13 to board 10/);
+  assert.match(T.bookLineFor('tweener'), /laydown 14½ to board 10/);
+  assert.match(T.bookLineFor({ v: 'cranker' }), /real cranker house line .*laydown 18/);
+  for (const s of [null, 'two', '']) { const t = T.bookLineFor(s); assert.match(t, /laydown 13–18 \(stroker to power\)/); assert.doesNotMatch(t, /tweener/); }
+});

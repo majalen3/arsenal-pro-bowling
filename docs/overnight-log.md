@@ -218,3 +218,7 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - `aimbox.boxOf(pref, preset, patLen)`: on Targeting, the Sport box uses the night's picked length. 2026 PBA Shark at 48 ft now gives board 17 at 50–52 ft; before, the 45 ft engine preset gave board 14 at 47–49 ft. The Lane and Compare views keep the preset they draw.
 - Tests: unit aimbox +1 (204 total); e2e aimbox +1 (Shark → "48 ft oil − 31 = board 17").
 - Sim2 #1 (three different "where do I stand" answers) is still open and needs one shared line source. See the final report.
+
+## Sim2 #12: Find footer follows the bowler's style (2026-10-24)
+- The "real house line" note under Find my strike line now uses the bowler's style: stroker 13, tweener 14½, cranker 18 (bowlingball.com book lines). When the style is unknown or two-handed, it shows the 13–18 range instead of assuming tweener. `T.bookLineFor`; unit +1; e2e target 36/0.
+- This commit has no sw bump, because another session has uncommitted edits in sw.js. The next ship bumps the cache.
