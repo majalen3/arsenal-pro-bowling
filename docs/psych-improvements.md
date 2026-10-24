@@ -84,3 +84,15 @@
 - **U/A (during game):**
   - Fix a frame: U = yes, it reaches any closed frame in ≤4 taps. A = yes, the bowler acts on it right away (the score is correct again).
   - Undo fix: U = yes. A = yes, it guards against a wrong correction.
+
+## Scoring fix 3: "Throwing this ball" chip, spare-ball rule, games by ball/leave, games CSV (2026-10-24)
+- **Informational, not evaluative.** The chip states a fact ("Ball Rattler Big Bite"). It shows "Spare ball …" only when the bowler has opted into the spare rule and is facing a leave. Nothing on it judges the bowler.
+- **Quiet during the game.** The chip is one line next to Saved. The picker opens only on tap and takes the pad's place, so the screen offers one action at a time. "Back to scoring" closes it. The spare rule is off by default (an autonomy choice).
+- **After session only.** The "By ball" (strikes x of n, spares) and "By leave" (made m of n) tables sit inside session Details, one tap deep. The recap head is unchanged.
+- **Ownership (autonomy).** "Export games (CSV)" on Sessions gives the bowler their own games in a spreadsheet. Cells that start with = + - @ are prefixed so the file cannot run formulas (GAP c).
+- **U/A:**
+  - Chip, during game: U = yes, one glance. A = yes, the ball credit is correct for later stats.
+  - By ball, after session: U = yes. A = yes, which ball carried.
+  - By leave, after session: U = yes. A = yes, which spares to practise.
+  - CSV, after session: U = yes. A = yes, league secretary / own records.
+- **3-second beginner check:** a new bowler sees only the pad plus one chip. They can ignore the chip and still score.

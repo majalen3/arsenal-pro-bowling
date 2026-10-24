@@ -111,3 +111,9 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - **Tests:**
   - Unit: 172/0 (new scoring_fix.test.mjs). Engine: 7500/0.
   - e2e: full suite 349 passed. The one failure was a cold-start race in [sim]: hub.js may seed the starter bag while migrating a v1 profile. The test now accepts either state.
+
+## Scoring fix 3 (2026-10-24)
+- Tonight quick log has a "Ball <name>" chip, which opens a picker in place of the pad. It has a "Spares with <spare ball>" rule (off by default). Shots are credited to the ball thrown, or to the spare ball when the rule is on and the bowler is facing a leave.
+- Session Details has "By ball" and "By leave" tables (card.js byBall).
+- Sessions has "Export games (CSV)" (card.js gamesRows + toCSV with formula guard; GAP c).
+- Tests: unit 174/0, engine 7500/0; e2e scoring step extended (chip, picker axe + 44 px, rule, by ball/leave, CSV contents).

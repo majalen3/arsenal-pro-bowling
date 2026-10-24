@@ -266,3 +266,24 @@ export function lastGames(P, n = 10) {
   const sc = L.map(x => x.score), t = throwStats(L.filter(x => x.game).map(x => x.game));
   return { n: L.length, avg: Math.round(sc.reduce((a, b) => a + b, 0) / sc.length), high: Math.max(...sc), low: Math.min(...sc), scored: t.first ? t : null, scoredGames: L.filter(x => x.game).length };
 }
+// ---- scoring fix 3: one session's throws by ball (first balls, strikes, spare chances made) and the games CSV rows.
+export function byBall(games) {
+  const B = {};
+  for (const g of games) for (const x of walk(g.throws)) {
+    const k = x.t.ballId || '', b = B[k] = B[k] || { ballId: x.t.ballId || null, first: 0, strikes: 0, spare: 0, spareMade: 0, games: new Set() };
+    b.games.add(g.game);
+    if (x.rack) { b.first++; if (x.strike) b.strikes++; } else if (x.facing.length) { b.spare++; if (x.made) b.spareMade++; }
+  }
+  return Object.values(B).map(b => Object.assign(b, { games: b.games.size })).sort((a, b) => (b.first + b.spare) - (a.first + a.spare));
+}
+// One row per scored game. Cells go through toCSV/safeCell (formula guard) in the screen; no negative numbers here.
+export const GAMES_CSV_HEAD = ['date', 'session', 'source', 'game', 'score', 'complete', 'balls', 'strikes', 'first_balls', 'spares_made', 'spare_chances', 'open_frames', 'frames'];
+export function gamesRows(P, nameOf = id => id) {
+  const rows = [GAMES_CSV_HEAD];
+  for (const s of sessionsOf(P).slice().reverse()) {
+    for (const g of s.games) { const t = throwStats([g]);
+      rows.push([s.date || '', s.id, s.source, g.game, g.score != null ? g.score : '', g.complete ? 'yes' : 'no', g.balls.map(nameOf).join(' | '), t.strikes, t.first, t.spareMade, t.spare, t.opens, g.frames.map(f => f.marks.join('')).join(' ')]); }
+    for (const x of s.scores) rows.push([s.date || '', s.id, s.source, x.game || '', x.score, 'yes', x.ballId ? nameOf(x.ballId) : '', '', '', '', '', '', '']);
+  }
+  return rows;
+}

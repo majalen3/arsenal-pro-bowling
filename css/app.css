@@ -582,3 +582,8 @@ noscript p{padding:24px}
 .fix-pick{display:grid;gap:var(--s1)}
 .fix-pick p{margin:0}
 .fix-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--s2)}
+/* scoring fix 3: throwing-this-ball chip */
+.ql-sub{align-items:center;gap:var(--s2)}
+.ql-sub .ql-ball{max-width:60%;overflow:hidden;text-overflow:ellipsis}
+.ql-ballpick{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
+.ql-ballpick .ql-rule{grid-column:1/-1}

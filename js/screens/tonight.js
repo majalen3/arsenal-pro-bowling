@@ -38,7 +38,7 @@ export async function render() {
   const setNet = () => { net.hidden = navigator.onLine; };
   window.addEventListener('online', setNet); window.addEventListener('offline', setNet);
   const ql = { leave: new Set(), foul: false, tag: null };   // quick-log taps not yet written
-  let swapOpen = null, lastTap = 0, busy = false, moreOpen = false, savedMsg = '', frameT0 = 0, edit = null, lastEdit = null, pickFix = false;
+  let swapOpen = null, lastTap = 0, busy = false, moreOpen = false, savedMsg = '', frameT0 = 0, edit = null, lastEdit = null, pickFix = false, ballOpen = false;
   let local = {};   // UI state not yet written (avoids re-render churn while typing)
   const sess = () => Object.assign({ kind: 'tonight', patternSlug: null, ft: null, ml: null, ratio: null, centerId: null, surface: 'unknown', stage: 'fresh', bagId: null, game: 1, pickId: null, reads: [] }, (proj().sessions || {})[curSid()], local);
   async function save(fields) {
@@ -100,7 +100,7 @@ export async function render() {
         bags.length > 1 ? h('div', { class: 'fld' }, h('span', { text: 'Bag' }), segmented('Bag', bags.map(x => [x.id, x.name]), bag.id, v => save({ bagId: v, pickId: null }))) : null,
         h('div', { class: 'fld' }, h('span', { text: 'Game' }), segmented('Game', [[1, '1'], [2, '2'], [3, '3'], [4, '4+']], s.game || 1, v => save({ game: +v }), 'wide')),
         h('button', { class: 'btn ghost block', id: 'tnBagLink', onclick: () => go('#/bag') }, 'Bag builder \u203a'));
-    const alt = (x, lbl) => x ? h('button', { class: 'alt btn', 'data-alt': lbl, onclick: () => save({ pickId: x.id }) }, h('small', { class: 'muted', text: lbl + ' ' }), h('b', { text: x.name })) : h('div', { class: 'alt muted', text: `No ${lbl.toLowerCase()} ball in this bag` });
+    const alt = (x, lbl) => x ? h('button', { class: 'alt btn', 'data-alt': lbl, onclick: () => save({ pickId: x.id, throwId: null }) }, h('small', { class: 'muted', text: lbl + ' ' }), h('b', { text: x.name })) : h('div', { class: 'alt muted', text: `No ${lbl.toLowerCase()} ball in this bag` });
     const alts = cur ? h('div', { class: 'alts' }, alt(r.weaker && cur === r.pick ? r.weaker : R.readMove(r, cur.id, 'early'), 'Weaker'), alt(r.stronger && cur === r.pick ? r.stronger : R.readMove(r, cur.id, 'weak'), 'Stronger')) : null;
     const pl = cur ? R.plan(r, ml) : null;
     const thenLine = pl && (pl.B || pl.C) ? h('p', { class: 'small', id: 'tnThen' }, h('b', { text: 'Then: ' }), [pl.B ? `${pl.B.name} if it hooks early` : null, pl.C ? `${pl.C.name} later` : null].filter(Boolean).join(' \u2192 ')) : null;
@@ -127,7 +127,7 @@ export async function render() {
     const reads = cur ? h('div', { class: 'card', id: 'tnReads' }, h('h2', { class: 'card-title', text: 'How did it read?' }),
       h('div', { class: 'btn-grid' }, ...Object.entries(R.READS).map(([k, l]) => h('button', { class: 'btn', 'data-read': k, onclick: async () => {
         const nx = R.readMove(r, cur.id, k), rd = (s.reads || []).concat([{ read: k, ballId: cur.id, ts: Date.now() }]).slice(-6);
-        await save({ pickId: nx ? nx.id : cur.id, reads: rd });
+        await save({ pickId: nx ? nx.id : cur.id, throwId: null, reads: rd });
         toast(nx ? `${nx.name}: ${k === 'early' || k === 'angular' ? 'one step ' + (k === 'early' ? 'weaker' : 'smoother') : 'one step ' + (k === 'weak' ? 'stronger' : 'more angular')}.` : `${cur.name} is already the ${k === 'early' ? 'weakest' : k === 'weak' ? 'strongest' : 'closest'} fit in this bag. Move feet and eyes instead.`);
       } }, l)))) : null;
     const pend = P.measurements.filter(m => !m.accepted && m.source === 'lanetrax');
@@ -161,6 +161,13 @@ export async function render() {
     const { game, mine, st: live } = g, sid = curSid();
     if (edit && (edit.game !== game || edit.sid !== sid)) edit = null;
     const st = edit ? Q.editState(edit.f, edit.throws) : live, facingLeave = st.standing.length < 10;
+    // Scoring fix 3: "Throwing this ball" chip. The pick is advice; this is the ball the throws are credited to. With the
+    // spare-ball rule on (More > off by default), a delivery at a leave is credited to the bag's spare ball.
+    const bg = bagOf(P, s), mk = (id, name) => ({ id, catalogId: (P.owned[id] || {}).catalogId || null, name });
+    const balls = bg.list.map(x => mk(x.ownedId, x.name)).concat(bg.spare ? [mk(bg.spare.id, short(bg.spare.name || (catOf(bg.spare.catalogId) || {}).name || 'Spare ball'))] : []);
+    const thrown = balls.find(x => x.id === s.throwId) || (cur ? mk(cur.id, cur.name) : null);
+    const spareBall = bg.spare && prefs().spareRule ? balls[balls.length - 1] : null;
+    const credit = facingLeave && spareBall ? spareBall : thrown;
     // Writes one or more throws (the two-tap spare writes two) as shot.logged events, then shows "Saved".
     const write = async throws => {
       // sim bug 2: a repeat tap inside 400 ms (or while the last write is still in flight) is a double tap, not a second ball.
@@ -171,7 +178,7 @@ export async function render() {
         for (const t of throws) {
           const facing = at.standing.length < 10, split = !facing && !t.foul && t.leave.length > 0 && Q.leaveHint(t.leave).split;
           await add('shot.logged', sid, { sessionId: sid, game, frame: at.frame, roll: at.roll, down: t.down, leave: t.leave, foul: !!t.foul, split: !!split,
-            ballId: cur ? cur.id : null, catalogId: cur ? cur.catalogId : null, miss: !facing ? ql.tag : null });
+            ballId: (facing && spareBall ? spareBall : thrown || {}).id || null, catalogId: (facing && spareBall ? spareBall : thrown || {}).catalogId || null, miss: !facing ? ql.tag : null });
           seq = seq.concat([t]); at = Q.stateOf(seq);
         }
         if (at.frame !== live.frame || at.done) { const tf = Date.now(); if (frameT0) (window.__apFrameMs = window.__apFrameMs || []).push(tf - frameT0); frameT0 = tf; }
@@ -190,7 +197,7 @@ export async function render() {
         const f = edit.f, old = mine.filter(x => x.frame === f), o = { deviceId: deviceId(), prov: { kind: 'user' } };
         const fresh = edit.throws.map((t, i) => { const was = old.find(x => x.roll === i + 1) || old[0] || {};
           return mkEvent('shot.logged', sid, { sessionId: sid, game, frame: f, roll: i + 1, down: t.down, leave: t.leave, foul: !!t.foul,
-            split: i === 0 && !t.foul && t.leave.length > 0 && !!Q.leaveHint(t.leave).split, ballId: was.ballId || (cur ? cur.id : null), catalogId: was.catalogId || (cur ? cur.catalogId : null), miss: i === 0 ? (was.miss || null) : null }, o); });
+            split: i === 0 && !t.foul && t.leave.length > 0 && !!Q.leaveHint(t.leave).split, ballId: was.ballId || (thrown ? thrown.id : null), catalogId: was.catalogId || (thrown ? thrown.catalogId : null), miss: i === 0 ? (was.miss || null) : null }, o); });
         await addMany(old.map(x => voidEvent(x.id, o)).concat(fresh));
         lastEdit = { f, game, sid, added: fresh.map(e => e.id), old: old.map(x => ({ sessionId: x.sessionId, game: x.game, frame: x.frame, roll: x.roll, down: x.down, leave: x.leave || [], foul: !!x.foul, split: !!x.split, ballId: x.ballId || null, catalogId: x.catalogId || null, miss: x.miss || null })) };
         savedMsg = `Saved \u2713 frame ${f} fixed`; edit = null;
@@ -214,7 +221,14 @@ export async function render() {
     const head = h('div', { class: 'row between' }, h('h2', { class: 'card-title', text: `Quick log \u00b7 game ${game}` }),
       h('span', { class: 'pill', id: 'qlWhere', text: edit ? `Fixing frame ${edit.f} \u00b7 ball ${st.roll}` : st.done ? `Final ${st.total}` : `Frame ${st.frame} \u00b7 ball ${st.roll}` }));
     const saved = h('p', { class: 'ql-saved small', id: 'qlSaved', role: 'status', text: savedMsg });
-    const card = h('div', { class: 'card', id: 'tnLog' }, head, frames, saved);
+    const chip = credit && !(live.done && !edit) ? h('button', { class: 'chip ql-ball', id: 'qlBall', 'aria-expanded': String(ballOpen), 'aria-controls': 'qlBallPick', onclick: () => { ballOpen = !ballOpen; draw(); } },
+      h('span', { class: 'chip-k', text: credit === spareBall && facingLeave ? 'Spare ball ' : 'Ball ' }), credit.name, h('span', { class: 'sr-only', text: ', change' })) : null;
+    const pickBall = ballOpen && chip ? h('div', { class: 'ql-ballpick', id: 'qlBallPick', role: 'group', 'aria-label': 'Throwing this ball' },
+      ...balls.map(x => h('button', { class: 'btn ghost', 'data-ball': x.id, 'aria-pressed': String(thrown && x.id === thrown.id), onclick: () => { ballOpen = false; save({ throwId: x.id }); } }, x.name)),
+      bg.spare ? h('button', { class: 'btn ghost ql-rule', id: 'qlSpareRule', 'aria-pressed': String(!!prefs().spareRule), onclick: () => { setPrefs({ spareRule: !prefs().spareRule }); draw(); } },
+        `Spares with ${balls[balls.length - 1].name}: ${prefs().spareRule ? 'on' : 'off'}`) : null,
+      h('button', { class: 'btn ghost ql-rule', id: 'qlBallDone', onclick: () => { ballOpen = false; draw(); } }, 'Back to scoring')) : null;
+    const card = h('div', { class: 'card', id: 'tnLog' }, head, frames, h('div', { class: 'row between ql-sub' }, saved, chip || ''));
     if (live.done && !edit) {
       card.append(h('p', { class: 'coach', text: `${st.total} in game ${game}.` }));
       const rc = nightRecap(P, sid);
@@ -233,7 +247,8 @@ export async function render() {
         h('button', { class: 'btn ghost', id: 'qlLeave', disabled: !n, onclick: () => log('leave') }, n ? `Log ${n} standing` : 'Tap pins standing'),
         facingLeave ? h('button', { class: 'btn ghost', id: 'qlMiss', onclick: () => log('none') }, '\u2013 Missed all') : null,
         h('button', { class: 'btn ghost', id: 'qlFoul', 'aria-pressed': String(ql.foul), onclick: () => { ql.foul = !ql.foul; draw(); } }, 'F Foul'));
-      card.append(h('div', { class: 'ql-pad', id: 'qlPad' }, pins, btns));
+      // the ball picker takes the pad's place while open, so the sticky pad never covers it
+      card.append(pickBall || h('div', { class: 'ql-pad', id: 'qlPad' }, pins, btns));
       if (edit) card.append(h('button', { class: 'btn ghost block', id: 'qlFixCancel', onclick: () => { edit = null; ql.leave.clear(); ql.foul = false; draw(); } }, `Cancel fix (frame ${edit.f} unchanged)`));
       if (!facingLeave && !edit) card.append(h('div', { class: 'fld' }, h('span', { text: 'First ball hit (optional, for triggers)' }),
         segmented('First ball hit', [['pocket', 'Pocket'], ['high', 'High'], ['light', 'Light']], ql.tag, v => { ql.tag = ql.tag === v ? null : v; draw(); }, 'wide')));

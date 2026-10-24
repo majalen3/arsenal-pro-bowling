@@ -7,6 +7,8 @@ import { PATTERN_LABEL, FINISH_LABEL, fmtBoard } from '../labels.js';
 import { FINISHES } from '../engine.js';
 import { ready, proj } from '../hub.js';
 import * as C from '../cc/card.js';
+import { toCSV } from '../data/csv.js';
+import { ballName } from './session.js';
 const st = { tab:null, q:'' };   // first open: Nights if any session exists, else Lines if you saved one
 const MISS_LABEL = { left:'Left', right:'Right', high:'High', light:'Light' };
 const ago = t => { const s = (Date.now() - t) / 1000; return s < 60 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : new Date(t).toLocaleDateString(); };
@@ -69,7 +71,11 @@ export async function render() {
     return [h('a', { class:'btn ghost block', href:'#/card', id:'goCard' }, 'My Bowler Card'),
       h('ul', { class:'plain night-list', id:'nightList' }, ...list.map(x => h('li', {}, h('a', { class:'night-row', href:'#/session/' + encodeURIComponent(x.id), 'data-sid':x.id },
         h('span', { class:'line-text' }, h('span', { class:'line-name', text:fmt(x.date) }), h('span', { class:'line-meta', text:line(x) })),
-        h('span', { class:'pill', text:x.source === 'Scored on Tonight' ? 'Scored' : x.source }))))) ];
+        h('span', { class:'pill', text:x.source === 'Scored on Tonight' ? 'Scored' : x.source }))))),
+      // GAP (c): every game as a spreadsheet file, made on the phone (toCSV quotes per RFC 4180 and guards formulas).
+      h('button', { class:'btn ghost block', id:'gamesCsv', onclick:() => { const rows = C.gamesRows(P, id => ballName(P, id) || id);
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + toCSV(rows)], { type:'text/csv' })); a.download = `arsenal-pro-games-${today()}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        toast(`Saved ${rows.length - 1} game${rows.length === 2 ? '' : 's'} as CSV`); } }, 'Export games (CSV)') ];
   }
   function draw() { body.innerHTML = ''; body.append(...(st.tab === 'nights' ? nights() : st.tab === 'lines' ? lines() : st.tab === 'shots' ? shots() : notes())); }
   draw();

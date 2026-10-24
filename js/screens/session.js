@@ -44,7 +44,15 @@ export async function render({ params }) {
       h('dt', { text: 'Single-pin spares' }), h('dd', { text: T.single ? `${T.singleMade} of ${T.single}` : '\u2014' }),
       h('dt', { text: 'Multi-pin spares' }), h('dd', { text: T.multi ? `${T.multiMade} of ${T.multi}` : '\u2014' }),
       h('dt', { text: 'Open frames' }), h('dd', { text: `${T.opens} of ${T.frames}` }),
-      T.leaves.length ? h('dt', { text: 'Leaves' }) : null, T.leaves.length ? h('dd', { text: T.leaves.slice(0, 6).map(l => `${l.leave}: ${l.made}/${l.n}`).join(', ') }) : null));
+      null));
+    // Scoring fix 3: the same games by ball and by leave (sample size on every row; no ranking words).
+    const BB = s.games.length ? C.byBall(s.games) : [];
+    if (BB.length) det.append(h('h3', { class: 'section-title', text: 'By ball' }), h('table', { class: 'bc-tbl', id: 'sessByBall' },
+      h('thead', {}, h('tr', {}, h('th', { text: 'Ball' }), h('th', { text: 'Strikes' }), h('th', { text: 'Spares' }))),
+      h('tbody', {}, ...BB.map(x => h('tr', {}, h('th', { text: x.ballId ? ballName(P, x.ballId) : 'Not set' }), h('td', { text: x.first ? `${x.strikes} of ${x.first}` : '\u2014' }), h('td', { text: x.spare ? `${x.spareMade} of ${x.spare}` : '\u2014' }))))));
+    if (T && T.leaves.length) det.append(h('h3', { class: 'section-title', text: 'By leave' }), h('table', { class: 'bc-tbl', id: 'sessByLeave' },
+      h('thead', {}, h('tr', {}, h('th', { text: 'Leave' }), h('th', { text: 'Made' }))),
+      h('tbody', {}, ...T.leaves.map(l => h('tr', {}, h('th', { text: l.leave }), h('td', { text: `${l.made} of ${l.n}` }))))));
     if (st.ltx) {
       const L = st.ltx, sm = L.summary || {};
       det.append(h('h3', { class: 'section-title', text: 'LaneTrax report' }), h('dl', { class: 'kv', id: 'sessLtx' },
