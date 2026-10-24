@@ -953,11 +953,46 @@ async def protect_cycle(b):
     check(not errs, '[protect] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
+async def alley_cycle(b):
+    # GAP (d): wake lock held only while a game is open (released at the final frame / when off); Large + Extra large text.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await c.add_init_script("""window.__wl = {req: 0, rel: 0, held: 0}; Object.defineProperty(navigator, 'wakeLock', {configurable: true, value: {request: async () => { __wl.req++; __wl.held++;
+      const l = new EventTarget(); l.release = async () => { if (l.done) return; l.done = 1; __wl.rel++; __wl.held--; l.dispatchEvent(new Event('release')); }; return l; }}});""")
+    await seed(p); await p.goto(BASE + '?al#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnLog')
+    wl = lambda: p.evaluate('window.__wl')
+    check((await wl())['held'] == 0, '[alley] no wake lock before the game starts')
+    await qtap(p, '#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 2')")
+    check((await wl())['held'] == 1, f'[alley] wake lock held once a game is open {await wl()}')
+    for _ in range(11): await qtap(p, '#qlStrike')
+    await p.wait_for_selector('#qlNext')
+    check((await wl())['held'] == 0, f'[alley] released at the final frame {await wl()}')
+    await p.goto(BASE + '#/more'); await p.wait_for_selector('#wakeFld')
+    await p.click('#wakeFld [data-v="off"]'); await p.click('#textSizeFld [data-v="xl"]')
+    fs = await p.evaluate("getComputedStyle(document.documentElement).fontSize"); check(fs == '20px', f'[alley] Extra large text scales the rem base ({fs})')
+    await axe_ok(p, '[alley] More appearance'); small = await p.evaluate(SMALL); check(not small, f'[alley] More targets >= 44px {small[:6]}')
+    await p.goto(BASE + '#/tonight'); await p.wait_for_selector('#qlNext'); await p.click('#qlNext'); await p.wait_for_selector('#qlStrike'); await qtap(p, '#qlStrike')
+    await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 2')")
+    check((await wl())['held'] == 0, f'[alley] setting Off: no wake lock during a game {await wl()}')
+    ov = await p.evaluate("document.documentElement.scrollWidth - innerWidth"); check(ov <= 0, f'[alley] XL text at 360 px: no sideways scroll ({ov})')
+    pad = await p.eval_on_selector('#qlPad', 'e => { const r = e.getBoundingClientRect(); return [r.top, r.bottom, innerHeight]; }')
+    check(pad[1] <= pad[2] and pad[0] >= 0, f'[alley] XL text: the pad still fits on screen {[round(x) for x in pad]}')
+    await axe_ok(p, '[alley] XL pad'); small = await p.evaluate(SMALL); check(not small, f'[alley] XL pad targets >= 44px {small[:6]}')
+    await shot(p, 'phone-xl-pad')
+    await p.reload(); await p.wait_for_selector('#qlPad')
+    check(await p.evaluate("document.documentElement.dataset.text") == 'xl', '[alley] text size survives reload')
+    wide = []
+    for r in ['#/lane', '#/arsenal', '#/patterns', '#/sessions', '#/more', '#/bag', '#/target']:
+        await p.goto(BASE + r); await p.wait_for_timeout(700)
+        if await p.evaluate("document.documentElement.scrollWidth - innerWidth") > 0: wide.append(r)
+    check(not wide, f'[alley] XL text: no sideways scroll on main screens {wide}')
+    check(not errs, '[alley] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
 async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

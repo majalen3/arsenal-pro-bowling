@@ -2,6 +2,7 @@ import { profile, setProfile, prefs, setPrefs, deviceId, useCode, status, on, AP
 import * as hub from '../hub.js';
 const { ready } = hub;
 import * as PR from '../cc/protect.js';
+import * as WK from '../cc/wake.js';
 import { h, icon, toast, segmented, sheet } from '../ui.js';
 import { adjust } from '../ctl.js';
 import { profileForm, ownedPicker } from './welcome.js';
@@ -65,7 +66,10 @@ export function render() {
         h('details', { class:'tn-more', id:'protMore' }, h('summary', { text:'Keep it safe' }), protBody),
         h('details', { class:'tn-more', id:'dataMore' }, h('summary', { text:'What\u2019s saved' }), dataCounts),
         h('div', { class:'btn-grid' }, h('a', { class:'btn ghost', href:'#/import', id:'goImport' }, 'Import a file'), h('a', { class:'btn ghost', href:'#/import?kind=lanetrax', id:'goLaneTrax' }, 'LaneTrax report'), h('a', { class:'btn ghost', href:'#/card', id:'goCardMore' }, 'My Bowler Card'), h('a', { class:'btn ghost', href:'#/sessions', id:'goNights' }, 'Past sessions'))),
-      h('div', { class:'card' }, h('h2', { class:'card-title', text:'Appearance' }), segmented('Theme', [['dark', 'Alley dark'], ['light', 'Light'], ['system', 'System']], prefs().theme || 'dark', v => { setPrefs({ theme:v }); applyTheme(v); }, 'wide')),
+      h('div', { class:'card' }, h('h2', { class:'card-title', text:'Appearance' }), segmented('Theme', [['dark', 'Alley dark'], ['light', 'Light'], ['system', 'System']], prefs().theme || 'dark', v => { setPrefs({ theme:v }); applyTheme(v); }, 'wide'),
+        h('div', { class:'fld', id:'textSizeFld' }, h('span', { text:'Text size' }), segmented('Text size', [['normal', 'Normal'], ['large', 'Large'], ['xl', 'Extra large']], prefs().textSize || 'normal', v => { setPrefs({ textSize:v }); WK.applyTextSize(v); }, 'wide')),
+        h('div', { class:'fld', id:'wakeFld' }, h('span', { text:'Keep the screen on during a game' }), segmented('Keep the screen on during a game', [['on', 'On'], ['off', 'Off']], prefs().wakeLock === false ? 'off' : 'on', v => setPrefs({ wakeLock: v === 'on' }), 'wide'),
+          h('p', { class:'small muted', id:'wakeNote', text: WK.supported() ? 'Only while a game is open; off at the last frame or after 10 idle minutes.' : 'This browser can\u2019t keep the screen on; set Auto-Lock in your phone settings instead.' }))),
       h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Sync & backup' }), stat),
         h('p', { class:'small', text:'Your backup code links this device to your saved lines on the server. Keep it private; anyone with it can see your lines.' }),
         h('div', { class:'row gap wrap' }, code, h('button', { class:'btn sm ghost', id:'copyCode', onclick:async () => { try { await navigator.clipboard.writeText(deviceId()); toast('Code copied'); const db = await ready(); await db.setMeta('codeCopiedAt', Date.now()); paintData(); } catch (e) { toast('Copy failed. Select the code and copy it.', { kind:'bad' }); } } }, 'Copy'),

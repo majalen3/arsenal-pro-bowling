@@ -2,13 +2,14 @@ import { restoreState, startSync, deviceId, prefs, profile, rawGet } from './sto
 import { route, start, go } from './router.js';
 import { $, $$, toast, icon } from './ui.js';
 import { listenInstall, isStandalone, askPersist } from './cc/protect.js';
+import { applyTextSize } from './cc/wake.js';
 // theme: dark (alley) default, light, or system
 export function applyTheme(t = prefs().theme || 'dark') {
   const dark = t === 'system' ? matchMedia('(prefers-color-scheme: dark)').matches : t !== 'light';
   document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = dark ? '#0B0F0D' : '#F6F5F0';
 }
-applyTheme(); matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme());
+applyTextSize(prefs().textSize); applyTheme(); matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme());
 restoreState(); deviceId();
 // GAP (a): keep the install offer for later (shown once after the first saved game, never mid-game). Installed apps ask for persistent storage at boot (no prompt there).
 listenInstall(); if (isStandalone()) askPersist();

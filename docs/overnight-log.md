@@ -140,3 +140,14 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
   - The "Replay the welcome tour" link is now a 44 px button.
 - sw.js precaches js/cc/league.js and js/cc/protect.js.
 - e2e: new `protect` step (14 checks).
+
+## GAP (d): wake lock + Large/XL text (2026-10-24)
+- New js/cc/wake.js:
+  - keepAwake(on): navigator.wakeLock while a game is open; re-acquired on visibilitychange; released at the final frame, on leaving Tonight, or after 10 idle min.
+  - shouldHold, plus TEXT_SIZES / applyTextSize.
+- Tonight calls keepAwake on every draw and releases it in destroy(). main.js applies prefs.textSize at boot.
+- More → Appearance: Text size (Normal / Large / Extra large) and Keep the screen on during a game (On / Off), with an honest note where it's unsupported.
+- css: 13 fixed 10/11 px font sizes are now .625/.6875 rem (identical at Normal); html[data-text=large|xl] sets 112.5% / 125%.
+- Tests: unit +2 (188/0). New e2e step `alley` (15 checks):
+  - wake lock stub: held only mid-game, released at the final frame, none when Off;
+  - XL: 20 px rem base, pad fits at 360, no sideways scroll on 8 screens, axe, 44 px, survives reload.

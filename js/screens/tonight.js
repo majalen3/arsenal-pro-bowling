@@ -19,6 +19,7 @@ import { openNight, newNightId, dayKey } from '../cc/night.js';
 import { sessionsOf, recapOf } from '../cc/card.js';
 import * as LG from '../cc/league.js';
 import * as PR from '../cc/protect.js';
+import * as WK from '../cc/wake.js';
 import * as hub from '../hub.js';
 export { standOf };
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
@@ -86,6 +87,7 @@ export async function render() {
     // Scoring fix 4: league team (frames in lineup order) or Baker (one team game). One pad; the pill says who is up.
     const team = teamOf(P, s), g = team ? team.g : gameOf(P, s);
     const gameOpen = (team ? team.started : g.mine.length > 0) && !g.st.done;
+    WK.keepAwake(WK.shouldHold(gameOpen, prefs().wakeLock));
     // ---- coach line (≤ 2 sentences, starts with a ball name)
     const coach = !cur ? 'Add balls to a bag to get a pick.' : cur === r.pick && bf && cur.benchmark ? `${cur.name} first: ${bf}, so start with your benchmark and read it.`
       : `${cur.name} for demand ${d.demand} of 5${cur.level != null ? ' (level ' + cur.level + ')' : ''}.` + (stand ? ` Stand ${stand.feet}, eyes ${ml.target} at the arrows.` : '');
@@ -430,5 +432,5 @@ export async function render() {
   const offs = [on('data', () => { if (!body.contains(document.activeElement) || document.activeElement.tagName === 'BUTTON') draw(); })];
   window.__apTonightMs = Math.round(performance.now() - t0);
   return { el, title: 'Tonight', mounted() { if (document.getElementById('tnNow')) padToThumb(); },
-    destroy() { offs.forEach(f => f()); window.removeEventListener('online', setNet); window.removeEventListener('offline', setNet); } };
+    destroy() { WK.keepAwake(false); offs.forEach(f => f()); window.removeEventListener('online', setNet); window.removeEventListener('offline', setNet); } };
 }

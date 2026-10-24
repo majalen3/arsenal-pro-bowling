@@ -116,3 +116,12 @@
   - Backup nudge, between games: U = yes. A = yes, one tap saves the file.
   - More chip + last-backup line, after session: U = yes, one word / one line. A = yes, it tells the bowler whether to act.
 - **3-second beginner check:** mid-game, nothing changed. After game 1 they see one short note under the next-game button, and can skip it.
+
+## GAP (d): screen stays on during a game, Large / Extra large text (2026-10-24)
+- **Zero taps, less friction.** The screen stays awake only while a game is open, so a frame no longer starts with Face ID. The lock is released at the final frame, when the bowler leaves Tonight, or after 10 idle minutes. Nothing appears on the scoring screen.
+- **Autonomy.** More → Appearance has "Keep the screen on during a game: On / Off" (default On, per GAP_REVIEW_1 §5 #4, battery trade-off) and "Text size: Normal / Large / Extra large". Where the browser can't hold the screen on, the note says so and points to Auto-Lock. It never pretends.
+- **Readable at arm's length.** The whole type scale is rem-based. The 13 fixed 10–11 px labels (frame strip, tiles, chips) became rem, so Large (112.5%) and XL (125%) scale the scoring pad, the frame strip and the recap together. Checked at 360 px with XL: no sideways scroll on 8 screens, the pad still fits, targets ≥44 px, axe 0 (WCAG 1.4.4).
+- **U/A:**
+  - Wake lock, during game: U = invisible. A = yes, it removes an unlock per frame.
+  - Text size, before the game: U = yes, 3 choices. A = yes, for alley lighting and older eyes.
+- **3-second beginner check:** nothing new on Tonight. The two settings live in More → Appearance.
