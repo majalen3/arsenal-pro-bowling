@@ -106,3 +106,13 @@
   - Team board, between games: U = yes, 4 columns. A = yes, a handicap total to check against the house sheet.
   - Setup, before the game: U = yes. A = yes, it is needed for the handicap.
 - **3-second beginner check:** "Just me" is the default, so a solo bowler sees nothing new.
+
+## GAP (a): storage protection, install offer, backup nudge (2026-10-24)
+- **Competence through information.** WebKit can clear a site's data after 7 days without a visit (webkit.org/tracking-prevention), and a once-a-week bowler is right at that edge. The app now says this in one sentence, without alarm words, and offers the fix: install, or a backup file. More shows one chip, "Protected" or "Not protected", and a "Last backup file: N days ago" line. The why and the buttons sit behind "Keep it safe".
+- **Never during scoring.** The install offer appears once ever, after the first finished game, below "Start game N". The backup nudge appears only between games, and only when there is no file and more than 3 games, or the file is more than 14 days old (team thresholds, GAP_REVIEW_1 §2). One nudge at a time: the install offer first, then the backup nudge.
+- **Autonomy.** "Not now" / "Got it" ends the install offer for good, and "Remind me in 14 days" snoozes the backup nudge. Nothing is automatic except the browser's own silent persist() grant for installed apps.
+- **U/A:**
+  - Install offer, between games: U = yes, 1 sentence + 1–2 buttons. A = yes, installing exempts the data from the 7-day clean-up.
+  - Backup nudge, between games: U = yes. A = yes, one tap saves the file.
+  - More chip + last-backup line, after session: U = yes, one word / one line. A = yes, it tells the bowler whether to act.
+- **3-second beginner check:** mid-game, nothing changed. After game 1 they see one short note under the next-game button, and can skip it.

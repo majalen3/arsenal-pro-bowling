@@ -124,3 +124,19 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - Teammates' and Baker throws carry `who` and go to P.teamShots, so only the bowler's frames feed stats (Rule 3a for Baker).
 - The Rule 18 note is on Bag → Ball status and care. Citations are in docs/LEAGUE_SCORING.md.
 - New js/cc/league.js with 6 unit tests (unit 180/0); e2e scoring step extended (league setup axe/44 px, rotation, absentee skip, board figures, stats isolation, Baker, reload).
+
+## GAP (a): storage protection / install / backup (2026-10-24)
+- New js/cc/protect.js:
+  - pure needsBackup / lastBackupText / protectLabel / lastBackupAt, with 6 unit tests;
+  - browser glue: beforeinstallprompt kept for later, storage.persist / persisted, display-mode standalone check, and a shared saveBackupFile.
+- main.js: listens for the install event; an installed app asks persist() at boot (no prompt there).
+- Tonight, between games only:
+  - a one-time install offer (after the first finished game);
+  - otherwise a backup nudge (no file and >3 games, or file >14 days), with "Remind me in 14 days".
+- More → Your data:
+  - a "Protected / Not protected" chip and a "Last backup file" line;
+  - "Keep it safe" (why + Install / browser how-to + "Ask the browser to keep my data");
+  - copying the backup code counts as a backup once the server has the data.
+  - The "Replay the welcome tour" link is now a 44 px button.
+- sw.js precaches js/cc/league.js and js/cc/protect.js.
+- e2e: new `protect` step (14 checks).

@@ -1,6 +1,7 @@
 import { restoreState, startSync, deviceId, prefs, profile, rawGet } from './store.js';
 import { route, start, go } from './router.js';
 import { $, $$, toast, icon } from './ui.js';
+import { listenInstall, isStandalone, askPersist } from './cc/protect.js';
 // theme: dark (alley) default, light, or system
 export function applyTheme(t = prefs().theme || 'dark') {
   const dark = t === 'system' ? matchMedia('(prefers-color-scheme: dark)').matches : t !== 'light';
@@ -9,6 +10,8 @@ export function applyTheme(t = prefs().theme || 'dark') {
 }
 applyTheme(); matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme());
 restoreState(); deviceId();
+// GAP (a): keep the install offer for later (shown once after the first saved game, never mid-game). Installed apps ask for persistent storage at boot (no prompt there).
+listenInstall(); if (isStandalone()) askPersist();
 route(/^\/lane$/, 'lane', () => import('./screens/lane.js'));
 route(/^\/target$/, 'lane', () => import('./screens/target.js'));
 route(/^\/arsenal$/, 'arsenal', () => import('./screens/arsenal.js'));

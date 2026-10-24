@@ -18,6 +18,8 @@ import { standOf, lineFor } from '../cc/line.js';
 import { openNight, newNightId, dayKey } from '../cc/night.js';
 import { sessionsOf, recapOf } from '../cc/card.js';
 import * as LG from '../cc/league.js';
+import * as PR from '../cc/protect.js';
+import * as hub from '../hub.js';
 export { standOf };
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
 const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
@@ -292,6 +294,7 @@ export async function render() {
       if (rc) card.append(rc);
       card.append(h('button', { class: 'btn primary block', id: 'qlNext', onclick: () => save({ game: game + 1 }) }, `Start game ${game + 1}`),
         h('button', { class: 'btn ghost block', id: 'qlEnd', onclick: async () => { await save({ ended: true, endedTs: Date.now() }); toast('Night saved. It is on Past sessions.'); go('#/session/' + encodeURIComponent(sid)); } }, 'End night'));
+      const pn = protectNudge(P); if (pn) card.append(pn);
     } else {
       const pins = h('div', { class: 'pins', id: 'qlPins', role: 'group', 'aria-label': facingLeave ? 'Tap the pins still standing' : 'Tap the pins left standing' },
         ...Q.LAYOUT.map(([pin, col]) => { const up = st.standing.includes(pin);
@@ -334,6 +337,24 @@ export async function render() {
           h('div', { class: 'fix-grid' }, ...fixable.map(f => h('button', { class: 'btn ghost', 'data-fix': f, 'aria-label': `Fix frame ${f}`, onclick: () => startFix(f) }, String(f)))))
       : h('button', { class: 'btn ghost block', id: 'qlFix', onclick: () => { pickFix = true; draw(); } }, 'Fix a frame'));
     return card;
+  }
+  // ---- GAP (a), between games only: one install offer (once ever), else a backup nudge (no file and >3 games, or file >14 days old).
+  function protectNudge(P) {
+    const pf = prefs(), db = hub.db; if (!db) return null;
+    if (!PR.isStandalone() && !pf.installAsked) {
+      const done = async inst => { setPrefs({ installAsked: true }); PR.askPersist(); if (inst && await PR.promptInstall()) toast('Installed.'); draw(); };
+      const how = PR.installHow();
+      return h('div', { class: 'tn-recap', id: 'tnProtect', role: 'note' },
+        h('p', { class: 'small', text: 'Your games are stored in this browser. Safari can clear website data after 7 days without a visit; apps on the Home Screen are exempt.' }),
+        how ? h('p', { class: 'small', id: 'tnInstallHow', text: how }) : h('button', { class: 'btn ghost block', id: 'tnInstall', onclick: () => done(true) }, 'Install the app'),
+        h('button', { class: 'btn ghost block', id: 'tnInstallLater', onclick: () => done(false) }, how ? 'Got it' : 'Not now'));
+    }
+    const at = PR.lastBackupAt(db.meta);
+    if (!PR.needsBackup({ games: P.games.length, lastBackupAt: at, snoozeUntil: pf.backupSnooze || 0 })) return null;
+    return h('div', { class: 'tn-recap', id: 'tnBackup', role: 'note' },
+      h('p', { class: 'small', text: `${PR.lastBackupText(at)} ${P.games.length} ${P.games.length === 1 ? 'game' : 'games'} saved; a backup file restores them on any phone.` }),
+      h('button', { class: 'btn ghost block', id: 'tnBackupNow', onclick: async () => { await PR.saveBackupFile(db, prefs()); toast('Backup file saved.'); draw(); } }, 'Download backup'),
+      h('button', { class: 'btn ghost block', id: 'tnBackupLater', onclick: () => { setPrefs({ backupSnooze: Date.now() + PR.NUDGE_DAYS * PR.DAY }); draw(); } }, 'Remind me in 14 days'));
   }
   // ---- between games / end of night (sim bug 7): series vs average, strikes, spares with pins left, one focus.
   function nightRecap(P, sid) {

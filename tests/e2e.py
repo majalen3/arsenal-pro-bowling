@@ -916,11 +916,48 @@ async def scoring_cycle(b):
     check(not errs, '[scoring] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
+async def protect_cycle(b):
+    # GAP (a): install offer once after the first saved game (never mid-game), backup nudge (>3 games or file >14 days), More chip + last backup.
+    errs = []; c = await ctx_for(b, 'phone', accept_downloads=True); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.goto(BASE + '?pr#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnLog')
+    await qtap(p, '#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 2')")
+    check(not await p.query_selector('#tnProtect, #tnBackup'), '[protect] nothing new while a game is open')
+    for _ in range(11): await qtap(p, '#qlStrike')
+    await p.wait_for_selector('#tnProtect')
+    tx = await p.text_content('#tnProtect')
+    check('7 days' in tx and 'Home Screen' in tx and not any(w in tx.lower() for w in ['great', 'good job', 'awesome']), f'[protect] install offer after the first saved game, plain and informational ({tx[:90]!r})')
+    order = await p.evaluate("() => { const a = [...document.querySelectorAll('#tnLog > *')].map(e => e.id); return [a.indexOf('qlNext'), a.indexOf('tnProtect')]; }")
+    check(order[0] >= 0 and order[1] > order[0], f'[protect] offer sits below Start next game {order}')
+    await axe_ok(p, '[protect] offer'); small = await p.evaluate(SMALL); check(not small, f'[protect] targets >= 44px {small[:6]}')
+    await shot(p, 'phone-protect-offer')
+    await p.click('#tnInstallLater'); await p.wait_for_function("() => !document.querySelector('#tnProtect')")
+    await p.reload(); await p.wait_for_selector('#qlNext')
+    check(not await p.query_selector('#tnProtect') and not await p.query_selector('#tnBackup'), '[protect] offer shown once; 1 game and no file -> no backup nudge yet')
+    old = "async d => { const m = await import('./js/hub.js'); await m.ready(); await m.db.setMeta('backupDownloadedAt', Date.now() - d * 864e5); }"
+    await p.evaluate(old, 20); await p.reload(); await p.wait_for_selector('#tnBackup')
+    check('20 days ago' in await p.text_content('#tnBackup'), f"[protect] backup nudge when the file is > 14 days old ({await p.text_content('#tnBackup')!r})")
+    async with p.expect_download() as dl: await p.click('#tnBackupNow')
+    bk = json.load(open(await (await dl.value).path()))
+    check(bk.get('format') == 'backup' and bk['events'], '[protect] nudge downloads the full backup file')
+    await p.wait_for_function("() => !document.querySelector('#tnBackup')")
+    await p.evaluate(old, 15); await p.reload(); await p.wait_for_selector('#tnBackupLater'); await p.click('#tnBackupLater')
+    await p.reload(); await p.wait_for_selector('#qlNext'); check(not await p.query_selector('#tnBackup'), '[protect] "Remind me in 14 days" holds the nudge back')
+    await p.goto(BASE + '#/more'); await p.wait_for_selector('#protChip'); await p.wait_for_function("() => /Protected|Not protected/.test(document.querySelector('#protChip').textContent)")
+    await p.wait_for_function("() => (document.querySelector('#lastBackup') || {}).textContent")
+    lb = await p.text_content('#lastBackup'); chip = await p.text_content('#protChip')
+    check(lb.startswith('Last backup file: 15 days ago') or 'days ago' in lb, f'[protect] More: last backup in plain words ({lb!r})')
+    await p.click('#protMore summary'); pm = await p.text_content('#protMore')
+    check(chip in ('Protected', 'Not protected') and '7 days' in pm and 'backup file' in pm, f'[protect] More: chip {chip!r}; why + fixes behind "Keep it safe"')
+    await axe_ok(p, '[protect] More'); small = await p.evaluate(SMALL); check(not small, f'[protect] More targets >= 44px {small[:6]}')
+    await shot(p, 'phone-protect-more')
+    check(not errs, '[protect] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
 async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('sim', lambda: sim_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

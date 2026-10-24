@@ -1,7 +1,7 @@
 import { profile, setProfile, prefs, setPrefs, deviceId, useCode, status, on, API_BASE } from '../store.js';
 import * as hub from '../hub.js';
 const { ready } = hub;
-import { buildBackup, BACKUP_NAME } from '../data/backup.js';
+import * as PR from '../cc/protect.js';
 import { h, icon, toast, segmented, sheet } from '../ui.js';
 import { adjust } from '../ctl.js';
 import { profileForm, ownedPicker } from './welcome.js';
@@ -21,18 +21,30 @@ export function render() {
   const paintStat = () => stat.textContent = status.text || 'Not synced yet';
   const body = h('div', { class:'stack' });
   async function downloadBackup() {
-    const db = await ready(); const b = await buildBackup(db, { prefs:prefs(), legacy:db.meta.legacySnapshot || null });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(b)], { type:'application/json' })); a.download = BACKUP_NAME; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    await db.setMeta('backupDownloadedAt', Date.now()); toast('Backup file saved.'); paintData();
+    const db = await ready(); await PR.saveBackupFile(db, prefs()); toast('Backup file saved.'); paintData();
   }
   const dataInfo = h('p', { class:'small', id:'dataInfo', text:'Loading your history\u2026' });
   const dataCounts = h('p', { class:'small', id:'dataCounts' });
+  // GAP (a): one plain status chip; the why and the fixes sit behind "Keep it safe".
+  const protChip = h('span', { class:'pill', id:'protChip', text:'Checking\u2026' });
+  const lastBk = h('p', { class:'small', id:'lastBackup' });
+  const protBody = h('div', { class:'stack', id:'protBody' });
+  async function paintProtect() {
+    const st = await PR.state(); protChip.textContent = st.label; protChip.className = 'pill' + (st.label === 'Protected' ? ' gold' : '');
+    protBody.innerHTML = '';
+    protBody.append(h('p', { class:'small', text: st.standalone ? 'Installed on this phone: Safari\u2019s 7-day clean-up does not apply.' : 'Safari can clear a website\u2019s data after 7 days without a visit. Apps added to the Home Screen are exempt.' }));
+    if (!st.standalone) { const how = PR.installHow();
+      protBody.append(how ? h('p', { class:'small', id:'installHow', text:how }) : h('button', { class:'btn ghost block', id:'installBtn', onclick:async () => { if (await PR.promptInstall()) toast('Installed.'); paintProtect(); } }, 'Install the app')); }
+    if (!st.persisted && navigator.storage && navigator.storage.persist) protBody.append(h('button', { class:'btn ghost block', id:'askPersist', onclick:async () => { const ok = await PR.askPersist(); toast(ok ? 'This browser will keep your data.' : 'The browser said no. Install the app or keep a backup file.'); paintProtect(); } }, 'Ask the browser to keep my data'));
+    protBody.append(h('p', { class:'small muted', text:'A backup file always works: Download backup, below.' }));
+  }
   function paintData() {
     const db = hub.db; if (!db) return; const P = db.projection(), m = db.meta;
     const unsynced = db.events().filter(e => !e.synced).length;
     // Plain words (sim bug 8): what is safe and what to do, counts behind a tap. No developer terms.
     const legacy = !m.backupDownloadedAt && db.meta.legacySnapshot;
     dataInfo.textContent = syncLine(m.sync, unsynced) + (legacy ? ' Your data from the older app version is also kept here until you download a backup file.' : '');
+    lastBk.textContent = PR.lastBackupText(PR.lastBackupAt(m));
     dataCounts.textContent = `On this phone: ${Object.keys(P.owned).length} balls, ${P.games.length} games, ${P.aggregates.length} LaneTrax reports (${db.events().length} saved changes).`;
   }
   // Server sync of the event log (D3). The quota message comes from the server; the phone keeps everything regardless.
@@ -41,7 +53,7 @@ export function render() {
     if (!unsynced) return st && st.lastPushAt ? 'Backed up to the server.' : 'Saved on this phone. Nothing to back up yet.';
     return `Saved on this phone; ${unsynced} ${unsynced === 1 ? 'change' : 'changes'} waiting to back up${st && st.lastError ? ' (offline, will retry)' : ''}.`;
   }
-  ready().then(paintData);
+  ready().then(paintData); paintProtect();
   function draw() {
     const pr = profile();
     body.innerHTML = '';
@@ -49,19 +61,21 @@ export function render() {
       h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Bowler profile' }), h('button', { class:'btn sm ghost', id:'editProfile', onclick:editProfile }, h('span', { html:icon('edit') }), 'Edit')),
         pr ? h('p', { text:`${pr.hand === 'left' ? 'Left' : 'Right'}-handed ${pr.style === 'two' ? 'two-hander' : pr.style}, ${(+pr.speed).toFixed(1)} mph, ${pr.rev} rpm${pr.pap ? ', PAP ' + pr.pap : ''}${pr.tilt ? ', tilt ' + pr.tilt : ''}.` }) : h('p', { class:'muted', text:'Not set. The lane uses its defaults (15 mph, 220 rpm).' }),
         h('div', { class:'row between' }, h('span', { text:`My bag: ${pr && pr.owned && pr.owned.length ? pr.owned.length + ' balls' : 'all 22'}` }), h('button', { class:'btn sm ghost', id:'editBag', onclick:editBag }, 'Choose'))),
-      h('div', { class:'card', id:'dataCard' }, h('h2', { class:'card-title', text:'Your data' }), dataInfo, h('details', { class:'tn-more', id:'dataMore' }, h('summary', { text:'What\u2019s saved' }), dataCounts),
+      h('div', { class:'card', id:'dataCard' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Your data' }), protChip), dataInfo, lastBk,
+        h('details', { class:'tn-more', id:'protMore' }, h('summary', { text:'Keep it safe' }), protBody),
+        h('details', { class:'tn-more', id:'dataMore' }, h('summary', { text:'What\u2019s saved' }), dataCounts),
         h('div', { class:'btn-grid' }, h('a', { class:'btn ghost', href:'#/import', id:'goImport' }, 'Import a file'), h('a', { class:'btn ghost', href:'#/import?kind=lanetrax', id:'goLaneTrax' }, 'LaneTrax report'), h('a', { class:'btn ghost', href:'#/card', id:'goCardMore' }, 'My Bowler Card'), h('a', { class:'btn ghost', href:'#/sessions', id:'goNights' }, 'Past sessions'))),
       h('div', { class:'card' }, h('h2', { class:'card-title', text:'Appearance' }), segmented('Theme', [['dark', 'Alley dark'], ['light', 'Light'], ['system', 'System']], prefs().theme || 'dark', v => { setPrefs({ theme:v }); applyTheme(v); }, 'wide')),
       h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Sync & backup' }), stat),
         h('p', { class:'small', text:'Your backup code links this device to your saved lines on the server. Keep it private; anyone with it can see your lines.' }),
-        h('div', { class:'row gap wrap' }, code, h('button', { class:'btn sm ghost', id:'copyCode', onclick:async () => { try { await navigator.clipboard.writeText(deviceId()); toast('Code copied'); } catch (e) { toast('Copy failed. Select the code and copy it.', { kind:'bad' }); } } }, 'Copy'),
+        h('div', { class:'row gap wrap' }, code, h('button', { class:'btn sm ghost', id:'copyCode', onclick:async () => { try { await navigator.clipboard.writeText(deviceId()); toast('Code copied'); const db = await ready(); await db.setMeta('codeCopiedAt', Date.now()); paintData(); } catch (e) { toast('Copy failed. Select the code and copy it.', { kind:'bad' }); } } }, 'Copy'),
           h('button', { class:'btn sm ghost', id:'dlBackup', onclick:downloadBackup }, 'Download backup')),
         h('form', { class:'inline-form', onsubmit:e => { e.preventDefault(); if (useCode(codeIn.value)) { code.textContent = deviceId(); codeIn.value = ''; toast('Code set. Syncing\u2026'); } else toast('That code doesn\u2019t look right (8\u201364 letters, numbers, - or _).', { kind:'bad' }); } },
           h('label', { class:'fld grow' }, h('span', { text:'Restore from another device' }), codeIn), h('button', { class:'btn primary', type:'submit' }, 'Use code'))),
       h('div', { class:'card' }, h('h2', { class:'card-title', text:'About' }),
         h('p', { class:'small', text:'Arsenal Pro models how each ball in your arsenal reads the lane, and coaches your next move. Ball specs come from manufacturer data (marked est. where estimated). Pattern library: Kegel Pattern Library via CarryDown.' }),
         h('p', { class:'small muted', text:`Version ${VERSION} \u00b7 API ${API_BASE.replace(/^https?:\/\//, '')}` }),
-        h('p', { class:'small' }, h('a', { href:'#/welcome' }, 'Replay the welcome tour'))));
+        h('a', { class:'btn ghost', href:'#/welcome', id:'replayTour' }, 'Replay the welcome tour')));
     paintStat();
   }
   draw();
