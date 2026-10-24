@@ -24,7 +24,7 @@ async def ctx_for(b, kind, **kw):
 
 async def page(c, errs):
     p = await c.new_page()
-    p.on('pageerror', lambda e: errs.append(str(e)))
+    p.on('pageerror', lambda e: (errs.append(str(e)), print('STACK', (e.stack or '')[:500]) if os.environ.get('E2E_STACK') else None))
     return p
 
 async def qtap(p, sel):
@@ -158,7 +158,7 @@ async def deck_cases(b):
     await p.click('[data-miss=right]'); await p.click('[data-miss=right]'); await p.wait_for_timeout(500)
     check(await p.get_attribute('#deckCard', 'data-tone') == 'info' and 'Light' in await p.get_attribute('#deck', 'aria-label'), '[deck] light hit coloured as light')
     if SHOTS: await (await p.query_selector('#deckCard')).screenshot(path=os.path.join(SHOTS, 'phone-deck-light.png'))
-    for _ in range(10):   # 2-and-1 moves (DECISIONS #26 geometry): keep moving left until the model reads high
+    for _ in range(16):   # 2-and-1 moves (DECISIONS #26 geometry): keep moving left until the model reads high
         await p.click('[data-miss=left]'); await p.wait_for_timeout(120)
         if 'High' in (await p.get_attribute('#deck', 'aria-label') or ''): break
     await p.wait_for_timeout(500)
@@ -815,7 +815,8 @@ async def sim_cycle(b):
     await c.set_offline(False); await p.evaluate("() => window.dispatchEvent(new Event('online'))"); await p.wait_for_selector('#netChip', state='hidden')
     await p.goto(BASE + '?sim#/lane'); await p.wait_for_selector('#lineSum[data-stand]'); await p.wait_for_timeout(400)
     ls = await p.text_content('#lineSum'); st = await p.get_attribute('#lineSum', 'data-stand')
-    check(int(st) == feet and aim in ls, f'[sim] Lane shows the same stand/aim as Tonight (lane {st}/{ls!r}, tonight {feet}/{aim})')
+    ah = round(float(aim) * 2) / 2; ahs = (str(int(ah)) if ah == int(ah) else f'{int(ah)}\u00bd')   # Lane shows whole/half boards (owner aim fix); Tonight keeps the model's tenth
+    check(int(st) == feet and ahs in ls, f'[sim] Lane shows the same stand/aim as Tonight (lane {st}/{ls!r}, tonight {feet}/{aim})')
     check(not errs, '[sim] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
@@ -1134,6 +1135,32 @@ async def ownpat_cycle(b):
     check('Kegel library' in await p.text_content('#tnSetup .fld .prov'), '[ownpat] picking from the library clears the own entry')
     check(not errs, f'[ownpat] no page errors {errs[:3]}'); await c.close()
 
+async def aimdrag_cycle(b):
+    # Owner bug 2026-10-24: "If I stand at the 25 board I should be able to aim at the 15 board. I can't drag that."
+    # Touch drag on a 360 px phone: feet near the foul line, aim higher up; independent, no snap back, mirrored for lefties.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    drag = """async ([board, fy, lefty]) => { const c = document.querySelector('#lane'), r = c.getBoundingClientRect(), W = r.width, pl = W < 180 ? 22 : 30;
+      const x = r.left + pl + (lefty ? board : 39 - board) / 39 * (W - pl - 8), y = fy < 0 ? r.bottom - 12 : r.top + r.height * fy, x0 = x + (x > r.left + W / 2 ? -40 : 40);
+      const ev = (t, xx) => c.dispatchEvent(new PointerEvent(t, { clientX: xx, clientY: y, pointerType: 'touch', pointerId: 7, bubbles: true, isPrimary: true }));
+      ev('pointerdown', x0); for (let i = 1; i <= 8; i++) { ev('pointermove', x0 + (x - x0) * i / 8); await new Promise(f => setTimeout(f, 16)); } ev('pointerup', x); }"""
+    for hand in ['right', 'left']:
+        lefty = hand == 'left'
+        await p.goto(BASE); await p.evaluate("h => { localStorage.clear(); localStorage.setItem('ap_prefs', JSON.stringify({ onboarded: true })); localStorage.setItem('ap_profile', JSON.stringify({ hand: h })); }", hand)
+        await p.goto(BASE + '?ad' + hand + '#/lane'); await p.wait_for_selector('#lineSum'); await p.wait_for_timeout(400)
+        for feet, aim in [(25, 15), (35, 10), (10, 5)]:
+            await p.evaluate(drag, [feet - 7, -1, lefty]); await p.wait_for_timeout(150)
+            await p.evaluate(drag, [aim, 0.45, lefty]); await p.wait_for_timeout(700)
+            st, am = await p.get_attribute('#lineSum', 'data-stand'), await p.get_attribute('#lineSum', 'data-aim')
+            check(st == str(feet) and float(am) == aim, f'[aimdrag] {hand}: touch-drag stand {feet}, aim {aim} on 360 px (got stand {st}, aim {am})')
+        await p.wait_for_timeout(600); am2 = await p.get_attribute('#lineSum', 'data-aim')
+        check(float(am2) == 5, f'[aimdrag] {hand}: aim stays where it was dragged (no snap back) ({am2})')
+        txt = await p.inner_text('#lineSum'); check('Aim' in txt and '5' in txt, f'[aimdrag] {hand}: line summary shows the aim board')
+        note = await p.query_selector('#laneModelNote:not([hidden])'); check(note is not None, f'[aimdrag] {hand}: a wide line says it is a model limit (laydown shift), stand unchanged')
+        await p.reload(); await p.wait_for_selector('#lineSum'); await p.wait_for_timeout(300)
+        check(float(await p.get_attribute('#lineSum', 'data-aim')) == 5 and await p.get_attribute('#lineSum', 'data-stand') == '10', f'[aimdrag] {hand}: stand/aim survive a reload')
+    check(not errs, f'[aimdrag] no console errors {errs[:2]}')
+    await c.close()
+
 async def drill_cycle(b):
     # M3: spare drill on practice nights (most-missed leaves, Made/Missed, never in a score), one optional process goal read
     # on the recap with its n ("10 of 10 single-pin spares made (100%) · goal 7 of 10"), never a "good job".
@@ -1262,7 +1289,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

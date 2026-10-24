@@ -9,10 +9,10 @@ import { createDeck, describe } from '../deck.js';
 const isLefty = () => !!(profile() && profile().hand === 'left');
 const mirrorWords = t => t.replace(/\b(left|right|Left|Right)\b/g, w => ({ left:'right', right:'left', Left:'Right', Right:'Left' })[w]);
 const DEFL_DOC = 'https://github.com/majalen3/arsenal-pro-bowling/blob/main/docs/DEFLECTION.md';
-import { adjust, miss, restore, target, MISSES, setBall, quickBalls } from '../ctl.js';
+import { adjust, miss, restore, target, modelIn, MISSES, setBall, quickBalls } from '../ctl.js';
 import { balls } from '../data.js';
 import { openBallSheet, openConditions, openTune, openLines, tunePanel } from './pickers.js';
-import { PATTERN_LABEL, FINISH_LABEL, CALL_LABEL, CALL_TONE, f1, fmtBoard } from '../labels.js';
+import { PATTERN_LABEL, FINISH_LABEL, CALL_LABEL, CALL_TONE, f1, fmtBoard, fmtHalf } from '../labels.js';
 import { profile } from '../store.js';
 import { houseRule } from '../cc/target.js';
 import { prefs, setPrefs } from '../store.js';
@@ -49,7 +49,7 @@ export function render() {
     h('div', { class:'miss-lbl', id:'missLbl', text:'Your ball went' }),
     h('div', { class:'miss-btns' }, ...['left', 'high', 'light', 'right'].map(k => h('button', { class:'miss-btn', 'data-miss':k, 'aria-label':`Missed ${MISSES[k].label}: ${MISSES[k].move}`, onclick:() => doMiss(k) },
       h('span', { class:'miss-ic', html:icon(k === 'left' ? 'left' : k === 'right' ? 'right' : k === 'high' ? 'up' : 'downArrow') }), h('span', { text:MISSES[k].label })))));
-  const aimPill = h('span', { class:'pill', id:'aimPill', hidden:true, 'aria-live':'polite' }), aimWhy = h('p', { class:'muted small', id:'aimWhy', hidden:true });
+  const aimPill = h('span', { class:'pill', id:'aimPill', hidden:true, 'aria-live':'polite' }), aimWhy = h('p', { class:'muted small', id:'aimWhy', hidden:true }), modelNote = h('p', { class:'muted small', id:'laneModelNote', hidden:true });
   // sim2 #1/#2: the Aim Box uses tonight's picked length when the Lane is on tonight's preset; the pill checks the model's reach.
   const patNow = () => { const P = proj(), sess = P ? ((P.sessions || {})[openNight(P) || ''] || {}) : {}, ft = sess.ft != null ? +sess.ft : null;
     return { preset: S.pattern, ft: ft != null && presetFor(ft) === S.pattern ? ft : null }; };
@@ -65,14 +65,15 @@ export function render() {
       h('section', { class:'deck-card', id:'deckCard', 'aria-labelledby':'deckH' }, h('figure', { class:'deck-fig' }, deckCv), h('div', { class:'deck-side' }, h('h2', { class:'deck-h', id:'deckH', text:'Pin deck' }), callBadge, coach, deckRead, h('p', { class:'deck-cap', id:'deckCap' }))),
       h('div', { class:'read-col' },
         h('div', { class:'tiles' }, tEntry, tAngle, tBp),
-        lineSum, hold, missRow, more, inlineTune)));
+        lineSum, modelNote, hold, missRow, more, inlineTune)));
   let tune = null;
-  const lane = createLane(canvas, { onAdjust:ch => adjust(ch), lefty:isLefty, aimBox:aimLayer(patNow) });
+  const lane = createLane(canvas, { onAdjust:ch => adjust(ch), lefty:isLefty, aimBox:aimLayer(patNow), eyes:target });
+  const half2 = v => Math.round(v * 2) / 2;
   const deck = createDeck(deckCv);
   function setTile(t, val, sub, tone) { t.querySelector('.tile-val').textContent = val; t.querySelector('.tile-sub').textContent = sub; t.dataset.tone = tone; }
   let lastKey = '';
   function update({ animate = false } = {}) {
-    const b = app.ball, a = analyze(b);
+    const b = app.ball, mi = modelIn(), a = analyze(b, { release: mi.release, aim: mi.aim });   // the bowler's stand → aim (ctl.modelIn)
     ballBtn.innerHTML = `<span class="ball-orb sm" style="--c:${b.color}" aria-hidden="true"></span><span class="ball-btn-text"><span class="ball-btn-name">${b.name}</span><span class="ball-btn-sub">${b.brand} · ${coverKind(b)} · RG ${rgTxt(b)}</span></span>${icon('down', 'chev')}`;
     ballBtn.title = 'Change ball';
     el.querySelector('#laneH1').textContent = `Lane: ${b.name}`;
@@ -88,8 +89,10 @@ export function render() {
     const r31 = a.bpBoard == null ? null : ruleOf31(S.pattern, a.bpBoard);
     setTile(tBp, a.bpBoard == null ? '\u2014' : f1(a.bpBoard), a.bpFeet == null ? 'no hook' : `@ ${Math.round(a.bpFeet)} ft`, r31 && Math.abs(r31.d) <= 2 ? 'good' : 'warn');
     // One stand/aim source (sim bug 5): Stand = laydown + offset − drift, the same number Tonight and Targeting show.
-    const sd = standOf(S.release); lineSum.dataset.release = S.release; lineSum.dataset.stand = sd.feet;
-    lineSum.innerHTML = `<span class="sr-only">Tune shot. </span><span><b class="num">${sd.feet}</b><small>Stand \u00b7 lay ${S.release}</small></span><span class="arrow" aria-hidden="true">→</span><span><b class="num">${fmtBoard(target())}</b><small>Aim</small></span><span><b class="num">${S.speed}</b><small>mph</small></span><span><b class="num">${S.rev}</b><small>rpm</small></span>${icon('tune', 'ls-ic')}`;
+    const sd = standOf(S.release); lineSum.dataset.release = S.release; lineSum.dataset.stand = sd.feet; lineSum.dataset.aim = half2(target());
+    modelNote.hidden = !mi.clamped;
+    if (mi.clamped) modelNote.textContent = `Model limit: the model launches at most 0.9 board off the laydown, so its ball starts ${Math.abs(mi.shift)} boards ${(mi.shift > 0) === !isLefty() ? 'left' : 'right'} of your laydown to cross the arrows at ${fmtHalf(target())}. Your stand is unchanged.`;
+    lineSum.innerHTML = `<span class="sr-only">Tune shot. </span><span><b class="num">${sd.feet}</b><small>Stand \u00b7 lay ${S.release}</small></span><span class="arrow" aria-hidden="true">→</span><span><b class="num">${fmtHalf(target())}</b><small>Aim</small></span><span><b class="num">${S.speed}</b><small>mph</small></span><span><b class="num">${S.rev}</b><small>rpm</small></span>${icon('tune', 'ls-ic')}`;
     const sens = sensitivity(b), n = +sens.split(' ')[0];
     hold.innerHTML = `<span class="hold-bar" aria-hidden="true">${Array.from({ length:6 }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span><span>Margin: <b>${sens}</b> small misses still strike</span>`;
     hold.dataset.tone = !a.strike ? 'off' : n >= 4 ? 'good' : 'warn';
@@ -98,7 +101,7 @@ export function render() {
       `<div>Rolls at ~<b>${rollMph(+S.speed).toFixed(1)} mph</b> (est.)${r31 ? ' · ' + r31.text : ''}</div>`;
     canvas.setAttribute('aria-label', `Lane preview (model). ${CALL_LABEL[a.call]}. Entry board ${f1(a.entryBoard)}, angle ${f1(a.angle)} degrees, breakpoint board ${f1(a.bpBoard)} at ${a.bpFeet == null ? 'none' : Math.round(a.bpFeet) + ' feet'}. ${isLefty() ? 'Mirrored for left hand. ' : ''}Arrow keys move feet and target.${paintPill(aimPill, patNow, a, aimCtx)}`);
     aimWhy.hidden = aimPill.dataset.state !== 'beyond'; aimWhy.textContent = aimPill.dataset.why || '';
-    const same = l => l.release === +S.release && l.aim === +S.aim && l.speed === +S.speed && l.rev === +S.rev && l.pattern === S.pattern && l.finish === S.finish && +l.oil === +S.oil;
+    const same = l => l.release === +S.release && l.aim === +S.aim && (l.eyes ?? null) === app.eyes && l.speed === +S.speed && l.rev === +S.rev && l.pattern === S.pattern && l.finish === S.finish && +l.oil === +S.oil;
     const mine = linesForBall(), saved = mine.some(same), bl = backLine(mine);
     backBtn.hidden = !bl || same(bl);
     if (bl) { backBtn.innerHTML = `${icon('undo')} <span>Back to saved</span>`; backBtn.setAttribute('aria-label', `Back to saved line ${bl.name}`); backBtn.title = `Back to \u201c${bl.name}\u201d`; }
@@ -110,7 +113,7 @@ export function render() {
     const lefty = !!(profile() && profile().hand === 'left'), d = describe(a, lefty);
     deck.draw({ res:a, lefty, tone, color:b.color }, { animate });
     deckCv.setAttribute('aria-label', `Pin deck close-up, ${d.pocket} pocket. ${CALL_LABEL[a.call]}. ${d.text}`);
-    deckRead.innerHTML = a.entryBoard == null ? `<p>${d.text}</p>` : `<p class="deck-side-call">${d.side[0].toUpperCase() + d.side.slice(1)}, ${d.ang}.</p><p class="deck-contact">${d.contact}</p><p class="deck-five">${d.five}</p>`;
+    deckRead.innerHTML = a.entryBoard == null || !d.side ? `<p>${d.text}</p>` : `<p class="deck-side-call">${d.side[0].toUpperCase() + d.side.slice(1)}, ${d.ang}.</p><p class="deck-contact">${d.contact}</p><p class="deck-five">${d.five}</p>`;
     el.querySelector('#deckCard').dataset.tone = tone;
     el.querySelector('#deckCap').innerHTML = `Pin action: approximate 2-D model, assumed 15 lb ball, no spin. <a href="${DEFL_DOC}" target="_blank" rel="noopener">How it works</a>${lefty ? ' · Mirrored for left hand.' : ''}`;
     lastKey = key;
@@ -127,7 +130,7 @@ export function render() {
   function backToSaved() { const l = backLine(linesForBall()); if (!l) return; applyLine(l); toast(`Back on \u201c${l.name}\u201d`); }
   function drawSync() { syncDot.dataset.state = status.cls || 'idle'; syncDot.setAttribute('aria-label', status.text || 'Not synced yet'); syncDot.title = status.text || ''; }
   function quickSave() {
-    const name = `${PATTERN_LABEL[S.pattern]} ${S.release}\u2192${fmtBoard(target())}`;
+    const name = `${PATTERN_LABEL[S.pattern]} ${S.release}\u2192${fmtHalf(target())}`;
     saveLine(name).then(l => { update(); toast(`Saved \u201c${name}\u201d`, { action:{ label:'Rename', run:() => renameSheet(l) } }); });
   }
   function renameSheet(l) {

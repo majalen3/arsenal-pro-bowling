@@ -153,3 +153,6 @@ Short ADR-style notes. Each: decision · why · consequence.
 - **No new table.** Tries are `session.drill [{leave, made, ts}]` and the goal is `session.goal {k:'single'|'drill', target 1..10}`, both via session.edited. /api/me export and delete already cover them.
 - **Goal kinds are process-only** (single-pin spares made, drill spares made), as a share of 10. Never a score goal. The result line always carries n and makes no praise or judgement words (unit and e2e both check this).
 - **sw v38** precaches drill.js.
+
+## Aim: feet and target are independent board values (2026-10-24)
+The owner's target is a board (1–39, halves allowed), not an engine angle. We store it as `app.eyes`. The engine still takes (release, aim); if the target is past the ±8 aim clamp, the laydown fed to the model is shifted (strikeline.js rule `rel = lay + (arr − got)`) and labelled as a model limit. We don't change simulatePath. Eyes are local-only, so the API stays backward compatible.

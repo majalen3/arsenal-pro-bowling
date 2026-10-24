@@ -6,6 +6,7 @@ import { setBall } from '../ctl.js';
 import { go, back } from '../router.js';
 import { readMed } from './pickers.js';
 import { PATTERN_LABEL, FINISH_LABEL, CALL_LABEL, CALL_TONE, f1, fmtBoard } from '../labels.js';
+import { arrowsBoard } from '../cc/geom.js';
 export function backBar(title, fallback) {
   return h('header', { class:'appbar' }, h('button', { class:'icon-btn', 'aria-label':'Back', html:icon('back'), onclick:() => back(fallback) }), h('h1', { class:'title', text:title }));
 }
@@ -29,7 +30,7 @@ export function render({ params }) {
     h('div', { class:'two' }, h('div', { class:'card tone-good' }, h('h3', { text:'Use when' }), h('p', { text:b.when })), h('div', { class:'card tone-warn' }, h('h3', { text:'Leave in the bag' }), h('p', { text:b.whenNot }))),
     h('div', { class:'card' }, h('h2', { class:'card-title', text:'Recommendation (~15 mph / ~220 rpm)' }), h('p', { text:b.rec })),
     h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Saved lines' })),
-      lines.length ? h('div', { class:'stack' }, ...lines.map(l => h('button', { class:'line-row', onclick:() => { applyLine(l); go('#/lane'); toast(`Loaded \u201c${l.name}\u201d`); } }, h('span', { class:'line-name', text:l.name }), h('span', { class:'line-meta', text:`Feet ${l.release} · Target ${fmtBoard(l.release - l.aim)} · ${l.speed} mph · ${PATTERN_LABEL[l.pattern] || l.pattern}` }))))
+      lines.length ? h('div', { class:'stack' }, ...lines.map(l => h('button', { class:'line-row', onclick:() => { applyLine(l); go('#/lane'); toast(`Loaded \u201c${l.name}\u201d`); } }, h('span', { class:'line-name', text:l.name }), h('span', { class:'line-meta', text:`Feet ${l.release} · Target ${fmtBoard(l.eyes != null ? +l.eyes : +arrowsBoard(+l.release, +l.aim).toFixed(1))} · ${l.speed} mph · ${PATTERN_LABEL[l.pattern] || l.pattern}` }))))
         : h('p', { class:'muted', text:'No saved lines yet. Put it on the lane and tap the bookmark.' })),
     h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Surface log' }), h('button', { class:'btn sm ghost', id:'logSurf', onclick:() => { logFinish(b.id, S.finish); toast(`Logged ${FINISH_LABEL[S.finish]} for ${b.name}`); go(location.hash, { replace:true }); } }, `Log ${FINISH_LABEL[S.finish]} today`)),
       surf.length ? h('ul', { class:'plain' }, ...surf.map(x => h('li', { text:`${x.date} \u2014 ${FINISH_LABEL[x.finish] || x.finish}` }))) : h('p', { class:'muted', text:'No surface changes logged.' })),

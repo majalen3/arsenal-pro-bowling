@@ -2,6 +2,8 @@
 // shapes, same endpoints, same offline queue / retry schedule. DOM writes replaced by events.
 import { balls } from './data.js';
 import { S, RANGES, FINISHES, PATTERNS } from './engine.js';
+import { BOARDS } from './cc/geom.js';
+const eyesOf = v => { const x = v === '' || v == null ? NaN : +v; return Number.isFinite(x) && x >= BOARDS[0] && x <= BOARDS[1] ? Math.round(x * 2) / 2 : null; };
 export const API_BASE = new URLSearchParams(location.search).get('api') || 'https://arsenal-pro-api.onrender.com';
 const API_TIMEOUT = 8000, API_WRITE_TIMEOUT = 25000; // writes wait out a free-tier cold start; UI never blocks on them
 export const LS = { lines:'ap_lines', surface:'ap_surface', notes:'ap_notes', dels:'ap_dels', shots:'ap_shots', profile:'ap_profile', prefs:'ap_prefs' };
@@ -26,14 +28,15 @@ export const status = { text: '', cls: '' };
 function setStatus(text, cls) { status.text = text; status.cls = cls || ''; emit('status', status); }
 
 // --- app state (ball + controls), persisted to ap_state exactly like v1 (string values)
-export const app = { ball: balls[0], lastLine: null };   // lastLine: {ballId,name} most recently saved/loaded (for 'Back to saved line')
+export const app = { ball: balls[0], lastLine: null, eyes: null };   // eyes: the bowler's aim at the arrows (js/ctl.js)   // lastLine: {ballId,name} most recently saved/loaded (for 'Back to saved line')
 let stateT = null;
-export function saveState() { clearTimeout(stateT); stateT = setTimeout(() => { rawSet('ap_state', JSON.stringify({ ball:app.ball.id, speed:String(S.speed), rev:String(S.rev), release:String(S.release), aim:String(S.aim), oil:String(S.oil), finish:S.finish, pattern:S.pattern })); }, 300); }
+export function saveState() { clearTimeout(stateT); stateT = setTimeout(() => { rawSet('ap_state', JSON.stringify({ ball:app.ball.id, speed:String(S.speed), rev:String(S.rev), release:String(S.release), aim:String(S.aim), eyes:app.eyes == null ? '' : String(app.eyes), oil:String(S.oil), finish:S.finish, pattern:S.pattern })); }, 300); }
 export function restoreState() {
   let st = null; try { st = JSON.parse(rawGet('ap_state')); } catch(e) {}
   if (!st || typeof st !== 'object') return false;
   const b = balls.find(x => x.id === st.ball); if (b) app.ball = b;
-  ['speed','rev','release','aim','oil'].forEach(id => { const v = +st[id]; if (Number.isFinite(v) && v >= RANGES[id][0] && v <= RANGES[id][1]) S[id] = v; });
+  ['speed','rev','release','aim','oil'].forEach(id => { const v = +st[id], [lo, hi] = id === 'release' ? BOARDS : RANGES[id]; if (Number.isFinite(v) && v >= lo && v <= hi) S[id] = v; });
+  app.eyes = eyesOf(st.eyes);
   if (typeof st.finish === 'string' && FINISHES.includes(st.finish)) S.finish = st.finish;
   if (typeof st.pattern === 'string' && PATTERNS.includes(st.pattern)) S.pattern = st.pattern;
   return true;
@@ -63,12 +66,13 @@ function retryLater(e) { if (retryT || retryN >= 4) return; const d = Math.max([
 export const esc = t => String(t==null?'':t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 // --- lines
-export function currentLine(name, note) { return { ballId:app.ball.id, name, release:+S.release, aim:+S.aim, speed:+S.speed, rev:+S.rev, oil:+S.oil, finish:S.finish, pattern:S.pattern, note:(note||'').trim() }; }
+export function currentLine(name, note) { return { ballId:app.ball.id, name, release:+S.release, aim:+S.aim, eyes:app.eyes, speed:+S.speed, rev:+S.rev, oil:+S.oil, finish:S.finish, pattern:S.pattern, note:(note||'').trim() }; }
 export const allLines = () => lsGet(LS.lines).sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
 export const linesForBall = id => allLines().filter(l => l.ballId === (id || app.ball.id));
 export function applyLine(l) {
   const b = balls.find(x => x.id === l.ballId); if (b) app.ball = b;
-  ['release','aim','speed','rev','oil'].forEach(k => { const v = +l[k]; if (Number.isFinite(v) && v >= RANGES[k][0] && v <= RANGES[k][1]) S[k] = v; });
+  ['release','aim','speed','rev','oil'].forEach(k => { const v = +l[k], [lo, hi] = k === 'release' ? BOARDS : RANGES[k]; if (Number.isFinite(v) && v >= lo && v <= hi) S[k] = v; });
+  app.eyes = eyesOf(l.eyes);
   if (FINISHES.includes(l.finish)) S.finish = l.finish; if (PATTERNS.includes(l.pattern)) S.pattern = l.pattern;
   app.lastLine = { ballId:l.ballId, name:l.name };
   saveState(); emit('state');

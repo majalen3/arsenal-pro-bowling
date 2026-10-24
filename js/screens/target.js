@@ -18,6 +18,7 @@ import * as T from '../cc/target.js';
 import * as F from '../cc/strikeline.js';
 import { aimLayer as aimL, paintPill, overlaysBtn } from './overlays.js';
 import { helpDot } from './help.js';
+import { fmtHalf } from '../labels.js';
 const num = f => f == null ? null : typeof f === 'object' ? (Number.isFinite(+f.v) ? +f.v : null) : (Number.isFinite(+f) ? +f : null);
 const prov = (p, label) => h('span', { class: 'prov', 'data-prov': p || null, text: label });
 const CALL = { pocket: ['Pocket', 'good'], high: ['High', 'warn'], light: ['Light', 'warn'], gutter: ['Gutter', 'bad'] };
@@ -99,11 +100,11 @@ export async function render({ query } = {}) {
   }
 
   const lane = createLane(canvas, { lefty,
-    state: () => ({ release: r ? r.lay : 10, aim: r ? r.aim : 0, pattern: r ? r.preset : 'house' }),
+    state: () => ({ release: r ? r.lay : 10, aim: r ? r.aim : 0, eyes: r ? r.arrows : null, pattern: r ? r.preset : 'house' }),
     aimBox: aimL(() => ({ preset: r ? r.preset : 'house', ft: sess.ft != null ? +sess.ft : null })),
     onAdjust: ch => {
       if (ch.release != null) t.feet = Math.round(ch.release + t.offset - t.drift);
-      else if (ch.aim != null) { const arrows = Math.round(arrowsBoard(r.lay, ch.aim) * 10) / 10; t.eyes = t.mode === 'dots' ? Math.round((r.lay + (arrows - r.lay) * T.DOTS_FT / T.ARROWS_FT) * 10) / 10 : arrows; }
+      else if (ch.target != null || ch.aim != null) { const arrows = ch.target != null ? +ch.target : Math.round(arrowsBoard(r.lay, ch.aim) * 10) / 10; t.eyes = t.mode === 'dots' ? Math.round((r.lay + (arrows - r.lay) * T.DOTS_FT / T.ARROWS_FT) * 10) / 10 : arrows; }
       update(false);
     },
     overlay: ({ g, bx, fy, approachY, foulY, done }) => {
@@ -131,7 +132,7 @@ export async function render({ query } = {}) {
       h('button', { class: 'tg-btn', 'aria-label': `${label} ${step === 1 ? '1 board' : step + ' board'} right`, html: icon('right'), onclick: () => mv('right') }));
     row.paint = txt => { val.textContent = txt; }; return row;
   };
-  const feetRow = ctlRow('tgFeet', 'Feet', () => t.feet, v => { t.feet = Math.max(1, Math.min(45, v)); });
+  const feetRow = ctlRow('tgFeet', 'Feet', () => t.feet, v => { t.feet = Math.max(1, Math.min(45, v)); });   // feet and eyes are independent (owner bug 2026-10-24)
   const eyesRow = ctlRow('tgEyes', 'Eyes', () => t.eyes, v => { t.eyes = Math.max(1, Math.min(39, Math.round(v * 10) / 10)); }, 0.5);   // ½-board steps: the model's whole launch range is ±0.8 board
   const driftRow = ctlRow('tgDrift', 'Drift', () => t.drift, v => { t.drift = Math.max(-8, Math.min(8, v)); });
   const offRow = ctlRow('tgOffset', 'Ball from foot', () => t.offset, v => { t.offset = Math.max(0, Math.min(12, v)); });
@@ -181,7 +182,7 @@ export async function render({ query } = {}) {
     feetRow.paint(`${t.feet}`); eyesRow.paint(`${t.eyes}`); driftRow.paint(t.drift ? dirB(t.drift).trim() : 'none'); offRow.paint(`${t.offset}`);
     bpbRow.paint(`${box.board}`); el.querySelector('#tgBpFVal').textContent = `${box.ft} ft`;
     modeSeg.querySelectorAll('button').forEach(x => { const on = x.dataset.v === t.mode; x.setAttribute('aria-checked', String(on)); x.tabIndex = on ? 0 : -1; });
-    sum.replaceChildren(...[['Feet', t.feet], ['Laydown', r.lay], [t.mode === 'dots' ? 'Dots' : 'Arrows', r.clamped ? `${t.eyes} (model ${r.arrowsModel})` : t.eyes], ['Break', r.bpBoard == null ? '\u2014' : `${r.bpBoard} @ ${r.bpFt}`], ['Entry', r.entry == null ? '\u2014' : `${r.entry} \u00b7 ${r.angle}\u00b0`]]
+    sum.replaceChildren(...[['Feet', t.feet], ['Laydown', r.lay], [t.mode === 'dots' ? 'Dots' : 'Arrows', fmtHalf(t.eyes)], ['Break', r.bpBoard == null ? '\u2014' : `${r.bpBoard} @ ${r.bpFt}`], ['Entry', r.entry == null ? '\u2014' : `${r.entry} \u00b7 ${r.angle}\u00b0`]]
       .map(([k, v]) => h('li', {}, h('small', { text: k }), h('b', { class: 'num', text: String(v) }))));
     sugBox.replaceChildren();
     if (sug) {

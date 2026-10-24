@@ -6,12 +6,14 @@
 // right-hander model and every number it returns is read in the bowler's own board numbering.
 import { LW, LH, boardToX, xToBoard, yToFeet, FOUL_Y, PX_FT, HEAD_Y, OIL_LEN, C_SKID, C_HOOK, C_ROLL, S, RANGES } from './engine.js';
 import { reduced } from './ui.js';
-import { aimFor } from './cc/geom.js';
+import { arrowsBoard, clampBoard, half } from './cc/geom.js';
 import { rectOf } from './cc/aimbox.js';
 const LX0 = 14, LX1 = LW - 14, LY0 = 20, LY1 = LH - 6;
-export function createLane(canvas, { onAdjust, lefty = () => false, state = null, overlay = null, aimBox = null } = {}) {
+export function createLane(canvas, { onAdjust, lefty = () => false, state = null, overlay = null, aimBox = null, eyes = null } = {}) {
   const isL = typeof lefty === 'function' ? lefty : () => !!lefty;
   const ss = () => state ? state() : S;   // Targeting passes its own release/aim/pattern; geometry is unchanged
+  // The bowler's aim at the arrows: their own board when given (stand and aim are independent), else read from the model aim.
+  const eyesNow = () => { const s = ss(), e = s.eyes != null ? s.eyes : eyes ? eyes() : null; return e != null ? +e : arrowsBoard(+s.release, +s.aim); };
   const g = canvas.getContext('2d');
   let W = 0, H = 0, dpr = 1, last = null, anim = null;
   const pad = { l: 30, r: 8, t: 10, b: 24 };
@@ -75,9 +77,11 @@ export function createLane(canvas, { onAdjust, lefty = () => false, state = null
     // pocket target ring (board 17.5)
     g.strokeStyle = 'rgba(218,175,55,.8)'; g.lineWidth = 1.5; g.beginPath(); g.arc(X(boardToX(17.5, LW)), by0 - sp * kv * .45, pr * 2.1, 0, 7); g.stroke();
     // aim line: release (feet) to target at arrows
-    const rel = +ss().release, aimB = Math.max(1, Math.min(39, rel - +ss().aim)), relX = X(boardToX(rel, LW));
+    const rel = +ss().release, aimB = clampBoard(eyesNow()), relX = X(boardToX(rel, LW));   // was rel − aim (v1, ~10× off)
     g.setLineDash([4, 4]); g.strokeStyle = 'rgba(218,175,55,.85)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(relX, Y(FOUL_Y - 4)); g.lineTo(X(boardToX(aimB, LW)), arrY); g.stroke(); g.setLineDash([]);
-    g.strokeStyle = '#DAAF37'; g.lineWidth = 2; g.beginPath(); g.arc(X(boardToX(aimB, LW)), arrY, 7, 0, 7); g.stroke();
+    // aim handle: a 44 px touch target (22 px radius halo) around the ring, so it reads as draggable by thumb
+    g.globalAlpha = .18; g.fillStyle = '#DAAF37'; g.beginPath(); g.arc(X(boardToX(aimB, LW)), arrY, 22, 0, 7); g.fill(); g.globalAlpha = 1;
+    g.strokeStyle = '#DAAF37'; g.lineWidth = 2.5; g.beginPath(); g.arc(X(boardToX(aimB, LW)), arrY, 9, 0, 7); g.stroke();
     g.fillStyle = '#DAAF37'; g.beginPath(); g.arc(relX, Y(FOUL_Y - 4), 5, 0, 7); g.fill();
     // phase-coloured path
     const pts = result.points, ph = result.phases, n = Math.max(2, Math.floor(pts.length * prog));
@@ -114,19 +118,21 @@ export function createLane(canvas, { onAdjust, lefty = () => false, state = null
   let mode = null, startE = null, moved = false;
   const logical = e => { const r = canvas.getBoundingClientRect(); return { x: invX(e.clientX - r.left), y: invY(e.clientY - r.top) }; };
   const apply = e => {
-    const p = logical(e), board = xToBoard(Math.max(14, Math.min(LW - 14, p.x)));
-    if (mode === 'release') onAdjust && onAdjust({ release: Math.max(5, Math.min(30, Math.round(board))), keepTarget: true });
-    else onAdjust && onAdjust({ aim: Math.round(aimFor(+ss().release, board).aim * 2) / 2 });   // engine geometry (cc/geom.js), clamped ±8
+    const p = logical(e), board = clampBoard(xToBoard(Math.max(LX0, Math.min(LX1, p.x))));
+    // Feet and aim are independent, each anywhere on boards 1–39 (owner bug 2026-10-24: the aim was the model's ±8 launch
+    // angle, so it could not get more than ~0.9 board from the feet). Feet whole boards, aim half boards.
+    if (mode === 'release') onAdjust && onAdjust({ release: Math.round(board), keepTarget: true });
+    else onAdjust && onAdjust({ target: half(board) });
   };
   canvas.addEventListener('pointerdown', e => { const p = logical(e); mode = (FOUL_Y - p.y) / PX_FT < 9 ? 'release' : 'aim'; startE = e; moved = false; if (e.pointerType === 'mouse') { try { canvas.setPointerCapture(e.pointerId); } catch(_) {} apply(e); e.preventDefault(); } });
   canvas.addEventListener('pointermove', e => { if (!mode) return; if (e.pointerType === 'mouse') { apply(e); return; } if (!moved && Math.abs(e.clientX - startE.clientX) > 3) { moved = true; try { canvas.setPointerCapture(e.pointerId); } catch(_) {} } if (moved) apply(e); });
   const end = e => { if (mode && e.type === 'pointerup' && e.pointerType !== 'mouse' && !moved) apply(e); mode = null; };
   canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
   canvas.addEventListener('keydown', e => {
-    const k = e.key, r = +ss().release, a = +ss().aim;
+    const k = e.key, r = +ss().release, a = eyesNow();
     const dl = isL() ? -1 : 1;   // screen-left = higher boards for a right-hander, lower for a mirrored lefty lane
-    if (k === 'ArrowLeft') onAdjust({ release: Math.max(5, Math.min(30, r + dl)), keepTarget: true }); else if (k === 'ArrowRight') onAdjust({ release: Math.max(5, Math.min(30, r - dl)), keepTarget: true });
-    else if (k === 'ArrowUp') onAdjust({ aim: Math.min(8, a + .5) }); else if (k === 'ArrowDown') onAdjust({ aim: Math.max(-8, a - .5) }); else return;
+    if (k === 'ArrowLeft') onAdjust({ release: clampBoard(r + dl), keepTarget: true }); else if (k === 'ArrowRight') onAdjust({ release: clampBoard(r - dl), keepTarget: true });
+    else if (k === 'ArrowUp') onAdjust({ target: clampBoard(half(a) + .5 * dl) }); else if (k === 'ArrowDown') onAdjust({ target: clampBoard(half(a) - .5 * dl) }); else return;   // aim ½ board, screen-left / right
     e.preventDefault();
   });
   return { draw, destroy: () => { ro.disconnect(); cancelAnimationFrame(anim); } };

@@ -5,7 +5,7 @@ import { S, OIL_LEN, analyze } from '../engine.js';
 import { specOK } from '../data.js';
 import { modelLine, presetFor } from './model.js';
 import { rule31 } from './rank.js';
-import { arrowsBoard, aimFor, REACH } from './geom.js';
+import { arrowsBoard, aimFor, REACH, modelOf } from './geom.js';
 
 export const SRC = {   // all "search excerpt" (2026-10-24); see docs/TEAM_PROMPT_TARGETING.md §2
   offset: { label: 'Breakdown Bowling', url: 'https://www.breakdownbowling.com/targeting-with-a-bowling-line/', note: 'release ~6\u20137 boards from the ankle; stand = laydown + 7 \u2212 2 (drift left) in their example' },
@@ -76,16 +76,16 @@ export function pocketOf(a) {
 }
 // One shot through the unchanged engine on the preset nearest tonight's length.
 export function read(cat, t, ctx, box) {
-  const lay = laydownOf(t), arrows = arrowsOf(t, lay), af = aimFor(lay, arrows), aim = af.aim, preset = presetFor(ctx.ft);
+  const lay = laydownOf(t), arrows = arrowsOf(t, lay), af = aimFor(lay, arrows), mo = modelOf(lay, arrows), aim = af.aim, preset = presetFor(ctx.ft);
   const keep = { pattern: S.pattern, finish: S.finish, oil: S.oil };
   let a;
-  try { S.pattern = preset; S.finish = 'factory'; S.oil = 1; a = analyze(cat, { speed: ctx.speed, rev: ctx.rev, release: lay, aim }); }
+  try { S.pattern = preset; S.finish = 'factory'; S.oil = 1; a = analyze(cat, { speed: ctx.speed, rev: ctx.rev, release: mo.release, aim }); }   // owner bug 2026-10-24: the model ball crosses the arrows at the bowler's eyes
   finally { Object.assign(S, keep); }
   const p = pocketOf(a), b = box ? inBox(box, a.bpBoard, a.bpFeet) : { ok: false };
   const warn = [];
   if (lay < 5 || lay > 30) warn.push(`Laydown ${r1(lay)} is outside the model's tested range (boards 5–30).`);
-  if (af.clamped) warn.push(`Model limit: from laydown ${r1(lay)} the model can only cross the arrows at ${r1(lay - REACH)}\u2013${r1(lay + REACH)}, so it is showing ${r1(af.got)}, not ${r1(arrows)}.`);
-  return { lay: r1(lay), arrows: r1(arrows), arrowsModel: r1(af.got), clamped: af.clamped, aim: Math.round(aim * 100) / 100, preset, presetLen: OIL_LEN[preset], a, ...p, box: b,
+  if (af.clamped) warn.push(`Model limit: the model launches at most ${r1(REACH)} board off the laydown, so its ball starts ${Math.abs(mo.shift)} boards from your laydown ${r1(lay)} to cross the arrows at ${r1(arrows)}. Your feet are unchanged.`);
+  return { lay: r1(lay), arrows: r1(arrows), arrowsModel: r1(arrows), modelLay: r1(mo.release), clamped: af.clamped, aim: Math.round(aim * 100) / 100, preset, presetLen: OIL_LEN[preset], a, ...p, box: b,
     bpBoard: a.bpBoard == null ? null : r1(a.bpBoard), bpFt: a.bpFeet == null ? null : Math.round(a.bpFeet), entry: a.gutter ? null : r1(a.entryBoard), angle: r1(a.angle), warn };
 }
 const grade = r => r.call === 'pocket' && r.box.ok && r.angleOK ? 0 : r.call === 'pocket' && r.box.ok ? 1 : r.call === 'pocket' && r.angleOK ? 2 : r.call === 'pocket' ? 3 : 4;
