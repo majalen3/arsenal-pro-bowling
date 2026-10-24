@@ -1,0 +1,106 @@
+name: journeys
+# Whole-night QA: the journey suite (tests/journeys), unit tests and engine equivalence.
+#  - push / PR to main: against this commit, served at http://localhost:8350/ (localhost so the service worker registers)
+#  - nightly + after every GitHub Pages deploy + manual: against the LIVE site (production API writes are blocked by the harness)
+# A step that fails is only allowed when it is listed in tests/journeys/known_issues.json (an open finding).
+# Visual baselines live in tests/journeys/baselines/<viewport>/ and are rendered on this runner image:
+# to refresh them, run "workflow_dispatch" with update_baselines=true and commit the PNGs from the artifact.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '17 9 * * *'          # nightly, 09:17 UTC
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'local (this commit) or live (GitHub Pages)'
+        default: live
+        type: choice
+        options: [live, local]
+      update_baselines:
+        description: 'Write new visual baselines into the artifact (commit them yourself)'
+        default: false
+        type: boolean
+
+concurrency:
+  group: journeys-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  journeys:
+    # deployment_status fires for every deployment; only run after a successful Pages deploy
+    if: github.event_name != 'deployment_status' || (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'github-pages')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      LIVE: ${{ github.event_name == 'schedule' || github.event_name == 'deployment_status' || (github.event_name == 'workflow_dispatch' && inputs.target == 'live') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      - name: Engine equivalence (simulatePath v1 vs 2.0, must be 0 mismatches)
+        run: node tests/engine_equivalence.mjs
+      - name: Unit tests (data layer, scoring, Command Center)
+        run: node --test tests/data/
+
+      - name: Install Playwright Chromium
+        run: pip install playwright pillow && python -m playwright install --with-deps chromium
+
+      - name: Serve this commit on localhost:8350
+        if: env.LIVE != 'true'
+        run: |
+          python -m http.server 8350 --bind 127.0.0.1 > /tmp/http.log 2>&1 &
+          for i in $(seq 1 20); do curl -sf http://localhost:8350/ > /dev/null && break; sleep 0.5; done
+
+      - name: Wait for the live site to serve this deploy
+        if: env.LIVE == 'true'
+        run: |
+          for i in $(seq 1 30); do curl -sf https://majalen3.github.io/arsenal-pro-bowling/sw.js > /dev/null && break; sleep 10; done
+
+      - name: Journeys
+        id: journeys
+        run: |
+          BASE=http://localhost:8350/; EXTRA=""
+          if [ "$LIVE" = "true" ]; then BASE=https://majalen3.github.io/arsenal-pro-bowling/; EXTRA="--live"; fi
+          if [ "${{ inputs.update_baselines }}" = "true" ]; then EXTRA="$EXTRA --update-baselines"; fi
+          python tests/journeys/run.py --base "$BASE" $EXTRA --out qa-report --media qa-media
+
+      - name: Lighthouse budgets (perf >= 80, a11y >= 95, best practices >= 90)
+        if: always() && env.LIVE != 'true'
+        run: python tests/journeys/lighthouse.py --base http://localhost:8350/ --out qa-report/lighthouse
+
+      - name: Job summary
+        if: always()
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, os
+          p = 'qa-report/results.json'
+          if not os.path.exists(p): print('No journey report was written.'); raise SystemExit
+          d = json.load(open(p)); s = d['summary']
+          print(f"### Journeys vs {s['base']}\n")
+          print(f"| passed | failed (new) | known | probe fails (new) | visual over tolerance |\n|---|---|---|---|---|\n| {s['passed']} | {s['failed']} | {s['known']} | {s['probe_fail']} | {s['visual_fail']} |\n")
+          for j in d['journeys']:
+              bad = [x['name'] for x in j['steps'] if x['status'] == 'fail']
+              if bad: print(f"- **{j['id']} {j['title']}**: " + '; '.join(bad))
+          if s.get('fixed'): print('\nKnown issues now passing (remove from known_issues.json): ' + ', '.join(s['fixed']))
+          lh = 'qa-report/lighthouse/summary.json'
+          if os.path.exists(lh):
+              L = json.load(open(lh)); print('\n### Lighthouse\n\n| screen | perf | a11y | best practices |\n|---|---|---|---|')
+              for r in L['screens']: print(f"| {r['screen']} | {r['performance']} | {r['accessibility']} | {r['best-practices']} |")
+              for b in L['over_budget']: print(f'- over budget: {b}')
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa-report-${{ env.LIVE == 'true' && 'live' || 'local' }}-${{ github.run_number }}
+          path: |
+            qa-report
+            qa-media
+          retention-days: 14

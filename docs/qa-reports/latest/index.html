@@ -1,0 +1,324 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Arsenal Pro · journey QA report</title><style>
+body{font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;background:#f5f6f8;color:#1b1f24}
+header{background:#14213d;color:#fff;padding:18px 22px} header h1{margin:0 0 4px;font-size:20px} main{padding:16px 22px;max-width:1500px}
+.kpis{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0} .kpi{background:#fff;border-radius:10px;padding:10px 14px;min-width:110px;box-shadow:0 1px 2px #0002}
+.kpi b{display:block;font-size:22px} section{background:#fff;border-radius:12px;padding:14px 16px;margin:14px 0;box-shadow:0 1px 2px #0002}
+h2{font-size:17px;margin:0 0 6px} .strip{display:flex;gap:10px;overflow-x:auto;padding:6px 0 10px}
+.card{flex:0 0 190px;border:3px solid #ccc;border-radius:10px;overflow:hidden;background:#fafafa} .card img{width:100%;display:block;aspect-ratio:360/780;object-fit:cover;object-position:top}
+.card .t{padding:6px 8px;font-size:12px} .card .t b{display:block;font-size:12.5px;margin-bottom:2px} .badge{display:inline-block;color:#fff;border-radius:6px;padding:1px 7px;font-size:11px;font-weight:600}
+.x{color:#c62828} .ok{color:#1f8a4c} table{border-collapse:collapse;width:100%;font-size:12.5px} td,th{border-bottom:1px solid #e3e5e8;padding:5px 6px;text-align:left;vertical-align:top}
+th{background:#f0f2f5;position:sticky;top:0} .muted{color:#666} details summary{cursor:pointer;font-weight:600} code{font-size:12px} .vis img{width:120px;border:1px solid #ccc}
+</style></head><body><header><h1>Arsenal Pro · whole-night journey QA</h1>
+<div>https://majalen3.github.io/arsenal-pro-bowling/ · 2026-10-24T09:59:49Z · LIVE site · the production API is never written to (route mock)</div></header><main>
+<div class="kpis"><div class="kpi"><b>12</b>journeys</div><div class="kpi"><b class="ok">77</b>steps passed</div>
+<div class="kpi"><b class="x">0</b>steps failed (new)</div><div class="kpi"><b style="color:#b26a00">12</b>known app bugs</div>
+<div class="kpi"><b>0</b>skipped</div><div class="kpi"><b class="x">0</b>flow probes failed</div><div class="kpi"><b class="x">0</b>visual diffs</div></div>
+<p class="muted">Times are Keystroke-Level-Model estimates (first tap 2.65 s, later taps 1.3 s, scroll 1 s, char 0.28 s), not real users. "Known" = fails because of an open finding listed in tests/journeys/known_issues.json.</p>
+<section id='J01'><h2>J01 · First run and onboarding: choose hand, add a ball</h2><div class='muted'>persona <b>lefty</b> · 11 pass · 0 fail · 1 known · 0 skip · 15 taps · ≈37.0 s est. · 11.1 s wall · <a href='../qa-live3-media/video/J01.webm'>video</a> · trace <code>trace/J01.zip</code></div><div class='strip'>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J01/01.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>1 · pass</span><b>Fresh install opens Welcome</b><span class='muted'>0 taps · ≈0.0 s · #/welcome</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J01/02.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>2 · pass</span><b>Choose Left hand explicitly (step 1)</b><span class='muted'>3 taps · ≈5.2 s · #/welcome</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J01/03.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>3 · pass</span><b>Speed and revs (step 2)</b><span class='muted'>1 taps · ≈2.7 s · #/welcome</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J01/04.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>4 · pass</span><b>Pick owned balls (step 3) and start</b><span class='muted'>2 taps / ≤12 · ≈5.0 s · #/tonight</span><div class='muted'>carries: hand=left</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J01/05.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>5 · pass</span><b>Onboarding total taps</b><span class='muted'>0 taps / ≤10 · ≈0.0 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J01/06.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>6 · pass</span><b>Hand carries to More profile</b><span class='muted'>1 taps · ≈2.7 s · #/more</span><div class='muted'>carries: hand=left</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J01/07.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>7 · pass</span><b>Hand carries to Lane (mirrored)</b><span class='muted'>1 taps · ≈2.7 s · #/lane</span><div class='muted'>carries: hand=left</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J01/08.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>8 · pass</span><b>Hand survives reload; Welcome not shown again</b><span class='muted'>0 taps · ≈0.0 s · #/lane</span><div class='muted'>carries: hand=left</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J01/09.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>9 · pass</span><b>Tonight with no bag offers the next step</b><span class='muted'>1 taps · ≈2.7 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J01/10.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>10 · pass</span><b>Add a ball from the catalogue</b><span class='muted'>5 taps / ≤6 · ≈13.3 s · #/bag</span></div></div>
+<div class='card' style='border-color:#b26a00'><img loading='lazy' src='shots/J01/11.jpg' alt=''><div class='t'><span class='badge' style='background:#b26a00'>11 · known</span><b>The search box example is a ball the catalogue knows</b><span class='muted'>0 taps · ≈0.0 s · #/add-ball</span><div class='x'>✗ the search box example &quot;Storm Phaze II&quot; is in the catalogue</div><div style='color:#b26a00'>known: F14</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J01/12.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>12 · pass</span><b>Tonight now picks a ball for a lefty</b><span class='muted'>1 taps · ≈2.7 s · #/tonight</span></div></div>
+</div>
+<details><summary>State carried between screens</summary><pre>{
+ &quot;persona&quot;: &quot;lefty&quot;,
+ &quot;tonight&quot;: {
+  &quot;ball&quot;: &quot;AstroPhysiX&quot;,
+  &quot;feet&quot;: 18,
+  &quot;eyes&quot;: 11
+ }
+}</pre></details>
+</section>
+<section id='J02'><h2>J02 · Home prep: bag builder, Status, export the arsenal</h2><div class='muted'>persona <b>righty</b> · 4 pass · 0 fail · 4 known · 0 skip · 6 taps · ≈17.2 s est. · 6.3 s wall · <a href='../qa-live3-media/video/J02.webm'>video</a> · trace <code>trace/J02.zip</code></div><div class='strip'>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J02/01.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>1 · pass</span><b>Tonight: choose League and see the advisor bag</b><span class='muted'>1 taps · ≈2.7 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J02/02.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>2 · pass</span><b>Open the bag builder from Tonight</b><span class='muted'>1 taps / ≤2 · ≈2.7 s · #/bag</span></div></div>
+<div class='card' style='border-color:#b26a00'><img loading='lazy' src='shots/J02/03.jpg' alt=''><div class='t'><span class='badge' style='background:#b26a00'>3 · known</span><b>Bag builder explains what to do in one glance</b><span class='muted'>0 taps · ≈0.0 s · #/bag</span><div class='x'>✗ above the fold says what to pack tonight (&quot;Tournament 6 | League 3 | League 3 | League 4 | Tourn. 6 | Custom | Coverage | Strength 5 (heavy oil) to 1 (dry) from th&quot;)</div><div style='color:#b26a00'>known: F09</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J02/04.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>4 · pass</span><b>Send a ball to the Pro shop (Status)</b><span class='muted'>1 taps / ≤3 · ≈3.7 s · #/bag</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J02/05.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>5 · pass</span><b>Status carries to the Arsenal page</b><span class='muted'>1 taps · ≈2.7 s · #/arsenal</span><div class='muted'>carries: status=proShop</div></div></div>
+<div class='card' style='border-color:#b26a00'><img loading='lazy' src='shots/J02/06.jpg' alt=''><div class='t'><span class='badge' style='background:#b26a00'>6 · known</span><b>Status carries to Tonight (ball not suggested)</b><span class='muted'>1 taps · ≈2.7 s · #/tonight</span><div class='muted'>carries: status=proShop</div><div class='x'>✗ Tonight does not pick Rattler Big Bite (Rattler Big Bite)</div><div style='color:#b26a00'>known: F04</div></div></div>
+<div class='card' style='border-color:#b26a00'><img loading='lazy' src='shots/J02/07.jpg' alt=''><div class='t'><span class='badge' style='background:#b26a00'>7 · known</span><b>Ball page shows the same Status</b><span class='muted'>0 taps · ≈0.0 s · #/ball/rattler-big-bite</span><div class='muted'>carries: status=proShop</div><div class='x'>✗ ball page says Pro shop</div><div style='color:#b26a00'>known: F07</div></div></div>
+<div class='card' style='border-color:#b26a00'><img loading='lazy' src='shots/J02/08.jpg' alt=''><div class='t'><span class='badge' style='background:#b26a00'>8 · known</span><b>Export the arsenal (file)</b><span class='muted'>1 taps / ≤3 · ≈2.7 s · #/arsenal</span><div class='x'>✗ Arsenal has an Export button (0)</div><div style='color:#b26a00'>known: F10</div></div></div>
+</div>
+<details><summary>State carried between screens</summary><pre>{
+ &quot;advStart&quot;: &quot;Start with: Rattler Big Bite, from feet 17, aim 10\u00bd at the arrows.2-D model \u00b7 offset 7 assumed&quot;,
+ &quot;statusBall&quot;: [
+  &quot;own-rattler-big-bite&quot;,
+  &quot;Rattler Big Bite&quot;
+ ]
+}</pre></details>
+</section>
+<section id='J03'><h2>J03 · Arrival: center memory, pattern, Tonight stand/aim on every screen</h2><div class='muted'>persona <b>righty</b> · 6 pass · 0 fail · 0 known · 0 skip · 3 taps · ≈14.3 s est. · 7.1 s wall · <a href='../qa-live3-media/video/J03.webm'>video</a> · trace <code>trace/J03.zip</code></div><div class='strip'>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J03/01.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>1 · pass</span><b>Type the center: last-time card appears</b><span class='muted'>1 taps · ≈7.9 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J03/02.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>2 · pass</span><b>Use last setup in 1 tap</b><span class='muted'>1 taps / ≤1 · ≈3.7 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J03/03.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>3 · pass</span><b>Tonight gives stand/aim and a ball</b><span class='muted'>0 taps · ≈0.0 s · #/tonight</span><div class='muted'>carries: feet, eyes, ball</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J03/04.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>4 · pass</span><b>Lane shows the same ball and line</b><span class='muted'>1 taps · ≈2.7 s · #/lane</span><div class='muted'>carries: feet, eyes, ball</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J03/05.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>5 · pass</span><b>Targeting shows the same line</b><span class='muted'>0 taps · ≈0.0 s · #/target</span><div class='muted'>carries: feet, eyes, ball</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J03/06.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>6 · pass</span><b>Back returns to Tonight with the setup kept</b><span class='muted'>0 taps · ≈0.0 s · #/tonight</span></div></div>
+</div>
+<details><summary>State carried between screens</summary><pre>{
+ &quot;last&quot;: &quot;Oct 15 \u00b7 lanes 21-22 \u00b7 2026 PBA Badger 41 ft \u00b7 2 games, 223 avg \u00b7 mostly Rattler Big Bite&quot;,
+ &quot;tonight&quot;: {
+  &quot;ball&quot;: &quot;Rattler Big Bite&quot;,
+  &quot;feet&quot;: 21,
+  &quot;eyes&quot;: 13
+ },
+ &quot;lane&quot;: {
+  &quot;feet&quot;: 21.0,
+  &quot;eyes&quot;: 13.5,
+  &quot;ball&quot;: &quot;Rattler Big Bite&quot;
+ },
+ &quot;target&quot;: {
+  &quot;feet&quot;: 21,
+  &quot;eyes&quot;: 13,
+  &quot;ball&quot;: &quot;Rattler Big Bite&quot;
+ }
+}</pre></details>
+</section>
+<section id='J04'><h2>J04 · Solo game: strike, spare hint, ball change, fix, undo, 10th frame</h2><div class='muted'>persona <b>righty</b> · 10 pass · 0 fail · 1 known · 0 skip · 27 taps · ≈47.1 s est. · 15.6 s wall · <a href='../qa-live3-media/video/J04.webm'>video</a> · trace <code>trace/J04.zip</code></div><div class='strip'>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J04/01.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>1 · pass</span><b>Open the score pad</b><span class='muted'>0 taps · ≈0.0 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J04/02.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>2 · pass</span><b>Frame 1 strike in 1 tap</b><span class='muted'>1 taps / ≤1 · ≈3.7 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J04/03.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>3 · pass</span><b>Frame 2: 10-pin leave shows a spare hint from the strike stand</b><span class='muted'>3 taps / ≤3 · ≈5.2 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J04/04.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>4 · pass</span><b>Ball change mid-game (spare ball)</b><span class='muted'>2 taps / ≤3 · ≈4.0 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#b26a00'><img loading='lazy' src='shots/J04/05.jpg' alt=''><div class='t'><span class='badge' style='background:#b26a00'>5 · known</span><b>The &quot;now&quot; line follows the ball change</b><span class='muted'>0 taps · ≈0.0 s · #/tonight</span><div class='muted'>carries: ball in hand</div><div class='x'>✗ top line &quot;Rattler Big Bite · feet 17 · aim 10½&quot; names the ball in hand &quot;Ball Super Nova , change&quot;</div><div style='color:#b26a00'>known: F02</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J04/06.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>6 · pass</span><b>Frames 3-5 with the new ball</b><span class='muted'>8 taps · ≈11.8 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J04/07.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>7 · pass</span><b>Fix a past frame (frame 3) in &lt;= 4 taps</b><span class='muted'>3 taps / ≤4 · ≈5.2 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J04/08.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>8 · pass</span><b>Undo the last ball</b><span class='muted'>1 taps / ≤1 · ≈2.7 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J04/09.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>9 · pass</span><b>Nothing extra visible during active scoring</b><span class='muted'>0 taps · ≈0.0 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J04/10.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>10 · pass</span><b>Finish through the 10th frame (X, 9/ fill)</b><span class='muted'>8 taps · ≈11.8 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J04/11.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>11 · pass</span><b>The game shows on Sessions with the same score</b><span class='muted'>1 taps · ≈2.7 s · #/sessions</span><div class='muted'>carries: night id, score</div></div></div>
+</div>
+<details><summary>State carried between screens</summary><pre>{
+ &quot;ball0&quot;: &quot;Ball Rattler Big Bite , change&quot;,
+ &quot;ball1&quot;: &quot;Ball Super Nova , change&quot;,
+ &quot;score&quot;: 247
+}</pre></details>
+</section>
+<section id='J05'><h2>J05 · League/Baker night: handicap, absentee, total-only, past midnight</h2><div class='muted'>persona <b>league4</b> · 7 pass · 0 fail · 1 known · 0 skip · 20 taps · ≈46.4 s est. · 10.2 s wall · <a href='../qa-live3-media/video/J05.webm'>video</a> · trace <code>trace/J05.zip</code></div><div class='strip'>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J05/01.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>1 · pass</span><b>Set up League scoring with 4 bowlers</b><span class='muted'>11 taps · ≈24.2 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J05/02.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>2 · pass</span><b>Mark Bo absent (blind/absentee)</b><span class='muted'>1 taps / ≤1 · ≈2.7 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#b26a00'><img loading='lazy' src='shots/J05/03.jpg' alt=''><div class='t'><span class='badge' style='background:#b26a00'>3 · known</span><b>Mark Cal total-only (types a game total)</b><span class='muted'>0 taps / ≤1 · ≈0.0 s · #/tonight</span><div class='x'>✗ a &quot;total only&quot; option exists for a teammate</div><div style='color:#b26a00'>known: F06</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J05/04.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>4 · pass</span><b>Frame 1 rotates You -&gt; Ann (Bo skipped)</b><span class='muted'>4 taps · ≈7.6 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J05/05.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>5 · pass</span><b>Team board: USBC handicap and absentee score</b><span class='muted'>1 taps · ≈3.7 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J05/06.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>6 · pass</span><b>Cross midnight: the same night continues</b><span class='muted'>0 taps · ≈0.0 s · #/tonight</span><div class='muted'>carries: night id</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J05/07.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>7 · pass</span><b>Teammates never feed my stats</b><span class='muted'>0 taps · ≈0.0 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J05/08.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>8 · pass</span><b>Switch to Baker: frames rotate per frame</b><span class='muted'>3 taps · ≈8.2 s · #/tonight</span></div></div>
+</div>
+<details><summary>State carried between screens</summary><pre>{
+ &quot;board&quot;: &quot;BOWLER SCRATCH HDCP TOTAL You \u2014 36 \u2014 Ann \u2014 63 \u2014 Bo 150 (absentee) 54 204 Cal \u2014 45 \u2014 Team \u2014 198 \u2014&quot;,
+ &quot;night&quot;: &quot;night-2026-10-22-1&quot;
+}</pre></details>
+</section>
+<section id='J06'><h2>J06 · Between games: Weaker/Stronger, drag 25 -&gt; 15, Aim Box</h2><div class='muted'>persona <b>righty</b> · 4 pass · 0 fail · 3 known · 0 skip · 8 taps · ≈22.4 s est. · 8.5 s wall · <a href='../qa-live3-media/video/J06.webm'>video</a> · trace <code>trace/J06.zip</code></div><div class='strip'>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J06/01.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>1 · pass</span><b>Tonight: tap Stronger after a read</b><span class='muted'>2 taps / ≤2 · ≈5.0 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#b26a00'><img loading='lazy' src='shots/J06/02.jpg' alt=''><div class='t'><span class='badge' style='background:#b26a00'>2 · known</span><b>Lane opens with the new ball</b><span class='muted'>1 taps · ≈2.7 s · #/lane</span><div class='muted'>carries: ball</div><div class='x'>✗ Lane Rattler Big Bite vs Tonight Deadly Rattler</div><div style='color:#b26a00'>known: F03</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J06/03.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>3 · pass</span><b>Drag stand 25, aim 15 on the lane</b><span class='muted'>2 taps / ≤2 · ≈7.0 s · #/lane</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J06/04.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>4 · pass</span><b>Dragged line survives a reload</b><span class='muted'>0 taps · ≈0.0 s · #/lane</span><div class='muted'>carries: feet=25, eyes=15</div></div></div>
+<div class='card' style='border-color:#b26a00'><img loading='lazy' src='shots/J06/05.jpg' alt=''><div class='t'><span class='badge' style='background:#b26a00'>5 · known</span><b>Targeting shows the dragged line</b><span class='muted'>0 taps · ≈0.0 s · #/target</span><div class='muted'>carries: feet=25, eyes=15</div><div class='x'>✗ Targeting {&#x27;feet&#x27;: 17, &#x27;eyes&#x27;: 10, &#x27;ball&#x27;: &#x27;Rattler Big Bite&#x27;}</div><div style='color:#b26a00'>known: F01</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J06/06.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>6 · pass</span><b>Aim Box on: same box on Lane and Targeting</b><span class='muted'>2 taps / ≤3 · ≈5.0 s · #/target</span></div></div>
+<div class='card' style='border-color:#b26a00'><img loading='lazy' src='shots/J06/07.jpg' alt=''><div class='t'><span class='badge' style='background:#b26a00'>7 · known</span><b>Back on Tonight the line is the one I set</b><span class='muted'>1 taps · ≈2.7 s · #/tonight</span><div class='x'>✗ Tonight {&#x27;ball&#x27;: &#x27;Deadly Rattler&#x27;, &#x27;feet&#x27;: 18, &#x27;eyes&#x27;: 11} after dragging 25/15 on the lane</div><div style='color:#b26a00'>known: F01</div></div></div>
+</div>
+<details><summary>State carried between screens</summary><pre>{
+ &quot;t0&quot;: {
+  &quot;ball&quot;: &quot;Rattler Big Bite&quot;,
+  &quot;feet&quot;: 17,
+  &quot;eyes&quot;: 10
+ },
+ &quot;t1&quot;: {
+  &quot;ball&quot;: &quot;Deadly Rattler&quot;,
+  &quot;feet&quot;: 18,
+  &quot;eyes&quot;: 11
+ },
+ &quot;drag&quot;: {
+  &quot;feet&quot;: 25.0,
+  &quot;eyes&quot;: 15.0,
+  &quot;ball&quot;: &quot;Rattler Big Bite&quot;
+ },
+ &quot;aimbox&quot;: [
+  &quot;Beyond model&quot;,
+  &quot;Beyond model&quot;
+ ]
+}</pre></details>
+</section>
+<section id='J07'><h2>J07 · Recap -&gt; focus -&gt; next session shows the focus</h2><div class='muted'>persona <b>righty</b> · 6 pass · 0 fail · 0 known · 0 skip · 22 taps · ≈34.8 s est. · 15.7 s wall · <a href='../qa-live3-media/video/J07.webm'>video</a> · trace <code>trace/J07.zip</code></div><div class='strip'>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J07/01.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>1 · pass</span><b>Bowl a game with three 10-pin leaves</b><span class='muted'>20 taps · ≈28.4 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J07/02.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>2 · pass</span><b>Recap names the flat 10 pattern</b><span class='muted'>0 taps · ≈0.0 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J07/03.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>3 · pass</span><b>Save the focus for next time</b><span class='muted'>1 taps / ≤1 · ≈3.7 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J07/04.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>4 · pass</span><b>End night lands on the session page</b><span class='muted'>1 taps / ≤1 · ≈2.7 s · #/session/night-2026-10-22-1</span><div class='muted'>carries: night id</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J07/05.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>5 · pass</span><b>Session page focus matches the recap</b><span class='muted'>0 taps · ≈0.0 s · #/session/night-2026-10-22-1</span><div class='muted'>carries: focus</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J07/06.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>6 · pass</span><b>Next week: Tonight shows the carried focus</b><span class='muted'>0 taps · ≈0.0 s · #/tonight</span><div class='muted'>carries: focus</div></div></div>
+</div>
+<details><summary>State carried between screens</summary><pre>{
+ &quot;recap&quot;: &quot;217 average over 1 game. First-ball strikes 8 of 12 Spares made 3 of 4 \u00b7 1 pin left on misses Next focus: the 10 pin, 3 of 4 made tonight. Make this my next focus Whole night, game by game \u203a&quot;,
+ &quot;focus&quot;: &quot;Next focus: the 10 pin, 3 of 4 made tonight.&quot;,
+ &quot;sid&quot;: &quot;night-2026-10-22-1&quot;
+}</pre></details>
+</section>
+<section id='J08'><h2>J08 · Insights, Bowler Card and leave patterns (flat 10)</h2><div class='muted'>persona <b>righty</b> · 6 pass · 0 fail · 1 known · 0 skip · 3 taps · ≈6.7 s est. · 14.9 s wall · <a href='../qa-live3-media/video/J08.webm'>video</a> · trace <code>trace/J08.zip</code></div><div class='strip'>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J08/01.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>1 · pass</span><b>Seed 8 past league nights (3 single 10-pin leaves in game 1 of each)</b><span class='muted'>0 taps · ≈0.0 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J08/02.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>2 · pass</span><b>Bowler Card: headline and few figures</b><span class='muted'>0 taps · ≈0.0 s · #/card</span></div></div>
+<div class='card' style='border-color:#b26a00'><img loading='lazy' src='shots/J08/03.jpg' alt=''><div class='t'><span class='badge' style='background:#b26a00'>3 · known</span><b>Card names the 10-pin leave as the thing to work on</b><span class='muted'>0 taps · ≈0.0 s · #/card</span><div class='x'>✗ Card mentions the 10 pin</div><div style='color:#b26a00'>known: F08</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J08/04.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>4 · pass</span><b>Insights agrees with the Card average</b><span class='muted'>0 taps · ≈0.0 s · #/arsenal/insights</span><div class='muted'>carries: average</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J08/05.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>5 · pass</span><b>Insights cold load (reload x4) always shows my games</b><span class='muted'>0 taps · ≈0.0 s · #/arsenal/insights</span><div class='muted'>carries: average</div><div style='color:#b26a00'>known: F05</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J08/06.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>6 · pass</span><b>Session page lists 10-pin leaves by count</b><span class='muted'>1 taps · ≈2.7 s · #/session/qa-night-2</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J08/07.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>7 · pass</span><b>Sessions -&gt; a night -&gt; Back keeps the list position</b><span class='muted'>2 taps · ≈4.0 s · #/sessions</span></div></div>
+</div>
+<details><summary>State carried between screens</summary><pre>{
+ &quot;headline&quot;: &quot;Spare conversion: Level 4 of 5 (56/64 spares made (87.5%)).&quot;,
+ &quot;cardAvg&quot;: &quot;223&quot;
+}</pre></details>
+</section>
+<section id='J09'><h2>J09 · Learning: Help &quot;?&quot; on every screen, Bowling Guide, Learn more</h2><div class='muted'>persona <b>beginner</b> · 7 pass · 0 fail · 1 known · 0 skip · 10 taps · ≈26.2 s est. · 22.3 s wall · <a href='../qa-live3-media/video/J09.webm'>video</a> · trace <code>trace/J09.zip</code></div><div class='strip'>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J09/01.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>1 · pass</span><b>Turn Help on in More</b><span class='muted'>2 taps / ≤2 · ≈4.0 s · #/more</span></div></div>
+<div class='card' style='border-color:#b26a00'><img loading='lazy' src='shots/J09/02.jpg' alt=''><div class='t'><span class='badge' style='background:#b26a00'>2 · known</span><b>Every screen has a &quot;?&quot; when Help is on</b><span class='muted'>0 taps · ≈0.0 s · #/more</span><div class='x'>✗ /more: 0 &quot;?&quot;</div><div style='color:#b26a00'>known: F13</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J09/03.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>3 · pass</span><b>No &quot;?&quot; on the score pad while scoring</b><span class='muted'>0 taps · ≈0.0 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J09/04.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>4 · pass</span><b>Tap a &quot;?&quot;: plain answer and Learn more opens the Guide</b><span class='muted'>2 taps / ≤2 · ≈5.0 s · #/guide?t=bm-shr</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J09/05.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>5 · pass</span><b>Find the Bowling Guide from any screen in &lt;= 2 taps</b><span class='muted'>2 taps / ≤2 · ≈5.0 s · #/guide?t=bm-shr</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J09/06.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>6 · pass</span><b>Top-bar &quot;?&quot; turns Help off and on from the Lane screen</b><span class='muted'>2 taps / ≤2 · ≈4.0 s · #/lane</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J09/07.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>7 · pass</span><b>Guide search finds &quot;breakpoint&quot;</b><span class='muted'>1 taps · ≈5.5 s · #/glossary</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J09/08.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>8 · pass</span><b>Turn Help off: no &quot;?&quot; anywhere</b><span class='muted'>1 taps · ≈2.7 s · #/more</span></div></div>
+</div>
+<details><summary>State carried between screens</summary><pre>{
+ &quot;helpDots&quot;: {
+  &quot;/tonight&quot;: 3,
+  &quot;/lane&quot;: 1,
+  &quot;/target&quot;: 1,
+  &quot;/arsenal&quot;: 2,
+  &quot;/ball/rattler-big-bite&quot;: 16,
+  &quot;/bag&quot;: 2,
+  &quot;/patterns&quot;: 1,
+  &quot;/sessions&quot;: 1,
+  &quot;/card&quot;: 1,
+  &quot;/more&quot;: 0
+ }
+}</pre></details>
+</section>
+<section id='J10'><h2>J10 · Practice night spare drill</h2><div class='muted'>persona <b>righty</b> · 4 pass · 0 fail · 0 known · 0 skip · 6 taps · ≈13.0 s est. · 4.4 s wall · <a href='../qa-live3-media/video/J10.webm'>video</a> · trace <code>trace/J10.zip</code></div><div class='strip'>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J10/01.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>1 · pass</span><b>Choose Practice</b><span class='muted'>1 taps / ≤2 · ≈2.7 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J10/02.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>2 · pass</span><b>Drill lists my most-missed leave first (10 pin)</b><span class='muted'>1 taps · ≈3.7 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J10/03.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>3 · pass</span><b>Log 3 made, 1 missed</b><span class='muted'>4 taps / ≤4 · ≈6.6 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J10/04.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>4 · pass</span><b>Practice stays out of the average</b><span class='muted'>0 taps · ≈0.0 s · #/card</span></div></div>
+</div>
+</section>
+<section id='J11'><h2>J11 · Data trust: offline, reload, sync, backup, CSV, restore, re-import</h2><div class='muted'>persona <b>righty</b> · 9 pass · 0 fail · 0 known · 0 skip · 14 taps · ≈28.5 s est. · 11.7 s wall · <a href='../qa-live3-media/video/J11.webm'>video</a> · trace <code>trace/J11.zip</code></div><div class='strip'>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J11/01.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>1 · pass</span><b>Score 3 frames, then go offline</b><span class='muted'>5 taps · ≈8.8 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J11/02.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>2 · pass</span><b>Keep scoring offline</b><span class='muted'>4 taps · ≈6.6 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J11/03.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>3 · pass</span><b>Reload mid-game while offline: same frame, same scores</b><span class='muted'>0 taps · ≈0.0 s · #/tonight</span><div class='muted'>carries: night id, frames</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J11/04.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>4 · pass</span><b>Back online: everything syncs</b><span class='muted'>0 taps · ≈0.0 s · #/tonight</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J11/05.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>5 · pass</span><b>More: storage chip and last backup are readable</b><span class='muted'>1 taps · ≈2.7 s · #/more</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J11/06.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>6 · pass</span><b>Download a backup (JSON)</b><span class='muted'>1 taps / ≤1 · ≈3.7 s · #/more</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J11/07.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>7 · pass</span><b>Export games CSV from Sessions</b><span class='muted'>2 taps / ≤2 · ≈4.0 s · #/sessions</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J11/08.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>8 · pass</span><b>Wipe the phone and restore the backup: same data</b><span class='muted'>1 taps · ≈2.7 s · #/import</span><div class='muted'>carries: projection hash</div></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J11/09.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>9 · pass</span><b>Re-import the same backup: duplicates detected, nothing doubled</b><span class='muted'>0 taps · ≈0.0 s · #/import</span></div></div>
+</div>
+<details><summary>State carried between screens</summary><pre>{
+ &quot;backup&quot;: &quot;/tmp/qa-live3-media/J11-arsenal-pro-backup-v1.json&quot;
+}</pre></details>
+</section>
+<section id='J12'><h2>J12 · Coach review from a backup</h2><div class='muted'>persona <b>coach</b> · 3 pass · 0 fail · 0 known · 0 skip · 5 taps · ≈11.2 s est. · 6.0 s wall · <a href='../qa-live3-media/video/J12.webm'>video</a> · trace <code>trace/J12.zip</code></div><div class='strip'>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J12/01.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>1 · pass</span><b>Coach imports the bowler&#x27;s backup</b><span class='muted'>2 taps · ≈5.0 s · #/import</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J12/02.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>2 · pass</span><b>Sessions -&gt; a night -&gt; Card in &lt;= 3 taps</b><span class='muted'>3 taps / ≤3 · ≈6.2 s · #/card</span></div></div>
+<div class='card' style='border-color:#1f8a4c'><img loading='lazy' src='shots/J12/03.jpg' alt=''><div class='t'><span class='badge' style='background:#1f8a4c'>3 · pass</span><b>Share the Bowler Card</b><span class='muted'>0 taps / ≤1 · ≈0.0 s · #/card</span></div></div>
+</div>
+</section>
+<section><h2>Tap count and time per task</h2><table><tr><th>Journey</th><th>Step</th><th>Task</th><th>Taps</th><th>Target</th><th>Est. s</th><th>Target s</th><th>Result</th></tr>
+<tr><td>J01</td><td>Pick owned balls (step 3) and start</td><td>onboard</td><td>2</td><td>12</td><td>5.0</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J01</td><td>Onboarding total taps</td><td></td><td>0</td><td>10</td><td>0.0</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J01</td><td>Add a ball from the catalogue</td><td>add-ball</td><td>5</td><td>6</td><td>13.3</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J02</td><td>Open the bag builder from Tonight</td><td>bag</td><td>1</td><td>2</td><td>2.7</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J02</td><td>Send a ball to the Pro shop (Status)</td><td>status</td><td>1</td><td>3</td><td>3.7</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J02</td><td>Export the arsenal (file)</td><td>export</td><td>1</td><td>3</td><td>2.7</td><td></td><td class='x'>known</td></tr>
+<tr><td>J03</td><td>Use last setup in 1 tap</td><td>arrive</td><td>1</td><td>1</td><td>3.7</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J04</td><td>Frame 1 strike in 1 tap</td><td>frame</td><td>1</td><td>1</td><td>3.7</td><td>4</td><td class='ok'>pass</td></tr>
+<tr><td>J04</td><td>Frame 2: 10-pin leave shows a spare hint from the strike stand</td><td>frame</td><td>3</td><td>3</td><td>5.2</td><td>5.5</td><td class='ok'>pass</td></tr>
+<tr><td>J04</td><td>Ball change mid-game (spare ball)</td><td>ball-change</td><td>2</td><td>3</td><td>4.0</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J04</td><td>Fix a past frame (frame 3) in &lt;= 4 taps</td><td>fix</td><td>3</td><td>4</td><td>5.2</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J04</td><td>Undo the last ball</td><td>undo</td><td>1</td><td>1</td><td>2.7</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J05</td><td>Mark Bo absent (blind/absentee)</td><td>league-setup</td><td>1</td><td>1</td><td>2.7</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J05</td><td>Mark Cal total-only (types a game total)</td><td>league-setup</td><td>0</td><td>1</td><td>0.0</td><td></td><td class='x'>known</td></tr>
+<tr><td>J06</td><td>Tonight: tap Stronger after a read</td><td>adjust</td><td>2</td><td>2</td><td>5.0</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J06</td><td>Drag stand 25, aim 15 on the lane</td><td>aim</td><td>2</td><td>2</td><td>7.0</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J06</td><td>Aim Box on: same box on Lane and Targeting</td><td>aimbox</td><td>2</td><td>3</td><td>5.0</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J07</td><td>Save the focus for next time</td><td>focus</td><td>1</td><td>1</td><td>3.7</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J07</td><td>End night lands on the session page</td><td>end</td><td>1</td><td>1</td><td>2.7</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J09</td><td>Turn Help on in More</td><td>help</td><td>2</td><td>2</td><td>4.0</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J09</td><td>Tap a &quot;?&quot;: plain answer and Learn more opens the Guide</td><td>help</td><td>2</td><td>2</td><td>5.0</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J09</td><td>Find the Bowling Guide from any screen in &lt;= 2 taps</td><td>guide</td><td>2</td><td>2</td><td>5.0</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J09</td><td>Top-bar &quot;?&quot; turns Help off and on from the Lane screen</td><td>help</td><td>2</td><td>2</td><td>4.0</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J10</td><td>Choose Practice</td><td>practice</td><td>1</td><td>2</td><td>2.7</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J10</td><td>Log 3 made, 1 missed</td><td>drill</td><td>4</td><td>4</td><td>6.6</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J11</td><td>Download a backup (JSON)</td><td>backup</td><td>1</td><td>1</td><td>3.7</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J11</td><td>Export games CSV from Sessions</td><td>export</td><td>2</td><td>2</td><td>4.0</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J12</td><td>Sessions -&gt; a night -&gt; Card in &lt;= 3 taps</td><td>review</td><td>3</td><td>3</td><td>6.2</td><td></td><td class='ok'>pass</td></tr>
+<tr><td>J12</td><td>Share the Bowler Card</td><td>share</td><td>0</td><td>1</td><td>0.0</td><td></td><td class='ok'>pass</td></tr>
+</table></section>
+<section><h2>Flow quality per screen</h2><p class='muted'>Score 0-10 = usability (heading, action above fold, text ≥12 px, targets ≥44 px, no truncation) + applicability (a next step in words, ≤12 numbers above the fold, numbers carry a source, not a dead end, scoring view lean). An automated proxy for the owner's rule: every number readable at a glance and changes an action.</p><table><tr><th>Screen</th><th>Journey</th><th>Score</th><th>Numbers above fold</th><th>Axe serious</th><th>Targets &lt;44px</th><th>Truncated at 360</th><th>Back / tabs</th><th>Missing</th></tr>
+<tr><td><b>session</b><br><span class='muted'>#/session/night-2026-10-22-1</span></td><td>J07</td><td><b>6</b>/10</td><td>29</td><td class='ok'>0</td><td class='x'>1 SUMMARY 326x28 &quot;Details&quot;</td><td class='ok'>0 </td><td>1 / 6</td><td>targets &gt;= 44px, a next step in words, &lt;= 12 numbers above fold, numbers carry a source</td></tr>
+<tr><td><b>card</b><br><span class='muted'>#/card</span></td><td>J08</td><td><b>6</b>/10</td><td>20</td><td class='ok'>0</td><td class='x'>6 SUMMARY 326x28 &quot;Coach notes&quot;; SUMMARY 326x28 &quot;Spares&quot;; SUMMARY 326x28 &quot;Release: speed, revs, st&quot;; SUMMARY 326x28 &quot;Consistency (LaneTrax le&quot;</td><td class='ok'>0 </td><td>1 / 6</td><td>targets &gt;= 44px, a next step in words, &lt;= 12 numbers above fold, numbers carry a source</td></tr>
+<tr><td><b>lane</b><br><span class='muted'>#/lane</span></td><td>J01</td><td><b>7</b>/10</td><td>29</td><td class='ok'>0</td><td class='ok'>0 </td><td class='x'>3 span.ball-btn-name &quot;Rattler Big Bite&quot; (clipped); span.ball-btn-sub &quot;Radical · Hybrid · RG 2.48&quot; (clipped); span.qball-name &quot;Original Hy-Road&quot; (clipped)</td><td>0 / 6</td><td>text &gt;= 12px, no truncation, &lt;= 12 numbers above fold</td></tr>
+<tr><td><b>arsenal-empty</b><br><span class='muted'>#/arsenal</span></td><td>J01</td><td><b>7</b>/10</td><td>49</td><td class='ok'>0</td><td class='x'>1 SUMMARY 294x28 &quot;Hall of Fame0&quot;</td><td class='ok'>0 </td><td>0 / 6</td><td>text &gt;= 12px, targets &gt;= 44px, &lt;= 12 numbers above fold</td></tr>
+<tr><td><b>lane</b><br><span class='muted'>#/lane</span></td><td>J03</td><td><b>7</b>/10</td><td>32</td><td class='ok'>0</td><td class='ok'>0 </td><td class='x'>3 span.ball-btn-name &quot;Rattler Big Bite&quot; (clipped); span.ball-btn-sub &quot;Radical · Hybrid · RG 2.48&quot; (clipped); span.qball-name &quot;Original Hy-Road&quot; (clipped)</td><td>0 / 6</td><td>text &gt;= 12px, no truncation, &lt;= 12 numbers above fold</td></tr>
+<tr><td><b>target</b><br><span class='muted'>#/target</span></td><td>J03</td><td><b>7</b>/10</td><td>14</td><td class='ok'>0</td><td class='x'>2 SUMMARY 328x38 &quot;Model limit: straighter &quot;; .card-title 294x28 &quot;Drift, ball offset, your&quot;</td><td class='ok'>0 </td><td>2 / 6</td><td>text &gt;= 12px, targets &gt;= 44px, &lt;= 12 numbers above fold</td></tr>
+<tr><td><b>insights</b><br><span class='muted'>#/arsenal/insights</span></td><td>J08</td><td><b>7</b>/10</td><td>15</td><td class='ok'>0</td><td class='ok'>0 </td><td class='ok'>0 </td><td>1 / 6</td><td>a next step in words, &lt;= 12 numbers above fold, numbers carry a source</td></tr>
+<tr><td><b>tonight-empty</b><br><span class='muted'>#/tonight</span></td><td>J01</td><td><b>8</b>/10</td><td>20</td><td class='ok'>0</td><td class='ok'>0 </td><td class='ok'>0 </td><td>0 / 6</td><td>text &gt;= 12px, &lt;= 12 numbers above fold</td></tr>
+<tr><td><b>tonight</b><br><span class='muted'>#/tonight</span></td><td>J02</td><td><b>8</b>/10</td><td>17</td><td class='ok'>0</td><td class='ok'>0 </td><td class='ok'>0 </td><td>0 / 6</td><td>text &gt;= 12px, &lt;= 12 numbers above fold</td></tr>
+<tr><td><b>bag</b><br><span class='muted'>#/bag</span></td><td>J02</td><td><b>8</b>/10</td><td>14</td><td class='ok'>0</td><td class='ok'>0 </td><td class='ok'>0 </td><td>1 / 6</td><td>text &gt;= 12px, &lt;= 12 numbers above fold</td></tr>
+<tr><td><b>arsenal</b><br><span class='muted'>#/arsenal</span></td><td>J02</td><td><b>8</b>/10</td><td>17</td><td class='ok'>0</td><td class='x'>2 SUMMARY 294x28 &quot;Bench and pro shop5&quot;; SUMMARY 294x28 &quot;Hall of Fame0&quot;</td><td class='ok'>0 </td><td>0 / 6</td><td>targets &gt;= 44px, &lt;= 12 numbers above fold</td></tr>
+<tr><td><b>ball</b><br><span class='muted'>#/ball/rattler-big-bite</span></td><td>J02</td><td><b>8</b>/10</td><td>12</td><td class='ok'>0</td><td class='ok'>0 </td><td class='ok'>0 </td><td>1 / 6</td><td>text &gt;= 12px, numbers carry a source</td></tr>
+<tr><td><b>scoring</b><br><span class='muted'>#/tonight</span></td><td>J04</td><td><b>8</b>/10</td><td>17</td><td class='ok'>0</td><td class='ok'>0 </td><td class='ok'>0 </td><td>0 / 6</td><td>text &gt;= 12px, &lt;= 12 numbers above fold</td></tr>
+<tr><td><b>sessions</b><br><span class='muted'>#/sessions</span></td><td>J04</td><td><b>8</b>/10</td><td>3</td><td class='ok'>0</td><td class='ok'>0 </td><td class='ok'>0 </td><td>0 / 6</td><td>a next step in words, numbers carry a source</td></tr>
+<tr><td><b>league-setup</b><br><span class='muted'>#/tonight</span></td><td>J05</td><td><b>8</b>/10</td><td>10</td><td class='ok'>0</td><td class='ok'>0 </td><td class='ok'>0 </td><td>0 / 6</td><td>text &gt;= 12px, a next step in words</td></tr>
+<tr><td><b>welcome</b><br><span class='muted'>#/welcome</span></td><td>J01</td><td><b>9</b>/10</td><td>2</td><td class='ok'>0</td><td class='ok'>0 </td><td class='ok'>0 </td><td>0 / 0</td><td>numbers carry a source</td></tr>
+<tr><td><b>more</b><br><span class='muted'>#/more</span></td><td>J01</td><td><b>9</b>/10</td><td>4</td><td class='ok'>0</td><td class='ok'>0 </td><td class='ok'>0 </td><td>0 / 6</td><td>numbers carry a source</td></tr>
+<tr><td><b>add-ball</b><br><span class='muted'>#/add-ball</span></td><td>J01</td><td><b>9</b>/10</td><td>2</td><td class='ok'>0</td><td class='ok'>0 </td><td class='ok'>0 </td><td>1 / 6</td><td>numbers carry a source</td></tr>
+<tr><td><b>tonight-arrival</b><br><span class='muted'>#/tonight</span></td><td>J03</td><td><b>9</b>/10</td><td>4</td><td class='ok'>0</td><td class='ok'>0 </td><td class='ok'>0 </td><td>0 / 6</td><td>text &gt;= 12px</td></tr>
+<tr><td><b>tonight-next</b><br><span class='muted'>#/tonight</span></td><td>J07</td><td><b>9</b>/10</td><td>7</td><td class='ok'>0</td><td class='ok'>0 </td><td class='ok'>0 </td><td>0 / 6</td><td>text &gt;= 12px</td></tr>
+<tr><td><b>glossary</b><br><span class='muted'>#/glossary</span></td><td>J09</td><td><b>9</b>/10</td><td>3</td><td class='ok'>0</td><td class='x'>104 SUMMARY 294x28 &quot;10th frameBeginner&quot;; SUMMARY 294x28 &quot;Approach etiquetteBeginn&quot;; SUMMARY 294x28 &quot;Baker formatIntermediate&quot;; SUMMARY 294x28 &quot;Blind / absentee scoreBe&quot;</td><td class='ok'>0 </td><td>1 / 6</td><td>targets &gt;= 44px</td></tr>
+<tr><td><b>more</b><br><span class='muted'>#/more</span></td><td>J11</td><td><b>9</b>/10</td><td>8</td><td class='ok'>0</td><td class='ok'>0 </td><td class='ok'>0 </td><td>0 / 6</td><td>numbers carry a source</td></tr>
+</table></section>
+<section><h2>Flow probe failures</h2><table><tr><th>Probe</th><th>Journey</th><th>Detail</th><th>Status</th></tr>
+<tr><td><code>probe/lane/truncation</code></td><td>J01</td><td>span.ball-btn-name &quot;Rattler Big Bite&quot; (clipped); span.ball-btn-sub &quot;Radical · Hybrid · RG 2.48&quot; (clipped); span.qball-name &quot;Original Hy-Road&quot; (clipped)</td><td>known: F12</td></tr>
+<tr><td><code>probe/arsenal-empty/targets</code></td><td>J01</td><td>SUMMARY 294x28 &quot;Hall of Fame0&quot;</td><td>known: F11</td></tr>
+<tr><td><code>probe/arsenal/targets</code></td><td>J02</td><td>SUMMARY 294x28 &quot;Bench and pro shop5&quot;; SUMMARY 294x28 &quot;Hall of Fame0&quot;</td><td>known: F11</td></tr>
+<tr><td><code>probe/target/targets</code></td><td>J03</td><td>SUMMARY 328x38 &quot;Model limit: straighter &quot;; .card-title 294x28 &quot;Drift, ball offset, your&quot;</td><td>known: F11</td></tr>
+<tr><td><code>probe/session/targets</code></td><td>J07</td><td>SUMMARY 326x28 &quot;Details&quot;</td><td>known: F11</td></tr>
+<tr><td><code>probe/card/targets</code></td><td>J08</td><td>SUMMARY 326x28 &quot;Coach notes&quot;; SUMMARY 326x28 &quot;Spares&quot;; SUMMARY 326x28 &quot;Release: speed, revs, st&quot;; SUMMARY 326x28 &quot;Consistency (LaneTrax le&quot;; SUMMARY 326x28 &quot;Accuracy and breakpoint&quot;; SUMMARY 326x28 &quot;Sources and thresholds&quot;</td><td>known: F11</td></tr>
+<tr><td><code>probe/glossary/targets</code></td><td>J09</td><td>SUMMARY 294x28 &quot;10th frameBeginner&quot;; SUMMARY 294x28 &quot;Approach etiquetteBeginn&quot;; SUMMARY 294x28 &quot;Baker formatIntermediate&quot;; SUMMARY 294x28 &quot;Blind / absentee scoreBe&quot;; SUMMARY 294x28 &quot;Brooklyn (crossover)Begi&quot;; SUMMARY 294x28 &quot;FoulBeginner&quot;; SUMMARY 294x28 &quot;HandicapBeginner&quot;; SUMMARY 294x28 &quot;PocketBeginner&quot;; SUMMARY 294x28 &quot;ScratchBeginner&quot;; SUMMARY 294x28 &quot;Spare scoringBeginner&quot;; SUMMARY 294x28 &quot;SplitBeginner&quot;; SUMMARY 294x28 &quot;Strike scoringBeginner&quot;; SUMMARY 294x28 &quot;Ball fit (span, pitch, t&quot;; SU</td><td>known: F11</td></tr>
+</table></section>
+<section class='vis'><h2>Visual regression (360x780, 414x896)</h2><table><tr><th>Screen</th><th>Viewport</th><th>Diff ratio</th><th>Status</th><th>Now</th><th>Baseline</th><th>Diff</th></tr>
+<tr><td>tonight</td><td>360x780</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/360x780/tonight.png'></td><td><img loading='lazy' src='visual/360x780/tonight.base.png'></td><td></td></tr>
+<tr><td>lane</td><td>360x780</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/360x780/lane.png'></td><td><img loading='lazy' src='visual/360x780/lane.base.png'></td><td></td></tr>
+<tr><td>target</td><td>360x780</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/360x780/target.png'></td><td><img loading='lazy' src='visual/360x780/target.base.png'></td><td></td></tr>
+<tr><td>arsenal</td><td>360x780</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/360x780/arsenal.png'></td><td><img loading='lazy' src='visual/360x780/arsenal.base.png'></td><td></td></tr>
+<tr><td>ball</td><td>360x780</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/360x780/ball.png'></td><td><img loading='lazy' src='visual/360x780/ball.base.png'></td><td></td></tr>
+<tr><td>bag</td><td>360x780</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/360x780/bag.png'></td><td><img loading='lazy' src='visual/360x780/bag.base.png'></td><td></td></tr>
+<tr><td>patterns</td><td>360x780</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/360x780/patterns.png'></td><td><img loading='lazy' src='visual/360x780/patterns.base.png'></td><td></td></tr>
+<tr><td>sessions</td><td>360x780</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/360x780/sessions.png'></td><td><img loading='lazy' src='visual/360x780/sessions.base.png'></td><td></td></tr>
+<tr><td>session</td><td>360x780</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/360x780/session.png'></td><td><img loading='lazy' src='visual/360x780/session.base.png'></td><td></td></tr>
+<tr><td>card</td><td>360x780</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/360x780/card.png'></td><td><img loading='lazy' src='visual/360x780/card.base.png'></td><td></td></tr>
+<tr><td>insights</td><td>360x780</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/360x780/insights.png'></td><td><img loading='lazy' src='visual/360x780/insights.base.png'></td><td></td></tr>
+<tr><td>more</td><td>360x780</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/360x780/more.png'></td><td><img loading='lazy' src='visual/360x780/more.base.png'></td><td></td></tr>
+<tr><td>glossary</td><td>360x780</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/360x780/glossary.png'></td><td><img loading='lazy' src='visual/360x780/glossary.base.png'></td><td></td></tr>
+<tr><td>tonight</td><td>414x896</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/414x896/tonight.png'></td><td><img loading='lazy' src='visual/414x896/tonight.base.png'></td><td></td></tr>
+<tr><td>lane</td><td>414x896</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/414x896/lane.png'></td><td><img loading='lazy' src='visual/414x896/lane.base.png'></td><td></td></tr>
+<tr><td>target</td><td>414x896</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/414x896/target.png'></td><td><img loading='lazy' src='visual/414x896/target.base.png'></td><td></td></tr>
+<tr><td>arsenal</td><td>414x896</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/414x896/arsenal.png'></td><td><img loading='lazy' src='visual/414x896/arsenal.base.png'></td><td></td></tr>
+<tr><td>ball</td><td>414x896</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/414x896/ball.png'></td><td><img loading='lazy' src='visual/414x896/ball.base.png'></td><td></td></tr>
+<tr><td>bag</td><td>414x896</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/414x896/bag.png'></td><td><img loading='lazy' src='visual/414x896/bag.base.png'></td><td></td></tr>
+<tr><td>patterns</td><td>414x896</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/414x896/patterns.png'></td><td><img loading='lazy' src='visual/414x896/patterns.base.png'></td><td></td></tr>
+<tr><td>sessions</td><td>414x896</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/414x896/sessions.png'></td><td><img loading='lazy' src='visual/414x896/sessions.base.png'></td><td></td></tr>
+<tr><td>session</td><td>414x896</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/414x896/session.png'></td><td><img loading='lazy' src='visual/414x896/session.base.png'></td><td></td></tr>
+<tr><td>card</td><td>414x896</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/414x896/card.png'></td><td><img loading='lazy' src='visual/414x896/card.base.png'></td><td></td></tr>
+<tr><td>insights</td><td>414x896</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/414x896/insights.png'></td><td><img loading='lazy' src='visual/414x896/insights.base.png'></td><td></td></tr>
+<tr><td>more</td><td>414x896</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/414x896/more.png'></td><td><img loading='lazy' src='visual/414x896/more.base.png'></td><td></td></tr>
+<tr><td>glossary</td><td>414x896</td><td>0.0</td><td style='color:#1f8a4c'>pass </td><td><img loading='lazy' src='visual/414x896/glossary.png'></td><td><img loading='lazy' src='visual/414x896/glossary.base.png'></td><td></td></tr>
+</table></section>
+</main></body></html>

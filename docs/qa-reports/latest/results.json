@@ -1,0 +1,4271 @@
+{
+ "summary": {
+  "base": "https://majalen3.github.io/arsenal-pro-bowling/",
+  "started": "2026-10-24T09:59:49Z",
+  "live": true,
+  "journeys": 12,
+  "passed": 77,
+  "failed": 0,
+  "known": 12,
+  "skipped": 0,
+  "probe_fail": 0,
+  "probe_known": 7,
+  "visual_fail": 0,
+  "fixed": [
+   "J08/Insights cold load (reload x4) always shows my games"
+  ],
+  "failed_total": 0
+ },
+ "journeys": [
+  {
+   "id": "J01",
+   "title": "First run and onboarding: choose hand, add a ball",
+   "persona": "lefty",
+   "steps": [
+    {
+     "name": "Fresh install opens Welcome",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "first run opens #/welcome (/welcome)"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 1.17,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/welcome",
+     "shot": "shots/J01/01.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Choose Left hand explicitly (step 1)",
+     "task": "onboard",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Left is selected"
+      ]
+     ],
+     "error": null,
+     "taps": 3,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 5.2,
+     "wall_s": 0.41,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/welcome",
+     "shot": "shots/J01/02.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Speed and revs (step 2)",
+     "task": "onboard",
+     "status": "pass",
+     "checks": [],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.14,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/welcome",
+     "shot": "shots/J01/03.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Pick owned balls (step 3) and start",
+     "task": "onboard",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "lands on Tonight (/tonight)"
+      ],
+      [
+       true,
+       "taps 2 <= target 12"
+      ]
+     ],
+     "error": null,
+     "taps": 2,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 5.0,
+     "wall_s": 0.81,
+     "target_taps": 12,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J01/04.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "hand=left"
+    },
+    {
+     "name": "Onboarding total taps",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "onboarding took 6 taps (target <= 10)"
+      ],
+      [
+       true,
+       "taps 0 <= target 10"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.0,
+     "target_taps": 10,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J01/05.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Hand carries to More profile",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "profile saved hand=left (left)"
+      ],
+      [
+       true,
+       "More shows the hand as Left"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.52,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/more",
+     "shot": "shots/J01/06.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "hand=left"
+    },
+    {
+     "name": "Hand carries to Lane (mirrored)",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "lane is drawn for a left-hander (Lane preview (model). Strike. Entry board 16.9, angle 5.3 degrees, breakpoint bo)"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.51,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/lane",
+     "shot": "shots/J01/07.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "hand=left"
+    },
+    {
+     "name": "Hand survives reload; Welcome not shown again",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "no second onboarding"
+      ],
+      [
+       true,
+       "hand still left"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.72,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/lane",
+     "shot": "shots/J01/08.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "hand=left"
+    },
+    {
+     "name": "Tonight with no bag offers the next step",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Tonight shows either a pick or how to add balls"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.68,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J01/09.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Add a ball from the catalogue",
+     "task": "add-ball",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "search shows catalogue matches (1)"
+      ],
+      [
+       true,
+       "the ball is in the arsenal (22 owned)"
+      ],
+      [
+       true,
+       "taps 5 <= target 6"
+      ]
+     ],
+     "error": null,
+     "taps": 5,
+     "scrolls": 1,
+     "chars": 16,
+     "drags": 0,
+     "klm_s": 13.3,
+     "wall_s": 3.5,
+     "target_taps": 6,
+     "target_s": null,
+     "url": "/bag",
+     "shot": "shots/J01/10.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "The search box example is a ball the catalogue knows",
+     "task": null,
+     "status": "known",
+     "checks": [
+      [
+       false,
+       "the search box example \"Storm Phaze II\" is in the catalogue"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 1.1,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/add-ball",
+     "shot": "shots/J01/11.jpg",
+     "console": [],
+     "failed": [],
+     "known": "F14",
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Tonight now picks a ball for a lefty",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Tonight shows a pick"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.88,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J01/12.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    }
+   ],
+   "aborted": null,
+   "state": {
+    "persona": "lefty",
+    "tonight": {
+     "ball": "AstroPhysiX",
+     "feet": 18,
+     "eyes": 11
+    }
+   },
+   "passed": 11,
+   "failed": 0,
+   "known": 1,
+   "skipped": 0,
+   "taps": 15,
+   "klm_s": 37.0,
+   "api_calls": 18,
+   "video": "video/J01.webm",
+   "trace": "trace/J01.zip",
+   "seconds": 11.1
+  },
+  {
+   "id": "J02",
+   "title": "Home prep: bag builder, Status, export the arsenal",
+   "persona": "righty",
+   "steps": [
+    {
+     "name": "Tonight: choose League and see the advisor bag",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "one-line start: \"Start with: Rattler Big Bite, from feet 17, aim 10\u00bd at the arrows.2-D model \u00b7 of\""
+      ],
+      [
+       true,
+       "advisor bag has 1-6 balls (3)"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.73,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J02/01.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Open the bag builder from Tonight",
+     "task": "bag",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "on the bag builder"
+      ],
+      [
+       true,
+       "taps 1 <= target 2"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.5,
+     "target_taps": 2,
+     "target_s": null,
+     "url": "/bag",
+     "shot": "shots/J02/02.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Bag builder explains what to do in one glance",
+     "task": null,
+     "status": "known",
+     "checks": [
+      [
+       false,
+       "above the fold says what to pack tonight (\"Tournament 6 | League 3 | League 3 | League 4 | Tourn. 6 | Custom | Coverage | Strength 5 (heavy oil) to 1 (dry) from th\")"
+      ],
+      [
+       true,
+       "<= 12 numbers above the fold (8)"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.02,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/bag",
+     "shot": "shots/J02/03.jpg",
+     "console": [],
+     "failed": [],
+     "known": "F09",
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Send a ball to the Pro shop (Status)",
+     "task": "status",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Rattler Big Bite is now Pro shop"
+      ],
+      [
+       true,
+       "taps 1 <= target 3"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 3.7,
+     "wall_s": 0.58,
+     "target_taps": 3,
+     "target_s": null,
+     "url": "/bag",
+     "shot": "shots/J02/04.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Status carries to the Arsenal page",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Arsenal shows the ball as at the pro shop"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.65,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/arsenal",
+     "shot": "shots/J02/05.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "status=proShop"
+    },
+    {
+     "name": "Status carries to Tonight (ball not suggested)",
+     "task": null,
+     "status": "known",
+     "checks": [
+      [
+       false,
+       "Tonight does not pick Rattler Big Bite (Rattler Big Bite)"
+      ],
+      [
+       true,
+       "advisor bag leaves it out"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.79,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J02/06.jpg",
+     "console": [],
+     "failed": [],
+     "known": "F04",
+     "fixed": false,
+     "carry": "status=proShop"
+    },
+    {
+     "name": "Ball page shows the same Status",
+     "task": null,
+     "status": "known",
+     "checks": [
+      [
+       false,
+       "ball page says Pro shop"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 1.0,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/ball/rattler-big-bite",
+     "shot": "shots/J02/07.jpg",
+     "console": [],
+     "failed": [],
+     "known": "F07",
+     "fixed": false,
+     "carry": "status=proShop"
+    },
+    {
+     "name": "Export the arsenal (file)",
+     "task": "export",
+     "status": "known",
+     "checks": [
+      [
+       false,
+       "Arsenal has an Export button (0)"
+      ],
+      [
+       true,
+       "taps 1 <= target 3"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.4,
+     "target_taps": 3,
+     "target_s": null,
+     "url": "/arsenal",
+     "shot": "shots/J02/08.jpg",
+     "console": [],
+     "failed": [],
+     "known": "F10",
+     "fixed": false,
+     "carry": null
+    }
+   ],
+   "aborted": null,
+   "state": {
+    "advStart": "Start with: Rattler Big Bite, from feet 17, aim 10\u00bd at the arrows.2-D model \u00b7 offset 7 assumed",
+    "statusBall": [
+     "own-rattler-big-bite",
+     "Rattler Big Bite"
+    ]
+   },
+   "passed": 4,
+   "failed": 0,
+   "known": 4,
+   "skipped": 0,
+   "taps": 6,
+   "klm_s": 17.2,
+   "api_calls": 15,
+   "video": "video/J02.webm",
+   "trace": "trace/J02.zip",
+   "seconds": 6.3
+  },
+  {
+   "id": "J03",
+   "title": "Arrival: center memory, pattern, Tonight stand/aim on every screen",
+   "persona": "righty",
+   "steps": [
+    {
+     "name": "Type the center: last-time card appears",
+     "task": "arrive",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "last time: lanes + pattern (\"Oct 15 \u00b7 lanes 21-22 \u00b7 2026 PBA Badger 41 ft \u00b7 2 games, 223 avg \u00b7 mostly Rattler Big Bite\")"
+      ],
+      [
+       true,
+       "note for next time is shown"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 1,
+     "chars": 15,
+     "drags": 0,
+     "klm_s": 7.9,
+     "wall_s": 1.46,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J03/01.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Use last setup in 1 tap",
+     "task": "arrive",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "pattern filled (2026 PBA Badger)"
+      ],
+      [
+       true,
+       "lanes filled (21-22)"
+      ],
+      [
+       true,
+       "taps 1 <= target 1"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 3.7,
+     "wall_s": 0.71,
+     "target_taps": 1,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J03/02.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Tonight gives stand/aim and a ball",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Tonight line {'ball': 'Rattler Big Bite', 'feet': 21, 'eyes': 13}"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.07,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J03/03.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "feet, eyes, ball"
+    },
+    {
+     "name": "Lane shows the same ball and line",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "ball: Tonight Rattler Big Bite vs Lane Rattler Big Bite"
+      ],
+      [
+       true,
+       "stand/aim: Tonight 21/13 vs Lane 21.0/13.5"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.93,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/lane",
+     "shot": "shots/J03/04.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "feet, eyes, ball"
+    },
+    {
+     "name": "Targeting shows the same line",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Targeting 21/13 vs Tonight 21/13"
+      ],
+      [
+       true,
+       "ball: Targeting Rattler Big Bite vs Tonight Rattler Big Bite"
+      ],
+      [
+       true,
+       "Find my line agrees (\"\")"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.7,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/target",
+     "shot": "shots/J03/05.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "feet, eyes, ball"
+    },
+    {
+     "name": "Back returns to Tonight with the setup kept",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "two Backs land on Tonight (/tonight)"
+      ],
+      [
+       true,
+       "unchanged {'ball': 'Rattler Big Bite', 'feet': 21, 'eyes': 13}"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.71,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J03/06.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    }
+   ],
+   "aborted": null,
+   "state": {
+    "last": "Oct 15 \u00b7 lanes 21-22 \u00b7 2026 PBA Badger 41 ft \u00b7 2 games, 223 avg \u00b7 mostly Rattler Big Bite",
+    "tonight": {
+     "ball": "Rattler Big Bite",
+     "feet": 21,
+     "eyes": 13
+    },
+    "lane": {
+     "feet": 21.0,
+     "eyes": 13.5,
+     "ball": "Rattler Big Bite"
+    },
+    "target": {
+     "feet": 21,
+     "eyes": 13,
+     "ball": "Rattler Big Bite"
+    }
+   },
+   "passed": 6,
+   "failed": 0,
+   "known": 0,
+   "skipped": 0,
+   "taps": 3,
+   "klm_s": 14.3,
+   "api_calls": 20,
+   "video": "video/J03.webm",
+   "trace": "trace/J03.zip",
+   "seconds": 7.1
+  },
+  {
+   "id": "J04",
+   "title": "Solo game: strike, spare hint, ball change, fix, undo, 10th frame",
+   "persona": "righty",
+   "steps": [
+    {
+     "name": "Open the score pad",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "pad at frame 1 (Frame 1 \u00b7 ball 1)"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.35,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J04/01.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Frame 1 strike in 1 tap",
+     "task": "frame",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "X shown"
+      ],
+      [
+       true,
+       "taps 1 <= target 1"
+      ],
+      [
+       true,
+       "est. time 3.7 s <= target 4 s"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 3.7,
+     "wall_s": 0.63,
+     "target_taps": 1,
+     "target_s": 4,
+     "url": "/tonight",
+     "shot": "shots/J04/02.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Frame 2: 10-pin leave shows a spare hint from the strike stand",
+     "task": "frame",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "hint shows where to stand (\"10: key pin 10 \u2192 stand 26 (move 9 left). Same target.righty \u00b7 strike s\")"
+      ],
+      [
+       true,
+       "9 / (9 /)"
+      ],
+      [
+       true,
+       "frame 1 = 20 (20)"
+      ],
+      [
+       true,
+       "taps 3 <= target 3"
+      ],
+      [
+       true,
+       "est. time 5.2 s <= target 5.5 s"
+      ]
+     ],
+     "error": null,
+     "taps": 3,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 5.2,
+     "wall_s": 1.4,
+     "target_taps": 3,
+     "target_s": 5.5,
+     "url": "/tonight",
+     "shot": "shots/J04/03.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Ball change mid-game (spare ball)",
+     "task": "ball-change",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "6 balls to pick"
+      ],
+      [
+       true,
+       "chip changed: Ball Rattler Big Bite , change -> Ball Super Nova , change"
+      ],
+      [
+       true,
+       "taps 2 <= target 3"
+      ]
+     ],
+     "error": null,
+     "taps": 2,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 4.0,
+     "wall_s": 0.24,
+     "target_taps": 3,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J04/04.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "The \"now\" line follows the ball change",
+     "task": null,
+     "status": "known",
+     "checks": [
+      [
+       false,
+       "top line \"Rattler Big Bite \u00b7 feet 17 \u00b7 aim 10\u00bd\" names the ball in hand \"Ball Super Nova , change\""
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.35,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J04/05.jpg",
+     "console": [],
+     "failed": [],
+     "known": "F02",
+     "fixed": false,
+     "carry": "ball in hand"
+    },
+    {
+     "name": "Frames 3-5 with the new ball",
+     "task": "frame",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "each throw has a ball (['own-super-nova', 'own-super-nova', 'own-super-nova', 'own-super-nova'])"
+      ]
+     ],
+     "error": null,
+     "taps": 8,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 11.8,
+     "wall_s": 3.41,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J04/06.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Fix a past frame (frame 3) in <= 4 taps",
+     "task": "fix",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "pad names the frame (Fixing frame 3 \u00b7 ball 1)"
+      ],
+      [
+       true,
+       "frame 3 now X (X)"
+      ],
+      [
+       true,
+       "play resumes at frame 6 (Frame 6 \u00b7 ball 1)"
+      ],
+      [
+       true,
+       "taps 3 <= target 4"
+      ]
+     ],
+     "error": null,
+     "taps": 3,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 5.2,
+     "wall_s": 0.94,
+     "target_taps": 4,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J04/07.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Undo the last ball",
+     "task": "undo",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "back to frame 6 (Frame 6 \u00b7 ball 1)"
+      ],
+      [
+       true,
+       "taps 1 <= target 1"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 1.16,
+     "target_taps": 1,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J04/08.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Nothing extra visible during active scoring",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "no prep cards while scoring ([])"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.01,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J04/09.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Finish through the 10th frame (X, 9/ fill)",
+     "task": "frame",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "at the 10th (Frame 10 \u00b7 ball 1)"
+      ],
+      [
+       true,
+       "game is complete"
+      ],
+      [
+       true,
+       "score 247 (X 9/ X(fixed) X 8/ X X X X X9/) = 247"
+      ]
+     ],
+     "error": null,
+     "taps": 8,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 11.8,
+     "wall_s": 4.88,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J04/10.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "The game shows on Sessions with the same score",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "247 appears on Sessions"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.46,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/sessions",
+     "shot": "shots/J04/11.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "night id, score"
+    }
+   ],
+   "aborted": null,
+   "state": {
+    "ball0": "Ball Rattler Big Bite , change",
+    "ball1": "Ball Super Nova , change",
+    "score": 247
+   },
+   "passed": 10,
+   "failed": 0,
+   "known": 1,
+   "skipped": 0,
+   "taps": 27,
+   "klm_s": 47.1,
+   "api_calls": 8,
+   "video": "video/J04.webm",
+   "trace": "trace/J04.zip",
+   "seconds": 15.6
+  },
+  {
+   "id": "J05",
+   "title": "League/Baker night: handicap, absentee, total-only, past midnight",
+   "persona": "league4",
+   "steps": [
+    {
+     "name": "Set up League scoring with 4 bowlers",
+     "task": "league-setup",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "USBC handicap rule shown"
+      ]
+     ],
+     "error": null,
+     "taps": 11,
+     "scrolls": 3,
+     "chars": 20,
+     "drags": 0,
+     "klm_s": 24.2,
+     "wall_s": 2.74,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J05/01.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Mark Bo absent (blind/absentee)",
+     "task": "league-setup",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Bo absent"
+      ],
+      [
+       true,
+       "taps 1 <= target 1"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.16,
+     "target_taps": 1,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J05/02.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Mark Cal total-only (types a game total)",
+     "task": "league-setup",
+     "status": "known",
+     "checks": [
+      [
+       false,
+       "a \"total only\" option exists for a teammate"
+      ],
+      [
+       true,
+       "taps 0 <= target 1"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.01,
+     "target_taps": 1,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J05/03.jpg",
+     "console": [],
+     "failed": [],
+     "known": "F06",
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Frame 1 rotates You -> Ann (Bo skipped)",
+     "task": "frame",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Ann is up (Up: Ann \u00b7 frame 1)"
+      ],
+      [
+       true,
+       "Bo skipped (Up: Cal \u00b7 frame 1)"
+      ]
+     ],
+     "error": null,
+     "taps": 4,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 7.6,
+     "wall_s": 2.01,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J05/04.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Team board: USBC handicap and absentee score",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Ann 63, me 36 handicap (BOWLER SCRATCH HDCP TOTAL You \u2014 36 \u2014 Ann \u2014 63 \u2014 Bo 150 (absentee) 54 204 Cal \u2014 45 \u2014 Team \u2014 198 \u2014)"
+      ],
+      [
+       true,
+       "Bo: 150 absentee score, 54 handicap"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 3.7,
+     "wall_s": 0.28,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J05/05.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Cross midnight: the same night continues",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "night id kept across 00:00 (night-2026-10-22-1 -> night-2026-10-22-1)"
+      ],
+      [
+       true,
+       "pad resumes where it was (\"Up: You \u00b7 frame 2\" -> \"Up: You \u00b7 frame 2\")"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 1.0,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J05/06.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "night id"
+    },
+    {
+     "name": "Teammates never feed my stats",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "mine 1, team 3"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.02,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J05/07.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Switch to Baker: frames rotate per frame",
+     "task": "baker",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Baker pad (Up: You \u00b7 frame 1)"
+      ],
+      [
+       true,
+       "next bowler up (Up: Ann \u00b7 frame 2)"
+      ],
+      [
+       true,
+       "Baker turn survives reload"
+      ]
+     ],
+     "error": null,
+     "taps": 3,
+     "scrolls": 3,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 8.2,
+     "wall_s": 2.32,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J05/08.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    }
+   ],
+   "aborted": null,
+   "state": {
+    "board": "BOWLER SCRATCH HDCP TOTAL You \u2014 36 \u2014 Ann \u2014 63 \u2014 Bo 150 (absentee) 54 204 Cal \u2014 45 \u2014 Team \u2014 198 \u2014",
+    "night": "night-2026-10-22-1"
+   },
+   "passed": 7,
+   "failed": 0,
+   "known": 1,
+   "skipped": 0,
+   "taps": 20,
+   "klm_s": 46.4,
+   "api_calls": 20,
+   "video": "video/J05.webm",
+   "trace": "trace/J05.zip",
+   "seconds": 10.2
+  },
+  {
+   "id": "J06",
+   "title": "Between games: Weaker/Stronger, drag 25 -> 15, Aim Box",
+   "persona": "righty",
+   "steps": [
+    {
+     "name": "Tonight: tap Stronger after a read",
+     "task": "adjust",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Weaker/Stronger alternatives offered"
+      ],
+      [
+       true,
+       "pick changed Rattler Big Bite -> Deadly Rattler"
+      ],
+      [
+       true,
+       "taps 2 <= target 2"
+      ]
+     ],
+     "error": null,
+     "taps": 2,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 5.0,
+     "wall_s": 1.08,
+     "target_taps": 2,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J06/01.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Lane opens with the new ball",
+     "task": null,
+     "status": "known",
+     "checks": [
+      [
+       false,
+       "Lane Rattler Big Bite vs Tonight Deadly Rattler"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.42,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/lane",
+     "shot": "shots/J06/02.jpg",
+     "console": [],
+     "failed": [],
+     "known": "F03",
+     "fixed": false,
+     "carry": "ball"
+    },
+    {
+     "name": "Drag stand 25, aim 15 on the lane",
+     "task": "aim",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "stand 25 (25.0)"
+      ],
+      [
+       true,
+       "aim 15 (15.0)"
+      ],
+      [
+       true,
+       "taps 2 <= target 2"
+      ]
+     ],
+     "error": null,
+     "taps": 2,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 2,
+     "klm_s": 7.0,
+     "wall_s": 0.44,
+     "target_taps": 2,
+     "target_s": null,
+     "url": "/lane",
+     "shot": "shots/J06/03.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Dragged line survives a reload",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "after reload {'feet': 25.0, 'eyes': 15.0, 'ball': 'Rattler Big Bite'}"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.67,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/lane",
+     "shot": "shots/J06/04.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "feet=25, eyes=15"
+    },
+    {
+     "name": "Targeting shows the dragged line",
+     "task": null,
+     "status": "known",
+     "checks": [
+      [
+       false,
+       "Targeting {'feet': 17, 'eyes': 10, 'ball': 'Rattler Big Bite'}"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.43,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/target",
+     "shot": "shots/J06/05.jpg",
+     "console": [],
+     "failed": [],
+     "known": "F01",
+     "fixed": false,
+     "carry": "feet=25, eyes=15"
+    },
+    {
+     "name": "Aim Box on: same box on Lane and Targeting",
+     "task": "aimbox",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "pill on both (\"Beyond model\" / \"Beyond model\")"
+      ],
+      [
+       true,
+       "same read on both screens (\"Beyond model\" vs \"Beyond model\")"
+      ],
+      [
+       true,
+       "taps 2 <= target 3"
+      ]
+     ],
+     "error": null,
+     "taps": 2,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 5.0,
+     "wall_s": 2.61,
+     "target_taps": 3,
+     "target_s": null,
+     "url": "/target",
+     "shot": "shots/J06/06.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Back on Tonight the line is the one I set",
+     "task": null,
+     "status": "known",
+     "checks": [
+      [
+       false,
+       "Tonight {'ball': 'Deadly Rattler', 'feet': 18, 'eyes': 11} after dragging 25/15 on the lane"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.89,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J06/07.jpg",
+     "console": [],
+     "failed": [],
+     "known": "F01",
+     "fixed": false,
+     "carry": null
+    }
+   ],
+   "aborted": null,
+   "state": {
+    "t0": {
+     "ball": "Rattler Big Bite",
+     "feet": 17,
+     "eyes": 10
+    },
+    "t1": {
+     "ball": "Deadly Rattler",
+     "feet": 18,
+     "eyes": 11
+    },
+    "drag": {
+     "feet": 25.0,
+     "eyes": 15.0,
+     "ball": "Rattler Big Bite"
+    },
+    "aimbox": [
+     "Beyond model",
+     "Beyond model"
+    ]
+   },
+   "passed": 4,
+   "failed": 0,
+   "known": 3,
+   "skipped": 0,
+   "taps": 8,
+   "klm_s": 22.4,
+   "api_calls": 18,
+   "video": "video/J06.webm",
+   "trace": "trace/J06.zip",
+   "seconds": 8.5
+  },
+  {
+   "id": "J07",
+   "title": "Recap -> focus -> next session shows the focus",
+   "persona": "righty",
+   "steps": [
+    {
+     "name": "Bowl a game with three 10-pin leaves",
+     "task": null,
+     "status": "pass",
+     "checks": [],
+     "error": null,
+     "taps": 20,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 28.4,
+     "wall_s": 10.72,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J07/01.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Recap names the flat 10 pattern",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "recap is shown after the game"
+      ],
+      [
+       true,
+       "recap mentions the 10 pin"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.02,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J07/02.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Save the focus for next time",
+     "task": "focus",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "focus text: \"Next focus: the 10 pin, 3 of 4 made tonight.\""
+      ],
+      [
+       true,
+       "taps 1 <= target 1"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 3.7,
+     "wall_s": 0.22,
+     "target_taps": 1,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J07/03.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "End night lands on the session page",
+     "task": "end",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "session page of the same night (/session/night-2026-10-22-1)"
+      ],
+      [
+       true,
+       "recap on the session page"
+      ],
+      [
+       true,
+       "taps 1 <= target 1"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 1.44,
+     "target_taps": 1,
+     "target_s": null,
+     "url": "/session/night-2026-10-22-1",
+     "shot": "shots/J07/04.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "night id"
+    },
+    {
+     "name": "Session page focus matches the recap",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "\"Next focus: the 10 pin, 3 of 4 made tonight.\" vs \"Next focus: the 10 pin, 3 of 4 made tonight.\""
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.02,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/session/night-2026-10-22-1",
+     "shot": "shots/J07/05.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "focus"
+    },
+    {
+     "name": "Next week: Tonight shows the carried focus",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Tonight focus \"Your focus: the 10 pin, 3 of 4 made tonight.\""
+      ],
+      [
+       true,
+       "last week's recap is not blocking the new night"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 1.58,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J07/06.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "focus"
+    }
+   ],
+   "aborted": null,
+   "state": {
+    "recap": "217 average over 1 game. First-ball strikes 8 of 12 Spares made 3 of 4 \u00b7 1 pin left on misses Next focus: the 10 pin, 3 of 4 made tonight. Make this my next focus Whole night, game by game \u203a",
+    "focus": "Next focus: the 10 pin, 3 of 4 made tonight.",
+    "sid": "night-2026-10-22-1"
+   },
+   "passed": 6,
+   "failed": 0,
+   "known": 0,
+   "skipped": 0,
+   "taps": 22,
+   "klm_s": 34.8,
+   "api_calls": 15,
+   "video": "video/J07.webm",
+   "trace": "trace/J07.zip",
+   "seconds": 15.7
+  },
+  {
+   "id": "J08",
+   "title": "Insights, Bowler Card and leave patterns (flat 10)",
+   "persona": "righty",
+   "steps": [
+    {
+     "name": "Seed 8 past league nights (3 single 10-pin leaves in game 1 of each)",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "8 sessions"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 1.49,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J08/01.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Bowler Card: headline and few figures",
+     "task": "card",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "headline \"Spare conversion: Level 4 of 5 (56/64 spares made (87.5%)).\""
+      ],
+      [
+       true,
+       "<= 6 figures (5)"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.95,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/card",
+     "shot": "shots/J08/02.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Card names the 10-pin leave as the thing to work on",
+     "task": null,
+     "status": "known",
+     "checks": [
+      [
+       false,
+       "Card mentions the 10 pin"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.01,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/card",
+     "shot": "shots/J08/03.jpg",
+     "console": [],
+     "failed": [],
+     "known": "F08",
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Insights agrees with the Card average",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "the Card shows an average ('223')"
+      ],
+      [
+       true,
+       "Card average 223 appears on Insights"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.7,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/arsenal/insights",
+     "shot": "shots/J08/04.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "average"
+    },
+    {
+     "name": "Insights cold load (reload x4) always shows my games",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "every cold load shows the average (4/4)"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 6.73,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/arsenal/insights",
+     "shot": "shots/J08/05.jpg",
+     "console": [],
+     "failed": [],
+     "known": "F05",
+     "fixed": true,
+     "carry": "average"
+    },
+    {
+     "name": "Session page lists 10-pin leaves by count",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "by-leave shows the 10 (\"LEAVE MADE 10 2 of 3 2-4-5 1 of 1 2-8 1 of 1 6 1 of 1 7 1 of 1 7-10 1 of 1\")"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 1.13,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/session/qa-night-2",
+     "shot": "shots/J08/06.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Sessions -> a night -> Back keeps the list position",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Sessions list is long enough to scroll (40)"
+      ],
+      [
+       true,
+       "night opened"
+      ],
+      [
+       true,
+       "scroll restored after Back (40 -> 0)"
+      ]
+     ],
+     "error": null,
+     "taps": 2,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 4.0,
+     "wall_s": 2.09,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/sessions",
+     "shot": "shots/J08/07.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    }
+   ],
+   "aborted": null,
+   "state": {
+    "headline": "Spare conversion: Level 4 of 5 (56/64 spares made (87.5%)).",
+    "cardAvg": "223"
+   },
+   "passed": 6,
+   "failed": 0,
+   "known": 1,
+   "skipped": 0,
+   "taps": 3,
+   "klm_s": 6.7,
+   "api_calls": 49,
+   "video": "video/J08.webm",
+   "trace": "trace/J08.zip",
+   "seconds": 14.9
+  },
+  {
+   "id": "J09",
+   "title": "Learning: Help \"?\" on every screen, Bowling Guide, Learn more",
+   "persona": "beginner",
+   "steps": [
+    {
+     "name": "Turn Help on in More",
+     "task": "help",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Help on"
+      ],
+      [
+       true,
+       "taps 2 <= target 2"
+      ]
+     ],
+     "error": null,
+     "taps": 2,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 4.0,
+     "wall_s": 0.54,
+     "target_taps": 2,
+     "target_s": null,
+     "url": "/more",
+     "shot": "shots/J09/01.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Every screen has a \"?\" when Help is on",
+     "task": null,
+     "status": "known",
+     "checks": [
+      [
+       true,
+       "/tonight: 3 \"?\""
+      ],
+      [
+       true,
+       "/lane: 1 \"?\""
+      ],
+      [
+       true,
+       "/target: 1 \"?\""
+      ],
+      [
+       true,
+       "/arsenal: 2 \"?\""
+      ],
+      [
+       true,
+       "/ball/rattler-big-bite: 16 \"?\""
+      ],
+      [
+       true,
+       "/bag: 2 \"?\""
+      ],
+      [
+       true,
+       "/patterns: 1 \"?\""
+      ],
+      [
+       true,
+       "/sessions: 1 \"?\""
+      ],
+      [
+       true,
+       "/card: 1 \"?\""
+      ],
+      [
+       false,
+       "/more: 0 \"?\""
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 7.84,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/more",
+     "shot": "shots/J09/02.jpg",
+     "console": [],
+     "failed": [],
+     "known": "F13",
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "No \"?\" on the score pad while scoring",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "0 on the pad"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.31,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J09/03.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Tap a \"?\": plain answer and Learn more opens the Guide",
+     "task": "help",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "\"Every ball skids, then hooks, then rolls. Skid usually lasts\""
+      ],
+      [
+       true,
+       "Learn more -> Guide (/guide?t=bm-shr)"
+      ],
+      [
+       true,
+       "the Guide opens with its search box"
+      ],
+      [
+       true,
+       "taps 2 <= target 2"
+      ]
+     ],
+     "error": null,
+     "taps": 2,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 5.0,
+     "wall_s": 1.75,
+     "target_taps": 2,
+     "target_s": null,
+     "url": "/guide?t=bm-shr",
+     "shot": "shots/J09/04.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Find the Bowling Guide from any screen in <= 2 taps",
+     "task": "guide",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "the Guide is reachable from Lane in <= 2 taps (? then Learn more)"
+      ],
+      [
+       true,
+       "taps 2 <= target 2"
+      ]
+     ],
+     "error": null,
+     "taps": 2,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 5.0,
+     "wall_s": 1.54,
+     "target_taps": 2,
+     "target_s": null,
+     "url": "/guide?t=bm-shr",
+     "shot": "shots/J09/05.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Top-bar \"?\" turns Help off and on from the Lane screen",
+     "task": "help",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "toggle: off -> 0 \"?\", on -> 1 \"?\""
+      ],
+      [
+       true,
+       "taps 2 <= target 2"
+      ]
+     ],
+     "error": null,
+     "taps": 2,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 4.0,
+     "wall_s": 1.67,
+     "target_taps": 2,
+     "target_s": null,
+     "url": "/lane",
+     "shot": "shots/J09/06.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Guide search finds \"breakpoint\"",
+     "task": "guide",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "\"2 of 112 terms\""
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 10,
+     "drags": 0,
+     "klm_s": 5.5,
+     "wall_s": 1.21,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/glossary",
+     "shot": "shots/J09/07.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Turn Help off: no \"?\" anywhere",
+     "task": "help",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "still showing: {}"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 5.66,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/more",
+     "shot": "shots/J09/08.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    }
+   ],
+   "aborted": null,
+   "state": {
+    "helpDots": {
+     "/tonight": 3,
+     "/lane": 1,
+     "/target": 1,
+     "/arsenal": 2,
+     "/ball/rattler-big-bite": 16,
+     "/bag": 2,
+     "/patterns": 1,
+     "/sessions": 1,
+     "/card": 1,
+     "/more": 0
+    }
+   },
+   "passed": 7,
+   "failed": 0,
+   "known": 1,
+   "skipped": 0,
+   "taps": 10,
+   "klm_s": 26.2,
+   "api_calls": 10,
+   "video": "video/J09.webm",
+   "trace": "trace/J09.zip",
+   "seconds": 22.3
+  },
+  {
+   "id": "J10",
+   "title": "Practice night spare drill",
+   "persona": "righty",
+   "steps": [
+    {
+     "name": "Choose Practice",
+     "task": "practice",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Spare drill card shown"
+      ],
+      [
+       true,
+       "taps 1 <= target 2"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.6,
+     "target_taps": 2,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J10/01.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Drill lists my most-missed leave first (10 pin)",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "first drill leave = 10"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 3.7,
+     "wall_s": 0.21,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J10/02.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Log 3 made, 1 missed",
+     "task": "drill",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "count shown (\"10 pin \u00b7 missed 1 of 3 \u00b7 tonight 2 of 2MadeMissed\")"
+      ],
+      [
+       true,
+       "taps 4 <= target 4"
+      ]
+     ],
+     "error": null,
+     "taps": 4,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 6.6,
+     "wall_s": 0.56,
+     "target_taps": 4,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J10/03.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Practice stays out of the average",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "card notes practice is left out"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.79,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/card",
+     "shot": "shots/J10/04.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    }
+   ],
+   "aborted": null,
+   "state": {},
+   "passed": 4,
+   "failed": 0,
+   "known": 0,
+   "skipped": 0,
+   "taps": 6,
+   "klm_s": 13.0,
+   "api_calls": 16,
+   "video": "video/J10.webm",
+   "trace": "trace/J10.zip",
+   "seconds": 4.4
+  },
+  {
+   "id": "J11",
+   "title": "Data trust: offline, reload, sync, backup, CSV, restore, re-import",
+   "persona": "righty",
+   "steps": [
+    {
+     "name": "Score 3 frames, then go offline",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "the offline cache (service worker) controls the page"
+      ],
+      [
+       true,
+       "offline is visible (\"Offline \u00b7 saved on this phone\")"
+      ]
+     ],
+     "error": null,
+     "taps": 5,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 8.8,
+     "wall_s": 4.58,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J11/01.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Keep scoring offline",
+     "task": "frame",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Frame 6 \u00b7 ball 1"
+      ]
+     ],
+     "error": null,
+     "taps": 4,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 6.6,
+     "wall_s": 1.91,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J11/02.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Reload mid-game while offline: same frame, same scores",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "['X', '9 /', 'X', 'X', '9 -'] == ['X', '9 /', 'X', 'X', '9 -']"
+      ],
+      [
+       true,
+       "\"Frame 6 \u00b7 ball 1\""
+      ],
+      [
+       true,
+       "the pad is on screen after reload (no hunting)"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.97,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J11/03.jpg",
+     "console": [
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED"
+     ],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "night id, frames"
+    },
+    {
+     "name": "Back online: everything syncs",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "outbox empty; 2 POSTs answered by the mock, 0 reached production"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.04,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/tonight",
+     "shot": "shots/J11/04.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "More: storage chip and last backup are readable",
+     "task": "data",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "storage chip \"Not protected\""
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.61,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/more",
+     "shot": "shots/J11/05.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Download a backup (JSON)",
+     "task": "backup",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "arsenal-pro-backup-v1.json parses"
+      ],
+      [
+       true,
+       "taps 1 <= target 1"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 3.7,
+     "wall_s": 0.17,
+     "target_taps": 1,
+     "target_s": null,
+     "url": "/more",
+     "shot": "shots/J11/06.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Export games CSV from Sessions",
+     "task": "export",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "CSV header \"date,session,source,game,score,complete,balls,strikes,first_balls,spares_made,spare_chances,open_frames,frames\""
+      ],
+      [
+       true,
+       "taps 2 <= target 2"
+      ]
+     ],
+     "error": null,
+     "taps": 2,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 4.0,
+     "wall_s": 0.54,
+     "target_taps": 2,
+     "target_s": null,
+     "url": "/sessions",
+     "shot": "shots/J11/07.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Wipe the phone and restore the backup: same data",
+     "task": "restore",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "games 1 -> 1"
+      ],
+      [
+       true,
+       "projection hash identical (6858443cfc vs 6858443cfc)"
+      ]
+     ],
+     "error": null,
+     "taps": 1,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 2.7,
+     "wall_s": 0.67,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/import",
+     "shot": "shots/J11/08.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": "projection hash"
+    },
+    {
+     "name": "Re-import the same backup: duplicates detected, nothing doubled",
+     "task": null,
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "preview says already imported (\"Restore backup Preview \u00b7 not saved yet J11-arsenal-pro-backup-v1.json 23 events \")"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.28,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/import",
+     "shot": "shots/J11/09.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    }
+   ],
+   "aborted": null,
+   "state": {
+    "backup": "/tmp/qa-live3-media/J11-arsenal-pro-backup-v1.json"
+   },
+   "passed": 9,
+   "failed": 0,
+   "known": 0,
+   "skipped": 0,
+   "taps": 14,
+   "klm_s": 28.5,
+   "api_calls": 30,
+   "video": "video/J11.webm",
+   "trace": "trace/J11.zip",
+   "seconds": 11.7
+  },
+  {
+   "id": "J12",
+   "title": "Coach review from a backup",
+   "persona": "coach",
+   "steps": [
+    {
+     "name": "Coach imports the bowler's backup",
+     "task": "import",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "2 sessions"
+      ]
+     ],
+     "error": null,
+     "taps": 2,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 5.0,
+     "wall_s": 1.43,
+     "target_taps": null,
+     "target_s": null,
+     "url": "/import",
+     "shot": "shots/J12/01.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Sessions -> a night -> Card in <= 3 taps",
+     "task": "review",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "night opened"
+      ],
+      [
+       true,
+       "on the Card (/card)"
+      ],
+      [
+       true,
+       "taps 3 <= target 3"
+      ]
+     ],
+     "error": null,
+     "taps": 3,
+     "scrolls": 1,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 6.2,
+     "wall_s": 3.5,
+     "target_taps": 3,
+     "target_s": null,
+     "url": "/card",
+     "shot": "shots/J12/02.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    },
+    {
+     "name": "Share the Bowler Card",
+     "task": "share",
+     "status": "pass",
+     "checks": [
+      [
+       true,
+       "Share button visible"
+      ],
+      [
+       true,
+       "taps 0 <= target 1"
+      ]
+     ],
+     "error": null,
+     "taps": 0,
+     "scrolls": 0,
+     "chars": 0,
+     "drags": 0,
+     "klm_s": 0.0,
+     "wall_s": 0.02,
+     "target_taps": 1,
+     "target_s": null,
+     "url": "/card",
+     "shot": "shots/J12/03.jpg",
+     "console": [],
+     "failed": [],
+     "known": null,
+     "fixed": false,
+     "carry": null
+    }
+   ],
+   "aborted": null,
+   "state": {},
+   "passed": 3,
+   "failed": 0,
+   "known": 0,
+   "skipped": 0,
+   "taps": 5,
+   "klm_s": 11.2,
+   "api_calls": 16,
+   "video": "video/J12.webm",
+   "trace": "trace/J12.zip",
+   "seconds": 6.0
+  }
+ ],
+ "screens": [
+  {
+   "screen": "welcome",
+   "journey": "J01",
+   "persona": "lefty",
+   "hash": "#/welcome",
+   "title": "Welcome \u00b7 Arsenal Pro",
+   "h1": "How do you bowl?",
+   "tabs": 0,
+   "back": 0,
+   "actionsAboveFold": 8,
+   "numbersAboveFold": 2,
+   "wordsAboveFold": 26,
+   "fontMin": 12,
+   "imperative": true,
+   "provs": 0,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 796,
+   "small": [],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 5,
+   "applicability": 4,
+   "score": 9,
+   "why": [
+    "numbers carry a source"
+   ]
+  },
+  {
+   "screen": "more",
+   "journey": "J01",
+   "persona": "lefty",
+   "hash": "#/more",
+   "title": "More \u00b7 Arsenal Pro",
+   "h1": "More",
+   "tabs": 6,
+   "back": 0,
+   "actionsAboveFold": 9,
+   "numbersAboveFold": 4,
+   "wordsAboveFold": 88,
+   "fontMin": 12,
+   "imperative": true,
+   "provs": 0,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 1858,
+   "small": [],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 5,
+   "applicability": 4,
+   "score": 9,
+   "why": [
+    "numbers carry a source"
+   ]
+  },
+  {
+   "screen": "lane",
+   "journey": "J01",
+   "persona": "lefty",
+   "hash": "#/lane",
+   "title": "Lane \u00b7 Arsenal Pro",
+   "h1": "Lane: Rattler Big Bite",
+   "tabs": 6,
+   "back": 0,
+   "actionsAboveFold": 21,
+   "numbersAboveFold": 29,
+   "wordsAboveFold": 93,
+   "fontMin": 10,
+   "imperative": true,
+   "provs": 6,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 1191,
+   "small": [],
+   "trunc": [
+    "span.ball-btn-name \"Rattler Big Bite\" (clipped)",
+    "span.ball-btn-sub \"Radical \u00b7 Hybrid \u00b7 RG 2.48\" (clipped)",
+    "span.qball-name \"Original Hy-Road\" (clipped)"
+   ],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 3,
+   "applicability": 4,
+   "score": 7,
+   "why": [
+    "text >= 12px",
+    "no truncation",
+    "<= 12 numbers above fold"
+   ]
+  },
+  {
+   "screen": "tonight-empty",
+   "journey": "J01",
+   "persona": "lefty",
+   "hash": "#/tonight",
+   "title": "Tonight \u00b7 Arsenal Pro",
+   "h1": "Tonight",
+   "tabs": 6,
+   "back": 0,
+   "actionsAboveFold": 10,
+   "numbersAboveFold": 20,
+   "wordsAboveFold": 74,
+   "fontMin": 10.8333,
+   "imperative": true,
+   "provs": 10,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 2273,
+   "small": [],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 4,
+   "applicability": 4,
+   "score": 8,
+   "why": [
+    "text >= 12px",
+    "<= 12 numbers above fold"
+   ]
+  },
+  {
+   "screen": "arsenal-empty",
+   "journey": "J01",
+   "persona": "lefty",
+   "hash": "#/arsenal",
+   "title": "Armory \u00b7 Arsenal Pro",
+   "h1": "Armory",
+   "tabs": 6,
+   "back": 0,
+   "actionsAboveFold": 39,
+   "numbersAboveFold": 49,
+   "wordsAboveFold": 241,
+   "fontMin": 11,
+   "imperative": true,
+   "provs": 9,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 6019,
+   "small": [
+    "SUMMARY 294x28 \"Hall of Fame0\""
+   ],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 3,
+   "applicability": 4,
+   "score": 7,
+   "why": [
+    "text >= 12px",
+    "targets >= 44px",
+    "<= 12 numbers above fold"
+   ]
+  },
+  {
+   "screen": "add-ball",
+   "journey": "J01",
+   "persona": "lefty",
+   "hash": "#/add-ball",
+   "title": "Add a ball \u00b7 Arsenal Pro",
+   "h1": "Add a ball",
+   "tabs": 6,
+   "back": 1,
+   "actionsAboveFold": 4,
+   "numbersAboveFold": 2,
+   "wordsAboveFold": 24,
+   "fontMin": 13,
+   "imperative": true,
+   "provs": 0,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 780,
+   "small": [],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 5,
+   "applicability": 4,
+   "score": 9,
+   "why": [
+    "numbers carry a source"
+   ]
+  },
+  {
+   "screen": "tonight",
+   "journey": "J02",
+   "persona": "righty",
+   "hash": "#/tonight",
+   "title": "Tonight \u00b7 Arsenal Pro",
+   "h1": "Tonight",
+   "tabs": 6,
+   "back": 0,
+   "actionsAboveFold": 10,
+   "numbersAboveFold": 17,
+   "wordsAboveFold": 77,
+   "fontMin": 10.8333,
+   "imperative": true,
+   "provs": 10,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 2358,
+   "small": [],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 4,
+   "applicability": 4,
+   "score": 8,
+   "why": [
+    "text >= 12px",
+    "<= 12 numbers above fold"
+   ]
+  },
+  {
+   "screen": "bag",
+   "journey": "J02",
+   "persona": "righty",
+   "hash": "#/bag",
+   "title": "Bag \u00b7 Arsenal Pro",
+   "h1": "Bag",
+   "tabs": 6,
+   "back": 1,
+   "actionsAboveFold": 15,
+   "numbersAboveFold": 14,
+   "wordsAboveFold": 60,
+   "fontMin": 11,
+   "imperative": true,
+   "provs": 16,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 3128,
+   "small": [],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 4,
+   "applicability": 4,
+   "score": 8,
+   "why": [
+    "text >= 12px",
+    "<= 12 numbers above fold"
+   ]
+  },
+  {
+   "screen": "arsenal",
+   "journey": "J02",
+   "persona": "righty",
+   "hash": "#/arsenal",
+   "title": "Armory \u00b7 Arsenal Pro",
+   "h1": "Armory",
+   "tabs": 6,
+   "back": 0,
+   "actionsAboveFold": 23,
+   "numbersAboveFold": 17,
+   "wordsAboveFold": 92,
+   "fontMin": 12,
+   "imperative": true,
+   "provs": 9,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 6099,
+   "small": [
+    "SUMMARY 294x28 \"Bench and pro shop5\"",
+    "SUMMARY 294x28 \"Hall of Fame0\""
+   ],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 4,
+   "applicability": 4,
+   "score": 8,
+   "why": [
+    "targets >= 44px",
+    "<= 12 numbers above fold"
+   ]
+  },
+  {
+   "screen": "ball",
+   "journey": "J02",
+   "persona": "righty",
+   "hash": "#/ball/rattler-big-bite",
+   "title": "Rattler Big Bite \u00b7 Arsenal Pro",
+   "h1": "Rattler Big Bite",
+   "tabs": 6,
+   "back": 1,
+   "actionsAboveFold": 2,
+   "numbersAboveFold": 12,
+   "wordsAboveFold": 53,
+   "fontMin": 11,
+   "imperative": true,
+   "provs": 0,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 1415,
+   "small": [],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 4,
+   "applicability": 4,
+   "score": 8,
+   "why": [
+    "text >= 12px",
+    "numbers carry a source"
+   ]
+  },
+  {
+   "screen": "tonight-arrival",
+   "journey": "J03",
+   "persona": "righty",
+   "hash": "#/tonight",
+   "title": "Tonight \u00b7 Arsenal Pro",
+   "h1": "Tonight",
+   "tabs": 6,
+   "back": 0,
+   "actionsAboveFold": 20,
+   "numbersAboveFold": 4,
+   "wordsAboveFold": 43,
+   "fontMin": 11,
+   "imperative": true,
+   "provs": 10,
+   "helpDots": 0,
+   "scrollY": 1287,
+   "docH": 2682,
+   "small": [],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 4,
+   "applicability": 5,
+   "score": 9,
+   "why": [
+    "text >= 12px"
+   ]
+  },
+  {
+   "screen": "lane",
+   "journey": "J03",
+   "persona": "righty",
+   "hash": "#/lane",
+   "title": "Lane \u00b7 Arsenal Pro",
+   "h1": "Lane: Rattler Big Bite",
+   "tabs": 6,
+   "back": 0,
+   "actionsAboveFold": 17,
+   "numbersAboveFold": 32,
+   "wordsAboveFold": 101,
+   "fontMin": 10,
+   "imperative": true,
+   "provs": 6,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 1228,
+   "small": [],
+   "trunc": [
+    "span.ball-btn-name \"Rattler Big Bite\" (clipped)",
+    "span.ball-btn-sub \"Radical \u00b7 Hybrid \u00b7 RG 2.48\" (clipped)",
+    "span.qball-name \"Original Hy-Road\" (clipped)"
+   ],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 3,
+   "applicability": 4,
+   "score": 7,
+   "why": [
+    "text >= 12px",
+    "no truncation",
+    "<= 12 numbers above fold"
+   ]
+  },
+  {
+   "screen": "target",
+   "journey": "J03",
+   "persona": "righty",
+   "hash": "#/target",
+   "title": "Targeting \u00b7 Arsenal Pro",
+   "h1": "Targeting",
+   "tabs": 6,
+   "back": 2,
+   "actionsAboveFold": 14,
+   "numbersAboveFold": 14,
+   "wordsAboveFold": 75,
+   "fontMin": 11,
+   "imperative": true,
+   "provs": 4,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 1553,
+   "small": [
+    "SUMMARY 328x38 \"Model limit: straighter \"",
+    ".card-title 294x28 \"Drift, ball offset, your\""
+   ],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 3,
+   "applicability": 4,
+   "score": 7,
+   "why": [
+    "text >= 12px",
+    "targets >= 44px",
+    "<= 12 numbers above fold"
+   ]
+  },
+  {
+   "screen": "scoring",
+   "journey": "J04",
+   "persona": "righty",
+   "hash": "#/tonight",
+   "title": "Tonight \u00b7 Arsenal Pro",
+   "h1": "Tonight",
+   "tabs": 6,
+   "back": 0,
+   "actionsAboveFold": 10,
+   "numbersAboveFold": 17,
+   "wordsAboveFold": 77,
+   "fontMin": 10.8333,
+   "imperative": true,
+   "provs": 10,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 2358,
+   "small": [],
+   "trunc": [],
+   "axe": [],
+   "scoring": true,
+   "deadEnd": false,
+   "usability": 4,
+   "applicability": 4,
+   "score": 8,
+   "why": [
+    "text >= 12px",
+    "<= 12 numbers above fold"
+   ]
+  },
+  {
+   "screen": "sessions",
+   "journey": "J04",
+   "persona": "righty",
+   "hash": "#/sessions",
+   "title": "Sessions \u00b7 Arsenal Pro",
+   "h1": "Sessions",
+   "tabs": 6,
+   "back": 0,
+   "actionsAboveFold": 8,
+   "numbersAboveFold": 3,
+   "wordsAboveFold": 17,
+   "fontMin": 12,
+   "imperative": false,
+   "provs": 0,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 780,
+   "small": [],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 5,
+   "applicability": 3,
+   "score": 8,
+   "why": [
+    "a next step in words",
+    "numbers carry a source"
+   ]
+  },
+  {
+   "screen": "league-setup",
+   "journey": "J05",
+   "persona": "league4",
+   "hash": "#/tonight",
+   "title": "Tonight \u00b7 Arsenal Pro",
+   "h1": "Tonight",
+   "tabs": 6,
+   "back": 0,
+   "actionsAboveFold": 22,
+   "numbersAboveFold": 10,
+   "wordsAboveFold": 37,
+   "fontMin": 11,
+   "imperative": false,
+   "provs": 10,
+   "helpDots": 0,
+   "scrollY": 1578,
+   "docH": 2803,
+   "small": [],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 4,
+   "applicability": 4,
+   "score": 8,
+   "why": [
+    "text >= 12px",
+    "a next step in words"
+   ]
+  },
+  {
+   "screen": "session",
+   "journey": "J07",
+   "persona": "righty",
+   "hash": "#/session/night-2026-10-22-1",
+   "title": "Session \u00b7 Arsenal Pro",
+   "h1": "Session",
+   "tabs": 6,
+   "back": 1,
+   "actionsAboveFold": 5,
+   "numbersAboveFold": 29,
+   "wordsAboveFold": 41,
+   "fontMin": 12,
+   "imperative": false,
+   "provs": 0,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 780,
+   "small": [
+    "SUMMARY 326x28 \"Details\""
+   ],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 4,
+   "applicability": 2,
+   "score": 6,
+   "why": [
+    "targets >= 44px",
+    "a next step in words",
+    "<= 12 numbers above fold",
+    "numbers carry a source"
+   ]
+  },
+  {
+   "screen": "tonight-next",
+   "journey": "J07",
+   "persona": "righty",
+   "hash": "#/tonight",
+   "title": "Tonight \u00b7 Arsenal Pro",
+   "h1": "Tonight",
+   "tabs": 6,
+   "back": 0,
+   "actionsAboveFold": 11,
+   "numbersAboveFold": 7,
+   "wordsAboveFold": 79,
+   "fontMin": 10.8333,
+   "imperative": true,
+   "provs": 10,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 2414,
+   "small": [],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 4,
+   "applicability": 5,
+   "score": 9,
+   "why": [
+    "text >= 12px"
+   ]
+  },
+  {
+   "screen": "card",
+   "journey": "J08",
+   "persona": "righty",
+   "hash": "#/card",
+   "title": "My Bowler Card \u00b7 Arsenal Pro",
+   "h1": "My Bowler Card",
+   "tabs": 6,
+   "back": 1,
+   "actionsAboveFold": 2,
+   "numbersAboveFold": 20,
+   "wordsAboveFold": 57,
+   "fontMin": 12,
+   "imperative": false,
+   "provs": 0,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 1278,
+   "small": [
+    "SUMMARY 326x28 \"Coach notes\"",
+    "SUMMARY 326x28 \"Spares\"",
+    "SUMMARY 326x28 \"Release: speed, revs, st\"",
+    "SUMMARY 326x28 \"Consistency (LaneTrax le\"",
+    "SUMMARY 326x28 \"Accuracy and breakpoint\"",
+    "SUMMARY 326x28 \"Sources and thresholds\""
+   ],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 4,
+   "applicability": 2,
+   "score": 6,
+   "why": [
+    "targets >= 44px",
+    "a next step in words",
+    "<= 12 numbers above fold",
+    "numbers carry a source"
+   ]
+  },
+  {
+   "screen": "insights",
+   "journey": "J08",
+   "persona": "righty",
+   "hash": "#/arsenal/insights",
+   "title": "Insights \u00b7 Arsenal Pro",
+   "h1": "Arsenal insights",
+   "tabs": 6,
+   "back": 1,
+   "actionsAboveFold": 3,
+   "numbersAboveFold": 15,
+   "wordsAboveFold": 42,
+   "fontMin": 12,
+   "imperative": false,
+   "provs": 0,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 780,
+   "small": [],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 5,
+   "applicability": 2,
+   "score": 7,
+   "why": [
+    "a next step in words",
+    "<= 12 numbers above fold",
+    "numbers carry a source"
+   ]
+  },
+  {
+   "screen": "glossary",
+   "journey": "J09",
+   "persona": "beginner",
+   "hash": "#/glossary",
+   "title": "Bowling Guide \u00b7 Arsenal Pro",
+   "h1": "Bowling Guide",
+   "tabs": 6,
+   "back": 1,
+   "actionsAboveFold": 11,
+   "numbersAboveFold": 3,
+   "wordsAboveFold": 58,
+   "fontMin": 12,
+   "imperative": true,
+   "provs": 276,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 9466,
+   "small": [
+    "SUMMARY 294x28 \"10th frameBeginner\"",
+    "SUMMARY 294x28 \"Approach etiquetteBeginn\"",
+    "SUMMARY 294x28 \"Baker formatIntermediate\"",
+    "SUMMARY 294x28 \"Blind / absentee scoreBe\"",
+    "SUMMARY 294x28 \"Brooklyn (crossover)Begi\"",
+    "SUMMARY 294x28 \"FoulBeginner\"",
+    "SUMMARY 294x28 \"HandicapBeginner\"",
+    "SUMMARY 294x28 \"PocketBeginner\"",
+    "SUMMARY 294x28 \"ScratchBeginner\"",
+    "SUMMARY 294x28 \"Spare scoringBeginner\"",
+    "SUMMARY 294x28 \"SplitBeginner\"",
+    "SUMMARY 294x28 \"Strike scoringBeginner\"",
+    "SUMMARY 294x28 \"Ball fit (span, pitch, t\"",
+    "SUMMARY 294x28 \"Ball statusBeginner\"",
+    "SUMMARY 294x28 \"Ball weightBeginner\"",
+    "SUMMARY 294x28 \"Benchmark ballIntermedia\"",
+    "SUMMARY 294x28 \"Cleaning (and Rule 18)In\"",
+    "SUMMARY 294x28 \"Compare two ballsBeginne\"",
+    "SUMMARY 294x28 \"Conventional vs fingerti\"",
+    "SUMMARY 294x28 \"Core (weight block)Begin\"",
+    "SUMMARY 294x28 \"DifferentialIntermediate\"",
+    "SUMMARY 294x28 \"Holes & balance holes (r\"",
+    "SUMMARY 294x28 \"Lane shineIntermediate\"",
+    "SUMMARY 294x28 \"Layout (pin / CG placeme\"",
+    "SUMMARY 294x28 \"Plastic (polyester) ball\"",
+    "SUMMARY 294x28 \"Reactive resin ballBegin\"",
+    "SUMMARY 294x28 \"Resurface / detox schedu\"",
+    "SUMMARY 294x28 \"RG (radius of gyration)I\"",
+    "SUMMARY 294x28 \"Solid / pearl / hybridIn\"",
+    "SUMMARY 294x28 \"Spare ballBeginner\"",
+    "SUMMARY 294x28 \"Storage & temperatureBeg\"",
+    "SUMMARY 294x28 \"Surface / gritIntermedia\"",
+    "SUMMARY 294x28 \"Urethane ballIntermediat\"",
+    "SUMMARY 294x28 \"Use when / Leave in the \"",
+    "SUMMARY 294x28 \"Boards & approach dotsBe\"",
+    "SUMMARY 294x28 \"Bowler's tapeIntermediat\"",
+    "SUMMARY 294x28 \"Breaking in / brushing s\"",
+    "SUMMARY 294x28 \"Finger inserts / thumb s\"",
+    "SUMMARY 294x28 \"Heels (brake)Intermediat\"",
+    "SUMMARY 294x28 \"Microfiber padIntermedia\"",
+    "SUMMARY 294x28 \"Rosin bag / grip sackBeg\"",
+    "SUMMARY 294x28 \"Shammy / towelBeginner\"",
+    "SUMMARY 294x28 \"Shoe coversBeginner\"",
+    "SUMMARY 294x28 \"Slide footBeginner\"",
+    "SUMMARY 294x28 \"Slide powder vs rosinBeg\"",
+    "SUMMARY 294x28 \"Slide sole numbersInterm\"",
+    "SUMMARY 294x28 \"Starting positionBeginne\"",
+    "SUMMARY 294x28 \"Traction soleIntermediat\"",
+    "SUMMARY 294x28 \"What's usually in the ba\"",
+    "SUMMARY 294x28 \"Wood vs synthetic approa\"",
+    "SUMMARY 294x28 \"Wrist supportIntermediat\"",
+    "SUMMARY 294x28 \"4-step approachBeginner\"",
+    "SUMMARY 294x28 \"5-step approachBeginner\"",
+    "SUMMARY 294x28 \"Common style misconcepti\"",
+    "SUMMARY 294x28 \"Every hole must be gripp\"",
+    "SUMMARY 294x28 \"Finish position / follow\"",
+    "SUMMARY 294x28 \"One-handed (thumb in)Beg\"",
+    "SUMMARY 294x28 \"One-handed, no thumbInte\"",
+    "SUMMARY 294x28 \"Other step countsInterme\"",
+    "SUMMARY 294x28 \"Push awayBeginner\"",
+    "SUMMARY 294x28 \"SpinnerIntermediate\"",
+    "SUMMARY 294x28 \"Stroker / tweener / cran\"",
+    "SUMMARY 294x28 \"Switching stylesIntermed\"",
+    "SUMMARY 294x28 \"TimingIntermediate\"",
+    "SUMMARY 294x28 \"Two-handedBeginner\"",
+    "SUMMARY 294x28 \"CarrydownIntermediate\"",
+    "SUMMARY 294x28 \"Heads / midlane / backen\"",
+    "SUMMARY 294x28 \"House shotBeginner\"",
+    "SUMMARY 294x28 \"Lane topographyAdvanced\"",
+    "SUMMARY 294x28 \"Oil ratioIntermediate\"",
+    "SUMMARY 294x28 \"Oil rings (flare)Interme\"",
+    "SUMMARY 294x28 \"Pattern lengthIntermedia\"",
+    "SUMMARY 294x28 \"Reading a pattern sheetA\"",
+    "SUMMARY 294x28 \"Reading dry vs oilyBegin\"",
+    "SUMMARY 294x28 \"Sport shotIntermediate\"",
+    "SUMMARY 294x28 \"What lane oil doesBeginn\"",
+    "SUMMARY 294x28 \"'Throw harder = more pin\"",
+    "SUMMARY 294x28 \"Axis rotationIntermediat\"",
+    "SUMMARY 294x28 \"Axis tiltIntermediate\"",
+    "SUMMARY 294x28 \"Ball 'dies' / hits weakI\"",
+    "SUMMARY 294x28 \"Ball speedIntermediate\"",
+    "SUMMARY 294x28 \"BreakpointIntermediate\"",
+    "SUMMARY 294x28 \"Early hook / burning upI\"",
+    "SUMMARY 294x28 \"Entry angleAdvanced\"",
+    "SUMMARY 294x28 \"FlareIntermediate\"",
+    "SUMMARY 294x28 \"LoftIntermediate\"",
+    "SUMMARY 294x28 \"Model estimate (this app\"",
+    "SUMMARY 294x28 \"Over/underIntermediate\"",
+    "SUMMARY 294x28 \"PAP (positive axis point\"",
+    "SUMMARY 294x28 \"Rev rateIntermediate\"",
+    "SUMMARY 294x28 \"Skid \u2192 hook \u2192 rollInterm\"",
+    "SUMMARY 294x28 \"Speed / rev matchAdvance\"",
+    "SUMMARY 294x28 \"Why isn't my ball hookin\"",
+    "SUMMARY 294x28 \"10 pin (RH) / 7 pin (LH)\"",
+    "SUMMARY 294x28 \"2-and-1 moveIntermediate\"",
+    "SUMMARY 294x28 \"3-6-9 spare systemBeginn\"",
+    "SUMMARY 294x28 \"Aim at the arrows, not t\"",
+    "SUMMARY 294x28 \"Beginner starting lineBe\"",
+    "SUMMARY 294x28 \"Common leave namesBeginn\"",
+    "SUMMARY 294x28 \"DriftIntermediate\"",
+    "SUMMARY 294x28 \"High, light and solid hi\"",
+    "SUMMARY 294x28 \"Key pinBeginner\"",
+    "SUMMARY 294x28 \"Laydown & geometryAdvanc\"",
+    "SUMMARY 294x28 \"Move toward the missBegi\""
+   ],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 4,
+   "applicability": 5,
+   "score": 9,
+   "why": [
+    "targets >= 44px"
+   ]
+  },
+  {
+   "screen": "more",
+   "journey": "J11",
+   "persona": "righty",
+   "hash": "#/more",
+   "title": "More \u00b7 Arsenal Pro",
+   "h1": "More",
+   "tabs": 6,
+   "back": 0,
+   "actionsAboveFold": 9,
+   "numbersAboveFold": 8,
+   "wordsAboveFold": 86,
+   "fontMin": 12,
+   "imperative": true,
+   "provs": 0,
+   "helpDots": 0,
+   "scrollY": 0,
+   "docH": 1873,
+   "small": [],
+   "trunc": [],
+   "axe": [],
+   "scoring": false,
+   "deadEnd": false,
+   "usability": 5,
+   "applicability": 4,
+   "score": 9,
+   "why": [
+    "numbers carry a source"
+   ]
+  }
+ ],
+ "probes": [
+  {
+   "key": "probe/lane/truncation",
+   "journey": "J01",
+   "detail": [
+    "span.ball-btn-name \"Rattler Big Bite\" (clipped)",
+    "span.ball-btn-sub \"Radical \u00b7 Hybrid \u00b7 RG 2.48\" (clipped)",
+    "span.qball-name \"Original Hy-Road\" (clipped)"
+   ],
+   "known": "F12"
+  },
+  {
+   "key": "probe/arsenal-empty/targets",
+   "journey": "J01",
+   "detail": [
+    "SUMMARY 294x28 \"Hall of Fame0\""
+   ],
+   "known": "F11"
+  },
+  {
+   "key": "probe/arsenal/targets",
+   "journey": "J02",
+   "detail": [
+    "SUMMARY 294x28 \"Bench and pro shop5\"",
+    "SUMMARY 294x28 \"Hall of Fame0\""
+   ],
+   "known": "F11"
+  },
+  {
+   "key": "probe/target/targets",
+   "journey": "J03",
+   "detail": [
+    "SUMMARY 328x38 \"Model limit: straighter \"",
+    ".card-title 294x28 \"Drift, ball offset, your\""
+   ],
+   "known": "F11"
+  },
+  {
+   "key": "probe/session/targets",
+   "journey": "J07",
+   "detail": [
+    "SUMMARY 326x28 \"Details\""
+   ],
+   "known": "F11"
+  },
+  {
+   "key": "probe/card/targets",
+   "journey": "J08",
+   "detail": [
+    "SUMMARY 326x28 \"Coach notes\"",
+    "SUMMARY 326x28 \"Spares\"",
+    "SUMMARY 326x28 \"Release: speed, revs, st\"",
+    "SUMMARY 326x28 \"Consistency (LaneTrax le\"",
+    "SUMMARY 326x28 \"Accuracy and breakpoint\"",
+    "SUMMARY 326x28 \"Sources and thresholds\""
+   ],
+   "known": "F11"
+  },
+  {
+   "key": "probe/glossary/targets",
+   "journey": "J09",
+   "detail": [
+    "SUMMARY 294x28 \"10th frameBeginner\"",
+    "SUMMARY 294x28 \"Approach etiquetteBeginn\"",
+    "SUMMARY 294x28 \"Baker formatIntermediate\"",
+    "SUMMARY 294x28 \"Blind / absentee scoreBe\"",
+    "SUMMARY 294x28 \"Brooklyn (crossover)Begi\"",
+    "SUMMARY 294x28 \"FoulBeginner\"",
+    "SUMMARY 294x28 \"HandicapBeginner\"",
+    "SUMMARY 294x28 \"PocketBeginner\"",
+    "SUMMARY 294x28 \"ScratchBeginner\"",
+    "SUMMARY 294x28 \"Spare scoringBeginner\"",
+    "SUMMARY 294x28 \"SplitBeginner\"",
+    "SUMMARY 294x28 \"Strike scoringBeginner\"",
+    "SUMMARY 294x28 \"Ball fit (span, pitch, t\"",
+    "SUMMARY 294x28 \"Ball statusBeginner\"",
+    "SUMMARY 294x28 \"Ball weightBeginner\"",
+    "SUMMARY 294x28 \"Benchmark ballIntermedia\"",
+    "SUMMARY 294x28 \"Cleaning (and Rule 18)In\"",
+    "SUMMARY 294x28 \"Compare two ballsBeginne\"",
+    "SUMMARY 294x28 \"Conventional vs fingerti\"",
+    "SUMMARY 294x28 \"Core (weight block)Begin\"",
+    "SUMMARY 294x28 \"DifferentialIntermediate\"",
+    "SUMMARY 294x28 \"Holes & balance holes (r\"",
+    "SUMMARY 294x28 \"Lane shineIntermediate\"",
+    "SUMMARY 294x28 \"Layout (pin / CG placeme\"",
+    "SUMMARY 294x28 \"Plastic (polyester) ball\"",
+    "SUMMARY 294x28 \"Reactive resin ballBegin\"",
+    "SUMMARY 294x28 \"Resurface / detox schedu\"",
+    "SUMMARY 294x28 \"RG (radius of gyration)I\"",
+    "SUMMARY 294x28 \"Solid / pearl / hybridIn\"",
+    "SUMMARY 294x28 \"Spare ballBeginner\"",
+    "SUMMARY 294x28 \"Storage & temperatureBeg\"",
+    "SUMMARY 294x28 \"Surface / gritIntermedia\"",
+    "SUMMARY 294x28 \"Urethane ballIntermediat\"",
+    "SUMMARY 294x28 \"Use when / Leave in the \"",
+    "SUMMARY 294x28 \"Boards & approach dotsBe\"",
+    "SUMMARY 294x28 \"Bowler's tapeIntermediat\"",
+    "SUMMARY 294x28 \"Breaking in / brushing s\"",
+    "SUMMARY 294x28 \"Finger inserts / thumb s\"",
+    "SUMMARY 294x28 \"Heels (brake)Intermediat\"",
+    "SUMMARY 294x28 \"Microfiber padIntermedia\"",
+    "SUMMARY 294x28 \"Rosin bag / grip sackBeg\"",
+    "SUMMARY 294x28 \"Shammy / towelBeginner\"",
+    "SUMMARY 294x28 \"Shoe coversBeginner\"",
+    "SUMMARY 294x28 \"Slide footBeginner\"",
+    "SUMMARY 294x28 \"Slide powder vs rosinBeg\"",
+    "SUMMARY 294x28 \"Slide sole numbersInterm\"",
+    "SUMMARY 294x28 \"Starting positionBeginne\"",
+    "SUMMARY 294x28 \"Traction soleIntermediat\"",
+    "SUMMARY 294x28 \"What's usually in the ba\"",
+    "SUMMARY 294x28 \"Wood vs synthetic approa\"",
+    "SUMMARY 294x28 \"Wrist supportIntermediat\"",
+    "SUMMARY 294x28 \"4-step approachBeginner\"",
+    "SUMMARY 294x28 \"5-step approachBeginner\"",
+    "SUMMARY 294x28 \"Common style misconcepti\"",
+    "SUMMARY 294x28 \"Every hole must be gripp\"",
+    "SUMMARY 294x28 \"Finish position / follow\"",
+    "SUMMARY 294x28 \"One-handed (thumb in)Beg\"",
+    "SUMMARY 294x28 \"One-handed, no thumbInte\"",
+    "SUMMARY 294x28 \"Other step countsInterme\"",
+    "SUMMARY 294x28 \"Push awayBeginner\"",
+    "SUMMARY 294x28 \"SpinnerIntermediate\"",
+    "SUMMARY 294x28 \"Stroker / tweener / cran\"",
+    "SUMMARY 294x28 \"Switching stylesIntermed\"",
+    "SUMMARY 294x28 \"TimingIntermediate\"",
+    "SUMMARY 294x28 \"Two-handedBeginner\"",
+    "SUMMARY 294x28 \"CarrydownIntermediate\"",
+    "SUMMARY 294x28 \"Heads / midlane / backen\"",
+    "SUMMARY 294x28 \"House shotBeginner\"",
+    "SUMMARY 294x28 \"Lane topographyAdvanced\"",
+    "SUMMARY 294x28 \"Oil ratioIntermediate\"",
+    "SUMMARY 294x28 \"Oil rings (flare)Interme\"",
+    "SUMMARY 294x28 \"Pattern lengthIntermedia\"",
+    "SUMMARY 294x28 \"Reading a pattern sheetA\"",
+    "SUMMARY 294x28 \"Reading dry vs oilyBegin\"",
+    "SUMMARY 294x28 \"Sport shotIntermediate\"",
+    "SUMMARY 294x28 \"What lane oil doesBeginn\"",
+    "SUMMARY 294x28 \"'Throw harder = more pin\"",
+    "SUMMARY 294x28 \"Axis rotationIntermediat\"",
+    "SUMMARY 294x28 \"Axis tiltIntermediate\"",
+    "SUMMARY 294x28 \"Ball 'dies' / hits weakI\"",
+    "SUMMARY 294x28 \"Ball speedIntermediate\"",
+    "SUMMARY 294x28 \"BreakpointIntermediate\"",
+    "SUMMARY 294x28 \"Early hook / burning upI\"",
+    "SUMMARY 294x28 \"Entry angleAdvanced\"",
+    "SUMMARY 294x28 \"FlareIntermediate\"",
+    "SUMMARY 294x28 \"LoftIntermediate\"",
+    "SUMMARY 294x28 \"Model estimate (this app\"",
+    "SUMMARY 294x28 \"Over/underIntermediate\"",
+    "SUMMARY 294x28 \"PAP (positive axis point\"",
+    "SUMMARY 294x28 \"Rev rateIntermediate\"",
+    "SUMMARY 294x28 \"Skid \u2192 hook \u2192 rollInterm\"",
+    "SUMMARY 294x28 \"Speed / rev matchAdvance\"",
+    "SUMMARY 294x28 \"Why isn't my ball hookin\"",
+    "SUMMARY 294x28 \"10 pin (RH) / 7 pin (LH)\"",
+    "SUMMARY 294x28 \"2-and-1 moveIntermediate\"",
+    "SUMMARY 294x28 \"3-6-9 spare systemBeginn\"",
+    "SUMMARY 294x28 \"Aim at the arrows, not t\"",
+    "SUMMARY 294x28 \"Beginner starting lineBe\"",
+    "SUMMARY 294x28 \"Common leave namesBeginn\"",
+    "SUMMARY 294x28 \"DriftIntermediate\"",
+    "SUMMARY 294x28 \"High, light and solid hi\"",
+    "SUMMARY 294x28 \"Key pinBeginner\"",
+    "SUMMARY 294x28 \"Laydown & geometryAdvanc\"",
+    "SUMMARY 294x28 \"Move toward the missBegi\""
+   ],
+   "known": "F11"
+  }
+ ],
+ "visual": [
+  {
+   "screen": "tonight",
+   "vp": "360x780",
+   "route": "/tonight",
+   "shot": "visual/360x780/tonight.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/360x780/tonight.base.png"
+  },
+  {
+   "screen": "lane",
+   "vp": "360x780",
+   "route": "/lane",
+   "shot": "visual/360x780/lane.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/360x780/lane.base.png"
+  },
+  {
+   "screen": "target",
+   "vp": "360x780",
+   "route": "/target",
+   "shot": "visual/360x780/target.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/360x780/target.base.png"
+  },
+  {
+   "screen": "arsenal",
+   "vp": "360x780",
+   "route": "/arsenal",
+   "shot": "visual/360x780/arsenal.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/360x780/arsenal.base.png"
+  },
+  {
+   "screen": "ball",
+   "vp": "360x780",
+   "route": "/ball/rattler-big-bite",
+   "shot": "visual/360x780/ball.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/360x780/ball.base.png"
+  },
+  {
+   "screen": "bag",
+   "vp": "360x780",
+   "route": "/bag",
+   "shot": "visual/360x780/bag.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/360x780/bag.base.png"
+  },
+  {
+   "screen": "patterns",
+   "vp": "360x780",
+   "route": "/patterns",
+   "shot": "visual/360x780/patterns.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/360x780/patterns.base.png"
+  },
+  {
+   "screen": "sessions",
+   "vp": "360x780",
+   "route": "/sessions",
+   "shot": "visual/360x780/sessions.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/360x780/sessions.base.png"
+  },
+  {
+   "screen": "session",
+   "vp": "360x780",
+   "route": "/session/qa-night-2",
+   "shot": "visual/360x780/session.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/360x780/session.base.png"
+  },
+  {
+   "screen": "card",
+   "vp": "360x780",
+   "route": "/card",
+   "shot": "visual/360x780/card.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/360x780/card.base.png"
+  },
+  {
+   "screen": "insights",
+   "vp": "360x780",
+   "route": "/arsenal/insights",
+   "shot": "visual/360x780/insights.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/360x780/insights.base.png"
+  },
+  {
+   "screen": "more",
+   "vp": "360x780",
+   "route": "/more",
+   "shot": "visual/360x780/more.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/360x780/more.base.png"
+  },
+  {
+   "screen": "glossary",
+   "vp": "360x780",
+   "route": "/glossary",
+   "shot": "visual/360x780/glossary.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/360x780/glossary.base.png"
+  },
+  {
+   "screen": "tonight",
+   "vp": "414x896",
+   "route": "/tonight",
+   "shot": "visual/414x896/tonight.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/414x896/tonight.base.png"
+  },
+  {
+   "screen": "lane",
+   "vp": "414x896",
+   "route": "/lane",
+   "shot": "visual/414x896/lane.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/414x896/lane.base.png"
+  },
+  {
+   "screen": "target",
+   "vp": "414x896",
+   "route": "/target",
+   "shot": "visual/414x896/target.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/414x896/target.base.png"
+  },
+  {
+   "screen": "arsenal",
+   "vp": "414x896",
+   "route": "/arsenal",
+   "shot": "visual/414x896/arsenal.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/414x896/arsenal.base.png"
+  },
+  {
+   "screen": "ball",
+   "vp": "414x896",
+   "route": "/ball/rattler-big-bite",
+   "shot": "visual/414x896/ball.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/414x896/ball.base.png"
+  },
+  {
+   "screen": "bag",
+   "vp": "414x896",
+   "route": "/bag",
+   "shot": "visual/414x896/bag.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/414x896/bag.base.png"
+  },
+  {
+   "screen": "patterns",
+   "vp": "414x896",
+   "route": "/patterns",
+   "shot": "visual/414x896/patterns.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/414x896/patterns.base.png"
+  },
+  {
+   "screen": "sessions",
+   "vp": "414x896",
+   "route": "/sessions",
+   "shot": "visual/414x896/sessions.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/414x896/sessions.base.png"
+  },
+  {
+   "screen": "session",
+   "vp": "414x896",
+   "route": "/session/qa-night-2",
+   "shot": "visual/414x896/session.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/414x896/session.base.png"
+  },
+  {
+   "screen": "card",
+   "vp": "414x896",
+   "route": "/card",
+   "shot": "visual/414x896/card.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/414x896/card.base.png"
+  },
+  {
+   "screen": "insights",
+   "vp": "414x896",
+   "route": "/arsenal/insights",
+   "shot": "visual/414x896/insights.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/414x896/insights.base.png"
+  },
+  {
+   "screen": "more",
+   "vp": "414x896",
+   "route": "/more",
+   "shot": "visual/414x896/more.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/414x896/more.base.png"
+  },
+  {
+   "screen": "glossary",
+   "vp": "414x896",
+   "route": "/glossary",
+   "shot": "visual/414x896/glossary.png",
+   "ratio": 0.0,
+   "status": "pass",
+   "base": "visual/414x896/glossary.base.png"
+  }
+ ]
+}
