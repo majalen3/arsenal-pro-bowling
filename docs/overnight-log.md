@@ -188,3 +188,18 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
   - unit armory 5/5;
   - e2e `armory` 14/0: header, empty pedestal, 6-ball shelf, bench folded, no marks without games, catalog RG/Diff, no new tab, axe, 44 px, 360 px, retire → Hall of Fame, pedestal → ball page, no errors.
 - **Shots:** /workspace/ux-shots/armory/.
+
+## Sim2: persona simulations, round 2 (2026-10-24)
+- **What:**
+  - Six personas on the live build at 360×740 and 390×844: beginner, league team with Baker, lefty, advanced Sport, coach Practice + export, and midnight/offline.
+  - The API was blocked the whole time, with fresh profiles, so no production data was touched.
+  - Report: docs/user-simulations-2.md. Harness: /workspace/ux/sim2/. Shots: /workspace/ux-shots/sim2/.
+- **Scores:** 19/19 games correct (including fouls, a 300, X 6/ and 9/9 tenths, the team board with absentee and vacancy handicaps, and a Baker game of 226). No scoring or data-loss bug: reload, midnight and offline reload all kept the game.
+- **Sim1 fixes held:** lefty hints, midnight, double tap, in-game pad position, recap, ball credit and offline chip.
+- **Top new fixes:**
+  1. Tonight, Find my strike line and Aim Box give three different start lines, and the box marks the app's own line "Outside zone".
+  2. Aim Box Sport uses the engine preset length (Shark 45 ft) instead of tonight's pattern (48 ft), so the Rule of 31 says board 14 instead of 17.
+  3. League "Fix a frame" edits whoever is up, without a name.
+  4. Finished games can't be fixed.
+  5. At 360×740, Undo, Fix and the spare hint are below the fold.
+- **Next:** #2 and #3 are S-effort and safe; #1 needs one stand/aim source shared by Tonight, Targeting and Aim Box.
