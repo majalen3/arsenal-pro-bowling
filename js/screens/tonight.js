@@ -3,7 +3,7 @@
 import { h, icon, toast, segmented } from '../ui.js';
 import { go } from '../router.js';
 import { ready, proj, add, addMany, loadStarter } from '../hub.js';
-import { on, today, deviceId } from '../store.js';
+import { on, today, deviceId, prefs, setPrefs } from '../store.js';
 import { mkEvent, voidEvent } from '../data/events.js';
 import * as Q from '../cc/quicklog.js';
 import { balls, specOK } from '../data.js';
@@ -11,11 +11,20 @@ import * as R from '../cc/rank.js';
 import { modelLine } from '../cc/model.js';
 import { loadIndex } from '../patdata.js';
 import { catOf } from '../cc/cats.js';
+import * as A from '../cc/advisor.js';
+import { packList } from '../cc/bag.js';
+import { DEFAULTS as TGD } from '../cc/target.js';
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
 const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
 const provChip = (prov, label) => h('span', { class: 'prov', 'data-prov': prov || null, text: label });
 const SRC_PROV = { [R.SRC.assumed]: 'assumed', [R.SRC.model]: 'model', [R.SRC.spec]: 'manufacturer', [R.SRC.usbc]: 'usbc', [R.SRC.bowl]: 'usbc', [R.SRC.tag]: 'catalog' };
 let IDX = null, TERT = null;
+// Stand board = laydown + offset − drift (Breakdown Bowling). The model line gives the laydown; offset/drift are the
+// bowler's Targeting settings, else the assumed default 7 / 0.
+export function standOf(lay) {
+  const pt = prefs().target || {}, t = pt.tv === 2 && pt.t ? pt.t : TGD, off = +t.offset || TGD.offset, dr = +t.drift || 0;
+  return { feet: Math.round(lay + off - dr), lay, offset: off, drift: dr, assumed: !(pt.tv === 2 && pt.t) };
+}
 export async function render() {
   const t0 = performance.now();
   await ready();
@@ -23,6 +32,7 @@ export async function render() {
   const body = h('div', { class: 'stack', id: 'tonightBody' });
   const el = h('section', { class: 'screen list-screen', id: 'tonight' }, h('header', { class: 'appbar' }, h('h1', { class: 'title', text: 'Tonight' })), body);
   const ql = { leave: new Set(), foul: false, tag: null };   // quick-log taps not yet written
+  let swapOpen = null;
   let local = {};   // UI state not yet written (avoids re-render churn while typing)
   const sess = () => Object.assign({ kind: 'tonight', patternSlug: null, ft: null, ml: null, ratio: null, centerId: null, surface: 'unknown', stage: 'fresh', bagId: null, game: 1, pickId: null, reads: [] }, (proj().sessions || {})[sid], local);
   async function save(fields) {
@@ -50,6 +60,7 @@ export async function render() {
         h('button', { class: 'btn block', onclick: () => go('#/more') }, 'Choose balls on More')));
       return;
     }
+    body.append(advisorCard(P, s, b));
     const pat = s.ft != null ? { slug: s.patternSlug, name: s.patternName || s.patternSlug, ft: s.ft, ml: s.ml, ratio: s.ratio } : null;
     const center = s.centerId ? P.centers[s.centerId] : null;
     const prevCenters = new Set(Object.values(P.sessions).filter(x => x.id !== sid && x.centerId).map(x => x.centerId));
@@ -62,7 +73,7 @@ export async function render() {
     const ml = cur ? modelLine(cur.cat, { speed: num(b.speed) || 15, rev: num(b.rev) || 220, ft, finish: 'factory', target31: r31.target }) : null;
     // ---- coach line (≤ 2 sentences, starts with a ball name)
     const coach = !cur ? 'Add balls to a bag to get a pick.' : cur === r.pick && bf && cur.benchmark ? `${cur.name} first: ${bf}, so start with your benchmark and read it.`
-      : `${cur.name} for demand ${d.demand} of 5${cur.level != null ? ' (level ' + cur.level + ')' : ''}.` + (ml && !ml.none ? ` Start feet ${ml.feet}, eyes ${ml.target}.` : '');
+      : `${cur.name} for demand ${d.demand} of 5${cur.level != null ? ' (level ' + cur.level + ')' : ''}.` + (ml && !ml.none ? ` Stand ${standOf(ml.feet).feet}, eyes ${ml.target} at the arrows.` : '');
     // ---- setup
     const patIn = h('input', { id: 'tnPattern', type: 'search', list: 'tnPatList', autocomplete: 'off', placeholder: 'House shot (assumed 38 ft)', 'aria-label': 'Pattern', value: pat ? pat.name : '' });
     const dl = h('datalist', { id: 'tnPatList' }, ...(IDX || []).map(x => h('option', { value: x.name })));
@@ -84,7 +95,8 @@ export async function render() {
     if (cur) {
       const alt = (x, lbl) => x ? h('button', { class: 'alt btn', 'data-alt': lbl, onclick: () => save({ pickId: x.id }) }, h('small', { class: 'muted', text: lbl + ' ' }), h('b', { text: x.name })) : h('div', { class: 'alt muted', text: `No ${lbl.toLowerCase()} ball in this bag` });
       const lineBox = !ml || ml.none ? h('p', { class: 'muted small', id: 'tnModel', text: (ml && ml.reason) || 'spec TBD: no model line' })
-        : h('dl', { class: 'kv', id: 'tnModel' }, h('dt', { text: 'Feet' }), h('dd', {}, String(ml.feet), provChip('model', '2-D model')),
+        : h('dl', { class: 'kv', id: 'tnModel' }, h('dt', { text: 'Feet (stand)' }), h('dd', { id: 'tnFeet' }, String(standOf(ml.feet).feet), provChip(standOf(ml.feet).assumed ? 'assumed' : null, standOf(ml.feet).assumed ? 'offset 7 assumed' : 'your offset')),
+          h('dt', { text: 'Laydown' }), h('dd', {}, String(ml.feet), provChip('model', '2-D model')),
           h('dt', { text: 'Eyes (arrows)' }), h('dd', { text: String(ml.target) }),
           h('dt', { text: 'Breakpoint' }), h('dd', { text: `board ${ml.bp} at ${ml.bpFt} ft` }),
           h('dt', { text: 'Holds' }), h('dd', { text: `${ml.holds} of ${ml.of} small misses (\u00b10.5 mph, \u00b120 rpm, \u00b11 board)` }));
@@ -148,7 +160,7 @@ export async function render() {
     } else {
       const pins = h('div', { class: 'pins', id: 'qlPins', role: 'group', 'aria-label': facingLeave ? 'Tap the pins still standing' : 'Tap the pins left standing' },
         ...Q.LAYOUT.map(([pin, col]) => { const up = st.standing.includes(pin);
-          return h('button', { class: 'pin', 'data-pin': pin, 'aria-pressed': String(ql.leave.has(pin)), disabled: !up, 'aria-label': `Pin ${pin}`, style: { gridColumn: String(col + 1), gridRow: String(pin >= 7 ? 1 : pin >= 4 ? 2 : pin >= 2 ? 3 : 4) },
+          return h('button', { class: 'pin', 'data-pin': pin, 'aria-pressed': String(ql.leave.has(pin)), disabled: !up, 'aria-label': `Pin ${pin}`, style: { gridColumn: `${col + 1} / span 2`, gridRow: String(pin >= 7 ? 1 : pin >= 4 ? 2 : pin >= 2 ? 3 : 4) },
             onclick: () => { ql.leave.has(pin) ? ql.leave.delete(pin) : ql.leave.add(pin); draw(); } }, String(pin)); }));
       const n = ql.leave.size;
       const btns = h('div', { class: 'btn-grid', id: 'qlBtns' },
@@ -170,6 +182,55 @@ export async function render() {
     if (tr) card.append(h('div', { class: 'warn-box', id: 'qlTrigger', role: 'status' }, tr.text, provChip('assumed', 'team rule')));
     const last = mine[mine.length - 1];
     if (last) card.append(h('button', { class: 'btn ghost block', id: 'qlUndo', onclick: async () => { await addMany([voidEvent(last.id, { deviceId: deviceId(), prov: { kind: 'user' } })]); draw(); } }, `Undo last ball (frame ${last.frame})`));
+    return card;
+  }
+  // ---- Bag Advisor (TEAM_PROMPT_BAG_ADVISOR.md): event \u2192 packed bag with roles, evidence and a start line.
+  function advisorCard(P, s, b) {
+    const ap = prefs().advisor || {}, ev = s.event || ap.last || null;
+    const card = h('div', { class: 'card adv', id: 'tnAdvisor' }, h('h2', { class: 'card-title', id: 'advTitle', text: 'Where are you bowling?' }));
+    const pick = h('div', { class: 'seg wrap', role: 'radiogroup', 'aria-labelledby': 'advTitle', id: 'advEvent' }, ...Object.entries(A.EVENTS).map(([k, e]) =>
+      h('button', { class: 'seg-opt', role: 'radio', 'aria-checked': String(k === ev), 'data-event': k, onclick: () => { setPrefs({ advisor: Object.assign({}, prefs().advisor, { last: k }) }); save({ event: k, pickId: null }); } }, e.short)));
+    card.append(pick);
+    if (!ev) { card.append(h('p', { class: 'muted small', text: 'Pick one: your bag, first ball and where to stand appear here.' })); return card; }
+    const mem = ap[ev] || {}, pat = s.ft != null ? { slug: s.patternSlug, name: s.patternName || s.patternSlug, ft: s.ft, ml: s.ml, ratio: s.ratio } : null;
+    const ft = pat ? pat.ft : R.HOUSE_ASSUMED.ft, r31 = R.rule31(ft);
+    const cur = Object.values(P.bags).find(x => x.format === A.EVENTS[ev].format);
+    const a = A.advise(P, { event: ev, pattern: pat, tert: TERT, surface: s.surface, style: b.style || 'tweener', health: P.health, swaps: mem.swaps || {}, current: cur ? cur.slots.map(x => x.owned) : [],
+      line: c => modelLine(c, { speed: num(b.speed) || 15, rev: num(b.rev) || 220, ft, finish: 'factory', target31: r31.target }) });
+    if (a.none) { card.append(h('p', { class: 'muted', text: a.reason }), h('button', { class: 'btn block', onclick: () => go('#/arsenal') }, 'Open Arsenal \u203a')); return card; }
+    const ml = a.line, st = ml && !ml.none ? standOf(ml.feet) : null;
+    card.append(h('p', { class: 'coach', id: 'advStart', role: 'status', text: st ? `Start with: ${a.A.name}, from feet ${st.feet}, aim ${ml.target} at the arrows.` : `Start with: ${a.A.name}. ${(ml && ml.reason) || 'spec TBD: no model line'}, so set feet and eyes on Targeting.` },
+      st ? provChip('model', st.assumed ? '2-D model \u00b7 offset 7 assumed' : '2-D model') : null));
+    const packed = mem.packedTs && P.bags['bag-adv-' + ev];
+    const list = h('ul', { class: 'adv-list', id: 'advList' }, ...a.rows.map(r => {
+      const conf = provChip(r.confidence.key === 'measured' ? 'device' : r.confidence.key === 'spec' ? 'catalog' : 'assumed', r.confidence.label);
+      const li = h('li', { class: 'adv-row', 'data-owned': r.ownedId, 'data-role': r.role },
+        h('div', { class: 'adv-head' }, h('b', { text: r.name }), h('span', { class: 'pill' + (r.role === 'benchmark' ? ' gold' : ''), text: r.role }), conf),
+        h('p', { class: 'small muted', text: r.reason }),
+        r.evidence ? h('p', { class: 'small', 'data-evidence': '' }, r.evidence) : null,
+        r.warning ? h('p', { class: 'small adv-warn', 'data-warn': '' }, '\u26a0 ' + r.warning) : null);
+      if (r.role !== 'spare') li.append(h('button', { class: 'btn sm ghost', 'data-swap': r.ownedId, 'aria-expanded': String(swapOpen === r.ownedId), 'aria-label': `Swap ${r.name}`, onclick: () => {
+        if (!a.bench.length) { toast('No other available ball. Mark one \u201cin bag\u201d on Arsenal.'); return; } swapOpen = swapOpen === r.ownedId ? null : r.ownedId; draw(); } }, 'Swap'));
+      if (swapOpen === r.ownedId) li.append(h('div', { class: 'chips', role: 'group', 'aria-label': `Swap ${r.name} for` }, ...a.bench.map(x => h('button', { class: 'btn sm', 'data-swap-to': x.ownedId, onclick: () => {
+        const m = Object.assign({}, prefs().advisor), e2 = Object.assign({}, m[ev]); e2.swaps = Object.assign({}, e2.swaps); for (const [k, v] of Object.entries(e2.swaps)) if (v === r.ownedId) delete e2.swaps[k];
+        e2.swaps[r.ownedId] = x.ownedId; m[ev] = e2; swapOpen = null; setPrefs({ advisor: m }); draw(); toast(`${x.name} in for ${r.name}.`); } }, x.name))));
+      return li; }));
+    card.append(list);
+    const id = 'bag-adv-' + ev;
+    card.append(h('div', { class: 'btn-grid' }, h('button', { class: 'btn primary', id: 'advPack', onclick: async () => {
+      const slots = a.slots.concat(a.spare ? [a.spare] : []).map(o => ({ owned: o, locked: false }));
+      await add('bag.saved', id, { name: `${A.EVENTS[ev].label} (advisor)`, format: A.EVENTS[ev].format, slots, spare: a.spare || null, excluded: [], eventDate: today(), source: 'advisor', event: ev });
+      setPrefs({ advisor: Object.assign({}, prefs().advisor, { [ev]: Object.assign({}, (prefs().advisor || {})[ev], { packedTs: Date.now(), slots: a.slots, spare: a.spare }) }) });
+      await save({ bagId: id, pickId: a.A.ownedId }); toast(`Packed: ${a.rows.map(r => r.name).join(', ')}.`); } }, packed ? 'Packed \u2713 Pack again' : 'Pack this'),
+      h('button', { class: 'btn ghost', id: 'advBuilder', onclick: () => go('#/bag') }, 'Full bag builder \u203a')));
+    if (a.plan.length) card.append(h('p', { class: 'small', id: 'advPlan' }, h('b', { text: 'Then: ' }), a.plan.map(x => `${x.k} ${x.name} (${x.when})`).join(' \u2192 ')));
+    card.append(h('p', { class: 'small', id: 'advWhy' }, h('b', { text: 'Why this bag: ' }), a.why),
+      h('p', { class: 'small muted', id: 'advChange' }, h('b', { text: 'What would change it: ' }), a.change, ' ', h('a', { class: 'srclink', href: A.MIN_SRC.url, target: '_blank', rel: 'noopener', text: A.MIN_SRC.label })));
+    if (a.noData) card.append(h('div', { class: 'row', id: 'advNoData' }, h('button', { class: 'btn sm', onclick: () => document.getElementById('tnLog') && document.getElementById('tnLog').scrollIntoView() }, 'Quick-log a game'), h('button', { class: 'btn sm', onclick: () => go('#/import') }, 'Import results')));
+    if (packed) { const pl = packList(a.slots.map(o => ({ ownedId: o, catalogId: P.owned[o] && P.owned[o].catalogId, name: short(P.owned[o] && (P.owned[o].name || (catOf(P.owned[o].catalogId) || {}).name)), benchmark: o === a.A.ownedId, status: P.owned[o] && P.owned[o].status })),
+        a.spare ? { ownedId: a.spare, name: short(P.owned[a.spare].name) } : null, { health: P.health });
+      card.append(h('details', { class: 'adv-pack', id: 'advPackList', open: true }, h('summary', { text: `Pack list \u00b7 ${pl.rows.length} balls` }),
+        h('ol', { class: 'small' }, ...pl.rows.map(x => h('li', {}, h('b', { text: x.name }), ` \u00b7 ${x.role}`))))); }
     return card;
   }
   function bowlerOf(P) { return P.bowler || {}; }

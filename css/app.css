@@ -457,8 +457,8 @@ noscript p{padding:24px}
 .alts{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
 .alt{background:var(--surface-2);border-radius:var(--r-md);padding:var(--s2) var(--s3);font-size:var(--fs-sm);min-height:var(--tap)}
 .why{font-size:var(--fs-sm);color:var(--text-2);padding-left:var(--s4)} .why li{list-style:disc}
-.pins{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-width:320px;margin:0 auto}
-.pin{min-width:var(--tap);min-height:var(--tap);border-radius:50%;border:2px solid var(--line-2);background:var(--surface-2);color:var(--text);font-weight:800;font-size:var(--fs-sm)}
+.pins{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;width:100%;max-width:248px;margin:0 auto}
+.pin{min-width:48px;min-height:48px;aspect-ratio:1;border-radius:50%;border:2px solid var(--line-2);background:var(--surface-2);color:var(--text);font-weight:800;font-size:var(--fs-sm)}
 .pin:disabled{opacity:.3;cursor:default}
 .pin[aria-pressed=true]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .frames{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;font-size:11px;text-align:center}
@@ -522,3 +522,14 @@ noscript p{padding:24px}
 .target-screen>.btn.block{width:auto;display:flex;justify-content:center;gap:var(--s2);margin-block:var(--s2)}
 .tg-find{display:grid;gap:var(--s2)}
 .tg-find details ul{padding-left:1.1em;margin:var(--s1) 0}
+/* Bag Advisor (Tonight) */
+.adv .seg.wrap{display:flex}.adv .seg.wrap .seg-opt{flex:1 1 30%;min-height:var(--tap);padding:0 8px}
+.adv .card-title{margin-bottom:0}.adv>p{margin:0}
+.adv-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--s2)}
+.adv-list{gap:0}
+.adv-row{display:grid;grid-template-columns:1fr auto;gap:0 var(--s2);align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.adv-row>*{grid-column:1}.adv-row>[data-swap]{grid-column:2;grid-row:1/span 4;min-height:var(--tap)}.adv-row>.chips{grid-column:1/-1;margin-top:6px}
+.adv-head{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px}.adv-head .prov{margin-left:0}
+.adv-row p{margin:0}.adv-row .chips .btn{min-height:var(--tap)}
+.adv-warn{color:var(--warn)}
+.adv-pack summary{font-weight:700;min-height:var(--tap);display:flex;align-items:center;cursor:pointer}

@@ -236,3 +236,19 @@ Each cycle: change → test → independent review → commit+push. Scores are 1
   - Find arrows = path crossing is now unit-tested.
   - Angles are labelled as model/drawn units on Lane, Targeting, Find, Deck, Compare, Ball and Add-ball (ENGINE_VERIFICATION_REPORT 5b).
   - Service worker v20; e2e 279/0; Lighthouse 98/100/100/100 for `#/target` and 97/100/100/100 for `#/lane`.
+
+## BA: Bag Advisor on Tonight (2026-10-24)
+- **Before:** Tonight opened on the pick card. "Feet" showed the laydown (the stand was off by the ball-from-foot offset). Answering "which balls tonight?" meant opening `#/bag` and building it by hand. The pin grid overflowed 360 px by 6 px; the old e2e check missed it because mobile emulation widened innerWidth.
+- **After:** the first element is "Where are you bowling?" (5 events). One tap builds the bag: rows with role, confidence chip, reason, ≤1 warning, evidence or "no results logged yet", plus Swap in 2 taps. Then "Start with: Rattler Big Bite, from feet 17, aim 10.7 at the arrows", Pack this (bottom at 559 px of 740), A→B→C, why/what would change it (USBC Rule 319a 21-game minimum cited). The last answer is remembered per event. Pins are now ≥48 px, with no horizontal scroll.
+- **Numbers:**
+
+| Check | Result |
+|---|---|
+| Taps to an answer | 1 (event) |
+| Taps to swap | 2 |
+| e2e advisor | 20/0 |
+| Unit | 154/0 (advisor 8) |
+| Engine equivalence | 7 500/0 |
+| Lighthouse `#/tonight` | 94–98 perf (noisy on python http.server), 100/100/100. Tonight's module chain is now modulepreloaded |
+| Service worker | v21 |
+- **Screenshots (box):** `ux-shots/advisor/tonight-before-360.png`, `tonight-after-0-select.png`, `tonight-after-360.png`, `tonight-after-packed.png`, `tonight-after-tournament-full.png`.

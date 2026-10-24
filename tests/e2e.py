@@ -321,7 +321,7 @@ async def tonight_cycle(b):
     ms = await p.evaluate("() => window.__apTonightMs"); check(ms is not None and ms < 1000, f'[tonight] render {ms} ms < 1 s')
     await axe_ok(p, '[tonight]'); await p.wait_for_timeout(200)
     small = await p.evaluate(SMALL); check(not small, f'[tonight] targets >= 44px {small[:6]}')
-    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= w[0], f'[tonight] no horizontal overflow at 360 {w}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360 and w[0] == 360, f'[tonight] no horizontal overflow at 360 {w}')
     await shot(p, 'phone-tonight')
     await p.click('[data-read=early]'); await p.wait_for_function("() => !document.querySelector('#tnPickName').textContent.includes('Big Bite')")
     check('Ordnance C4' in await p.text_content('#tnPickName'), '[tonight] "Too early" -> one step weaker (C4) in 1 tap')
@@ -358,7 +358,7 @@ async def bag_cycle(b):
     n = await p.evaluate("() => document.querySelectorAll('#bagChecks [data-check]').length"); check(n == 10, f'[bag] 10 checks listed ({n})')
     await axe_ok(p, '[bag]'); await p.wait_for_timeout(200)
     small = await p.evaluate(SMALL); check(not small, f'[bag] targets >= 44px {small[:6]}')
-    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= w[0], f'[bag] no horizontal overflow at 360 {w}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360 and w[0] == 360, f'[bag] no horizontal overflow at 360 {w}')
     await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())"); await p.evaluate("() => document.querySelector('#bagCover').scrollIntoView()"); await shot(p, 'phone-bag')
     await p.click('#bagHead [data-v="bag-league"]'); await p.wait_for_selector('#bagGrid .cell.hole[data-l="3"]')
     check('level 3' in await p.text_content('#bagChecks [data-check="4"]'), '[bag] League 3: hole at level 3 between Big Bite and HRP')
@@ -416,7 +416,7 @@ async def targeting_cycle(b):
     check('assumed' in await p.text_content('#tgCond'), '[target] release / pattern sources labelled')
     await axe_ok(p, '[target] pocket'); await p.wait_for_timeout(200)
     small = await p.evaluate(SMALL); check(not small, f'[target] targets >= 44px {small[:6]}')
-    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= w[0], f'[target] no horizontal overflow at 360 {w}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360 and w[0] == 360, f'[target] no horizontal overflow at 360 {w}')
     db = await (await p.query_selector('#tgDock')).bounding_box(); check(db['y'] + db['height'] <= 780, f'[target] feet/eyes controls in the thumb zone (dock bottom {round(db["y"] + db["height"])})')
     await shot(p, 'phone-target-pocket')
     # save as my line, then move away
@@ -516,7 +516,7 @@ async def addball_cycle(b):
     await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())")
     await axe_ok(p, '[addball] confirm + engine'); await p.wait_for_timeout(200)
     small = await p.evaluate(SMALL); check(not small, f'[addball] targets >= 44px {small[:6]}')
-    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= w[0], f'[addball] no horizontal overflow at 360 {w}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360 and w[0] == 360, f'[addball] no horizontal overflow at 360 {w}')
     await p.evaluate("() => window.scrollTo(0, 0)"); await shot(p, 'phone-addball-confirm')
     await p.evaluate("() => document.querySelector('#abEngine').scrollIntoView()"); await shot(p, 'phone-addball-engine')
     await p.evaluate("() => document.querySelector('#abPlace').scrollIntoView()"); await shot(p, 'phone-addball-grid')
@@ -575,7 +575,7 @@ async def quicklog_cycle(b):
         await p.wait_for_function(f"() => document.querySelector('#qlWhere').textContent !== {json.dumps(f0)} && document.querySelector('#qlStrike')")
     tr = await p.text_content('#qlTrigger'); check('2 of 3 high' in tr and 'feet 2 left' in tr, f'[quicklog] trigger: 2 of 3 high -> move left ({tr.strip()[:50]})')
     await axe_ok(p, '[quicklog]'); small = await p.evaluate(SMALL); check(not small, f'[quicklog] targets >= 44px {small[:6]}')
-    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= w[0], f'[quicklog] no horizontal overflow at 360 {w}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360 and w[0] == 360, f'[quicklog] no horizontal overflow at 360 {w}')
     await p.eval_on_selector('#tnLog', 'e => e.scrollIntoView()'); await shot(p, 'phone-quicklog')
     # tab kill: log 3 more balls, kill the page the moment the UI moves on, reopen
     for _ in range(3):
@@ -626,6 +626,11 @@ class MockEvents:
         if req.method == 'GET': return await js(200, [])
         return await js(201, {'id': 1})
 
+async def apx(p, expr):
+    # app globals can re-init under load (module re-eval on SW update): wait for them before every read
+    await p.wait_for_function("() => window.__apData && window.__apSync", timeout=10000)
+    return await p.evaluate(expr)
+
 async def sync_cycle(b):
     # D3: airplane mode -> log (CSV import) -> kill the tab -> reopen (outbox intact) -> online -> flush -> wipe phone -> same code -> pull -> identical projection
     errs = []; m = MockEvents(); c = await b.new_context(viewport={'width': 360, 'height': 780}, is_mobile=True, has_touch=True); c.set_default_timeout(10000)
@@ -637,29 +642,29 @@ async def sync_cycle(b):
     import tempfile; d = tempfile.mkdtemp(); f = os.path.join(d, 'scores.csv'); open(f, 'w').write("Date,Game 1,Game 2,Game 3\n2026-10-18,201,187,224\n2026-10-19,170,193,\n")
     await p.set_input_files('#impFile', f); await p.wait_for_selector('#impPreview'); await p.click('#impCommit'); await p.wait_for_selector('#impDone')
     await p.wait_for_function("() => window.__apData && window.__apSync && window.__apSync.outbox() > 0")   # globals can re-init under load
-    n = await p.evaluate("window.__apData.events()");
-    check(n >= 8 and await p.evaluate("window.__apSync.outbox()") == n, f'[sync] airplane mode: {n} events logged, all waiting in the outbox')
-    h0 = await p.evaluate("window.__apData.hash()")
+    n = await apx(p, "window.__apData.events()");
+    check(n >= 8 and await apx(p, "window.__apSync.outbox()") == n, f'[sync] airplane mode: {n} events logged, all waiting in the outbox')
+    h0 = await apx(p, "window.__apData.hash()")
     await p.close()  # tab killed while offline
     p = await page(c, errs); await p.goto(BASE + '?sync2#/more'); await p.wait_for_function("() => window.__apData && window.__apSync && window.__apData.events() > 0")
-    check(await p.evaluate("window.__apData.events()") == n and await p.evaluate("window.__apSync.outbox()") == n, '[sync] after the kill: 0 events lost, outbox intact')
+    check(await apx(p, "window.__apData.events()") == n and await apx(p, "window.__apSync.outbox()") == n, '[sync] after the kill: 0 events lost, outbox intact')
     await p.wait_for_function("() => document.querySelector('#dataInfo').textContent.includes('waiting to sync')")
-    m.online = True; await p.evaluate("window.__apSync.run()")
+    m.online = True; await apx(p, "window.__apSync.run()")
     await p.wait_for_function("() => window.__apSync.outbox() === 0", timeout=15000)
     srv = {r[2]['id'] for r in m.mine('d-e2e-sync-0001')}
     check(len(srv) == n, f'[sync] back online: all {n} events on the server ({len(srv)}), in <=15 kB batches')
     await p.wait_for_function("() => document.querySelector('#dataInfo').textContent.includes('All synced')"); await shot(p, 'phone-more-synced')
     await p.evaluate(WIPE); await p.evaluate("localStorage.setItem('ap_prefs', JSON.stringify({onboarded:true})); localStorage.setItem('ap_device', 'd-e2e-sync-0001')")
     await p.goto(BASE + '?sync3#/more'); await p.wait_for_function(f"() => window.__apData && window.__apData.events() === {n}", timeout=15000)
-    check(await p.evaluate("window.__apData.hash()") == h0, '[sync] wiped phone + same backup code: pull restores the identical projection')
-    check(await p.evaluate("window.__apSync.outbox()") == 0, '[sync] pulled events are not pushed back')
+    check(await apx(p, "window.__apData.hash()") == h0, '[sync] wiped phone + same backup code: pull restores the identical projection')
+    check(await apx(p, "window.__apSync.outbox()") == 0, '[sync] pulled events are not pushed back')
     posts = m.posts; m.quota = n
     f2 = os.path.join(d, 'scores2.csv'); open(f2, 'w').write("Date,Game 1\n2026-10-20,210\n")
     await p.goto(BASE + '?sync4#/import'); await p.wait_for_selector('#impPick'); await p.wait_for_function("() => window.__apSync")
     await p.set_input_files('#impFile', f2); await p.wait_for_selector('#impPreview'); await p.click('#impCommit'); await p.wait_for_selector('#impDone')
-    await p.evaluate("window.__apSync.run()"); await p.goto(BASE + '?sync5#/more')
+    await apx(p, "window.__apSync.run()"); await p.goto(BASE + '?sync5#/more')
     await p.wait_for_function("() => document.querySelector('#dataInfo') && document.querySelector('#dataInfo').textContent.includes('Server backup is full')")
-    check(await p.evaluate("window.__apSync.outbox()") > 0, '[sync] quota 429: newer events kept on the phone, More explains it')
+    check(await apx(p, "window.__apSync.outbox()") > 0, '[sync] quota 429: newer events kept on the phone, More explains it')
     check(not errs, '[sync] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
@@ -676,11 +681,47 @@ async def offline(b):
     check(await p.evaluate("JSON.parse(localStorage.getItem('ap_lines')||'[]').some(l=>!l.synced)"), '[offline] save queued while offline')
     await c.close()
 
+async def advisor_cycle(b):
+    # Bag Advisor: event selector first on Tonight -> 1 tap builds the bag (roles, reasons, confidence) + "Start with: X, from feet N, aim N"
+    # -> swap in 2 taps -> Pack this saves a bag + pack list -> answer remembered per event after reload. Owned in-bag balls only.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 740})
+    await seed(p); await p.goto(BASE + '?adv#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnAdvisor')
+    first = await p.evaluate("document.querySelector('#tonightBody').firstElementChild.id"); check(first == 'tnAdvisor', f'[advisor] event selector is the first thing on Tonight ({first})')
+    labels = await p.eval_on_selector_all('#advEvent [data-event]', 'e=>e.map(x=>x.textContent)'); check(labels == ['League', 'Tournament', 'Practice', 'New center', 'Sport'], f'[advisor] 5 events {labels}')
+    await p.click('[data-event=league]'); await p.wait_for_selector('#advStart')
+    st = await p.text_content('#advStart'); check(st.startswith('Start with: Rattler Big Bite, from feet 17, aim 10.7'), f'[advisor] 1 tap -> start line with stand feet (laydown 10 + offset 7), not the laydown: {st!r}')
+    rows = await p.eval_on_selector_all('.adv-row', 'e=>e.map(x=>[x.dataset.owned, x.dataset.role, !!x.querySelector(".prov"), x.querySelector("p").textContent.length>5])')
+    check(len(rows) == 3 and rows[-1][1] == 'spare' and all(r[2] and r[3] for r in rows), f'[advisor] league = 2 + spare, each with role, reason, confidence {rows}')
+    check(all(r[0] not in ('own-guru-supreme', 'own-raw-hammer', 'own-green-scout', 'own-rack-attack') for r in rows), '[advisor] benched balls never packed')
+    check('no results logged yet' in await p.text_content('#advWhy') and await p.query_selector('#advNoData') is not None, '[advisor] no data -> "based on specs + your release, no results logged yet" + quick-log / import offered')
+    check(await p.query_selector('#advPlan') is not None and 'A Rattler Big Bite' in await p.text_content('#advPlan'), '[advisor] A -> B -> C plan')
+    check('21' in await p.text_content('#advChange'), '[advisor] "what would change it" cites the 21-game minimum')
+    pk = await p.evaluate("document.getElementById('advPack').getBoundingClientRect().bottom"); check(pk <= 740, f'[advisor] answer + Pack this fit one 360x740 screen (bottom {round(pk)})')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360 and w[0] == 360, f'[advisor] no horizontal overflow at 360 {w}')
+    small = await p.evaluate(SMALL.replace("filter(e=>{", "filter(e=>{if(!e.closest('#tnAdvisor'))return false;")); check(not small, f'[advisor] targets >= 44px {small[:6]}')
+    await axe_ok(p, '[advisor]')
+    await shot(p, 'phone-advisor')
+    # swap in 2 taps
+    await p.click('.adv-row[data-role=weaker-control] [data-swap]'); await p.click('[data-swap-to]'); await p.wait_for_timeout(300)
+    rows2 = await p.eval_on_selector_all('.adv-row', 'e=>e.map(x=>x.dataset.owned)'); check(rows2 != [r[0] for r in rows] and len(rows2) == 3, f'[advisor] swap in 2 taps {rows2}')
+    await p.click('#advPack'); await p.wait_for_selector('#advPackList')
+    pl = await p.text_content('#advPackList'); check('3 balls' in pl and 'Spare' in pl, f'[advisor] Pack this -> pack list shown {pl[:80]!r}')
+    check(await p.text_content('#tnPickName') == 'Rattler Big Bite', '[advisor] packed bag drives the Tonight pick')
+    await p.reload(); await p.wait_for_selector('#advPackList')
+    rows3 = await p.eval_on_selector_all('.adv-row', 'e=>e.map(x=>x.dataset.owned)'); check(rows3 == rows2 and 'Packed' in await p.text_content('#advPack'), '[advisor] answer remembered after reload')
+    await p.click('[data-event=tournament]'); await p.wait_for_function("() => document.querySelectorAll('.adv-row').length === 6")
+    warn = await p.eval_on_selector_all('.adv-row', 'e=>e.map(x=>x.querySelectorAll("[data-warn]").length)'); check(max(warn) <= 1, f'[advisor] tournament = 5 + spare, <= 1 warning per ball {warn}')
+    await p.click('[data-event=league]'); await p.wait_for_selector('#advPackList')
+    check(await p.eval_on_selector_all('.adv-row', 'e=>e.map(x=>x.dataset.owned)') == rows2, '[advisor] last answer per event type remembered (league swap kept)')
+    await p.click('#advBuilder'); await p.wait_for_function("() => location.hash === '#/bag'"); check(True, '[advisor] full bag builder reachable')
+    check(not errs, '[advisor] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
 async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)
