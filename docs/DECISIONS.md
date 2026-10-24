@@ -121,3 +121,8 @@ Short ADR-style notes. Each: decision · why · consequence.
     - **Feedback:** the path is checked against the box using engine points plus interpolated band edges, so a sparse path can't skip the box. The result reads "Through zone" (good tone) or "Outside zone" (warn), and the outline turns green when the path goes through. Only the drawing is mirrored for lefties; boards stay in the bowler's own numbering.
     - **Model angles:** the angle note says "4–6° model entry (drawn units, about 1° real)". `simulatePath` is unchanged.
     - **Where it appears:** Lane, Targeting and Compare, behind an "Overlays" chip. There is no video overlay in the app, so nothing to register to. It is not shown during scoring (Tonight has no lane view).
+
+## 31. Armory = the Arsenal tab, restyled (2026-10-24)
+- There is no Armory spec doc. The brief (owner, relayed) asks for a trophy room: lit shelves, gold nameplates with role and stats, the current bag highlighted, retired balls in a Hall of Fame, and milestones only when earned from logged games. With the "no new top-level tabs" rule, it lives at the top of the existing Arsenal screen, and the catalog stays below it unchanged (search, filters and compare keep working).
+- The bowler has no name field, so the header reads "Urbanek Honey Badgers · Armory". If a name is ever on file it becomes "<name>'s Armory".
+- A game counts toward a ball's marks when that ball threw most of the first balls in the game. Spare-ball throws don't credit the spare ball with the game.

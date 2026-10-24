@@ -988,6 +988,33 @@ async def alley_cycle(b):
     check(not errs, '[alley] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
+async def armory_cycle(b):
+    # Armory: owned balls on lit shelves, gold nameplates, Hall of Fame behind a tap, marks only when earned. No new tab.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.goto(BASE + '?arm#/arsenal'); await p.wait_for_selector('#armory')
+    check(await p.text_content('.arm-team') == 'Urbanek Honey Badgers' and await p.text_content('.appbar .title') == 'Armory', '[armory] header: team line + Armory (no invented name)')
+    n = await p.evaluate("() => document.querySelectorAll('#armBag .ped[data-own]').length"); check(n == 0 and await p.query_selector('#armEmpty[href=\"#/add-ball\"]') is not None, f'[armory] empty: only the Add ball pedestal ({n})')
+    await p.goto(BASE + '?arm#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnBagLink')
+    await p.goto(BASE + '?arm2#/arsenal'); await p.wait_for_selector('#armBag .ped[data-own]')
+    ids = await p.evaluate("() => [...document.querySelectorAll('#armBag .ped[data-own]')].map(x => x.dataset.own)")
+    check(len(ids) == 6 and ids[0] == 'own-rattler-big-bite', f'[armory] bag shelf: 6 in-bag balls, benchmark first {ids}')
+    check(await p.evaluate("() => document.querySelectorAll('#armBenchShelf .ped').length") == 4 and not await p.evaluate("() => document.querySelector('#armBench').open"), '[armory] bench (4) folded behind a tap')
+    check(await p.evaluate("() => !document.querySelector('#armory [data-m]')"), '[armory] no marks without logged games')
+    spec = await p.text_content('#armBag [data-own="own-rattler-big-bite"] .plate-spec'); check('RG' in spec and 'Diff' in spec, f'[armory] nameplate shows catalog RG/Diff ({spec})')
+    check(await p.query_selector('#tabs a[href="#/arsenal"][aria-current=page]') is not None and await p.query_selector('#tabs a[href*="armory"]') is None, '[armory] same Arsenal tab, no new tab')
+    await axe_ok(p, '[armory]'); small = await p.evaluate(SMALL); check(not small, f'[armory] targets >= 44px {small[:6]}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[armory] no horizontal overflow at 360 {w}')
+    await shot(p, 'phone-armory')
+    await p.goto(BASE + '?arm3#/bag'); await p.wait_for_selector('#bagCare'); await p.select_option('#bagCareBall', 'own-raw-hammer'); await p.click('#bagCare [data-v="retired"]')
+    await p.wait_for_function("() => document.querySelector('#bagCare [data-v=\"retired\"]').getAttribute('aria-checked') === 'true' || document.querySelector('#bagCare [data-v=\"retired\"]').getAttribute('aria-pressed') === 'true'"); await p.wait_for_timeout(400)
+    await p.goto(BASE + '?arm4#/arsenal'); await p.wait_for_selector('#armHall'); await p.click('#armHall summary')
+    hall = await p.evaluate("() => [...document.querySelectorAll('#armHallShelf .ped')].map(x => x.dataset.own)")
+    check(hall == ['own-raw-hammer'], f'[armory] retired ball moves to the Hall of Fame {hall}')
+    await axe_ok(p, '[armory] hall open'); await shot(p, 'phone-armory-hall')
+    await p.click('#armBag [data-own="own-rattler-big-bite"] .ped-link'); await p.wait_for_function("() => location.hash.startsWith('#/ball/')")
+    check(True, '[armory] pedestal opens the ball page')
+    check(not errs, f'[armory] no page errors {errs[:3]}'); await c.close()
+
 async def aimbox_cycle(b):
     # Aim Box: default off (lane pixels unchanged, no pill); Overlays sheet turns it on; House = Baker 4.5-9.5 at 45 ft;
     # through/outside pill; Custom edges persist after reload; lefty mirror keeps the same read; Targeting + Compare show it.
@@ -1034,7 +1061,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('armory', lambda: armory_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

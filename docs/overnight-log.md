@@ -176,3 +176,15 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
   - unit aimbox 5/5: off, presets, intersection incl. sparse path, mirror, persistence;
   - e2e `aimbox` 15/0: default off, pixels, axe on the sheet, 44 px targets, custom persists, lefty same read, Targeting pill, off again.
 - **Shots:** /workspace/ux-shots/aimbox/.
+
+## Armory (2026-10-24)
+- **Code:**
+  - js/cc/armory.js (pure: `title`, `records`, `milestones`, `shelves`).
+  - The Arsenal screen gets a team line plus "Armory", an "In the bag" lit shelf (benchmark first, on-lane ball gold-ringed), an empty "Add ball" pedestal, Bench & pro shop and Hall of Fame (retired) behind taps, then the unchanged catalog.
+- **Data rules:**
+  - The specs on the nameplates come from the catalog only. A ball with no catalog link shows "Specs not entered".
+  - Marks come only from frames logged with that ball (strike-ball majority per game). No name is invented.
+- **Tests:**
+  - unit armory 5/5;
+  - e2e `armory` 14/0: header, empty pedestal, 6-ball shelf, bench folded, no marks without games, catalog RG/Diff, no new tab, axe, 44 px, 360 px, retire → Hall of Fame, pedestal → ball page, no errors.
+- **Shots:** /workspace/ux-shots/armory/.

@@ -6,6 +6,9 @@ import { setBall } from '../ctl.js';
 import { go } from '../router.js';
 import { readMed, owned } from './pickers.js';
 import { PATTERN_LABEL } from '../labels.js';
+import { ready, proj } from '../hub.js';
+import { catOf } from '../cc/cats.js';
+import * as A from '../cc/armory.js';
 const st = { q:'', f:'all', picked:[] };
 const PAT_OIL = { house:'medium', cheetah:'medium', sport:'heavy', scorpion:'heavy', shark:'heavy', dry:'light' };
 const short = c => c.split(' / ')[0].replace('Strong ', 'Str. ').replace('Medium ', 'Med. ').replace('Asymmetrical', 'Asym').replace('Symmetrical', 'Sym');
@@ -21,7 +24,33 @@ export function tile(b, { onCompareToggle, picked }) {
       h('button', { class:'btn sm ghost cmp-btn', 'aria-pressed':String(picked), 'aria-label':`${picked ? 'Picked' : 'Compare'} ${b.name}`, onclick:() => onCompareToggle(b) }, h('span', { html:icon(picked ? 'check' : 'compare') }), picked ? 'Picked' : 'Compare')));
   return t;
 }
-export function render() {
+// Armory (owner brief 2026-10-24): owned balls on lit shelves with gold nameplates; retired balls in the Hall of Fame.
+// One takeaway: what is in your bag. Bench and Hall of Fame sit behind a tap; the full catalog stays below.
+function pedestal(it) {
+  const c = it.cat, inCatalog = c && balls.some(b => b.id === c.id), onLane = c && c.id === app.ball.id;
+  const specs = c && c.rg != null ? `RG ${rgTxt(c)} \u00b7 Diff ${diffTxt(c)}` : 'Specs not entered';
+  return h('article', { class:'ped' + (onLane ? ' onlane' : ''), 'data-own':it.id },
+    h('a', { class:'ped-link', href:inCatalog ? `#/ball/${c.id}` : '#/bag' },
+      h('span', { class:'ped-lit', 'aria-hidden':'true' }, h('span', { class:'ball-orb', style:{ '--c':it.color || 'var(--text-3)' } })),
+      h('span', { class:'plate' }, h('span', { class:'plate-name', text:(it.benchmark ? '\u2605 ' : '') + it.name }),
+        it.role ? h('span', { class:'plate-role', text:it.role }) : null, h('span', { class:'plate-spec num', text:specs }), onLane ? h('span', { class:'sr-only', text:'on lane' }) : null)),
+    it.earned.length || onLane ? h('div', { class:'ped-marks' }, onLane ? h('span', { class:'pill gold', text:'On lane' }) : null, ...it.earned.map(m => h('span', { class:'pill', 'data-m':m.id, text:m.text }))) : null);
+}
+function armory(P) {
+  const sh = A.shelves(P, catOf);
+  const shelf = (items, id, label, extra) => h('div', { class:'shelf', id, role:'list', 'aria-label':label }, ...items.map(it => h('div', { role:'listitem' }, pedestal(it))), extra || null);
+  const empty = h('div', { role:'listitem' }, h('a', { class:'ped ped-empty', id:'armEmpty', href:'#/add-ball' }, h('span', { class:'ped-lit', 'aria-hidden':'true' }, h('span', { class:'ped-slot' })), h('span', { class:'plate' }, h('span', { class:'plate-name', text:'Add ball' }), h('span', { class:'plate-role', text:'Empty pedestal' }))));
+  const fold = (id, label, n, body) => h('details', { class:'card arm-fold', id }, h('summary', {}, h('span', { text:label }), h('span', { class:'pill', text:String(n) })), body);
+  return h('section', { class:'armory', id:'armory', 'aria-labelledby':'armBagH' },
+    h('h2', { class:'group-h', id:'armBagH', text:`In the bag \u00b7 ${sh.bag.length}` }),
+    shelf(sh.bag, 'armBag', 'In the bag', empty),
+    sh.bench.length ? fold('armBench', 'Bench and pro shop', sh.bench.length, shelf(sh.bench, 'armBenchShelf', 'Bench and pro shop')) : null,
+    fold('armHall', 'Hall of Fame', sh.hall.length, sh.hall.length ? shelf(sh.hall, 'armHallShelf', 'Hall of Fame')
+      : h('div', { class:'stack', id:'armHallNone' }, h('p', { class:'muted small', text:'Retired balls rest here with their record. Set a ball to Retired in Bag.' }), h('a', { class:'btn ghost sm', href:'#/bag' }, 'Open Bag'))),
+    h('p', { class:'muted small', id:'armNote', text:'Marks appear only from games you log with frames.' }));
+}
+export async function render() {
+  await ready(); const P = proj(), T = A.title(P);
   const search = h('input', { type:'search', class:'search', id:'arsSearch', placeholder:'Search name, cover, role', 'aria-label':'Search balls', value:st.q, autocomplete:'off' });
   const chips = h('div', { class:'chips scroll', role:'group', 'aria-label':'Filter balls' });
   const grid = h('div', { class:'bgrid', id:'arsGrid' });
@@ -55,7 +84,8 @@ export function render() {
   search.oninput = () => { st.q = search.value; draw(); };
   drawChips(); draw();
   const el = h('section', { class:'screen list-screen' },
-    h('header', { class:'appbar' }, h('h1', { class:'title', text:'Arsenal' }), h('div', { class:'appbar-actions' }, h('a', { class:'btn primary sm', id:'arsAdd', href:'#/add-ball' }, 'Add ball'), h('a', { class:'btn ghost sm', href:'#/arsenal/insights' }, 'Insights'))),
+    h('header', { class:'appbar arm-head' }, h('div', { class:'arm-titles' }, h('span', { class:'arm-team', text:T.team }), h('h1', { class:'title', text:T.title })), h('div', { class:'appbar-actions' }, h('a', { class:'btn primary sm', id:'arsAdd', href:'#/add-ball' }, 'Add ball'), h('a', { class:'btn ghost sm', href:'#/arsenal/insights' }, 'Insights'))),
+    P ? armory(P) : null, h('h2', { class:'group-h arm-cat', text:'Catalog' }),
     h('div', { class:'list-tools' }, search, chips, count), sugg, grid, tray);
-  return { el, title:'Arsenal' };
+  return { el, title:T.title };
 }

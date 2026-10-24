@@ -138,3 +138,13 @@
   - **Usability:** one chip ("Overlays"), then one switch; the default preset needs no setup. The 3-second beginner check: a gold dashed box on the lane, and the pill says whether the line goes through it.
   - **Applicability:** between games / practice planning only. It is never shown during active scoring.
   - Tooltip text as specified.
+
+## Armory (2026-10-24)
+- **SDT:**
+  - **Relatedness:** the team line "Urbanek Honey Badgers" sits on top, and the screen reads as the bowler's own armory, not a store shelf. No name is shown unless one is on file; none is made up.
+  - **Competence:** marks ("First game logged", "10+ games", "212 best", "300 game") appear only after games logged frame by frame with that ball. They are facts from the bowler's own log, never praise or ratings, and never compared with anyone else.
+  - **Autonomy:** the bowler sets the shelves (In bag / Benched / Pro shop / Retired in Bag). Retiring a ball moves it to the Hall of Fame with its record intact, so letting go of a ball isn't a loss.
+- **U/A:**
+  - **Usability:** one takeaway, what's in the bag, shown on a lit shelf with gold nameplates (name, role, RG and Diff from the catalog). Bench and Hall of Fame are folded behind a tap. An empty pedestal is the Add ball button. Targets are ≥44 px, 360 px with no sideways scroll, axe 0.
+  - **Applicability:** used between sessions and when packing. It isn't on the scoring screen, and the tab stays "Arsenal" (no new tab).
+- **3-second beginner check:** "these are my balls; the gold-ringed one is on the lane."
