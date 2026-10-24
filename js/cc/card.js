@@ -224,7 +224,8 @@ export function focusOf(stats) {
     if (order.length) { const k = order[0][1]; return { k, text: 'Next focus: ' + DRILL[k]({ leaves: [] }).replace(/^[A-Z][a-z]+ drill: /, '') }; } }
   return null;
 }
-export function recapOf(list, id) {
+// opts.myAvg: the league average typed in Team setup (sim2 #8). Used only when no other sessions give an average, and named as typed.
+export function recapOf(list, id, { myAvg = null } = {}) {
   const me = list.find(x => x.id === id); if (!me) return null;
   const s = me.stats, t = s.throws, cmp = compare(list, id), by = k => cmp.find(x => x.k === k);
   const word = { strikePct: 'Strikes', sparePct: 'Spares made', openPct: 'Open frames' };
@@ -236,6 +237,10 @@ export function recapOf(list, id) {
   if (done.length && og) { const ser = done.reduce((x, g) => x + g.score, 0), base = Math.round(oth.reduce((n, x) => n + x.stats.avg * x.stats.games, 0) / og), d = ser - base * done.length;
     head = done.length === 1 ? `${ser} game: ${d === 0 ? 'right on' : Math.abs(d) + ' pins ' + (d > 0 ? 'over' : 'under')} your ${base} average.`
       : `${ser} series over ${done.length} games: ${d === 0 ? 'right on' : Math.abs(d) + ' pins ' + (d > 0 ? 'over' : 'under')} your ${base} average (${base * done.length}).`; }
+  const typed = Number.isFinite(+myAvg) && +myAvg > 0 ? Math.round(+myAvg) : null;
+  if (!head && done.length && typed) { const ser = done.reduce((x, g) => x + g.score, 0), d = ser - typed * done.length, vs = d === 0 ? 'right on' : Math.abs(d) + ' pins ' + (d > 0 ? 'over' : 'under');
+    head = done.length === 1 ? `${ser} game: ${vs} your ${typed} league average (typed in Team setup).`
+      : `${ser} series over ${done.length} games: ${vs} your ${typed} league average (${typed * done.length}, typed in Team setup).`; }
   if (!head && a && a.dPrev != null && Math.abs(a.dPrev) >= 5) head = `${a.v} average, ${Math.abs(Math.round(a.dPrev))} pins ${a.dPrev > 0 ? 'over' : 'under'} last session (${a.prev}).`;
   if (!head) for (const k of ['sparePct', 'strikePct', 'openPct']) { const x = by(k); if (x && x.dPrev != null && Math.abs(x.dPrev) >= 5) { head = `${word[k]}: ${x.v}%, ${x.dPrev > 0 ? 'up' : 'down'} ${Math.abs(x.dPrev)} points from last session.`; break; } }
   if (!head && a && a.dPrev != null) head = `${a.v} average, about the same as last session (${a.prev}).`;

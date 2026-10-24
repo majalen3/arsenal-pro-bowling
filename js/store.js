@@ -57,7 +57,7 @@ async function api(path, opts={}) {
     return await r.json();
   } finally { clearTimeout(t); }
 }
-function failStatus(e) { return e && e.status === 429 ? 'Server busy. Saved on this phone, will retry.' : e && e.name === 'AbortError' ? 'Server waking up. Saved on this phone, will retry.' : 'Offline (saved on this phone)'; }
+function failStatus(e) { return e && e.status === 429 ? 'Server busy. Saved on this phone, will retry.' : e && e.name === 'AbortError' ? 'Server waking up. Saved on this phone, will retry.' : navigator.onLine === false ? 'Offline (saved on this phone)' : 'Not backed up yet (saved on this phone, will retry)'; }   // sim2 #13: server unreachable is not "offline"
 let retryN = 0, retryT = null;
 function retryLater(e) { if (retryT || retryN >= 4) return; const d = Math.max([15000,45000,120000,300000][retryN++], e && e.retryAfter ? e.retryAfter*1000+500 : 0); retryT = setTimeout(async () => { retryT = null; await syncLines(); await syncAlley(); }, d); }
 export const esc = t => String(t==null?'':t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

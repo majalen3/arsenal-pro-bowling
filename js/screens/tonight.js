@@ -437,7 +437,8 @@ export async function render() {
   }
   // ---- between games / end of night (sim bug 7): series vs average, strikes, spares with pins left, one focus.
   function nightRecap(P, sid) {
-    const list = sessionsOf(P), r = recapOf(list, sid); if (!r) return null;
+    const lgAvg = (P.sessions[sid] || {}).event === 'league' ? (prefs().league || {}).myAvg : null;   // sim2 #8
+    const list = sessionsOf(P), r = recapOf(list, sid, { myAvg: lgAvg }); if (!r) return null;
     const box = h('div', { class: 'tn-recap', id: 'tnRecap' }, h('p', { class: 'bc-headline', id: 'tnRecapHead', text: r.head }),
       r.support.length ? h('dl', { class: 'bc-figs' }, ...r.support.map(x => h('div', { class: 'bc-fig', 'data-k': x.k }, h('dt', { text: x.label }), h('dd', { text: x.text })))) : null);
     if (r.focus) { const fc = prefs().focus, set = fc && fc.from === sid && fc.text === r.focus.text;

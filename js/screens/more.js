@@ -52,7 +52,7 @@ export function render() {
   function syncLine(st, unsynced) {
     if (st && st.quota && st.quota.full) return `Server backup is full; your ${unsynced} newest ${unsynced === 1 ? 'change is' : 'changes are'} kept only on this phone. Download a backup file below.`;
     if (!unsynced) return st && st.lastPushAt ? 'Backed up to the server.' : 'Saved on this phone. Nothing to back up yet.';
-    return `Saved on this phone; ${unsynced} ${unsynced === 1 ? 'change' : 'changes'} waiting to back up${st && st.lastError ? ' (offline, will retry)' : ''}.`;
+    return `Saved on this phone; ${unsynced} ${unsynced === 1 ? 'change' : 'changes'} waiting to back up${st && st.lastError ? (navigator.onLine === false ? ' (offline, will retry)' : ' (server not reached, will retry)') : ''}.`;
   }
   ready().then(paintData); paintProtect();
   function draw() {
