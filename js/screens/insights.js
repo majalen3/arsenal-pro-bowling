@@ -25,7 +25,7 @@ export function render() {
     (() => { const P = proj(), L = P ? lastGames(P, 10) : null;
       // Sim bug 7: lead with the last 10 games (practice left out); arsenal charts sit behind one tap.
       return h('div', { class:'card', id:'insLast' }, h('h2', { class:'card-title', text:L ? `Last ${L.n} ${L.n === 1 ? 'game' : 'games'}` : 'Last 10 games' }),
-        h('p', { class:'bc-headline', id:'insLastHead', text:L ? `${L.avg} average, high ${L.high}, low ${L.low}.` : 'Score a game on Tonight or import scores to see your last 10 games here.' }),
+        h('p', { class:'bc-headline', id:'insLastHead', text:L ? `${L.avg} average, high ${L.high}, low ${L.low}.` : (P && P.sessions && Object.values(P.sessions).some(x => x.event === 'practice') ? 'Only practice so far. Practice stays out of your average; league or open games show here.' : 'Score a game on Tonight or import scores to see your last 10 games here.') }),
         L && L.scored ? h('dl', { class:'bc-figs' }, h('div', { class:'bc-fig' }, h('dt', { text:'First-ball strikes' }), h('dd', { text:`${L.scored.strikes} of ${L.scored.first}` })),
           h('div', { class:'bc-fig' }, h('dt', { text:'Spares made' }), h('dd', { text:`${L.scored.spareMade} of ${L.scored.spare}` }))) : null,
         L ? h('p', { class:'muted small', id:'insLastN', text:`${L.n} ${L.n === 1 ? 'game' : 'games'}${L.scored ? `, ${L.scoredGames} scored ball by ball` : ''}; practice nights left out.` }) : null); })(),

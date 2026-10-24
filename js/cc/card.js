@@ -160,9 +160,11 @@ export function bowlerCard(P, opts = {}) {
   const tend = { breakpointBoard: mk(wmean(aggs, S('breakpointBoard')), 'board', ltxSrc), breakpointDistance: mk(wmean(aggs, S('breakpointDistance')), 'ft', ltxSrc),
     entryBoard: mk(wmean(aggs, S('entryBoard')), 'board', ltxSrc), impactAngle: mk(wmean(aggs, S('impactAngle')), '°', Object.assign({ note: 'measured by LaneTrax (real degrees), not the app model' }, ltxSrc)) };
   const trend = list.slice().reverse().filter(x => x.stats.strikePct != null).map(x => ({ date: x.date, v: x.stats.strikePct, src: x.source }));
-  const avgTrend = list.slice().reverse().filter(x => x.stats.avg != null).map(x => ({ date: x.date, v: x.stats.avg }));
-  const gamesN = list.reduce((s, x) => s + x.stats.games, 0);
-  const card = { throws: T, speed, rev, style, match, release, consistency, strike, spare, accuracy, tend, trend, avgTrend, games: gamesN, sessions: list.length, leaves: T ? T.leaves : [], src: SRC };
+  // Sim2 #7: the average leaves practice out (USBC averages are certified play only), the same as Insights' last 10 games.
+  const isPr = x => (x.meta && x.meta.event) === 'practice', gN = l => l.reduce((s, x) => s + x.stats.games, 0);
+  const avgTrend = list.slice().reverse().filter(x => !isPr(x) && x.stats.avg != null).map(x => ({ date: x.date, v: x.stats.avg }));
+  const gamesN = gN(list), avgGames = gN(list.filter(x => !isPr(x))), practiceGames = gN(list.filter(isPr));
+  const card = { throws: T, speed, rev, style, match, release, consistency, strike, spare, accuracy, tend, trend, avgTrend, games: gamesN, avgGames, practiceGames, sessions: list.length, leaves: T ? T.leaves : [], src: SRC };
   card.takeaways = takeaways(card);
   card.empty = !list.length && !speedT && !revT;
   return card;
@@ -201,7 +203,7 @@ export function headline(c) {
 // each passes usability (plain bowling words) + applicability (changes a decision). Speed/rev feed ball choice. Max 6.
 export function figures(c) {
   const out = [], T = c.throws;
-  if (c.avgTrend.length) { const avg = Math.round(c.avgTrend.reduce((s, x) => s + x.v, 0) / c.avgTrend.length); out.push({ k: 'avg', label: 'Average', v: avg, unit: '', n: c.games, nUnit: 'games', src: 'your games', why: 'league average, handicap' }); }
+  if (c.avgTrend.length) { const avg = Math.round(c.avgTrend.reduce((s, x) => s + x.v, 0) / c.avgTrend.length); out.push({ k: 'avg', label: 'Average', v: avg, unit: '', n: c.avgGames != null ? c.avgGames : c.games, nUnit: 'games', src: c.practiceGames ? 'your games, practice left out' : 'your games', why: 'league average, handicap' }); }
   if (c.spare.single) out.push({ k: 'single', label: 'Single-pin spares', v: c.spare.single.v, unit: '%', n: c.spare.single.n, nUnit: 'chances', src: c.spare.single.src.label, why: 'spare approach' });
   else if (c.spare.ltx) out.push({ k: 'spare', label: 'Spares made', v: c.spare.ltx.v, unit: '%', n: c.spare.ltx.n, nUnit: 'chances', src: c.spare.ltx.src.label, why: 'spare approach' });
   if (T && T.firstAvg != null) out.push({ k: 'firstAvg', label: 'First-ball average', v: T.firstAvg, unit: 'pins', n: T.first, nUnit: 'first balls', src: 'your scored games', why: 'line and ball choice' });

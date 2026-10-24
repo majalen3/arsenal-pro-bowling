@@ -93,3 +93,16 @@ test('Sim2 #10: strikes alone are not "tagged"; pocket shows only after a non-st
   const P2 = project(base().concat(game('test-sess-pk2', 3)));
   const r2 = C.recapOf(C.sessionsOf(P2), 'test-sess-pk2'); assert.match(r2.support.find(x => x.k === 'strike').text, /pocket \d+ of \d+ tagged/);
 });
+
+test('Sim2 #7: the Card average leaves practice out and says so', () => {
+  const ev = base(), o = { ts: 4000 };
+  ev.push(mkEvent('session.created', 'test-sess-pr', { kind: 'tonight', date: '2026-10-19', event: 'practice' }, o));
+  ev.push(...game('test-sess-pr', 12, { ts: 4100 }));
+  const P = project(ev), c = C.bowlerCard(P), f = C.figures(c);
+  assert.equal(c.practiceGames, 1); assert.equal(c.avgGames, 0); assert.equal(f.find(x => x.k === 'avg'), undefined, 'no average from practice alone');
+  assert.equal(C.lastGames(P), null);
+  ev.push(mkEvent('session.created', 'test-sess-lg', { kind: 'tonight', date: '2026-10-20', event: 'league' }, o));
+  ev.push(...game('test-sess-lg', 0, { ts: 6000 }));
+  const c2 = C.bowlerCard(project(ev)), a = C.figures(c2).find(x => x.k === 'avg');
+  assert.ok(a); assert.equal(a.n, 1); assert.equal(a.src, 'your games, practice left out'); assert.equal(a.v, C.lastGames(project(ev)).avg);
+});

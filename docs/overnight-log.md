@@ -225,3 +225,6 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 
 ## Sim2 #10: "pocket N of N tagged" only once you tag (2026-10-24)
 - Strikes count as tags in `throwStats`, so an untagged night read "pocket 12 of 12 tagged". The recap and the Card pocket row now show only when tagged > strikes, meaning at least one non-strike first ball carries a "First ball hit" tag. Unit +1 (206 total); e2e card 24/0. No sw bump (see the #12 note).
+
+## Sim2 #7: Card average leaves practice out (2026-10-24)
+- `bowlerCard` builds avgTrend and the Average figure from non-practice sessions only. The Average row's source reads "your games, practice left out" when practice exists. Insights shows "Only practice so far. Practice stays out of your average…" instead of "Score a game…" when every game so far is practice. This matches USBC (averages are certified play only) and Insights' last 10 games. Strike and spare figures still include practice, because they are skill data. Unit +1 (207); e2e card+advisor 44/0. No sw bump.
