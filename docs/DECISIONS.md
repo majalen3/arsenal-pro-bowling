@@ -168,3 +168,9 @@ The owner's target is a board (1–39, halves allowed), not an engine angle. We 
 - The bag's `excluded` list is retired: excluded balls migrate to At home (unless they are at the pro shop or retired), and the list is always saved empty.
 - Swap may bring an At home ball, which is marked "grab from home". Pro shop and Retired balls are never offered.
 - "Why not this ball?" comes from one function (`cc/status.js whyNotFor`), so the ball page, Arsenal, Tonight and Bag can never disagree.
+
+## One saved bag, "Bring: N", 3-step builder (P1.1 / P1.2 / P1.4, 2026-10-24)
+- THE bag is the latest `bag.saved` (`status.js currentBag`). Tonight's suggestion, the #/bag builder and the ball chip all read it. Tonight's Pack writes it (`bag-tonight`). Swaps on Tonight edit it once it is packed for that night type.
+- "Bring: N" counts the spare and is the only size control (#/bag step 1: 2 / 3 / 4 / 6 / Other, and Other takes any whole number 1–20). Defaults: League 3, Tournament 6, Practice 3, New center 3, Sport 6. Tonight states "Bag builder · Bring N ›" and has no control. Tonight's Bag selector and the builder's Format row are removed; `format` is derived from N for the 10 checks (`bagedit.formatOfBring`).
+- Builder = wireframe 03. Role rows use bowler words (Start ball / If it hooks early / If it stops hooking / For heavy oil / Spares) with a one-line why. The Swap sheet shows In my bag, then At home ("grab from home"), each with what changes. The weaker↔stronger ladder and the 10 checks are behind a tap. "Left out (why not)" covers every other owned ball: [Bring] swaps in for the closest-level unpinned non-spare. Pro shop and Retired balls get only "Change where it is ›". A sticky "Pack these N" saves the bag.
+- Pure edits live in `js/cc/bagedit.js` (swap / bringIn / pin / fromAnswer). The engine and the advisor ranking are unchanged; `advise()` gains `bring`, `fixed` (the saved bag as-is) and `locked`.

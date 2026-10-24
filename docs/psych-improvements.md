@@ -210,3 +210,13 @@
   - **Usability:** one 4-way control on the ball page and a 2-tap sheet in Bag. The why-not line sits under the ball. Every target is 44 px, with no overflow at 360 and axe 0.
   - **Applicability:** applies to every bowler with more than one ball. Nothing is added during scoring, and the ball chip just stops offering balls that aren't in the bag.
 - **3-second beginner check:** "My Ice Storm is at the pro shop, so it's not in tonight's bag, and the app says so."
+
+## One bag, "Bring: N", 3-step builder (P1.1 / P1.2 / P1.4, 2026-10-24)
+- **SDT:**
+  - **Competence:** each ball has a job in bowler words ("If it hooks early") and one line of why. The ladder and the 10 checks are there for learning, behind a tap. Every ball left out says why, so the bowler can predict the builder.
+  - **Autonomy:** the bowler picks how many to bring, swaps any role, pins balls with 📌 Always bring and can bring any left-out ball. The builder suggests; it never overrides a choice.
+  - **Relatedness:** "Bring 3" is how league bowlers talk about their bag; the same bag shows on Tonight, in Bag and on the ball chip, so there is one shared picture.
+- **U/A:**
+  - **Usability:** one size control instead of three, one sticky "Pack these N" button always inside 360×740, Swap in 2 taps, 44 px targets, no horizontal scroll, axe 0.
+  - **Applicability:** applies to anyone with 2+ balls; a one-ball bowler sees one row and "Bring more from Left out". Nothing changes during scoring.
+- **3-second beginner check:** "Bring 3: start with Big Bite, Hy-Road if it hooks early, Ice Storm for spares. Pack."

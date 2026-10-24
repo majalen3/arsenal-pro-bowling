@@ -12,6 +12,7 @@ import * as G from '../cc/bag.js';
 import { HOUSE_ASSUMED } from '../cc/rank.js';
 import { openNight } from '../cc/night.js';
 import { helpDot } from './help.js';
+import { currentBag, packedIds } from '../cc/status.js';
 const prov = (p, t) => h('span', { class: 'prov', 'data-prov': p || null, text: t });
 const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const WEIGHTS = [16, 15, 14, 13, 12];
@@ -146,8 +147,8 @@ export async function render() {
     }
     detail.append(eng);
     // ---- 4. grid placement against the balls in the bag
-    const bag = Object.values(P.bags || {}).sort((x, y) => (x.id < y.id ? 1 : -1))[0];
-    const items = bag ? bag.slots.map(x => x.owned).filter(id => id !== bag.spare && P.owned[id]).map(id => ({ ownedId: id, catalogId: P.owned[id].catalogId || null, name: P.owned[id].name }))
+    const bag = currentBag(P);   // P1.1: the one saved bag
+    const items = bag ? packedIds(P, bag).filter(id => id !== bag.spare && P.owned[id]).map(id => ({ ownedId: id, catalogId: P.owned[id].catalogId || null, name: P.owned[id].name }))
       : Object.keys(P.owned).filter(id => (P.owned[id].status || 'inBag') === 'inBag').map(id => ({ ownedId: id, catalogId: P.owned[id].catalogId || null, name: P.owned[id].name }));
     const pl = A.placement(cat, items), dec = items.map(x => Object.assign({}, x, G.cellOf(x.catalogId)));
     const over = new Set(pl.overlaps.flatMap(o => [o.a, o.b]));

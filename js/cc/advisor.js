@@ -7,12 +7,32 @@ import { catOf } from './cats.js';
 // Event → bag size (balls besides the spare). Sizes: league 3 / tournament 6 / practice 2–3 (owner spec); sport and
 // new center are app choices, labelled as such.
 export const EVENTS = {
-  league: { label: 'League night', short: 'League', format: 'league3', size: SIZE.league3, spare: true },
-  tournament: { label: 'Tournament', short: 'Tournament', format: 'tournament6', size: SIZE.tournament6, spare: true },
-  practice: { label: 'Practice', short: 'Practice', format: 'custom', size: 2, spare: true },
-  newCenter: { label: 'New center', short: 'New center', format: 'league3', size: SIZE.league3, spare: true, benchFirst: 'new center' },
-  sport: { label: 'Sport pattern', short: 'Sport', format: 'tournament6', size: SIZE.tournament6, spare: true, note: 'app choice: 6 balls, flat patterns need more shapes' },
+  league: { label: 'League night', short: 'League', format: 'league3', size: SIZE.league3, bring: 3, spare: true },
+  tournament: { label: 'Tournament', short: 'Tournament', format: 'tournament6', size: SIZE.tournament6, bring: 6, spare: true },
+  practice: { label: 'Practice', short: 'Practice', format: 'custom', size: 2, bring: 3, spare: true },
+  newCenter: { label: 'New center', short: 'New center', format: 'league3', size: SIZE.league3, bring: 3, spare: true, benchFirst: 'new center' },
+  sport: { label: 'Sport pattern', short: 'Sport', format: 'tournament6', size: SIZE.tournament6, bring: 6, spare: true, note: 'app choice: 6 balls, flat patterns need more shapes' },
 };
+// P1.2: "Bring: N" (N counts the spare) is the only bag-size control. The stored bag keeps a v1-compatible format.
+export const BRING_OPTS = [2, 3, 4, 6];
+export const bringOf = n => { const x = Math.round(Number(n)); return Number.isFinite(x) && x >= 1 ? Math.min(x, 20) : null; };
+// P1.4 (wireframe 03): roles in bowler words. Keys stay (data-role); labels are what the bowler reads.
+export function roleWords(rows) {
+  const lv = rows.map(r => r.level), A = rows.find(r => r.role === 'benchmark'), lvA = A ? A.level : null;
+  const top = Math.max(...rows.filter(r => r.role === 'stronger' && r.level != null).map(r => r.level), -Infinity);
+  const nStrong = rows.filter(r => r.role === 'stronger').length;
+  for (const r of rows) {
+    if (r.role === 'benchmark') { r.label = 'Start ball'; r.line = 'Throw this first and read the lanes.'; }
+    else if (r.role === 'weaker-control') { r.label = 'If it hooks early'; r.line = 'Weaker: for when the lanes dry out or hook early.'; }
+    else if (r.role === 'stronger') { const heavy = nStrong > 1 && r.level === top && top - lvA >= 2;
+      r.label = heavy ? 'For heavy oil' : 'If it stops hooking'; r.line = heavy ? 'Strongest: for heavier oil than expected.' : 'Stronger: for when the start ball won\u2019t turn.'; }
+    else if (r.role === 'shape change') { const more = r.ang != null && A && A.ang != null && r.ang > A.ang;
+      r.label = more ? 'If it stops hooking' : 'If it hooks early'; r.line = more ? 'Same strength, sharper turn at the end.' : 'Same strength, smoother arc.'; }
+    else if (r.role === 'spare') { r.label = 'Spares'; r.line = r.plastic ? 'Plastic cover goes straight: aim at the pins left.' : 'Goes straighter: aim at the pins left.'; }
+    else { r.label = 'Specs to check'; r.line = 'No oil tag yet (spec TBD), so the app can\u2019t place it.'; }
+  }
+  void lv; return rows;
+}
 // Minimum sample before results can re-order the bag: USBC Rule 319a needs a 21-game league average (bowl.com,
 // "Recent rule changes", search excerpt). Below it, results are shown but labelled "app estimate".
 export const MIN_GAMES = 21;
@@ -58,7 +78,7 @@ function warningFor(item, all, health) {
   if (ov) { const other = all.find(x => x.ownedId === (ov.a === item.ownedId ? ov.b : ov.a)); return `overlaps ${other ? short(other.name) : 'another ball'} (${ov.why})`; }
   return null;
 }
-// opts: { event, pattern, tert, surface, style, speed, rev, health, swaps: {ownedId: replacementId}, line: fn(cat) → model line }
+// opts: { event, bring (N incl. spare), fixed: { slots: [ownedId], spare } (the saved bag, P1.1), locked: [ownedId], pattern, tert, surface, style, speed, rev, health, swaps: {ownedId: replacementId}, line: fn(cat) → model line }
 export function advise(P, opts = {}) {
   const E = EVENTS[opts.event] || EVENTS.league;
   const itemOf = o => { const c = catOf(o.catalogId);
@@ -71,9 +91,21 @@ export function advise(P, opts = {}) {
   // ball at the same distance from tonight's demand. Fewer games never re-order (shown, labelled app estimate).
   const ev = Object.fromEntries(pool.map(o => [o.ownedId, evidenceOf(P, o.ownedId, o.catalogId)]));
   const bf = E.benchFirst || benchFirstReason({ patternKnown: !!pat, centerKnown: true, centerNew: false, tournamentFirstGame: opts.event === 'tournament' });
-  const f = fill(owned, { format: E.format, size: E.size, current: opts.current || [], ctx: { format: E.format, pattern: pat, tert: opts.tert, surface: opts.surface, style: opts.style } });
-  let ids = f.slots.map(s => s.owned); const spareId = f.spare;
-  for (const [from, to] of Object.entries(opts.swaps || {})) { const i = ids.indexOf(from); if (i >= 0 && to && !ids.includes(to) && pool.some(o => o.ownedId === to)) ids[i] = to; }
+  const bring = bringOf(opts.bring) || E.bring, wantSpare = E.spare && bring >= 2;
+  let ids, spareId;
+  if (opts.fixed) {
+    const fx = opts.fixed, inPool = id => pool.some(o => o.ownedId === id);
+    spareId = fx.spare && inPool(fx.spare) && (fx.slots || []).includes(fx.spare) ? fx.spare : null;
+    ids = (fx.slots || []).filter(id => id !== spareId && inPool(id));
+  } else {
+    const lockedIds = (opts.locked || []).filter(id => pool.some(o => o.ownedId === id)), fp = owned.concat(pool.filter(o => lockedIds.includes(o.ownedId) && !owned.includes(o)));
+    const fo = { format: E.format, locked: lockedIds, current: opts.current || [], ctx: { format: E.format, pattern: pat, tert: opts.tert, surface: opts.surface, style: opts.style } };
+    let f = fill(fp, Object.assign({ size: Math.max(1, wantSpare ? bring - 1 : bring) }, fo));
+    if (!wantSpare || !f.spare) f = fill(fp, Object.assign({ size: bring }, fo, !wantSpare ? { excluded: [] } : {}));
+    if (!wantSpare && f.spare) { const all2 = fill(fp.filter(o => o.ownedId !== f.spare), Object.assign({ size: bring }, fo)); f = all2.slots.length >= bring ? Object.assign(all2, { spare: null }) : Object.assign(f, { spare: null }); }
+    ids = f.slots.map(s => s.owned); spareId = f.spare;
+    for (const [from, to] of Object.entries(opts.swaps || {})) { const i = ids.indexOf(from); if (i >= 0 && to && !ids.includes(to) && pool.some(o => o.ownedId === to)) ids[i] = to; }
+  }
   const strike = ids.map(id => pool.find(o => o.ownedId === id)).filter(Boolean);
   const r = rank(strike, { demand: d.demand, benchFirst: bf, style: opts.style || 'tweener' });
   const order = r.order.slice();
@@ -82,7 +114,7 @@ export function advise(P, opts = {}) {
     if (a.dist === b.dist && !(bf && a.benchmark) && ea.enough && eb.enough && (eb.strikePct || 0) > (ea.strikePct || 0)) { order[i] = b; order[i + 1] = a; }
   }
   const A = order[0] || null, lvA = A ? A.level : null;
-  const all = strike.concat(spareId ? owned.filter(o => o.ownedId === spareId) : []);
+  const all = strike.concat(spareId ? pool.filter(o => o.ownedId === spareId) : []);
   const roleOf = x => x === A ? 'benchmark' : x.level == null || lvA == null ? 'option' : x.level > lvA ? 'stronger' : x.level < lvA ? 'weaker-control' : 'shape change';
   const reasonOf = (x, role) => {
     const lv = x.level != null ? `Level ${x.level} vs demand ${d.demand}` : 'No oil tag (spec TBD)';
@@ -92,8 +124,9 @@ export function advise(P, opts = {}) {
     return `${lv}: other shape, same strength.`;
   };
   const rows = order.map(x => { const role = roleOf(x), e = ev[x.id];
-    return { ownedId: x.id, catalogId: x.catalogId, name: short(x.name), role, reason: reasonOf(x, role), confidence: confidenceOf(e), evidence: evidenceText(short(x.name), e), warning: warningFor({ ownedId: x.id, catalogId: x.catalogId, cat: x.cat, name: x.name }, all, opts.health) }; });
-  if (spareId) { const s = owned.find(o => o.ownedId === spareId); rows.push({ ownedId: s.ownedId, catalogId: s.catalogId, name: short(s.name), role: 'spare', reason: 'Straight at spares (3-6-9).', confidence: confidenceOf(ev[s.ownedId]), evidence: evidenceText(short(s.name), ev[s.ownedId]), warning: null }); }
+    return { ownedId: x.id, catalogId: x.catalogId, name: short(x.name), role, level: x.level, ang: x.ang, home: (pool.find(o => o.ownedId === x.id) || {}).status === 'benched', reason: reasonOf(x, role), confidence: confidenceOf(e), evidence: evidenceText(short(x.name), e), warning: warningFor({ ownedId: x.id, catalogId: x.catalogId, cat: x.cat, name: x.name }, all, opts.health) }; });
+  if (spareId) { const s = pool.find(o => o.ownedId === spareId); rows.push({ ownedId: s.ownedId, catalogId: s.catalogId, name: short(s.name), role: 'spare', level: levelOf(s.cat), home: s.status === 'benched', plastic: !!(s.cat && /polyester|plastic/i.test(s.cat.coverstock || s.cat.cover || '')), reason: 'Straight at spares (3-6-9).', confidence: confidenceOf(ev[s.ownedId]), evidence: evidenceText(short(s.name), ev[s.ownedId]), warning: null }); }
+  roleWords(rows);
   // A → B → C: weaker first (lanes break down as the night goes), then stronger if they never hook.
   const weaker = order.filter(x => x !== A && x.level != null && lvA != null && x.level < lvA).sort((a, b) => b.level - a.level);
   const stronger = order.filter(x => x !== A && x.level != null && lvA != null && x.level > lvA).sort((a, b) => a.level - b.level);
@@ -104,8 +137,8 @@ export function advise(P, opts = {}) {
   const anyEnough = rows.some(x => x.confidence.key === 'measured'), anyData = rows.some(x => x.confidence.key !== 'spec');
   const why = `${strike.length} strike ball${strike.length === 1 ? '' : 's'} covering level${levels.length === 1 ? '' : 's'} ${levels.join('\u2013') || 'unknown'} around demand ${d.demand}${spareId ? ', plus a spare ball' : ''}; ${anyEnough ? 'order uses your results.' : anyData ? `results shown, but under ${MIN_GAMES} games they don\u2019t re-order the bag.` : 'based on specs + your release, no results logged yet.'}`;
   const change = pat ? `${MIN_GAMES}+ logged games with a ball, a lane-condition change, or a ball at the pro shop.` : `Setting the pattern (now an assumed ${HOUSE_ASSUMED.ft} ft house shot), ${MIN_GAMES}+ logged games with a ball, or a ball at the pro shop.`;
-  return { event: opts.event || 'league', E, demand: d, rows, plan, A: A ? { ownedId: A.id, catalogId: A.catalogId, name: short(A.name), cat: A.cat } : null, line: ml, slots: strike.map(x => x.ownedId), spare: spareId,
-    why, change, noData: !anyData, fromHome: strike.filter(x => x.status === 'benched').map(x => x.ownedId),
+  return { event: opts.event || 'league', E, bring, demand: d, rows, plan, A: A ? { ownedId: A.id, catalogId: A.catalogId, name: short(A.name), cat: A.cat } : null, line: ml, slots: strike.map(x => x.ownedId), spare: spareId,
+    why, change, noData: !anyData, fromHome: all.filter(x => x.status === 'benched').map(x => x.ownedId),
     bench: pool.filter(o => !ids.includes(o.ownedId) && o.ownedId !== spareId).map(o => ({ ownedId: o.ownedId, name: short(o.name), level: levelOf(o.cat), home: o.status === 'benched' })),
     // "Why not this ball?" for every owned ball left out (status.js, the same words as the ball page and the builder).
     left: Object.values(P.owned || {}).filter(o => !ids.includes(o.id) && o.id !== spareId).map(itemOf).map(o => Object.assign({ ownedId: o.ownedId, name: short(o.name), status: o.status },

@@ -648,3 +648,10 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .hand-line{display:flex;align-items:center;flex-wrap:wrap;gap:2px;margin:0}
 .linkish{min-height:var(--tap);min-width:var(--tap);padding:0 6px;border:0;background:none;color:var(--text);font:inherit;font-weight:700;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .linkish:focus-visible{outline:2px solid var(--gold);outline-offset:-4px;border-radius:var(--r-sm,6px)}
+/* P1.4 bag builder (wireframe 03): role rows, ladder, sticky Pack these N */
+.bb-row{display:grid;gap:4px;padding:var(--s2) 0;border-bottom:1px solid var(--line)}
+.bb-row:last-child{border-bottom:0}
+#bagLeft .ball-row{display:grid;gap:4px;padding:var(--s2) 0;border-bottom:1px solid var(--line)}
+.ladder{display:grid;gap:4px;padding-left:var(--s4)}
+.swap-cand{display:grid;justify-items:start;text-align:left;gap:2px;height:auto;min-height:44px;padding-top:6px;padding-bottom:6px}
+.bag-dock{position:sticky;bottom:calc(var(--tab-h) + 4px);z-index:5;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--s2);box-shadow:var(--shadow-2)}

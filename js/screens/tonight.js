@@ -27,6 +27,7 @@ import * as OP from '../cc/ownpat.js';
 import * as DR from '../cc/drill.js';
 import * as hub from '../hub.js';
 import * as ST from '../cc/status.js';
+import * as BE from '../cc/bagedit.js';
 import { helpDot, withHelp } from './help.js';
 import * as HAND from '../cc/hand.js';
 import { handAsk, handLine } from './hand.js';
@@ -61,8 +62,10 @@ export async function render() {
       : mkEvent('session.created', id, Object.assign({ kind: 'tonight', date: dayKey(Date.now()) }, sess(), fields), { deviceId: deviceId(), prov: { kind: 'user' } });
     await addMany([ev]); local = {}; draw();
   }
+  const swapIn = (P, bag, from, to) => add('bag.saved', bag.id, BE.swap(P, bag, from, to));
   function bagOf(P, s) {
-    const bags = Object.values(P.bags), bag = bags.find(b => b.id === s.bagId) || bags[0] || null;
+    // P1.1: ONE saved bag. Tonight, the builder and the ball chip all read the latest bag.saved (status.js currentBag).
+    const bags = Object.values(P.bags), bag = ST.currentBag(P);
     // P1.3: only what is actually packed (status.js) — a ball moved to At home / the pro shop / Retired drops out at once.
     const ids = bag ? ST.packedIds(P, bag) : Object.values(P.owned).filter(ST.inMyBag).map(o => o.id);
     const spare = bag && ids.includes(bag.spare) ? bag.spare : null;
@@ -87,7 +90,7 @@ export async function render() {
     const center = s.centerId ? P.centers[s.centerId] : null;
     const prevCenters = new Set(Object.values(P.sessions).filter(x => x.id !== curSid() && x.centerId).map(x => x.centerId));
     const d = R.demandOf({ pattern: pat, tert: TERT, surface: s.surface, stage: s.stage });
-    const { bag, bags, list, spare } = bagOf(P, s);
+    const { bag, list, spare } = bagOf(P, s);
     const bf = R.benchFirstReason({ patternKnown: !!pat, centerKnown: !!center, centerNew: !!center && !prevCenters.has(center.id), tournamentFirstGame: !!bag && bag.format === 'tournament6' && (s.game || 1) === 1 });
     const r = R.rank(list, { demand: d.demand, benchFirst: bf, style: b.style || 'tweener' });
     const cur = r.order.find(x => x.id === s.pickId) || r.pick;
@@ -127,7 +130,6 @@ export async function render() {
         center ? h('label', { class: 'fld' }, h('span', { text: 'Lane pair (optional)' }), lpIn) : null,
         h('div', { class: 'fld' }, h('span', {}, 'Lane surface ', s.surface === 'unknown' ? provChip('assumed', 'unknown') : null), segmented('Lane surface', [['unknown', 'Unknown'], ['wood', 'Wood'], ['synthetic', 'Synthetic']], s.surface, v => { save({ surface: v, pickId: null }); if (center) add('center.edited', center.id, { fields: { surface: v } }); })),
         h('div', { class: 'fld' }, h('span', { text: 'Lane condition' }), segmented('Lane condition', [['fresh', 'Fresh'], ['transition', 'Transition'], ['burn', 'Burned']], s.stage, v => save({ stage: v, pickId: null }))),
-        bags.length > 1 ? h('div', { class: 'fld' }, h('span', { text: 'Bag' }), segmented('Bag', bags.map(x => [x.id, x.name]), bag.id, v => save({ bagId: v, pickId: null }))) : null,
         h('div', { class: 'fld' }, h('span', { text: 'Game' }), segmented('Game', [[1, '1'], [2, '2'], [3, '3'], [4, '4+']], s.game || 1, v => save({ game: +v }), 'wide')),
         h('div', { class: 'fld' }, h('span', { text: 'Scoring' }), segmented('Scoring', [['solo', 'Just me'], ['league', 'League team'], ['baker', 'Baker']], s.mode || 'solo', v => save({ mode: v }), 'wide')),
         (s.mode || 'solo') !== 'solo' ? teamSetup(s) : null,
@@ -464,35 +466,37 @@ export async function render() {
     if (!ev) { card.append(h('p', { class: 'muted small', text: 'Pick one: your bag, first ball and where to stand appear here.' })); return card; }
     const mem = ap[ev] || {}, pat = s.ft != null ? { slug: s.patternSlug, name: s.patternName || s.patternSlug, ft: s.ft, ml: s.ml, ratio: s.ratio } : null;
     const ft = pat ? pat.ft : R.HOUSE_ASSUMED.ft, r31 = R.rule31(ft);
-    const cur = Object.values(P.bags).find(x => x.format === A.EVENTS[ev].format);
-    const a = A.advise(P, { event: ev, pattern: pat, tert: TERT, surface: s.surface, style: b.style || 'tweener', health: P.health, swaps: mem.swaps || {}, current: cur ? cur.slots.map(x => x.owned) : [],
+    // P1.1/P1.2: when the saved bag is for this event, Tonight shows exactly that bag (its Bring N); else a fresh suggestion.
+    const cur = ST.currentBag(P), mine = cur && cur.event === ev ? cur : null, bring = (mine && A.bringOf(mine.bring)) || A.EVENTS[ev].bring;
+    const a = A.advise(P, { event: ev, bring, fixed: mine ? { slots: ST.packedIds(P, mine), spare: mine.spare } : null, pattern: pat, tert: TERT, surface: s.surface, style: b.style || 'tweener', health: P.health, swaps: mine ? {} : mem.swaps || {}, current: cur ? cur.slots.map(x => x.owned) : [],
       line: c => lineFor(c, { speed: num(b.speed), rev: num(b.rev), ft: pat ? pat.ft : null }).ml });
     if (a.none) { card.append(h('p', { class: 'muted', text: a.reason }), h('button', { class: 'btn block', onclick: () => go('#/arsenal') }, 'Open Arsenal \u203a')); return card; }
     const ml = a.line, st = ml && !ml.none ? standOf(ml.feet) : null;
     card.append(h('p', { class: 'coach', id: 'advStart', role: 'status', text: st ? `Start with: ${a.A.name}, from feet ${st.feet}, aim ${fmtHalf(ml.target)} at the arrows.` : `Start with: ${a.A.name}. ${(ml && ml.reason) || 'spec TBD: no model line'}, so set feet and eyes on Targeting.` },
       st ? provChip('model', st.assumed ? '2-D model \u00b7 offset 7 assumed' : '2-D model') : null));
-    const packed = mem.packedTs && P.bags['bag-adv-' + ev];
+    const packed = !!(mine && mine.packedTs);
     const list = h('ul', { class: 'adv-list', id: 'advList' }, ...a.rows.map(r => {
       const conf = provChip(r.confidence.key === 'measured' ? 'device' : r.confidence.key === 'spec' ? 'catalog' : 'assumed', r.confidence.label);
       const li = h('li', { class: 'adv-row', 'data-owned': r.ownedId, 'data-role': r.role },
-        h('div', { class: 'adv-head' }, h('b', { text: r.name }), h('span', { class: 'pill' + (r.role === 'benchmark' ? ' gold' : ''), text: r.role }), conf),
+        h('div', { class: 'adv-head' }, h('b', { text: r.name }), h('span', { class: 'pill' + (r.role === 'benchmark' ? ' gold' : ''), text: r.label || r.role }), conf),
         h('p', { class: 'small muted', text: r.reason }),
         r.evidence ? h('p', { class: 'small', 'data-evidence': '' }, r.evidence) : null,
         r.warning ? h('p', { class: 'small adv-warn', 'data-warn': '' }, '\u26a0 ' + r.warning) : null);
       if (r.role !== 'spare') li.append(h('button', { class: 'btn sm ghost', 'data-swap': r.ownedId, 'aria-expanded': String(swapOpen === r.ownedId), 'aria-label': `Swap ${r.name}`, onclick: () => {
         if (!a.bench.length) { toast('No other ball in your bag or at home. Change a ball\u2019s Status on its page.'); return; } swapOpen = swapOpen === r.ownedId ? null : r.ownedId; draw(); } }, 'Swap'));
-      if (swapOpen === r.ownedId) li.append(h('div', { class: 'chips', role: 'group', 'aria-label': `Swap ${r.name} for` }, ...a.bench.map(x => h('button', { class: 'btn sm', 'data-swap-to': x.ownedId, onclick: () => {
+      if (swapOpen === r.ownedId) li.append(h('div', { class: 'chips', role: 'group', 'aria-label': `Swap ${r.name} for` }, ...a.bench.map(x => h('button', { class: 'btn sm', 'data-swap-to': x.ownedId, onclick: async () => {
+        if (mine) { swapOpen = null; await swapIn(P, mine, r.ownedId, x.ownedId); toast(`${x.name} in for ${r.name}.`); return; }
         const m = Object.assign({}, prefs().advisor), e2 = Object.assign({}, m[ev]); e2.swaps = Object.assign({}, e2.swaps); for (const [k, v] of Object.entries(e2.swaps)) if (v === r.ownedId) delete e2.swaps[k];
         e2.swaps[r.ownedId] = x.ownedId; m[ev] = e2; swapOpen = null; setPrefs({ advisor: m }); draw(); toast(`${x.name} in for ${r.name}.`); } }, x.home ? `${x.name} \u00b7 ${ST.HOME_TAG}` : x.name))));
       return li; }));
     card.append(list);
-    const id = 'bag-adv-' + ev;
+    const n = a.rows.length;
     card.append(h('div', { class: 'btn-grid' }, h('button', { class: 'btn primary', id: 'advPack', onclick: async () => {
-      const slots = a.slots.concat(a.spare ? [a.spare] : []).map(o => Object.assign({ owned: o, locked: false }, a.fromHome.includes(o) ? { fromHome: true } : {}));
-      await add('bag.saved', id, { name: `${A.EVENTS[ev].label} (advisor)`, format: A.EVENTS[ev].format, slots, spare: a.spare || null, excluded: [], eventDate: today(), source: 'advisor', event: ev });
-      setPrefs({ advisor: Object.assign({}, prefs().advisor, { [ev]: Object.assign({}, (prefs().advisor || {})[ev], { packedTs: Date.now(), slots: a.slots, spare: a.spare }) }) });
-      await save({ bagId: id, pickId: a.A.ownedId }); toast(`Packed: ${a.rows.map(r => r.name).join(', ')}.`); } }, packed ? 'Packed \u2713 Pack again' : 'Pack this'),
-      h('button', { class: 'btn ghost', id: 'advBuilder', onclick: () => go('#/bag') }, 'Full bag builder \u203a')));
+      const ids = a.slots.concat(a.spare ? [a.spare] : []), slots = ids.map(o => Object.assign({ owned: o, locked: !!(mine && (mine.slots.find(x => x.owned === o) || {}).locked) }, a.fromHome.includes(o) ? { fromHome: true } : {}));
+      await add('bag.saved', ST.TONIGHT_BAG, { name: `${A.EVENTS[ev].label}`, format: BE.formatOfBring(bring), bring, slots, spare: a.spare || null, excluded: [], eventDate: (mine && mine.eventDate) || today(), source: 'advisor', event: ev, packedTs: Date.now() });
+      const m = Object.assign({}, prefs().advisor), e2 = Object.assign({}, m[ev], { packedTs: Date.now(), swaps: {} }); m[ev] = e2; setPrefs({ advisor: m });
+      await save({ bagId: ST.TONIGHT_BAG, pickId: a.A.ownedId }); toast(`Packed: ${a.rows.map(r => r.name).join(', ')}.`); } }, packed ? 'Packed \u2713 Pack again' : `Pack these ${n}`),
+      h('button', { class: 'btn ghost', id: 'advBuilder', onclick: () => go('#/bag') }, `Bag builder \u00b7 Bring ${bring} \u203a`)));
     if (a.left.length) card.append(h('details', { class: 'why-not-list', id: 'advLeft' }, h('summary', { text: `Why not the others? (${a.left.length})` }),
       h('ul', { class: 'plain' }, ...a.left.map(x => h('li', { class: 'small', 'data-why-not': x.ownedId, 'data-why': x.key }, h('b', { text: x.name + ': ' }), x.text)))));
     if (a.plan.length) card.append(h('p', { class: 'small', id: 'advPlan' }, h('b', { text: 'Then: ' }), a.plan.map(x => `${x.k} ${x.name} (${x.when})`).join(' \u2192 ')));
