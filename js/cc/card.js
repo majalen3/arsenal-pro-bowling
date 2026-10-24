@@ -156,7 +156,7 @@ export function bowlerCard(P, opts = {}) {
     multi: T && T.multi ? { v: T.multiPct, made: T.multiMade, n: T.multi, dates: gDates, src: { label: 'your scored games', how: 'logged' } } : null,
     ltx: ltxOut.spare ? { v: pct(ltxOut.made, ltxOut.spare), made: ltxOut.made, n: ltxOut.spare, dates: ltxDates, src: ltxSrc } : null };
   const accuracy = { arrows: mk(wmean(aggs, KPI('arrowsDifference')), 'boards', Object.assign({ note: 'LaneTrax "Arrows": mean of the closest 50% of arrow differences' }, ltxSrc)),
-    pocket: T && T.tagged ? { v: T.pocketPct, n: T.tagged, dates: gDates, src: { label: 'your "First ball hit" tags + strikes', how: 'logged' } } : null };
+    pocket: T && T.tagged > T.strikes ? { v: T.pocketPct, n: T.tagged, dates: gDates, src: { label: 'your "First ball hit" tags + strikes', how: 'logged' } } : null };
   const tend = { breakpointBoard: mk(wmean(aggs, S('breakpointBoard')), 'board', ltxSrc), breakpointDistance: mk(wmean(aggs, S('breakpointDistance')), 'ft', ltxSrc),
     entryBoard: mk(wmean(aggs, S('entryBoard')), 'board', ltxSrc), impactAngle: mk(wmean(aggs, S('impactAngle')), '°', Object.assign({ note: 'measured by LaneTrax (real degrees), not the app model' }, ltxSrc)) };
   const trend = list.slice().reverse().filter(x => x.stats.strikePct != null).map(x => ({ date: x.date, v: x.stats.strikePct, src: x.source }));
@@ -240,8 +240,9 @@ export function recapOf(list, id) {
   if (!head) head = s.avg != null ? `${s.avg} average over ${PLURAL(s.games, 'game')}${s.high != null && s.games > 1 ? `, high ${s.high}` : ''}.`
     : s.ltx ? `${s.ltx.strikes} strikes on ${s.ltx.first} first balls; ${s.ltx.spareMade} of ${s.ltx.spare} spares made.` : t ? `${t.strikes} strikes on ${t.first} first balls.` : 'Session saved.';
   const sup = [];
+  // Sim2 #10: the pocket part shows only once a non-strike first ball is tagged (strikes alone are not tags).
   // Sim bug 7: first-ball strikes (pocket when tagged) and spares made with the pins they left, each with its sample size.
-  if (t && t.first) sup.push({ k: 'strike', label: 'First-ball strikes', text: `${t.strikes} of ${t.first}` + (t.tagged ? ` \u00b7 pocket ${t.pocket} of ${t.tagged} tagged` : '') });
+  if (t && t.first) sup.push({ k: 'strike', label: 'First-ball strikes', text: `${t.strikes} of ${t.first}` + (t.tagged > t.strikes ? ` \u00b7 pocket ${t.pocket} of ${t.tagged} tagged` : '') });
   if (t && t.spare) sup.push({ k: 'spare', label: 'Spares made', text: `${t.spareMade} of ${t.spare}` + (t.leftUp ? ` \u00b7 ${t.leftUp} ${t.leftUp === 1 ? 'pin' : 'pins'} left on misses` : '') });
   else if (!t && s.ltx && s.ltx.spare) sup.push({ k: 'spare', label: 'Spares made', text: `${s.ltx.spareMade} of ${s.ltx.spare}` });
   if (!t && s.ltx && s.ltx.first) sup.push({ k: 'strike', label: 'Strikes', text: `${s.ltx.strikes} of ${s.ltx.first}` });

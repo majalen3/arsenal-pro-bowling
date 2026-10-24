@@ -83,3 +83,13 @@ test('recap: one headline change, ≤2 supporting stats, one fixable focus (test
   const p = planLaneTrax({ record: EXPECTED, now: 9000, deviceId: 'd' }); const P2 = project(base().concat(p.events)); const l2 = C.sessionsOf(P2);
   const r2 = C.recapOf(l2, l2.find(x => x.agg).id); assert.match(r2.head, /^6 strikes on 47 first balls; 8 of 39 spares made\.$/); assert.match(r2.focus.text, /^Next focus:/);
 });
+
+test('Sim2 #10: strikes alone are not "tagged"; pocket shows only after a non-strike tag', () => {
+  const ev = base(), sid = 'test-sess-pk', o = { ts: 4000 };
+  ev.push(mkEvent('session.created', sid, { kind: 'tonight', date: '2026-10-20' }, o));
+  let t = 4100; for (let f = 1; f <= 12; f++) ev.push(mkEvent('shot.logged', sid, { sessionId: sid, game: 1, frame: Math.min(f, 10), roll: f <= 10 ? 1 : f - 9, down: 10, leave: [] }, { ts: t++ }));
+  const P = project(ev), list = C.sessionsOf(P), r = C.recapOf(list, sid);
+  const st = r.support.find(x => x.k === 'strike'); assert.ok(st); assert.doesNotMatch(st.text, /tagged/);
+  const P2 = project(base().concat(game('test-sess-pk2', 3)));
+  const r2 = C.recapOf(C.sessionsOf(P2), 'test-sess-pk2'); assert.match(r2.support.find(x => x.k === 'strike').text, /pocket \d+ of \d+ tagged/);
+});

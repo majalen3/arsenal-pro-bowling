@@ -222,3 +222,6 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 ## Sim2 #12: Find footer follows the bowler's style (2026-10-24)
 - The "real house line" note under Find my strike line now uses the bowler's style: stroker 13, tweener 14½, cranker 18 (bowlingball.com book lines). When the style is unknown or two-handed, it shows the 13–18 range instead of assuming tweener. `T.bookLineFor`; unit +1; e2e target 36/0.
 - This commit has no sw bump, because another session has uncommitted edits in sw.js. The next ship bumps the cache.
+
+## Sim2 #10: "pocket N of N tagged" only once you tag (2026-10-24)
+- Strikes count as tags in `throwStats`, so an untagged night read "pocket 12 of 12 tagged". The recap and the Card pocket row now show only when tagged > strikes, meaning at least one non-strike first ball carries a "First ball hit" tag. Unit +1 (206 total); e2e card 24/0. No sw bump (see the #12 note).
