@@ -222,6 +222,51 @@ Same launch angle in every row; only one variable changes.
 | — | Extra: strength calibration | **FAIL** | On carbon 42 ft, entry 17.5 at 15/220 needs lay 20 / arrows 14.6 (breakpoint 8.1 at 42.9 ft). Lines from lay 11–18 break at boards −0.1 to 4.2 at 24–34 ft: too strong and too early. |
 | — | Extra: breakdown direction | **QUESTIONABLE** | Entry drops 20.0 → 18.1 at 60 shots; head μ rises 5× (see §4). |
 
+### 6b. Engine B v5 fixes: before/after (2026-10-24)
+
+**Scope.**
+- Code is in the `physics` repo: `engines/model6.py`, `engine5.py`, `oil.py` (clamp), `calib_oil_v5.py`, `calib_grid5.py`, `calib_absorb5.py`, `fit5.py`, `eval5.py`, `qa5.py`, `sweep5.py`, `transition5.py` and `verify/b_verify5.py`.
+- v4b is kept unchanged as the regression path.
+- Every v5 number below is a **model output**.
+- Plots:
+  - `engine-verify/engine-b-v5-strikelines.png`;
+  - `engine-verify/engine-b-v5-breakdown-loft.png`.
+
+| # | Item | v4b | v5 | Numbers (v4b → v5) | Mechanism / source |
+|---|---|---|---|---|---|
+| a | Tilt delays roll | FAIL | **FAIL** | Roll at tilt 5/12/20°: 48.56/48.38/48.10 → 51.97/51.80/51.60 ft. With the track term OFF: 51.97/51.80/51.60. | Added a ring-geometry track term `kp/max(cos τ,0.2)` (track circumference 2πR·cos τ, no new constant). Its effect is negligible because core migration (`kr`) dominates. Searched for measured tilt → roll pairs: none found (S-tier qualitative claims only; the USBC studies use a fixed 13°). No constant is fitted to force the ordering. |
+| b | Dry/carbon strength | FAIL | **PARTIAL** | Carbon strike lines, lay 12/15/18: bp 25.9/30.2/35.0 ft → lay 11–20: 32.5–43.4 ft. Board at 42 ft: 6.2/5.4/4.7 → 4.3–8.3; the target band is 8–12 (bowl.com, S) / ~11 (Rule of 31, S). | Grid map T = s·U^p refit by CV on robot + human tables: (0.79, 1) → **(3.2, 0.25)**, chosen in 2 of 4 folds. Grid-CV: robot hook60 3.11 → **1.84** boards; human entry 1.04 → **0.96°**. `p` is at its lower bound (oil presence matters more than volume): an empirical result. The robot pattern is **constructed** (USBC core3/core4, F); its H = 20 units and 40 ft length are **ASSUMED**. The (4.0, 0.1) map had a lower train loss (8.40 vs 10.49) but a worse CV (2.33) and is a near step function, so it was rejected. Dynamics refit (`fit5`): loss 8.38 → 6.66. Analytic CV with the original map: robot hook60 2.58 → 2.19; human entry 1.12 → 1.17. |
+| c | Breakdown direction | QUESTIONABLE | **PASS (bp) / PARTIAL (hook)** | Fixed aim, 0/30/60/90 shots: bp 37.1/38.0/38.9/38.0 ft (later, wrong) → **40.2/40.0/39.0/37.4 ft (earlier)**. Hook60 25.4 → 20.5–21.7 boards. Carrydown at 44–50 ft goes 0 → 1.4 units. | Deposit/carrydown refit (`calib_oil_v5`) with a physical clamp: the unclamped run gave a negative ring load (DE exploited it). Held-out reduced day: 23.35 (✗) → **25.42** vs observed 27.8 (±3 ✔). Kegel (F): flaring balls deplete equal % along the pattern and balanced balls deplete the first 16 ft. v5 heads/mid: flaring 1.25, balanced 1.39 ✔ direction. The target ratio of 1.0 is not met. Net hook falls because carrydown is stronger than head depletion. Published advice says the ball "reads earlier": the direction is reproduced, the magnitude is not. |
+| d | Dynamic absorption | ka = 0 | **ka = 0 (unidentifiable)** | Scan over ka 0…1000: the reduced/reactive hook ratio reaches 0.53 → 0.61 at most, against a target of 0.904 (USBC 5-person study). The fit is unreached, and ka = 1000 is unstable. | Wired in (`dm/dt −= ka·absorb·|v|·m`), but the data cannot identify it, so it is left at **0**. The gap comes from cover friction, not absorption. |
+| e | Loft = where friction starts | NOT MODELLED | **PASS (input; model-derived)** | bp at loft 0/1/3/5 ft: 40.24/40.32/40.55/40.86 ft; hook60 25.4 → 23.8. v4b's emulated time shift went the opposite way (37.11 → 36.42). | Contact begins at x = loft (airborne before it). The sign matches O'Keefe/ITRC (F: "starts its motion later") and BTM (S: depends on head oil). **No measured loft → bp data was found, so the magnitudes are model-derived.** |
+| f | Pin-to-PAP inches | not an input | **PASS (input)** | 2/3.375/4.5/5.5 in: entry 5.00/4.95/4.75/4.52°; bp 40.3/40.1/40.2/40.7 ft. | α = 90·in/6.75 (MoRich Dual Angle, F). Robot 3.375 in → 45° (USBC Ball Motion Study, F). Human default 4.5 in is **ASSUMED**. |
+| — | Oil volume / length | PASS | **PASS** | Volume ×0.7/1/1.3: bp 39.1/40.2/41.2 ft. Length ×0.88/1/1.12: bp 38.3/40.2/40.8 ft, roll 48.7/51.8/55.2 ft. | Sensitivity gate 8/8. |
+| — | Urethane friction | refused | **refused (kept)** | QA covers: urethane hook60 24.5 vs pearl 15.6. | No fetched urethane on-lane COF, so nothing is fitted. |
+
+**QA 10-gate scorecard (v4b 5/10 → v5 7/10).** Gates 1–5 are unchanged; gates 6 and 10 now pass.
+
+| # | Gate | v4b | v5 |
+|---|---|---|---|
+| 1 | Energy (no step increase) | ✔ | ✔ |
+| 2 | Step-halving (exit 17.920/17.949/17.949) | ✔ | ✔ |
+| 3 | Determinism | ✔ | ✔ |
+| 4 | Sensitivity 8/8 | ✔ | ✔ |
+| 5 | Transition: worst 15-shot jump ≤ 5 boards | ✔ | ✔ (4.57) |
+| 6 | 709-pattern sweep: bp 30–50 ft, no NaN | ✗ | **✔** (31.1–46.8 ft, 0 errors) |
+| 7 | CV robot hook60 ≤ 1.5 boards | ✗ 2.58 | ✗ 1.84 (grid-CV) / 2.19 (analytic) |
+| 8 | CV human entry ≤ 0.8° | ✗ 1.12 | ✗ 0.96 / 1.17 |
+| 9 | Urethane weakest (below pearl) | ✗ | ✗ |
+| 10 | Reduced day held-out ±3 | ✗ 23.35 | **✔** 25.42 vs 27.8 |
+
+**Verdict: 7/10. Below the port build gate (8) and the `cc3d` gate (9).**
+- The port is **plan only**: see `ENGINE_PORT_PLAN.md`.
+- CV caveat: the grid-CV selects (s, p) per fold, but its dynamics come from the train-split fits. That is a mild leak, flagged here.
+- Data that would unblock gates 7–9:
+  - real robot oil volume/length;
+  - per-case human patterns;
+  - urethane COF;
+  - tilt → roll and loft → bp pairs.
+
 ## 7. Ranked gaps (impact on realism)
 
 | Rank | Gap | Engine | Impact | Fix plan | Data needed |

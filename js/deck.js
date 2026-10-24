@@ -51,7 +51,7 @@ export function describe(res, lefty) {
   const pins = left.length === 0 ? 'all 10 pins down' : left.length === 10 ? 'no pins down' : `leaves the ${left.join('-')}`;
   const dv = sim.ball.deflect, dd = Math.abs(dv) < 0.5 ? 'holds its line' : `deflects ${Math.abs(dv).toFixed(0)}° ${(dv < 0) !== !!lefty ? 'right' : 'left'}`;
   const five = `Model: the ball ${dd} through the pins; ${pins}.`;
-  return { pocket, side, ang, contact, five, phi, sim, left, pins, text:`Enters board ${res.entryBoard.toFixed(1)}, ${side}, at ${ang}. ${contact} ${five}` };
+  return { pocket, side, ang, contact, five, phi, sim, left, pins, text:`Model estimate: Enters board ${res.entryBoard.toFixed(1)}, ${side}, at ${ang}. ${contact} ${five}` };
 }
 export function createDeck(canvas) {
   const g = canvas.getContext('2d'); let W = 0, H = 0, dpr = 1, last = null, anim = 0;

@@ -35,3 +35,22 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - **Why it matters:** "what happened tonight and what do I work on" is one sentence, with no data dump.
 - **Tests:** see the commit entry below.
 - **Tests:** e2e 335/0 (new `card` cycle, 24 checks); unit 162/0; engine 7 500/0; axe 0 serious; Lighthouse `#/card` 93/100/100/100 and `#/sessions` 91–94/100/100/100. Perf is noisy: box load average was 14, and `#/tonight` scored 94 in the same run. Fixed along the way: a heading-order a11y issue in the shared empty state (h3 → h2). Screenshots: `/workspace/ux-shots/bowler-card/phone-card-*.png`, `phone-session-*.png`.
+
+## 4. Engine B v5 realism fixes (physics QA 5/10 → 7/10)
+- **What changed (physics repo, model only):**
+  - Loft is a real input: friction starts at landing.
+  - Pin-to-PAP inches are an input (α = 90·in/6.75, MoRich, F).
+  - Breakdown direction is fixed: the breakpoint now moves earlier with shots, and the reduced held-out day is within ±3.
+  - Grid map recalibrated by CV: carbon breakpoints 26–35 ft → 32–43 ft.
+  - Tilt-track term added (negligible effect: FAIL, reported honestly).
+  - Dynamic absorption wired in but unidentifiable from the data, so ka = 0.
+  - The urethane refusal is kept.
+- **QA:** 7/10. Sweep and held-out breakdown now pass. CV robot hook / human entry and the urethane order still fail.
+- **Why it matters:** 7 is below the port gate of 8, so Engine B is **not ported**. `docs/ENGINE_PORT_PLAN.md` holds the plan, including measured JS timing (4.3 ms/sim at dt 0.004 → worker + reduced-order search needed).
+- **Not changed:** `simulatePath`; equivalence 7,500/0.
+- **Details:** `ENGINE_VERIFICATION_REPORT.md` §6b.
+
+## 5. Honest label: pin-deck read-out
+- **What changed:** `js/deck.js`. The pin-deck text alternative now starts "Model estimate: Enters board …". The on-screen angle already says "model".
+- **Why it matters:** the 2-D numbers are labelled as model output.
+- **Left for the lane-screen owner:** the lane canvas aria-label and the Entry/Break pt tiles in `js/screens/lane.js` (edits in progress by another worker) should get the same "(model)" note.
