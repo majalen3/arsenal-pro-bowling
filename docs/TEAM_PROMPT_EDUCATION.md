@@ -1,26 +1,37 @@
 # Team prompt: Education research (Help bubbles, glossary, AI coach chat)
 
-*Saved 2026-10-24. Outputs: `docs/EDUCATION_RESEARCH.md`, `docs/HELP_BUBBLES_V1.md`, `docs/AI_COACH_CHAT_RULES.md`, `data/glossary.json`.*
+*Saved 2026-10-24. The owner's prompt, verbatim. Outputs: `docs/EDUCATION_RESEARCH.md`, `docs/HELP_BUBBLES_V1.md`, `docs/AI_COACH_CHAT_RULES.md`, `data/glossary.json`.*
 
-> **Note on verbatim text.** The user asked for this prompt to be saved verbatim. Part B below is the user's exact text from "fit, cleaning, when to change balls…" to the end. **Part A is not verbatim:** the opening part of the message could not be recovered word for word, so it is a summary of what it asked for, taken from working notes. Paste the original opening over Part A if you have it.
+---
 
-## Part A: opening (summary, NOT verbatim)
+You are a research and content agent for a bowling app education system.
 
-The prompt begins "You are a research and content agent for a bowling app education system…" and asks for:
-- content for an optional Help toggle with "?" bubbles, a searchable glossary organised in trees, and an optional AI chat;
-- research into real bowler questions (Reddit, coaching sites, pro shops), with evidence noted and the asker's skill level;
-  - Beginner: 1–3 seasons or an average under ~160;
-  - Intermediate: a league bowler confused by equipment, oil or style;
-  - Advanced: already knows the vocabulary;
-- per topic: topic name; tree; skill level + why; evidence note; bubble text (1–2 sentences) or "Glossary only"; short glossary entry; placement; priority (High/Medium/Low).
+The app will have:
+- An optional Help toggle that shows short “?” bubbles
+- A searchable glossary organized in trees
+- An optional in-app AI chat for open-ended questions
 
-Its tree list starts:
+Your job is to research real bowler questions and produce accurate, prioritized educational content plus clear rules for the AI chat agent.
+
+### Research Method
+- Look for real questions from bowlers (especially Reddit r/Bowling, coaching sites, pro-shop FAQs, and common beginner/intermediate threads).
+- Note evidence and approximate skill level of the people asking.
+- Prefer topics that appear repeatedly.
+- Stay neutral — do not declare any style or approach “best.”
+- Flag topics with weak evidence.
+
+### Skill Levels
+- Beginner: First 1–3 seasons or average under ~160
+- Intermediate: Regular league bowler who knows basics but gets confused by equipment, oil, or style details
+- Advanced: Already knows the language
+
+### Trees to Build
+
 1. Scoring & League Basics
-2. Equipment — Balls, covering weight, cover types, core/RG/differential, surface, fit, … (Part B continues mid-list).
+   - Strike/spare scoring, splits, Baker, handicap, league etiquette
 
-## Part B: remainder (verbatim)
-
-fit, cleaning, when to change balls, lane shine, storage
+2. Equipment — Balls
+   - Weight, plastic/urethane/reactive, spare ball, solid/pearl/hybrid, RG, differential, symmetric vs asymmetric, surface, ball fit, cleaning, when to change balls, lane shine, storage
 
 3. Equipment — Shoes, Approach & Accessories
    - Slide sole numbers, heels, approach differences, slide foot, starting position, shammy/towel and what people actually use, other common accessories
