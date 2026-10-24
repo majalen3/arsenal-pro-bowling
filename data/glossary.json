@@ -1,0 +1,3272 @@
+{
+ "_meta": {
+  "version": 1,
+  "generated": "2026-10-24",
+  "status": "content only — not wired into the app",
+  "doc": "docs/EDUCATION_RESEARCH.md",
+  "labels": {
+   "F": "fetched and read this pass",
+   "S": "search excerpt / paraphrase, not fetched",
+   "A": "assumption",
+   "repo": "cited from a repo doc that keeps its own F/S labels"
+  },
+  "trees": [
+   "Scoring & League Basics",
+   "Equipment — Balls",
+   "Equipment — Shoes, Approach & Accessories",
+   "Styles & Approaches",
+   "Lane & Oil",
+   "Ball Motion",
+   "Targeting & Spares"
+  ],
+  "counts": {
+   "Scoring & League Basics": 13,
+   "Equipment — Balls": 21,
+   "Equipment — Shoes, Approach & Accessories": 19,
+   "Styles & Approaches": 15,
+   "Lane & Oil": 12,
+   "Ball Motion": 16,
+   "Targeting & Spares": 10
+  }
+ },
+ "terms": [
+  {
+   "id": "sc-strike",
+   "tree": "Scoring & League Basics",
+   "term": "Strike scoring",
+   "level": "Beginner",
+   "bubble": "Strike = 10 + your next 2 balls. X then 7-2 = 19 for that frame.",
+   "glossary": "A strike knocks down all 10 pins on the first ball. The frame scores 10 plus the pins from your next two balls.",
+   "placement": "Bubble (Tonight › Quick log (frame strip / rack)) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "ibf_rules",
+     "url": "https://bowling.sport/universal-playing-rules-chapter-2",
+     "label": "S",
+     "title": "IBF Universal Playing Rules ch. 2 (scoring)"
+    },
+    {
+     "key": "r_score",
+     "url": "https://www.reddit.com/r/Bowling/comments/mfcb9d/",
+     "label": "S",
+     "title": "r/Bowling: how scoring works"
+    },
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "People in their first seasons ask how the bonus works because the scorer does it for them.",
+   "evidence": "Scoring rules agree across the IBF rules and USBC lingo (S). 'How does scoring work' threads come from new bowlers (S).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sc-spare",
+   "tree": "Scoring & League Basics",
+   "term": "Spare scoring",
+   "level": "Beginner",
+   "bubble": "Spare = 10 + your next 1 ball. A spare, then an 8 on the next ball = 18.",
+   "glossary": "A spare is all 10 pins down using both balls of a frame. The frame scores 10 plus the pins from your next ball.",
+   "placement": "Bubble (Tonight › Quick log (frame strip / rack)) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "ibf_rules",
+     "url": "https://bowling.sport/universal-playing-rules-chapter-2",
+     "label": "S",
+     "title": "IBF Universal Playing Rules ch. 2 (scoring)"
+    },
+    {
+     "key": "r_score",
+     "url": "https://www.reddit.com/r/Bowling/comments/mfcb9d/",
+     "label": "S",
+     "title": "r/Bowling: how scoring works"
+    }
+   ],
+   "level_why": "Same askers as strike scoring.",
+   "evidence": "Same sources as strike scoring (S).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sc-tenth",
+   "tree": "Scoring & League Basics",
+   "term": "10th frame",
+   "level": "Beginner",
+   "bubble": "Strike in the 10th = 2 more balls; spare = 1 more. That's 3 balls max.",
+   "glossary": "The 10th frame gives bonus balls to finish the count: two after a strike, one after a spare. Otherwise it's two balls, like any frame.",
+   "placement": "Bubble (Tonight › Quick log (frame strip / rack)) + Glossary",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "ibf_rules",
+     "url": "https://bowling.sport/universal-playing-rules-chapter-2",
+     "label": "S",
+     "title": "IBF Universal Playing Rules ch. 2 (scoring)"
+    },
+    {
+     "key": "r_score",
+     "url": "https://www.reddit.com/r/Bowling/comments/mfcb9d/",
+     "label": "S",
+     "title": "r/Bowling: how scoring works"
+    }
+   ],
+   "level_why": "New bowlers are often unsure whether they get a third ball.",
+   "evidence": "Consistent across the scoring sources (S).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sc-foul",
+   "tree": "Scoring & League Basics",
+   "term": "Foul",
+   "level": "Beginner",
+   "bubble": "Over the foul line = 0 for that ball. A foul on ball 1 gets you a fresh rack for ball 2.",
+   "glossary": "Touching or crossing the foul line during a delivery. That ball scores zero. After a first-ball foul the pins are reset, so knocking all 10 down with ball 2 counts as a spare.",
+   "placement": "Bubble (Quick log (– Miss / foul)) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    },
+    {
+     "key": "repo_dec",
+     "url": "docs/DECISIONS.md",
+     "label": "repo",
+     "title": "Repo: #22 split reading (USBC Rule 2h), first-ball foul respot"
+    }
+   ],
+   "level_why": "Beginners slide over the line and don't know what happens next.",
+   "evidence": "PBA lingo (F) and the app's own rule in DECISIONS.md #22.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sc-split",
+   "tree": "Scoring & League Basics",
+   "term": "Split",
+   "level": "Beginner",
+   "bubble": "Split = headpin down, plus a gap between pins left standing. 3-10 and 2-7 count; 2-8 doesn't.",
+   "glossary": "A leave after the first ball where the headpin is down and pins are standing with a gap between them, e.g. 7-10, 4-6, 3-10. A pin directly behind another (2-8, a 'sleeper') is not a split.",
+   "placement": "Bubble (Quick log rack (split flag)) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "repo_dec",
+     "url": "docs/DECISIONS.md",
+     "label": "repo",
+     "title": "Repo: #22 split reading (USBC Rule 2h), first-ball foul respot"
+    },
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "Beginners and intermediates are often surprised that a 2-8 isn't a split.",
+   "evidence": "The app uses the USBC Rule 2h reading (DECISIONS.md #22). PBA (F) lists the baby splits (2-7, 3-10), defines a sleeper (2-8, 3-9), and treats a washout (headpin standing) as not a split.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sc-handicap",
+   "tree": "Scoring & League Basics",
+   "term": "Handicap",
+   "level": "Beginner",
+   "bubble": "Handicap = (base − your average) × the league %. Example only: 90% of 220 with a 170 average = 45 pins. Your league sets the base and %.",
+   "glossary": "Pins added to your score so bowlers of different averages can compete. Each league sets its own base and percentage. USBC says to use 100% if the league has no rule.",
+   "placement": "Bubble (Tonight › Quick log score total (handicap line)) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_loh",
+     "url": "https://images.bowl.com/bowl/media/assets/usbc/rules/general%20pdfs/060624_rules-to-consider-loh-06-01-2024.pdf",
+     "label": "F",
+     "title": "USBC, Rules to consider (league handicap, averages, absentee)"
+    },
+    {
+     "key": "r_hdcp1",
+     "url": "https://www.reddit.com/r/Bowling/comments/1b3iknh/handicaps_explain_it_like_im_5/",
+     "label": "S",
+     "title": "r/Bowling: handicaps ELI5"
+    },
+    {
+     "key": "r_hdcp2",
+     "url": "https://www.reddit.com/r/Bowling/comments/1jt5a6q/",
+     "label": "S",
+     "title": "r/Bowling: how handicap is calculated"
+    }
+   ],
+   "level_why": "Bowlers new to league ask how many pins they get and why.",
+   "evidence": "USBC's rules-to-consider PDF (F): without a league rule, use 100%, and the base should be above the highest average. Repeated 'ELI5 handicap' threads (S).",
+   "weak_evidence": false,
+   "v1_rank": 7
+  },
+  {
+   "id": "sc-average",
+   "tree": "Scoring & League Basics",
+   "term": "Average (entering / establishing)",
+   "level": "Beginner",
+   "bubble": null,
+   "glossary": "Your total pins divided by games bowled. Leagues usually start you on last season's average. Without one, you establish it on your first night unless league rules say otherwise. USBC youth: switching between 2H and 1H means establishing a new average.",
+   "placement": "Glossary only",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "usbc_loh",
+     "url": "https://images.bowl.com/bowl/media/assets/usbc/rules/general%20pdfs/060624_rules-to-consider-loh-06-01-2024.pdf",
+     "label": "F",
+     "title": "USBC, Rules to consider (league handicap, averages, absentee)"
+    }
+   ],
+   "level_why": "New league bowlers ask why their first night counts so much.",
+   "evidence": "USBC rules-to-consider (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sc-scratch",
+   "tree": "Scoring & League Basics",
+   "term": "Scratch",
+   "level": "Beginner",
+   "bubble": null,
+   "glossary": "Scoring with no handicap added. A 'scratch league' or 'scratch tournament' uses raw scores only.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "A term on league sheets.",
+   "evidence": "PBA lingo (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sc-blind",
+   "tree": "Scoring & League Basics",
+   "term": "Blind / absentee score",
+   "level": "Beginner",
+   "bubble": null,
+   "glossary": "The score credited for a missing bowler. USBC's default absentee score is the bowler's average minus 10 pins, unless the league rule says otherwise. Some glossaries describe it as just the average, so check your league's rules.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "usbc_loh",
+     "url": "https://images.bowl.com/bowl/media/assets/usbc/rules/general%20pdfs/060624_rules-to-consider-loh-06-01-2024.pdf",
+     "label": "F",
+     "title": "USBC, Rules to consider (league handicap, averages, absentee)"
+    },
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "League sheets show it without explaining it.",
+   "evidence": "USBC rules-to-consider (F): average − 10 by default. PBA lingo (F) describes a blind as simply the average. Sources differ, so the league rule decides.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sc-baker",
+   "tree": "Scoring & League Basics",
+   "term": "Baker format",
+   "level": "Intermediate",
+   "bubble": null,
+   "glossary": "A team format where 5 bowlers share one game: bowler 1 bowls frames 1 and 6, bowler 2 bowls frames 2 and 7, and so on. Matches are often 2 Baker games of total pins, but formats vary by event.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    },
+    {
+     "key": "baker_pdf",
+     "url": "https://www.gldba-gldwba.org/pdfs/baker.pdf",
+     "label": "S",
+     "title": "GLDBA Baker format sheet"
+    },
+    {
+     "key": "r_baker",
+     "url": "https://www.reddit.com/r/Bowling/comments/1icshjn/",
+     "label": "S",
+     "title": "r/Bowling: what is Baker"
+    }
+   ],
+   "level_why": "League and tournament bowlers meet it in team events.",
+   "evidence": "PBA lingo (F). GLDBA sheet and Reddit (S).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sc-etiquette",
+   "tree": "Scoring & League Basics",
+   "term": "Approach etiquette",
+   "level": "Beginner",
+   "bubble": "If you and the bowler next to you are both ready, the one on the right goes first. Stay off the approach until it's your turn, and keep food and drink off it.",
+   "glossary": "Courtesy rules: one bowler per pair of lanes at a time, and the bowler to the right goes first when in doubt. Celebrate on your own lane. No street shoes, food or drink on the approach. Be ready when it's your turn.",
+   "placement": "Bubble (Welcome tour / Glossary) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "usbc_etiq",
+     "url": "https://bowl.com/welcome/etiquette-and-lingo",
+     "label": "F",
+     "title": "USBC, Etiquette and Lingo"
+    }
+   ],
+   "level_why": "First-league bowlers worry about who goes first.",
+   "evidence": "USBC Etiquette and Lingo (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sc-pocket",
+   "tree": "Scoring & League Basics",
+   "term": "Pocket",
+   "level": "Beginner",
+   "bubble": "Pocket = between the 1 and 3 pins (right-handers) or the 1 and 2 (left-handers). It's the strike target.",
+   "glossary": "The gap between the headpin and the 3 pin (RH) or the 2 pin (LH). Hitting it at an angle gives the best chance of a strike.",
+   "placement": "Bubble (Tonight › Quick log (frame strip / rack)) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "Coaches and the app say 'pocket' constantly, so beginners need it.",
+   "evidence": "PBA lingo (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sc-brooklyn",
+   "tree": "Scoring & League Basics",
+   "term": "Brooklyn (crossover)",
+   "level": "Beginner",
+   "bubble": null,
+   "glossary": "A shot that hits the 'wrong' pocket, the 1-2 for a right-hander or the 1-3 for a left-hander.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "Common slang.",
+   "evidence": "PBA lingo (F): also called a 'Jersey'.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "eq-weight",
+   "tree": "Equipment — Balls",
+   "term": "Ball weight",
+   "level": "Beginner",
+   "bubble": "Pick the heaviest ball you can swing smoothly for a whole session, not the heaviest you can lift. 10% of body weight is only a rough starting point; 16 lb is the max.",
+   "glossary": "Balls run up to 16 lb. Control and a free swing matter more than mass. Many adults land at 14–15 lb, but that's a pattern people report, not a rule.",
+   "placement": "Bubble (Arsenal › ball detail and Add ball spec rows) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "r_wt1",
+     "url": "https://www.reddit.com/r/Bowling/comments/8zpdox/10_percent_body_weight_up_to_16_pounds_for_a_ball/",
+     "label": "S",
+     "title": "r/Bowling: 10% body weight rule"
+    },
+    {
+     "key": "r_wt2",
+     "url": "https://www.reddit.com/r/Bowling/comments/1dz3w4j/what_weight_ball_should_i_use/",
+     "label": "S",
+     "title": "r/Bowling: what weight ball"
+    },
+    {
+     "key": "bcom_wt",
+     "url": "https://www.bowling.com/knowledge-hub/questions/bowling-balls/ball-weight-choice/question_24_what-is-the-10-rule-for-choosing-a-bowling-ball-weight",
+     "label": "S",
+     "title": "bowling.com, the 10% rule (retailer)"
+    }
+   ],
+   "level_why": "One of the most common first-ball questions.",
+   "evidence": "Repeated threads (S). The 10% rule appears in retailer FAQs (S). The 16 lb maximum is a known USBC spec, but the spec page wasn't fetched in this pass (S).",
+   "weak_evidence": false,
+   "v1_rank": 19
+  },
+  {
+   "id": "eq-plastic",
+   "tree": "Equipment — Balls",
+   "term": "Plastic (polyester) ball",
+   "level": "Beginner",
+   "bubble": "Plastic barely hooks, even on dry lanes. That's why it's the go-to spare ball.",
+   "glossary": "The hardest, least grippy cover type. It goes nearly straight, which makes it ideal for corner-pin spares. Most house balls are plastic.",
+   "placement": "Bubble (Arsenal › ball detail and Add ball spec rows) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "bv_cover",
+     "url": "https://www.bowlingball.com/BowlVersity/simple-differences-between-solid-pearl-and-hybrid-bowling-balls",
+     "label": "F",
+     "title": "bowlingball.com BowlVersity, Solid vs pearl vs hybrid (retailer)"
+    },
+    {
+     "key": "bcom_spare",
+     "url": "https://www.bowling.com/knowledge-hub/questions/bowling-balls/choosing-a-spare-ball",
+     "label": "S",
+     "title": "bowling.com, Choosing a spare ball (retailer)"
+    },
+    {
+     "key": "r_spare1",
+     "url": "https://www.reddit.com/r/Bowling/comments/u0l9ar/are_spare_balls_worth_the_money/",
+     "label": "S",
+     "title": "r/Bowling: are spare balls worth it"
+    }
+   ],
+   "level_why": "Most house balls are plastic, and beginners ask why they won't hook.",
+   "evidence": "BowlVersity cover article (F). Spare-ball threads and retailer FAQ (S).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "eq-urethane",
+   "tree": "Equipment — Balls",
+   "term": "Urethane ball",
+   "level": "Intermediate",
+   "bubble": "Urethane hooks earlier and more smoothly than reactive, with less backend snap. Useful when lanes are short, dry or tricky.",
+   "glossary": "A mid-grip cover between plastic and reactive resin. It reads the lane early with a smooth, arcing motion and doesn't soak up oil like reactive covers.",
+   "placement": "Bubble (Arsenal › ball detail and Add ball spec rows) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "repo_amr",
+     "url": "docs/ARSENAL_MANAGER_RESEARCH.md",
+     "label": "repo",
+     "title": "Repo: USBC ES Manual 03/26, Rule 18, Siefers ball-life study, brand maintenance intervals (F there)"
+    },
+    {
+     "key": "r_spare2",
+     "url": "https://www.reddit.com/r/Bowling/comments/1gm7mwx/should_i_get_a_plastic_or_urethane_ball_for_spares/",
+     "label": "S",
+     "title": "r/Bowling: plastic or urethane for spares"
+    }
+   ],
+   "level_why": "League bowlers hear 'urethane is back' and don't know when to use it.",
+   "evidence": "Lab result in the repo (F): urethane did not absorb oil, while reactive covers did. On-lane 'smooth, early, less backend' comes from search excerpts (S).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "eq-reactive",
+   "tree": "Equipment — Balls",
+   "term": "Reactive resin ball",
+   "level": "Beginner",
+   "bubble": "Reactive resin grips the lane more than plastic, so it hooks more. A drilled entry-level reactive is the usual first step for a hook.",
+   "glossary": "The most common modern cover. It's porous and grippy, so it creates more hook and backend motion. It also absorbs oil over time, which is why it needs regular cleaning and maintenance.",
+   "placement": "Bubble (Arsenal › ball detail and Add ball spec rows) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "repo_amr",
+     "url": "docs/ARSENAL_MANAGER_RESEARCH.md",
+     "label": "repo",
+     "title": "Repo: USBC ES Manual 03/26, Rule 18, Siefers ball-life study, brand maintenance intervals (F there)"
+    },
+    {
+     "key": "r_hook1",
+     "url": "https://www.reddit.com/r/Bowling/comments/18zk9zf/",
+     "label": "S",
+     "title": "r/Bowling: ball won't hook (beginner)"
+    },
+    {
+     "key": "r_first1",
+     "url": "https://www.reddit.com/r/Bowling/comments/19dig7r/",
+     "label": "S",
+     "title": "r/Bowling: first ball to buy"
+    },
+    {
+     "key": "r_first2",
+     "url": "https://www.reddit.com/r/Bowling/comments/13f4fgk/",
+     "label": "S",
+     "title": "r/Bowling: first reactive ball"
+    }
+   ],
+   "level_why": "The usual answer to 'how do I get it to hook'.",
+   "evidence": "Repo (F): reactive covers absorbed oil in 4.7–6.95 min. Hook threads point beginners to an entry-level reactive (S).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "eq-spareball",
+   "tree": "Equipment — Balls",
+   "term": "Spare ball",
+   "level": "Beginner",
+   "bubble": "A plastic ball goes nearly straight, so corner pins (7 and 10) stop depending on the oil. Get the same weight and fit as your strike ball.",
+   "glossary": "A second ball, usually plastic, used for spares. It takes the lane condition out of the shot. Commonly recommended as the second ball people buy.",
+   "placement": "Bubble (Bag builder (#/bag) spare-ball slot) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "r_spare1",
+     "url": "https://www.reddit.com/r/Bowling/comments/u0l9ar/are_spare_balls_worth_the_money/",
+     "label": "S",
+     "title": "r/Bowling: are spare balls worth it"
+    },
+    {
+     "key": "r_spare2",
+     "url": "https://www.reddit.com/r/Bowling/comments/1gm7mwx/should_i_get_a_plastic_or_urethane_ball_for_spares/",
+     "label": "S",
+     "title": "r/Bowling: plastic or urethane for spares"
+    },
+    {
+     "key": "bcom_spare",
+     "url": "https://www.bowling.com/knowledge-hub/questions/bowling-balls/choosing-a-spare-ball",
+     "label": "S",
+     "title": "bowling.com, Choosing a spare ball (retailer)"
+    },
+    {
+     "key": "addicts_thumbless",
+     "url": "https://www.bowlingaddicts.com/thumbless-vs-two-handed/",
+     "label": "F",
+     "title": "Bowling Addicts, Thumbless vs two-handed (retailer blog; RPM figures not verified)"
+    }
+   ],
+   "level_why": "Often recommended as the second ball. Many people ask whether it's worth it.",
+   "evidence": "Repeated threads (S) and a retailer FAQ (S). A retail blog (F) says two-handers almost always carry one.",
+   "weak_evidence": false,
+   "v1_rank": 6
+  },
+  {
+   "id": "eq-cover-types",
+   "tree": "Equipment — Balls",
+   "term": "Solid / pearl / hybrid",
+   "level": "Intermediate",
+   "bubble": "Solid = earlier, smoother, made for more oil. Pearl = longer skid and a sharper reaction at the dry backend. Hybrid = in between.",
+   "glossary": "The three common reactive cover families. Surface prep changes all of them, so a sanded pearl can act like a hybrid.",
+   "placement": "Bubble (Add ball spec rows (cover)) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "bv_cover",
+     "url": "https://www.bowlingball.com/BowlVersity/simple-differences-between-solid-pearl-and-hybrid-bowling-balls",
+     "label": "F",
+     "title": "bowlingball.com BowlVersity, Solid vs pearl vs hybrid (retailer)"
+    }
+   ],
+   "level_why": "League bowlers buying a second or third ball get stuck here.",
+   "evidence": "BowlVersity (F): solids have more microscopic pores and are typically matte, for heavier oil. Pearl's mica gives longer skid and a quicker reaction at friction. Hybrid sits between them.",
+   "weak_evidence": false,
+   "v1_rank": 8
+  },
+  {
+   "id": "eq-rg",
+   "tree": "Equipment — Balls",
+   "term": "RG (radius of gyration)",
+   "level": "Intermediate",
+   "bubble": "Lower RG revs up sooner; higher RG skids longer before it turns. It's one factor; the cover usually matters more.",
+   "glossary": "A measure of where the core's mass sits. Low RG means mass near the center, so the ball revs up sooner. High RG means mass toward the cover, so it gets more length.",
+   "placement": "Bubble (Add ball spec rows / RG-diff chart) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    },
+    {
+     "key": "bcom_rg",
+     "url": "https://www.bowling.com/knowledge-hub/questions/bowling-balls/ball-cores/question_173_what-do-rg-and-differential-mean-in-bowling-ball-cores",
+     "label": "S",
+     "title": "bowling.com, What do RG and differential mean (retailer)"
+    },
+    {
+     "key": "usbc_core",
+     "url": "https://images.bowl.com/bowl/media/legacy/internap/bowl/equipandspecs/pdfs/CoreProperties042207.pdf",
+     "label": "S",
+     "title": "USBC, Core properties paper (not fetched)"
+    },
+    {
+     "key": "r_rg",
+     "url": "https://www.reddit.com/r/Bowling/comments/8xss9u/",
+     "label": "S",
+     "title": "r/Bowling: what do RG and diff mean"
+    }
+   ],
+   "level_why": "Spec sheets show RG and the app displays specs, but few people know what it means.",
+   "evidence": "PBA (F): RG is how fast the ball begins to rotate. Retailer and USBC core paper (S). Retail pages disagree on which oil each RG suits, so this entry doesn't map RG to oil.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "eq-diff",
+   "tree": "Equipment — Balls",
+   "term": "Differential",
+   "level": "Intermediate",
+   "bubble": "Higher differential = more flare = more hook potential. Low differential = smoother and more controllable.",
+   "glossary": "The gap between a core's highest and lowest RG. It tells you how much the ball can flare (migrate its track), which drives hook potential.",
+   "placement": "Bubble (Add ball spec rows / RG-diff chart) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "bcom_rg",
+     "url": "https://www.bowling.com/knowledge-hub/questions/bowling-balls/ball-cores/question_173_what-do-rg-and-differential-mean-in-bowling-ball-cores",
+     "label": "S",
+     "title": "bowling.com, What do RG and differential mean (retailer)"
+    },
+    {
+     "key": "usbc_core",
+     "url": "https://images.bowl.com/bowl/media/legacy/internap/bowl/equipandspecs/pdfs/CoreProperties042207.pdf",
+     "label": "S",
+     "title": "USBC, Core properties paper (not fetched)"
+    },
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "Same as RG. Shown on every spec sheet.",
+   "evidence": "Retailer FAQs and the USBC core paper (S). The flare definition is from PBA (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "eq-asym",
+   "tree": "Equipment — Balls",
+   "term": "Symmetric vs asymmetric core",
+   "level": "Intermediate",
+   "bubble": "Asymmetric cores tend to look more angular at the breakpoint; symmetric cores tend to be smoother and more predictable.",
+   "glossary": "Symmetric cores have matching RG on two axes. Asymmetric cores add an intermediate differential and a PSA (preferred spin axis), which gives the driller more options and usually a sharper motion.",
+   "placement": "Bubble (Arsenal › ball detail and Add ball spec rows) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "storm_anatomy",
+     "url": "https://www.stormbowling.com/ball-anatomy-guide",
+     "label": "S",
+     "title": "Storm, Ball anatomy guide"
+    },
+    {
+     "key": "bcom_rg",
+     "url": "https://www.bowling.com/knowledge-hub/questions/bowling-balls/ball-cores/question_173_what-do-rg-and-differential-mean-in-bowling-ball-cores",
+     "label": "S",
+     "title": "bowling.com, What do RG and differential mean (retailer)"
+    }
+   ],
+   "level_why": "A frequent 'what's the difference' question.",
+   "evidence": "Storm anatomy guide, retailer FAQs (S).",
+   "weak_evidence": true,
+   "v1_rank": null
+  },
+  {
+   "id": "eq-cover-dominance",
+   "tree": "Equipment — Balls",
+   "term": "Cover vs core: which matters more",
+   "level": "Intermediate",
+   "bubble": "USBC found that the top 5 factors in a ball's path are all about the coverstock. Cover and surface usually matter more than core numbers.",
+   "glossary": "USBC's Ball Motion Study ranked cover roughness, on-lane friction, oil absorption and similar cover properties ahead of core numbers. Low RG was among the significant factors.",
+   "placement": "Bubble (Arsenal › ball detail and Add ball spec rows) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "repo_evr",
+     "url": "docs/ENGINE_VERIFICATION_REPORT.md",
+     "label": "repo",
+     "title": "Repo: USBC Ball Motion Study (top 5 path factors are coverstock-related, F there)"
+    }
+   ],
+   "level_why": "Intermediates often shop by core numbers.",
+   "evidence": "USBC Ball Motion Study (F, via repo): 'top 5 factors affecting the ball path are related to coverstock'.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "eq-surface",
+   "tree": "Equipment — Balls",
+   "term": "Surface / grit",
+   "level": "Intermediate",
+   "bubble": "Lower grit (500–1000) = more friction and an earlier hook. Higher grit or polish (2000+) = more length and a sharper backend.",
+   "glossary": "The texture of the cover, set by sanding pads (numbered grits) or polish. It's one of the easiest ways to change a ball's reaction without changing the ball.",
+   "placement": "Bubble (Lane surface chip / Log service grit field) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "storm_burn",
+     "url": "https://www.stormbowling.com/read/cracking-the-code-of-the-burn",
+     "label": "F",
+     "title": "Storm, Cracking the code of the burn (manufacturer)"
+    },
+    {
+     "key": "nba_shine",
+     "url": "https://www.nationalbowlingacademy.com/video/lane-shine-important-017681",
+     "label": "F",
+     "title": "National Bowling Academy x Creating the Difference, Lane shine test (vendor-run, one ball)"
+    },
+    {
+     "key": "nba_surface",
+     "url": "https://www.nationalbowlingacademy.com/video/ball-reaction-surface-adjustments-016738",
+     "label": "S",
+     "title": "National Bowling Academy, Surface adjustments"
+    }
+   ],
+   "level_why": "League bowlers hear '1000 vs 3000' and don't know which way is stronger.",
+   "evidence": "Storm burn article (F): 2000 and 4000 grit add length. NBA test (F). A surface video says 500–1000 adds traction (S).",
+   "weak_evidence": false,
+   "v1_rank": 17
+  },
+  {
+   "id": "eq-laneshine",
+   "tree": "Equipment — Balls",
+   "term": "Lane shine",
+   "level": "Intermediate",
+   "bubble": "One test: a 2500-grit ball read about 4300 after 13 shots, without touching the lane. Shine means longer skid and a later hook.",
+   "glossary": "The cover getting smoother from use, partly from the ball return. Re-sanding to your chosen grit restores the surface. Rule 18 says do it before competition, not during.",
+   "placement": "Bubble (Arsenal › ball health counts) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "nba_shine",
+     "url": "https://www.nationalbowlingacademy.com/video/lane-shine-important-017681",
+     "label": "F",
+     "title": "National Bowling Academy x Creating the Difference, Lane shine test (vendor-run, one ball)"
+    },
+    {
+     "key": "repo_amr",
+     "url": "docs/ARSENAL_MANAGER_RESEARCH.md",
+     "label": "repo",
+     "title": "Repo: USBC ES Manual 03/26, Rule 18, Siefers ball-life study, brand maintenance intervals (F there)"
+    },
+    {
+     "key": "r_shine1",
+     "url": "https://www.reddit.com/r/Bowling/comments/1can4oo/polish_vs_lane_shine/",
+     "label": "S",
+     "title": "r/Bowling: polish vs lane shine"
+    },
+    {
+     "key": "r_shine2",
+     "url": "https://www.reddit.com/r/Bowling/comments/1faguv9/lane_shine/",
+     "label": "S",
+     "title": "r/Bowling: lane shine"
+    }
+   ],
+   "level_why": "People notice their ball 'quit' after a few games.",
+   "evidence": "One vendor-run test (F, NBA/CtD): a 2500-grit ball read about 4300 after 13 shots that never touched the lane. Reddit says shine shows within 3–6 games (S, via repo).",
+   "weak_evidence": true,
+   "v1_rank": null
+  },
+  {
+   "id": "eq-fit",
+   "tree": "Equipment — Balls",
+   "term": "Ball fit (span, pitch, thumb)",
+   "level": "Beginner",
+   "bubble": "If you have to squeeze to hold the ball, the fit is off. A pro shop can fix span, pitch or thumb size; tape is a short-term patch.",
+   "glossary": "How the holes match your hand: span (distance between holes), pitch (hole angles) and hole size. A good fit lets you hold the ball with a relaxed grip.",
+   "placement": "Bubble (Arsenal › ball detail and Add ball spec rows) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "r_fit1",
+     "url": "https://www.reddit.com/r/Bowling/comments/13vb69a/fit_advice/",
+     "label": "S",
+     "title": "r/Bowling: fit advice"
+    },
+    {
+     "key": "r_fit2",
+     "url": "https://www.reddit.com/r/Bowling/comments/1l81k8r/thumb_issues/",
+     "label": "S",
+     "title": "r/Bowling: thumb issues"
+    },
+    {
+     "key": "bv_thumb",
+     "url": "https://www.bowlingball.com/BowlVersity/grip-pressure-your-thumb-hole-is-too-big-",
+     "label": "S",
+     "title": "bowlingball.com, Your thumb hole is too big (retailer)"
+    }
+   ],
+   "level_why": "A common complaint is thumb soreness or having to squeeze the ball.",
+   "evidence": "Repeated threads and retailer article (S). Kept non-medical.",
+   "weak_evidence": false,
+   "v1_rank": 18
+  },
+  {
+   "id": "eq-grip",
+   "tree": "Equipment — Balls",
+   "term": "Conventional vs fingertip grip",
+   "level": "Beginner",
+   "bubble": "Conventional = fingers in to the 2nd knuckle (house balls). Fingertip = in to the 1st joint, giving more rotation; it's the usual drill for a reactive ball.",
+   "glossary": "Two finger-hole styles. Conventional grips are harder to hook. Fingertip lets the fingers stay in longer for more rotation.",
+   "placement": "Bubble (Arsenal › ball detail and Add ball spec rows) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    },
+    {
+     "key": "r_hook1",
+     "url": "https://www.reddit.com/r/Bowling/comments/18zk9zf/",
+     "label": "S",
+     "title": "r/Bowling: ball won't hook (beginner)"
+    },
+    {
+     "key": "r_hook2",
+     "url": "https://www.reddit.com/r/Bowling/comments/1hdpcbn/",
+     "label": "S",
+     "title": "r/Bowling: how to hook (beginner)"
+    }
+   ],
+   "level_why": "Explains why a house ball won't hook.",
+   "evidence": "PBA lingo (F). Hook threads (S).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "eq-cleaning",
+   "tree": "Equipment — Balls",
+   "term": "Cleaning (and Rule 18)",
+   "level": "Intermediate",
+   "bubble": "Clean after every session, not during it. Rule 18 bans liquid cleaner and sanding once competition starts; a dry towel is fine.",
+   "glossary": "Wipe lane oil and dirt off after bowling. USBC lists rubbing alcohol, Simple Green (Original) and Windex as approved cleaners. Competition rules limit cleaning to dry wiping, unless league officers give special permission for an approved cleaner.",
+   "placement": "Bubble (Arsenal › Log service / ball health) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_rules",
+     "url": "https://bowl.com/getmedia/64039e31-a0bb-42f1-94cb-81cb3b5fe6e9/USBC_Playing_Rules_2025_2026.pdf",
+     "label": "repo",
+     "title": "USBC Playing Rules 2025-26, Rule 18 (fetched for docs/ARSENAL_MANAGER_RESEARCH.md)"
+    },
+    {
+     "key": "usbc_clean",
+     "url": "https://images.bowl.com/bowl/media/assets/usbc/equipment%20specs/approved%20cleaners/082626_approved-cleaner-list-for-website-current.pdf",
+     "label": "F",
+     "title": "USBC approved cleaner list (rubbing alcohol, Simple Green Original, Windex)"
+    },
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    },
+    {
+     "key": "repo_amr",
+     "url": "docs/ARSENAL_MANAGER_RESEARCH.md",
+     "label": "repo",
+     "title": "Repo: USBC ES Manual 03/26, Rule 18, Siefers ball-life study, brand maintenance intervals (F there)"
+    },
+    {
+     "key": "r_clean1",
+     "url": "https://www.reddit.com/r/Bowling/comments/1bjlrzr/whats_the_best_ball_cleaner/",
+     "label": "S",
+     "title": "r/Bowling: best ball cleaner"
+    },
+    {
+     "key": "r_clean2",
+     "url": "https://www.reddit.com/r/Bowling/comments/ixvy9n/cleaning_ball_with_alcohol/",
+     "label": "S",
+     "title": "r/Bowling: cleaning with alcohol"
+    }
+   ],
+   "level_why": "People ask what's legal during league and what cleaner to use.",
+   "evidence": "USBC Rule 18 (F, via repo): no liquid cleaner, abrasive or foreign material during competition. USBC approved cleaners list (F): rubbing alcohol, Simple Green Original, Windex. USBC Fundamentals (F).",
+   "weak_evidence": false,
+   "v1_rank": 15
+  },
+  {
+   "id": "eq-maintenance",
+   "tree": "Equipment — Balls",
+   "term": "Resurface / detox schedule",
+   "level": "Intermediate",
+   "bubble": "Brands say every ~50–80 games: Storm 60–80, Motiv about 50. A tired ball skids longer and has less backend.",
+   "glossary": "Periodic re-sanding (resurface) and oil extraction (detox or revive) on reactive balls. Intervals vary by brand. USBC research found performance never fully returns to new.",
+   "placement": "Bubble (Arsenal › ball health counts) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "repo_amr",
+     "url": "docs/ARSENAL_MANAGER_RESEARCH.md",
+     "label": "repo",
+     "title": "Repo: USBC ES Manual 03/26, Rule 18, Siefers ball-life study, brand maintenance intervals (F there)"
+    }
+   ],
+   "level_why": "People ask how often, and whether it's worth it.",
+   "evidence": "Manufacturer intervals (F, via repo): Storm 60–80 games, Motiv about 50, Brunswick 10/30/60. USBC Siefers study (F, via repo): performance doesn't fully return to 100%.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "eq-when-change",
+   "tree": "Equipment — Balls",
+   "term": "When to change balls (during a session)",
+   "level": "Intermediate",
+   "bubble": "Switch when good shots stop carrying, not after one bad shot. Usually move first; change balls when moving can't fix it.",
+   "glossary": "Reasons to switch include the ball hooking early and dying, flat 10s on pocket hits, or running out of room to move. A common house-shot plan is to start smoother or earlier, then go cleaner or longer as the lanes break down.",
+   "placement": "Bubble (Tonight › Pick card (why-lines)) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "r_trans1",
+     "url": "https://www.reddit.com/r/Bowling/comments/17ftwxy/struggling_with_the_transition/",
+     "label": "S",
+     "title": "r/Bowling: struggling with the transition"
+    },
+    {
+     "key": "r_trans2",
+     "url": "https://www.reddit.com/r/Bowling/comments/erwua2/what_is_it_that_makes_you_switch_balls_in_the/",
+     "label": "S",
+     "title": "r/Bowling: what makes you switch balls"
+    },
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    },
+    {
+     "key": "storm_burn",
+     "url": "https://www.stormbowling.com/read/cracking-the-code-of-the-burn",
+     "label": "F",
+     "title": "Storm, Cracking the code of the burn (manufacturer)"
+    }
+   ],
+   "level_why": "A common league question.",
+   "evidence": "Reddit transition threads (S). USBC Fundamentals (F): if lanes are hooking, use a softer release or less aggressive equipment.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "eq-storage",
+   "tree": "Equipment — Balls",
+   "term": "Storage & temperature",
+   "level": "Beginner",
+   "bubble": "Don't leave balls in a hot or freezing car. Motiv's warranty excludes damage above 125°F or below 40°F.",
+   "glossary": "Keep balls at room temperature. Extreme heat or cold can crack covers, and manufacturers exclude it from warranties.",
+   "placement": "Bubble (Arsenal › ball detail) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "motiv_warr",
+     "url": "https://www.motivbowling.com/company/ball-warranty.html",
+     "label": "F",
+     "title": "Motiv, Ball warranty (temperature exclusion)"
+    }
+   ],
+   "level_why": "People ask if the car trunk is OK.",
+   "evidence": "Motiv warranty (F) excludes damage above 125°F or below 40°F. Storm's similar exclusion is a search excerpt (S).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "eq-holes-rule",
+   "tree": "Equipment — Balls",
+   "term": "Holes & balance holes (rules)",
+   "level": "Advanced",
+   "bubble": null,
+   "glossary": "USBC no longer allows balance holes. Each finger or thumb hole may have one vent hole. No-thumb balls are marked with a '+' on the palm side.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "repo_amr",
+     "url": "docs/ARSENAL_MANAGER_RESEARCH.md",
+     "label": "repo",
+     "title": "Repo: USBC ES Manual 03/26, Rule 18, Siefers ball-life study, brand maintenance intervals (F there)"
+    },
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "Drilling detail. Older articles are out of date.",
+   "evidence": "USBC ES Manual 03/26 (F, via repo): balance holes are not allowed, and a gripping hole not used throughout the approach counts as a balance hole. PBA lingo still mentions balance holes, which is outdated.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "eq-layout",
+   "tree": "Equipment — Balls",
+   "term": "Layout (pin / CG placement)",
+   "level": "Advanced",
+   "bubble": null,
+   "glossary": "Where the driller places the pin and the holes relative to your PAP. Layout changes the timing and shape of the motion. Ask a pro shop; the app does not recommend layouts.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "Pro-shop territory.",
+   "evidence": "PBA lingo (F): pin-in = more control, pin-out = more hook and flip. The app must not invent layouts.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "eq-benchmark",
+   "tree": "Equipment — Balls",
+   "term": "Benchmark ball",
+   "level": "Intermediate",
+   "bubble": null,
+   "glossary": "Your middle-of-the-road ball, thrown first to read the lanes before you go stronger or weaker.",
+   "placement": "Glossary only",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "btm_bench",
+     "url": "https://www.bowlingthismonth.com/quick-tips/the-benchmark-ball/",
+     "label": "S",
+     "title": "Bowling This Month, The benchmark ball"
+    }
+   ],
+   "level_why": "Used in arsenal talk and in this app.",
+   "evidence": "Bowling This Month (S).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sh-slide-sole",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Slide sole numbers",
+   "level": "Intermediate",
+   "bubble": "Higher number = more slide (Dexter: S2 least, S12 most). Sticking? Go up one. Sliding past the line? Go down one.",
+   "glossary": "Swappable pads under the slide shoe. Most brands number them low = grip, high = glide, but the numbers are brand-specific. Change one pad at a time.",
+   "placement": "Bubble (More › Bowler profile (equipment)) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "dexter",
+     "url": "https://www.dexterbowling.com/en/sole-and-heel-guide",
+     "label": "F",
+     "title": "Dexter, Sole and heel guide"
+    },
+    {
+     "key": "bmart_soles",
+     "url": "https://www.bowlersmart.com/learn/shoes/soles-and-heels/",
+     "label": "F",
+     "title": "BowlersMart, Soles and heels explained (retailer)"
+    },
+    {
+     "key": "r_sole1",
+     "url": "https://www.reddit.com/r/Bowling/comments/1kav7if/",
+     "label": "S",
+     "title": "r/Bowling: which slide sole"
+    },
+    {
+     "key": "r_sole2",
+     "url": "https://www.reddit.com/r/Bowling/comments/14ejgt9/",
+     "label": "S",
+     "title": "r/Bowling: sticking on approach"
+    },
+    {
+     "key": "r_sole3",
+     "url": "https://www.reddit.com/r/Bowling/comments/1hj0365/",
+     "label": "S",
+     "title": "r/Bowling: S8 vs S10"
+    }
+   ],
+   "level_why": "Owners of performance shoes ask which pad to use. Beginners in rentals rarely need this.",
+   "evidence": "Dexter guide (F): S2 = least slide up to S12 = most. BowlersMart (F): go up a number if you stick, down if you slide too far. Threads (S): S8 feels tacky until broken in; many carry 6/8/10. Numbers are brand-specific.",
+   "weak_evidence": false,
+   "v1_rank": 4
+  },
+  {
+   "id": "sh-heel",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Heels (brake)",
+   "level": "Intermediate",
+   "bubble": "The heel controls how fast your slide stops. H5 rubber is the usual start; H7 leather glides a little more for a softer finish.",
+   "glossary": "The swappable heel on a performance slide shoe. Change the heel for fine-tuning the finish; change the sole for slide length.",
+   "placement": "Bubble (More › Bowler profile (equipment)) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "bmart_soles",
+     "url": "https://www.bowlersmart.com/learn/shoes/soles-and-heels/",
+     "label": "F",
+     "title": "BowlersMart, Soles and heels explained (retailer)"
+    },
+    {
+     "key": "dexter",
+     "url": "https://www.dexterbowling.com/en/sole-and-heel-guide",
+     "label": "F",
+     "title": "Dexter, Sole and heel guide"
+    },
+    {
+     "key": "dexter_heels",
+     "url": "https://www.dexterbowling.com/en/bowling-heels/",
+     "label": "S",
+     "title": "Dexter, Bowling heels"
+    }
+   ],
+   "level_why": "A follow-up question once people own swappable shoes.",
+   "evidence": "BowlersMart (F): H5 Saw Tooth is the common default, low numbers brake hardest, H7 leather is softer. Dexter guide (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sh-traction",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Traction sole",
+   "level": "Intermediate",
+   "bubble": null,
+   "glossary": "The rubber sole on the push-off foot. It grips so your steps stay stable.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "bmart_soles",
+     "url": "https://www.bowlersmart.com/learn/shoes/soles-and-heels/",
+     "label": "F",
+     "title": "BowlersMart, Soles and heels explained (retailer)"
+    }
+   ],
+   "level_why": "Rarely asked.",
+   "evidence": "BowlersMart (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sh-slide-foot",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Slide foot",
+   "level": "Beginner",
+   "bubble": "Right-handers slide on the left foot; left-handers on the right. Performance shoes only slide on that foot.",
+   "glossary": "The foot that slides on your last step: the opposite foot to your bowling hand.",
+   "placement": "Bubble (More › Bowler profile (equipment)) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "bmart_soles",
+     "url": "https://www.bowlersmart.com/learn/shoes/soles-and-heels/",
+     "label": "F",
+     "title": "BowlersMart, Soles and heels explained (retailer)"
+    },
+    {
+     "key": "usbc_styles",
+     "url": "https://bowl.com/welcome/bowling-styles",
+     "label": "F",
+     "title": "USBC, Bowling Styles (4-step, 5-step, two-handed, spinner)"
+    }
+   ],
+   "level_why": "Rental shoes slide on both feet, so new bowlers ask which foot.",
+   "evidence": "BowlersMart (F). USBC Bowling Styles (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sh-slide-changes",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Why your slide changes day to day",
+   "level": "Intermediate",
+   "bubble": "Humidity, the approach surface and a dirty sole change your slide more than your feet do. Brush the sole first, then swap the pad.",
+   "glossary": "Humid air makes approaches tacky. Synthetic approaches tend to be slicker than older wood. Dirt picked up off the approach makes the slide unpredictable.",
+   "placement": "Bubble (More › Bowler profile (equipment)) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "bmart_soles",
+     "url": "https://www.bowlersmart.com/learn/shoes/soles-and-heels/",
+     "label": "F",
+     "title": "BowlersMart, Soles and heels explained (retailer)"
+    },
+    {
+     "key": "r_sole2",
+     "url": "https://www.reddit.com/r/Bowling/comments/14ejgt9/",
+     "label": "S",
+     "title": "r/Bowling: sticking on approach"
+    }
+   ],
+   "level_why": "A common league complaint: 'I was fine last week'.",
+   "evidence": "BowlersMart (F): humidity, the approach surface, foot traffic and a dirty sole. Threads (S): humidity calls for a higher number.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sh-shoe-covers",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Shoe covers",
+   "level": "Beginner",
+   "bubble": "Wear covers whenever you step off the approach. Dirt and drinks on the sole are the most common cause of a sudden stick.",
+   "glossary": "Slip-on covers for bowling shoes. Wear them whenever you walk off the approach area.",
+   "placement": "Bubble (More › Bowler profile (equipment)) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "bmart_soles",
+     "url": "https://www.bowlersmart.com/learn/shoes/soles-and-heels/",
+     "label": "F",
+     "title": "BowlersMart, Soles and heels explained (retailer)"
+    },
+    {
+     "key": "usbc_etiq",
+     "url": "https://bowl.com/welcome/etiquette-and-lingo",
+     "label": "F",
+     "title": "USBC, Etiquette and Lingo"
+    }
+   ],
+   "level_why": "Simple fix, often missed.",
+   "evidence": "BowlersMart (F): the most common reason a slide goes inconsistent. USBC etiquette (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sh-break-in",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Breaking in / brushing soles",
+   "level": "Beginner",
+   "bubble": "New slide soles need breaking in. Brush lightly from toe to heel with a wire brush; side to side makes it rough.",
+   "glossary": "Slide soles don't slide well straight out of the box. Light brushing in the direction of the slide, before and after sessions, keeps them consistent.",
+   "placement": "Bubble (More › Bowler profile (equipment)) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    },
+    {
+     "key": "bmart_soles",
+     "url": "https://www.bowlersmart.com/learn/shoes/soles-and-heels/",
+     "label": "F",
+     "title": "BowlersMart, Soles and heels explained (retailer)"
+    }
+   ],
+   "level_why": "New shoes stick.",
+   "evidence": "USBC Fundamentals (F): new slide soles must be broken in. Brush lightly from toe back with a soft wire brush; side-to-side roughs the sole up.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sh-powder-rosin",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Slide powder vs rosin",
+   "level": "Beginner",
+   "bubble": "Rosin makes a sole stick, not slide. If you use slide powder, use a tiny amount and never put it on the approach.",
+   "glossary": "Slide powder is made for soles; rosin is for your hand. Loose powder on the approach is a hazard to other bowlers, and USBC treats it as defacing the approach.",
+   "placement": "Bubble (More › Bowler profile (equipment)) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    }
+   ],
+   "level_why": "People put rosin on their shoes.",
+   "evidence": "USBC Fundamentals (F): rosin can have the opposite effect on a sole. Use slide powder sparingly and knock off the excess, because powder on the approach is technically defacing it.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sh-approach-surface",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Wood vs synthetic approach",
+   "level": "Intermediate",
+   "bubble": null,
+   "glossary": "Approach surfaces differ by center. Synthetic is often slicker and older wood tackier, but humidity and maintenance can outweigh the material.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "bmart_soles",
+     "url": "https://www.bowlersmart.com/learn/shoes/soles-and-heels/",
+     "label": "F",
+     "title": "BowlersMart, Soles and heels explained (retailer)"
+    }
+   ],
+   "level_why": "Travelers notice centers feel different.",
+   "evidence": "BowlersMart (F, retailer): newer synthetic tends to be slick, older wood tackier. No independent measurement found.",
+   "weak_evidence": true,
+   "v1_rank": null
+  },
+  {
+   "id": "sh-start-position",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Starting position",
+   "level": "Beginner",
+   "bubble": "Heels at the foul line, take 4½ normal steps back (5½ for a 5-step), and turn around. That's your start.",
+   "glossary": "Where you stand to begin your approach, both distance from the line and board. Adjust if you finish short of the line or foul.",
+   "placement": "Bubble (Targeting (#/target) Feet control) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    },
+    {
+     "key": "usbc_styles",
+     "url": "https://bowl.com/welcome/bowling-styles",
+     "label": "F",
+     "title": "USBC, Bowling Styles (4-step, 5-step, two-handed, spinner)"
+    },
+    {
+     "key": "r_start",
+     "url": "https://www.reddit.com/r/Bowling/comments/293b2e/where_do_you_start_and_end_your_approach/",
+     "label": "S",
+     "title": "r/Bowling: where do you start your approach"
+    }
+   ],
+   "level_why": "'Where do I stand' is a top beginner question.",
+   "evidence": "USBC Fundamentals (F) and Bowling Styles (F): heels at the foul line, 4½ steps (4-step) or 5½ (5-step), then turn. Reddit agrees (S).",
+   "weak_evidence": false,
+   "v1_rank": 20
+  },
+  {
+   "id": "sh-dots-boards",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Boards & approach dots",
+   "level": "Beginner",
+   "bubble": "39 boards, counted from your gutter side; the arrows sit every 5 boards (5, 10, 15…). Note the board under the inside edge of your slide foot so you can repeat it.",
+   "glossary": "The lane is 39 boards wide. Dots on the approach and arrows on the lane line up with boards, so you can stand and aim on the same numbers every shot.",
+   "placement": "Bubble (Targeting (#/target) Feet / Eyes controls) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    },
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    },
+    {
+     "key": "usbc_entry",
+     "url": "https://bowl.com/news/approach-position-for-entry-level-bowlers",
+     "label": "F",
+     "title": "USBC, Approach position for entry-level bowlers (Learn, 2009)"
+    }
+   ],
+   "level_why": "Needed before any move rule makes sense.",
+   "evidence": "PBA (F): 39 boards; the first arrow is on board 5; seven arrows start 16 ft past the foul line, and the dots on the lane are 7 ft out. USBC Fundamentals (F): line up using the inside of the slide shoe and count boards from your gutter.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sh-shammy",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Shammy / towel",
+   "level": "Beginner",
+   "bubble": "Wipe the ball dry between shots to keep oil off it. A dry shammy or towel is fine during competition; liquid cleaner isn't.",
+   "glossary": "A leather or synthetic pad (shammy) or towel for wiping oil off between shots. Hand-wash it. USBC suggests a grease-fighting dish soap for towels.",
+   "placement": "Bubble (Bag builder (#/bag) accessories / Glossary) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "r_shammy1",
+     "url": "https://www.reddit.com/r/Bowling/comments/by35ha/",
+     "label": "S",
+     "title": "r/Bowling: shammy vs microfiber"
+    },
+    {
+     "key": "r_shammy2",
+     "url": "https://www.reddit.com/r/Bowling/comments/13eoia7/",
+     "label": "S",
+     "title": "r/Bowling: what towel do you use"
+    },
+    {
+     "key": "r_shammy3",
+     "url": "https://www.reddit.com/r/Bowling/comments/1so0bz2/",
+     "label": "S",
+     "title": "r/Bowling: shammy care"
+    },
+    {
+     "key": "bsmart_towel",
+     "url": "https://www.bowlersmart.com/learn/accessories/towels-and-shammies",
+     "label": "S",
+     "title": "BowlersMart, Towels and shammies (retailer)"
+    },
+    {
+     "key": "nba_shine",
+     "url": "https://www.nationalbowlingacademy.com/video/lane-shine-important-017681",
+     "label": "F",
+     "title": "National Bowling Academy x Creating the Difference, Lane shine test (vendor-run, one ball)"
+    },
+    {
+     "key": "usbc_rules",
+     "url": "https://bowl.com/getmedia/64039e31-a0bb-42f1-94cb-81cb3b5fe6e9/USBC_Playing_Rules_2025_2026.pdf",
+     "label": "repo",
+     "title": "USBC Playing Rules 2025-26, Rule 18 (fetched for docs/ARSENAL_MANAGER_RESEARCH.md)"
+    },
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    }
+   ],
+   "level_why": "Asked once people see others wiping their ball between shots.",
+   "evidence": "Threads (S): leather shammy between shots, microfiber with cleaner after. NBA (F): wipe with a dry towel after every shot. Rule 18 (F, via repo): liquid cleaner is banned during competition.",
+   "weak_evidence": false,
+   "v1_rank": 16
+  },
+  {
+   "id": "sh-microfiber",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Microfiber pad",
+   "level": "Intermediate",
+   "bubble": null,
+   "glossary": "A cleaning pad usually used with an approved cleaner after bowling. Some bowlers also use one dry during play.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "r_shammy1",
+     "url": "https://www.reddit.com/r/Bowling/comments/by35ha/",
+     "label": "S",
+     "title": "r/Bowling: shammy vs microfiber"
+    },
+    {
+     "key": "bsmart_towel",
+     "url": "https://www.bowlersmart.com/learn/accessories/towels-and-shammies",
+     "label": "S",
+     "title": "BowlersMart, Towels and shammies (retailer)"
+    }
+   ],
+   "level_why": "'Shammy or microfiber?' threads.",
+   "evidence": "Threads (S): microfiber can smear oil when dry; many use it with cleaner after the session. Retailer (S).",
+   "weak_evidence": true,
+   "v1_rank": null
+  },
+  {
+   "id": "sh-tape",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Bowler's tape",
+   "level": "Intermediate",
+   "bubble": "Tape inside the thumb hole tightens the fit on nights your thumb shrinks. Needing lots of tape every week means it's time for the pro shop.",
+   "glossary": "Thin tape applied inside a hole to fine-tune the fit. A short-term adjustment, not a fix for a bad drill.",
+   "placement": "Bubble (Bag builder (#/bag) accessories / Glossary) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "bcom_acc",
+     "url": "https://www.bowling.com/knowledge-hub/bowling-accessories/5-most-essential-bowling-accessories",
+     "label": "S",
+     "title": "bowling.com, 5 essential accessories (retailer)"
+    },
+    {
+     "key": "r_bag1",
+     "url": "https://www.reddit.com/r/Bowling/comments/1fd65rd/bag_must_haves/",
+     "label": "S",
+     "title": "r/Bowling: bag must-haves"
+    },
+    {
+     "key": "bv_thumb",
+     "url": "https://www.bowlingball.com/BowlVersity/grip-pressure-your-thumb-hole-is-too-big-",
+     "label": "S",
+     "title": "bowlingball.com, Your thumb hole is too big (retailer)"
+    }
+   ],
+   "level_why": "Thumb fit changes from night to night.",
+   "evidence": "Retailer and Reddit (S) only.",
+   "weak_evidence": true,
+   "v1_rank": null
+  },
+  {
+   "id": "sh-rosin",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Rosin bag / grip sack",
+   "level": "Beginner",
+   "bubble": null,
+   "glossary": "A small bag that dries your hand for a consistent grip. Keep it off your slide sole.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "bcom_acc",
+     "url": "https://www.bowling.com/knowledge-hub/bowling-accessories/5-most-essential-bowling-accessories",
+     "label": "S",
+     "title": "bowling.com, 5 essential accessories (retailer)"
+    },
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    }
+   ],
+   "level_why": "A common accessory question.",
+   "evidence": "Retailer and Reddit (S). USBC (F): keep rosin off your soles.",
+   "weak_evidence": true,
+   "v1_rank": null
+  },
+  {
+   "id": "sh-wrist",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Wrist support",
+   "level": "Intermediate",
+   "bubble": null,
+   "glossary": "A brace some bowlers wear to keep the wrist position steady. Whether you need one is a coach or health question, not something the app recommends.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "bcom_acc",
+     "url": "https://www.bowling.com/knowledge-hub/bowling-accessories/5-most-essential-bowling-accessories",
+     "label": "S",
+     "title": "bowling.com, 5 essential accessories (retailer)"
+    },
+    {
+     "key": "r_bag1",
+     "url": "https://www.reddit.com/r/Bowling/comments/1fd65rd/bag_must_haves/",
+     "label": "S",
+     "title": "r/Bowling: bag must-haves"
+    }
+   ],
+   "level_why": "Often asked. Medical-adjacent.",
+   "evidence": "Retailer and Reddit (S) only. Medical-adjacent, so it stays out of bubbles.",
+   "weak_evidence": true,
+   "v1_rank": null
+  },
+  {
+   "id": "sh-inserts",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Finger inserts / thumb slug",
+   "level": "Intermediate",
+   "bubble": null,
+   "glossary": "Rubber or urethane liners in the holes. They give a consistent feel and wear out over time.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    }
+   ],
+   "level_why": "Pro-shop add-ons.",
+   "evidence": "USBC Fundamentals (F): replace inserts each season because they wear out.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sh-shoe-types",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "Rental, athletic or performance shoes",
+   "level": "Beginner",
+   "bubble": null,
+   "glossary": "Rental and athletic shoes have fixed soles. Performance shoes have swappable slide soles and heels, so you can adjust to the approach.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "bmart_soles",
+     "url": "https://www.bowlersmart.com/learn/shoes/soles-and-heels/",
+     "label": "F",
+     "title": "BowlersMart, Soles and heels explained (retailer)"
+    }
+   ],
+   "level_why": "An upgrade question.",
+   "evidence": "BowlersMart (F, retailer).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "sh-bag",
+   "tree": "Equipment — Shoes, Approach & Accessories",
+   "term": "What's usually in the bag",
+   "level": "Beginner",
+   "bubble": null,
+   "glossary": "What people commonly report carrying: towel or shammy, tape, rosin bag, shoe covers, a shoe brush, spare soles, and a cleaner for after the session. None is required.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "r_bag1",
+     "url": "https://www.reddit.com/r/Bowling/comments/1fd65rd/bag_must_haves/",
+     "label": "S",
+     "title": "r/Bowling: bag must-haves"
+    },
+    {
+     "key": "r_bag2",
+     "url": "https://www.reddit.com/r/Bowling/comments/119om0u/go_to_bowling_stuff_you_feel_like_is_necessary/",
+     "label": "S",
+     "title": "r/Bowling: go-to bowling stuff"
+    },
+    {
+     "key": "bv_bag",
+     "url": "https://www.bowlingball.com/BowlVersity/whats-in-your-bowling-bag",
+     "label": "S",
+     "title": "bowlingball.com, What's in your bag (retailer)"
+    },
+    {
+     "key": "bcom_acc",
+     "url": "https://www.bowling.com/knowledge-hub/bowling-accessories/5-most-essential-bowling-accessories",
+     "label": "S",
+     "title": "bowling.com, 5 essential accessories (retailer)"
+    }
+   ],
+   "level_why": "'What do I actually need' threads.",
+   "evidence": "Reddit and retailer lists (S). The popularity of each item is not measured.",
+   "weak_evidence": true,
+   "v1_rank": null
+  },
+  {
+   "id": "st-1h",
+   "tree": "Styles & Approaches",
+   "term": "One-handed (thumb in)",
+   "level": "Beginner",
+   "bubble": "Thumb plus two fingers in the ball; the thumb comes out first and the fingers add the turn. It's the most common style, not the 'right' one.",
+   "glossary": "The traditional delivery: thumb and two fingers in the ball, one hand. Gives the most direct control, especially for spares.",
+   "placement": "Bubble (Onboarding style step and More › Bowler profile) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usab_qr",
+     "url": "https://images.bowl.com/bowl/media/legacy/internap/bowl/youthresourcecenter/usa-bowling/coaching/USA_Bowling_Coaching_QuickReference_FundamentalsP2.pdf",
+     "label": "F",
+     "title": "USA Bowling Coaching Quick Reference, Fundamentals Phase 2"
+    },
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    },
+    {
+     "key": "addicts_thumbless",
+     "url": "https://www.bowlingaddicts.com/thumbless-vs-two-handed/",
+     "label": "F",
+     "title": "Bowling Addicts, Thumbless vs two-handed (retailer blog; RPM figures not verified)"
+    }
+   ],
+   "level_why": "The default style; beginners ask how it's 'supposed' to work.",
+   "evidence": "USA Bowling Quick Reference (F): RH thumb at 11 o'clock, fingers at 5. USBC Fundamentals (F): handshake position, thumb exits first. Retail blog (F): most league bowlers throw this way.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "st-2h",
+   "tree": "Styles & Approaches",
+   "term": "Two-handed",
+   "level": "Beginner",
+   "bubble": "Two-handed is legal in USBC play. It usually adds revs; the trade-offs are timing and spares, so many two-handers carry a plastic spare ball.",
+   "glossary": "A delivery with the non-bowling hand on the ball until just before release. Usually no thumb in the ball. It has a shorter backswing and a quicker tempo than the traditional approach.",
+   "placement": "Bubble (Onboarding style step) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_styles",
+     "url": "https://bowl.com/welcome/bowling-styles",
+     "label": "F",
+     "title": "USBC, Bowling Styles (4-step, 5-step, two-handed, spinner)"
+    },
+    {
+     "key": "r_2h1",
+     "url": "https://www.reddit.com/r/Bowling/comments/195h4hs/",
+     "label": "S",
+     "title": "r/Bowling: one-handed vs two-handed"
+    },
+    {
+     "key": "r_2h2",
+     "url": "https://www.reddit.com/r/Bowling/comments/1ppur2d/",
+     "label": "S",
+     "title": "r/Bowling: switching to two-handed"
+    },
+    {
+     "key": "r_2h3",
+     "url": "https://www.reddit.com/r/Bowling/comments/1qa9fk3/",
+     "label": "S",
+     "title": "r/Bowling: is two-handed better"
+    },
+    {
+     "key": "nba_2h",
+     "url": "https://www.nationalbowlingacademy.com/video/two-handed-bowling-advantages-disadvantages-025341",
+     "label": "S",
+     "title": "National Bowling Academy, Two-handed advantages and disadvantages"
+    },
+    {
+     "key": "r_2hrule1",
+     "url": "https://www.reddit.com/r/Bowling/comments/th02zx/two_hand_delivery_vs_two_hand_approach_usbc_rule/",
+     "label": "S",
+     "title": "r/Bowling: two-hand delivery USBC rule"
+    }
+   ],
+   "level_why": "Asked by beginners ('is it allowed?') and intermediates ('should I switch?').",
+   "evidence": "USBC Bowling Styles (F): chosen for faster speed and more revs, with a shorter backswing and quicker tempo; thumb optional. Reddit (S): not 'better', just different; timing is harder; many carry a spare ball. NBA (S).",
+   "weak_evidence": false,
+   "v1_rank": 9
+  },
+  {
+   "id": "st-nothumb",
+   "tree": "Styles & Approaches",
+   "term": "One-handed, no thumb",
+   "level": "Intermediate",
+   "bubble": "Legal: drilled with finger holes only and a '+' on the palm side. Many find it harder to repeat; it's a choice, not an upgrade.",
+   "glossary": "One hand, fingers in, no thumb. It adds revs, but many bowlers report it's harder to repeat. USBC requires that every hole be gripped, so a no-thumb ball has no thumb hole.",
+   "placement": "Bubble (Onboarding style step and More › Bowler profile) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "repo_amr",
+     "url": "docs/ARSENAL_MANAGER_RESEARCH.md",
+     "label": "repo",
+     "title": "Repo: USBC ES Manual 03/26, Rule 18, Siefers ball-life study, brand maintenance intervals (F there)"
+    },
+    {
+     "key": "r_nt1",
+     "url": "https://www.reddit.com/r/Bowling/comments/tj20tz/onehanded_thumbless_bowlers/",
+     "label": "S",
+     "title": "r/Bowling: one-handed thumbless bowlers"
+    },
+    {
+     "key": "r_nt2",
+     "url": "https://www.reddit.com/r/Bowling/comments/4ad26z/thumbless_onehanded_bowling/",
+     "label": "S",
+     "title": "r/Bowling: thumbless one-handed"
+    },
+    {
+     "key": "r_nt3",
+     "url": "https://www.reddit.com/r/Bowling/comments/qmmzx6/advice_regarding_nothumb_bowling/",
+     "label": "S",
+     "title": "r/Bowling: no-thumb advice"
+    },
+    {
+     "key": "addicts_thumbless",
+     "url": "https://www.bowlingaddicts.com/thumbless-vs-two-handed/",
+     "label": "F",
+     "title": "Bowling Addicts, Thumbless vs two-handed (retailer blog; RPM figures not verified)"
+    }
+   ],
+   "level_why": "A niche style that comes up in 'should I drop my thumb' threads.",
+   "evidence": "Weak: Reddit (S) and one retail blog (F). Rule fact from the USBC ES Manual (F, via repo): no thumb hole, '+' marked on the palm side. Wrist-strain comments are medical-adjacent and excluded.",
+   "weak_evidence": true,
+   "v1_rank": null
+  },
+  {
+   "id": "st-holes-rule",
+   "tree": "Styles & Approaches",
+   "term": "Every hole must be gripped",
+   "level": "Intermediate",
+   "bubble": "USBC rule: every hole in the ball must be gripped on every shot. A ball with a thumb hole means thumb in; no-thumb balls are drilled without one.",
+   "glossary": "Since balance holes were removed, an unused thumb hole is illegal. Switching between thumb and no-thumb styles usually means a separate ball or a redrill.",
+   "placement": "Bubble (Onboarding style step and More › Bowler profile) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "repo_amr",
+     "url": "docs/ARSENAL_MANAGER_RESEARCH.md",
+     "label": "repo",
+     "title": "Repo: USBC ES Manual 03/26, Rule 18, Siefers ball-life study, brand maintenance intervals (F there)"
+    },
+    {
+     "key": "r_2hrule1",
+     "url": "https://www.reddit.com/r/Bowling/comments/th02zx/two_hand_delivery_vs_two_hand_approach_usbc_rule/",
+     "label": "S",
+     "title": "r/Bowling: two-hand delivery USBC rule"
+    },
+    {
+     "key": "r_2hrule2",
+     "url": "https://www.reddit.com/r/Bowling/comments/1fa8wak/bowling_league_usbc_2handed_question/",
+     "label": "S",
+     "title": "r/Bowling: USBC league two-handed question"
+    },
+    {
+     "key": "r_2hrule3",
+     "url": "https://www.reddit.com/r/Bowling/comments/1oermic/league_ruleslegality_question_switching_styles/",
+     "label": "S",
+     "title": "r/Bowling: switching styles legality"
+    }
+   ],
+   "level_why": "Comes up when people switch styles.",
+   "evidence": "USBC ES Manual 03/26 (F, via repo): a gripping hole not used throughout the approach counts as a balance hole, which is illegal. Reddit rule threads (S).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "st-4step",
+   "tree": "Styles & Approaches",
+   "term": "4-step approach",
+   "level": "Beginner",
+   "bubble": "Ball and first step move together. It's the most common approach at every level (USBC).",
+   "glossary": "Step 1: push the ball away. Step 2: the ball swings down. Step 3: the ball reaches the top of the backswing. Step 4: slide and release.",
+   "placement": "Bubble (Onboarding / Bowler profile approach) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_styles",
+     "url": "https://bowl.com/welcome/bowling-styles",
+     "label": "F",
+     "title": "USBC, Bowling Styles (4-step, 5-step, two-handed, spinner)"
+    },
+    {
+     "key": "usab_qr",
+     "url": "https://images.bowl.com/bowl/media/legacy/internap/bowl/youthresourcecenter/usa-bowling/coaching/USA_Bowling_Coaching_QuickReference_FundamentalsP2.pdf",
+     "label": "F",
+     "title": "USA Bowling Coaching Quick Reference, Fundamentals Phase 2"
+    },
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    }
+   ],
+   "level_why": "'How many steps' is a top beginner question.",
+   "evidence": "USBC Bowling Styles (F): the 4-step is 'the most used by any level player'; push away and first step together. USA Bowling Quick Reference (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "st-5step",
+   "tree": "Styles & Approaches",
+   "term": "5-step approach",
+   "level": "Beginner",
+   "bubble": "A 5-step is a 4-step with one small starter step first, ball still. Same delivery; pick the one you can time.",
+   "glossary": "Step 1 is a small step with the slide-side foot while the ball stays still. The rest matches the 4-step.",
+   "placement": "Bubble (Onboarding / Bowler profile approach) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_styles",
+     "url": "https://bowl.com/welcome/bowling-styles",
+     "label": "F",
+     "title": "USBC, Bowling Styles (4-step, 5-step, two-handed, spinner)"
+    },
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    },
+    {
+     "key": "usab_qr",
+     "url": "https://images.bowl.com/bowl/media/legacy/internap/bowl/youthresourcecenter/usa-bowling/coaching/USA_Bowling_Coaching_QuickReference_FundamentalsP2.pdf",
+     "label": "F",
+     "title": "USA Bowling Coaching Quick Reference, Fundamentals Phase 2"
+    },
+    {
+     "key": "r_45a",
+     "url": "https://www.reddit.com/r/Bowling/comments/1dtrt8p/4_vs_5_steps/",
+     "label": "S",
+     "title": "r/Bowling: 4 vs 5 steps"
+    },
+    {
+     "key": "r_45b",
+     "url": "https://www.reddit.com/r/Bowling/comments/bm1zan/4_vs_5_step_approach/",
+     "label": "S",
+     "title": "r/Bowling: 4 vs 5 step approach"
+    },
+    {
+     "key": "r_45c",
+     "url": "https://www.reddit.com/r/Bowling/comments/8vrleo/4_vs_5_step_approach/",
+     "label": "S",
+     "title": "r/Bowling: 4 vs 5 step approach"
+    },
+    {
+     "key": "r_45d",
+     "url": "https://www.reddit.com/r/Bowling/comments/1pa6o4s/",
+     "label": "S",
+     "title": "r/Bowling: step count question"
+    },
+    {
+     "key": "nick_45",
+     "url": "https://nickthebowlingcoach.com/mastering-your-bowling-approach-4-step-vs-5-step-guide/",
+     "label": "S",
+     "title": "Nick the Bowling Coach, 4-step vs 5-step"
+    }
+   ],
+   "level_why": "Same askers. People think it's a different technique.",
+   "evidence": "USBC Bowling Styles (F): a 5-step 'simply includes a step before the ball and ball-side foot move together'. USBC Fundamentals (F): a short first step with the non-ball-side foot. Reddit (S): neither is better; pick the one you can time.",
+   "weak_evidence": false,
+   "v1_rank": 10
+  },
+  {
+   "id": "st-other-steps",
+   "tree": "Styles & Approaches",
+   "term": "Other step counts",
+   "level": "Intermediate",
+   "bubble": null,
+   "glossary": "Bowlers use other counts. Extra steps before the push away act like starter steps, and the one-step is a teaching drill. What matters is that the swing and feet arrive together.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "usab_qr",
+     "url": "https://images.bowl.com/bowl/media/legacy/internap/bowl/youthresourcecenter/usa-bowling/coaching/USA_Bowling_Coaching_QuickReference_FundamentalsP2.pdf",
+     "label": "F",
+     "title": "USA Bowling Coaching Quick Reference, Fundamentals Phase 2"
+    }
+   ],
+   "level_why": "Occasional 'is 3 or 6 steps OK' questions.",
+   "evidence": "USA Bowling (F): multiple steps are allowed before the ball moves; a one-step drill is used for teaching. No data on how common 3, 6 or 7 steps are.",
+   "weak_evidence": true,
+   "v1_rank": null
+  },
+  {
+   "id": "st-timing",
+   "tree": "Styles & Approaches",
+   "term": "Timing",
+   "level": "Intermediate",
+   "bubble": "Timing = where the ball is when your feet arrive. Fast feet? Hold the ball lower. Slow feet? Hold it higher (USBC).",
+   "glossary": "How the arm swing and footwork line up. USBC Coaching recommends adjusting the swing to your natural tempo rather than slowing your feet.",
+   "placement": "Bubble (Onboarding style step and More › Bowler profile) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    },
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "'I feel rushed' and 'early or late' questions.",
+   "evidence": "USBC Fundamentals (F): match ball height in the stance to your tempo. PBA (F): definition of early timing.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "st-pushaway",
+   "tree": "Styles & Approaches",
+   "term": "Push away",
+   "level": "Beginner",
+   "bubble": null,
+   "glossary": "Moving the ball out to start the swing. Push it toward your target and keep the first step short.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    }
+   ],
+   "level_why": "A building block of the approach.",
+   "evidence": "USBC Fundamentals (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "st-handshake",
+   "tree": "Styles & Approaches",
+   "term": "Handshake release (learning a hook)",
+   "level": "Beginner",
+   "bubble": "Thumb at 11 o'clock (right-handers; 1 o'clock for lefties) and keep that 'handshake' through release. The thumb exits first, then the fingers add side roll.",
+   "glossary": "USBC's simplest way to learn a curve: hold the hand position from stance to finish, with the thumb releasing before the fingers.",
+   "placement": "Bubble (Onboarding style step and More › Bowler profile) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    },
+    {
+     "key": "usab_qr",
+     "url": "https://images.bowl.com/bowl/media/legacy/internap/bowl/youthresourcecenter/usa-bowling/coaching/USA_Bowling_Coaching_QuickReference_FundamentalsP2.pdf",
+     "label": "F",
+     "title": "USA Bowling Coaching Quick Reference, Fundamentals Phase 2"
+    },
+    {
+     "key": "r_hook2",
+     "url": "https://www.reddit.com/r/Bowling/comments/1hdpcbn/",
+     "label": "S",
+     "title": "r/Bowling: how to hook (beginner)"
+    }
+   ],
+   "level_why": "The direct fix for 'how do I hook it'.",
+   "evidence": "USBC Fundamentals (F). USA Bowling Quick Reference (F). Hook threads (S).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "st-labels",
+   "tree": "Styles & Approaches",
+   "term": "Stroker / tweener / cranker",
+   "level": "Intermediate",
+   "bubble": null,
+   "glossary": "Loose style labels. A stroker has lower revs and a smooth release; a cranker has high revs and more hand action; a tweener is in between. They're descriptions, not levels.",
+   "placement": "Glossary only",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "repo_tpt",
+     "url": "docs/TEAM_PROMPT_TARGETING.md",
+     "label": "repo",
+     "title": "Repo: move rules, 2-and-1, drift, breakpoint 8-10 @ 39-41 ft (sources and labels listed there)"
+    }
+   ],
+   "level_why": "Labels people hear but rarely see defined.",
+   "evidence": "Book lines cited in the repo's targeting doc (S). Definitions vary by source, and none ranks one above another.",
+   "weak_evidence": true,
+   "v1_rank": null
+  },
+  {
+   "id": "st-spinner",
+   "tree": "Styles & Approaches",
+   "term": "Spinner",
+   "level": "Intermediate",
+   "bubble": null,
+   "glossary": "A style with heavy spin and little forward roll. USBC notes it can be very accurate for spares.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "usbc_styles",
+     "url": "https://bowl.com/welcome/bowling-styles",
+     "label": "F",
+     "title": "USBC, Bowling Styles (4-step, 5-step, two-handed, spinner)"
+    }
+   ],
+   "level_why": "A recognisable style.",
+   "evidence": "USBC Bowling Styles (F): lighter ball, lots of spin, palm faces down at release.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "st-switching",
+   "tree": "Styles & Approaches",
+   "term": "Switching styles",
+   "level": "Intermediate",
+   "bubble": null,
+   "glossary": "A switch changes your release, timing and spares at once. People report a temporary drop in average. It's a personal choice, and a coach helps.",
+   "placement": "Glossary only",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "addicts_thumbless",
+     "url": "https://www.bowlingaddicts.com/thumbless-vs-two-handed/",
+     "label": "F",
+     "title": "Bowling Addicts, Thumbless vs two-handed (retailer blog; RPM figures not verified)"
+    },
+    {
+     "key": "r_2h2",
+     "url": "https://www.reddit.com/r/Bowling/comments/1ppur2d/",
+     "label": "S",
+     "title": "r/Bowling: switching to two-handed"
+    },
+    {
+     "key": "usbc_loh",
+     "url": "https://images.bowl.com/bowl/media/assets/usbc/rules/general%20pdfs/060624_rules-to-consider-loh-06-01-2024.pdf",
+     "label": "F",
+     "title": "USBC, Rules to consider (league handicap, averages, absentee)"
+    }
+   ],
+   "level_why": "'Should I switch to 2H?' threads.",
+   "evidence": "Weak. Retail blog (F): expect your average to drop for months. Reddit (S): many say 1H to 2H is easier than the reverse. USBC (F): youth must establish a new average after changing.",
+   "weak_evidence": true,
+   "v1_rank": null
+  },
+  {
+   "id": "st-finish",
+   "tree": "Styles & Approaches",
+   "term": "Finish position / follow-through",
+   "level": "Beginner",
+   "bubble": null,
+   "glossary": "Balanced on the slide foot with the other leg behind, and the arm extended toward the target, elbow finishing above the shoulder.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "usbc_styles",
+     "url": "https://bowl.com/welcome/bowling-styles",
+     "label": "F",
+     "title": "USBC, Bowling Styles (4-step, 5-step, two-handed, spinner)"
+    },
+    {
+     "key": "usab_qr",
+     "url": "https://images.bowl.com/bowl/media/legacy/internap/bowl/youthresourcecenter/usa-bowling/coaching/USA_Bowling_Coaching_QuickReference_FundamentalsP2.pdf",
+     "label": "F",
+     "title": "USA Bowling Coaching Quick Reference, Fundamentals Phase 2"
+    }
+   ],
+   "level_why": "Building block.",
+   "evidence": "USBC Bowling Styles (F). USA Bowling Quick Reference (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "st-myths",
+   "tree": "Styles & Approaches",
+   "term": "Common style misconceptions",
+   "level": "Beginner",
+   "bubble": null,
+   "glossary": "Common misconceptions: 2H is illegal (it isn't, in USBC play); 2H or no-thumb is 'better' (it's a trade-off); you need 5 steps to be good (the 4-step is the most used at every level); pros all throw one way (styles vary).",
+   "placement": "Glossary only",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "usbc_styles",
+     "url": "https://bowl.com/welcome/bowling-styles",
+     "label": "F",
+     "title": "USBC, Bowling Styles (4-step, 5-step, two-handed, spinner)"
+    },
+    {
+     "key": "r_2hrule1",
+     "url": "https://www.reddit.com/r/Bowling/comments/th02zx/two_hand_delivery_vs_two_hand_approach_usbc_rule/",
+     "label": "S",
+     "title": "r/Bowling: two-hand delivery USBC rule"
+    },
+    {
+     "key": "r_2h1",
+     "url": "https://www.reddit.com/r/Bowling/comments/195h4hs/",
+     "label": "S",
+     "title": "r/Bowling: one-handed vs two-handed"
+    },
+    {
+     "key": "r_45a",
+     "url": "https://www.reddit.com/r/Bowling/comments/1dtrt8p/4_vs_5_steps/",
+     "label": "S",
+     "title": "r/Bowling: 4 vs 5 steps"
+    }
+   ],
+   "level_why": "They come up in threads at every level.",
+   "evidence": "Reddit (S). USBC rules (F) for legality.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "ln-oil",
+   "tree": "Lane & Oil",
+   "term": "What lane oil does",
+   "level": "Beginner",
+   "bubble": "Oil = less friction = less hook. Most house shots have more oil in the middle than outside, so the ball skids through the middle and grabs on the outside.",
+   "glossary": "Conditioner applied to protect the lane and shape ball motion. Where it is, how much and how far it goes decide where your ball hooks.",
+   "placement": "Bubble (Lane (#/lane) pattern / oil chips) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    },
+    {
+     "key": "bv_phases",
+     "url": "https://www.bowlingball.com/BowlVersity/the-three-phases-of-bowling-ball-motion",
+     "label": "F",
+     "title": "bowlingball.com BowlVersity, Three phases of ball motion (retailer)"
+    },
+    {
+     "key": "r_hook3",
+     "url": "https://www.reddit.com/r/Bowling/comments/1ll5n5s/",
+     "label": "S",
+     "title": "r/Bowling: same ball hooks one night, not the next"
+    }
+   ],
+   "level_why": "The root of 'it hooked last week but not today'.",
+   "evidence": "USBC Fundamentals (F): oily lanes mean a straighter line, the outside is generally drier. BowlVersity (F): longer patterns lengthen skid. Reddit (S).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "ln-house",
+   "tree": "Lane & Oil",
+   "term": "House shot",
+   "level": "Beginner",
+   "bubble": "A house shot has far more oil in the middle than outside: about 8:1 or more (USBC). The drier outside helps steer misses back toward the pocket.",
+   "glossary": "The everyday league pattern. A high ratio gives you more room for error than sport patterns.",
+   "placement": "Bubble (Lane (#/lane) pattern / oil chips) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_sport",
+     "url": "https://bowl.com/sport-bowling/information",
+     "label": "F",
+     "title": "USBC, Sport Bowling information (pattern ratios)"
+    },
+    {
+     "key": "kegel_kosi",
+     "url": "https://www.kegel.net/articles/oil-pattern-kosi-graphs",
+     "label": "F",
+     "title": "Kegel, Reading composite oil pattern graphs"
+    },
+    {
+     "key": "r_oil",
+     "url": "https://www.reddit.com/r/Bowling/comments/16t742q/",
+     "label": "S",
+     "title": "r/Bowling: ELI5 sport shot vs house shot"
+    }
+   ],
+   "level_why": "League bowlers hear 'house shot' constantly.",
+   "evidence": "USBC (F): typically 8:1 or higher, averaging about 40 ft. Kegel (F): house patterns give a defined 'ridge' to play against.",
+   "weak_evidence": false,
+   "v1_rank": 12
+  },
+  {
+   "id": "ln-sport",
+   "tree": "Lane & Oil",
+   "term": "Sport shot",
+   "level": "Intermediate",
+   "bubble": "Sport patterns are much flatter: about 4:1 or lower (USBC), against 8:1 or more on a house shot. Misses don't get steered back, so scores drop.",
+   "glossary": "A flatter oil pattern used in sport leagues and many tournaments. USBC's sport page says 4:1 or lower; its 2014 technical manual says 3:1 maximum.",
+   "placement": "Bubble (Lane (#/lane) pattern / oil chips) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "usbc_sport",
+     "url": "https://bowl.com/sport-bowling/information",
+     "label": "F",
+     "title": "USBC, Sport Bowling information (pattern ratios)"
+    },
+    {
+     "key": "usbc_techman",
+     "url": "https://images.bowl.com/bowl/media/legacy/internap/bowl/sportbowling/pdfs/2014SportBowlingTechManual.pdf",
+     "label": "S",
+     "title": "USBC 2014 Sport Bowling Technical Manual (search excerpt: 3:1 max, L18-R18 vs 3-7; conflicts with \"4:1 or lower\" on the bowl.com page)"
+    },
+    {
+     "key": "kegel_kosi",
+     "url": "https://www.kegel.net/articles/oil-pattern-kosi-graphs",
+     "label": "F",
+     "title": "Kegel, Reading composite oil pattern graphs"
+    }
+   ],
+   "level_why": "Intermediates ask why their average drops in sport leagues and tournaments.",
+   "evidence": "USBC sport page (F): typically 4:1 or lower. 2014 USBC Tech Manual (S): 3:1 maximum. The two sources conflict, so both are noted.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "ln-ratio",
+   "tree": "Lane & Oil",
+   "term": "Oil ratio",
+   "level": "Intermediate",
+   "bubble": null,
+   "glossary": "How much more oil is in the middle than outside. A high ratio is forgiving; a low ratio is demanding.",
+   "placement": "Glossary only",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "kegel_kosi",
+     "url": "https://www.kegel.net/articles/oil-pattern-kosi-graphs",
+     "label": "F",
+     "title": "Kegel, Reading composite oil pattern graphs"
+    },
+    {
+     "key": "usbc_sport",
+     "url": "https://bowl.com/sport-bowling/information",
+     "label": "F",
+     "title": "USBC, Sport Bowling information (pattern ratios)"
+    }
+   ],
+   "level_why": "Shows up on pattern sheets.",
+   "evidence": "Kegel (F): oil on boards L18–R18 divided by oil on boards 3–7. A lower ratio is harder.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "ln-length",
+   "tree": "Lane & Oil",
+   "term": "Pattern length",
+   "level": "Intermediate",
+   "bubble": "Pattern length = how far the oil goes. 43 ft of oil leaves 17 ft of dry lane before the pins.",
+   "glossary": "Distance from the foul line where the oil stops. Longer patterns push the hook later.",
+   "placement": "Bubble (Lane (#/lane) pattern / oil chips) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "kegel_kosi",
+     "url": "https://www.kegel.net/articles/oil-pattern-kosi-graphs",
+     "label": "F",
+     "title": "Kegel, Reading composite oil pattern graphs"
+    },
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "Shows up on pattern sheets.",
+   "evidence": "Kegel (F): a 43 ft pattern leaves 17 ft of dry lane. PBA (F): long vs short patterns.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "ln-breakdown",
+   "tree": "Lane & Oil",
+   "term": "Breakdown / transition (the burn)",
+   "level": "Intermediate",
+   "bubble": "Balls push oil out of the track as the night goes on. Expect an earlier hook; usually move deeper (left for right-handers) and keep the same breakpoint.",
+   "glossary": "The pattern changing during play: the track dries (the burn) and oil moves elsewhere. Adjust your line, speed or ball as it happens.",
+   "placement": "Bubble (Tonight › read buttons (hooking early / late)) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "storm_burn",
+     "url": "https://www.stormbowling.com/read/cracking-the-code-of-the-burn",
+     "label": "F",
+     "title": "Storm, Cracking the code of the burn (manufacturer)"
+    },
+    {
+     "key": "r_burn1",
+     "url": "https://www.reddit.com/r/Bowling/comments/bv8ndn/how_to_play_on_burned_out_lanes/",
+     "label": "S",
+     "title": "r/Bowling: burned-out lanes"
+    },
+    {
+     "key": "r_burn2",
+     "url": "https://www.reddit.com/r/Bowling/comments/dzibfq/struggling_with_early_hook_when_lanes_burnup/",
+     "label": "S",
+     "title": "r/Bowling: early hook when lanes burn up"
+    },
+    {
+     "key": "r_trans1",
+     "url": "https://www.reddit.com/r/Bowling/comments/17ftwxy/struggling_with_the_transition/",
+     "label": "S",
+     "title": "r/Bowling: struggling with the transition"
+    }
+   ],
+   "level_why": "A top league question: 'it worked game 1, not game 3'.",
+   "evidence": "Storm (F): as the pattern breaks down, move deeper (left for RH), add speed or axis rotation, or go pearl or higher grit. Reddit (S).",
+   "weak_evidence": false,
+   "v1_rank": 13
+  },
+  {
+   "id": "ln-carrydown",
+   "tree": "Lane & Oil",
+   "term": "Carrydown",
+   "level": "Intermediate",
+   "bubble": "Balls also drag oil past the end of the pattern (carrydown), so the backend can get weaker even as the front dries up.",
+   "glossary": "Oil moved toward the pins by balls rolling through the pattern. It can make the ball hook less late in the lane.",
+   "placement": "Bubble (Lane (#/lane) pattern / oil chips) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    },
+    {
+     "key": "kegel_carry",
+     "url": "https://www.kegel.net/articles/oil-pattern-breakdown-and-carrydown",
+     "label": "S",
+     "title": "Kegel, Oil pattern breakdown and carrydown"
+    }
+   ],
+   "level_why": "Explains a weaker backend later in the night.",
+   "evidence": "PBA (F): oil carried down the lane can reduce backend hook. Kegel (S).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "ln-reading",
+   "tree": "Lane & Oil",
+   "term": "Reading dry vs oily",
+   "level": "Beginner",
+   "bubble": "Hooking early? That part of the lane is drier. Move, or use a weaker ball. Going straight? There's more oil. Play straighter or use a stronger ball.",
+   "glossary": "Use your ball's reaction to read the lane. Watch where it starts to turn, and watch bowlers with a similar style.",
+   "placement": "Bubble (Tonight › read buttons) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    },
+    {
+     "key": "r_hook3",
+     "url": "https://www.reddit.com/r/Bowling/comments/1ll5n5s/",
+     "label": "S",
+     "title": "r/Bowling: same ball hooks one night, not the next"
+    }
+   ],
+   "level_why": "The beginner version of transition.",
+   "evidence": "USBC Fundamentals (F): if the lanes are oily, play straighter; if they're hooking, soften your release or use a less aggressive ball. Reddit (S): the same ball behaves differently on different nights.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "ln-zones",
+   "tree": "Lane & Oil",
+   "term": "Heads / midlane / backend",
+   "level": "Intermediate",
+   "bubble": "Heads = about the first 20 ft, midlane after that, backend = the last part, past the oil. The ball skids in the heads, hooks in the mid and back, and rolls into the pins.",
+   "glossary": "The three zones of the lane, and how ball motion maps to them.",
+   "placement": "Bubble (Lane (#/lane) pattern / oil chips) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    },
+    {
+     "key": "bv_phases",
+     "url": "https://www.bowlingball.com/BowlVersity/the-three-phases-of-bowling-ball-motion",
+     "label": "F",
+     "title": "bowlingball.com BowlVersity, Three phases of ball motion (retailer)"
+    }
+   ],
+   "level_why": "Coaches use these words without defining them.",
+   "evidence": "PBA (F): the heads are about the first 20 ft. BowlVersity (F): skid usually lasts the first 20–30 ft, and roll happens in the back third.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "ln-oil-rings",
+   "tree": "Lane & Oil",
+   "term": "Oil rings (flare)",
+   "level": "Intermediate",
+   "bubble": "Each oil ring is a new track as the ball flares. Rings spread farther apart = more fresh cover touching the lane = more hook potential.",
+   "glossary": "Lines of oil left on the ball. The spacing shows how much it flared. Dark rings that won't wipe off are a sign the ball needs cleaning or a detox.",
+   "placement": "Bubble (Lane (#/lane) pattern / oil chips) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    },
+    {
+     "key": "r_rings1",
+     "url": "https://www.reddit.com/r/Bowling/comments/1egypii/track_and_flare_questions/",
+     "label": "S",
+     "title": "r/Bowling: track and flare"
+    },
+    {
+     "key": "r_rings2",
+     "url": "https://www.reddit.com/r/Bowling/comments/1nr5gco/what_do_the_oil_tracks_mean/",
+     "label": "S",
+     "title": "r/Bowling: what do the oil tracks mean"
+    },
+    {
+     "key": "repo_amr",
+     "url": "docs/ARSENAL_MANAGER_RESEARCH.md",
+     "label": "repo",
+     "title": "Repo: USBC ES Manual 03/26, Rule 18, Siefers ball-life study, brand maintenance intervals (F there)"
+    }
+   ],
+   "level_why": "'What do the rings on my ball mean' threads.",
+   "evidence": "PBA (F): flare is track migration. Reddit (S): spacing matters more than the number of rings.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "ln-topography",
+   "tree": "Lane & Oil",
+   "term": "Lane topography",
+   "level": "Advanced",
+   "bubble": null,
+   "glossary": "Small tilts and dips in the lane surface. They can affect ball motion as much as oil.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "kegel_kosi",
+     "url": "https://www.kegel.net/articles/oil-pattern-kosi-graphs",
+     "label": "F",
+     "title": "Kegel, Reading composite oil pattern graphs"
+    }
+   ],
+   "level_why": "Rarely asked; advanced.",
+   "evidence": "Kegel (F): topography can be more dominant than the oil pattern.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "ln-graph",
+   "tree": "Lane & Oil",
+   "term": "Reading a pattern sheet",
+   "level": "Advanced",
+   "bubble": null,
+   "glossary": "Composite graphs show oil per board. Use them to judge difficulty, not to pick an exact line.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "kegel_kosi",
+     "url": "https://www.kegel.net/articles/oil-pattern-kosi-graphs",
+     "label": "F",
+     "title": "Kegel, Reading composite oil pattern graphs"
+    }
+   ],
+   "level_why": "Tournament bowlers.",
+   "evidence": "Kegel (F): look at length, volume, ratio and shape. A graph shows how a pattern may play, not where to stand.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "bm-shr",
+   "tree": "Ball Motion",
+   "term": "Skid → hook → roll",
+   "level": "Intermediate",
+   "bubble": "Every ball skids, then hooks, then rolls. Skid usually lasts the first 20–30 ft; you want the roll to start just before the pins.",
+   "glossary": "The three phases of ball motion. Surface, speed, revs and oil change how long each one lasts.",
+   "placement": "Bubble (Lane (#/lane) ball path and phase labels) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "bv_phases",
+     "url": "https://www.bowlingball.com/BowlVersity/the-three-phases-of-bowling-ball-motion",
+     "label": "F",
+     "title": "bowlingball.com BowlVersity, Three phases of ball motion (retailer)"
+    },
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "The framework behind most motion questions.",
+   "evidence": "BowlVersity (F): skid lasts about the first 20–30 ft; an early roll deflects and a late roll hits light. PBA (F): every ball skids first.",
+   "weak_evidence": false,
+   "v1_rank": 11
+  },
+  {
+   "id": "bm-not-hooking",
+   "tree": "Ball Motion",
+   "term": "Why isn't my ball hooking?",
+   "level": "Beginner",
+   "bubble": "Most common causes: a plastic or house ball, a conventional grip, a thumb that doesn't come out first, or heavy oil. A drilled reactive ball fixes the first two.",
+   "glossary": "Hook needs grip on the lane (cover and surface), rotation (release) and some friction (oil). Fix the cause you can control first.",
+   "placement": "Bubble (Tonight › read buttons (\"not hooking\") and Lane) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "r_hook1",
+     "url": "https://www.reddit.com/r/Bowling/comments/18zk9zf/",
+     "label": "S",
+     "title": "r/Bowling: ball won't hook (beginner)"
+    },
+    {
+     "key": "r_hook2",
+     "url": "https://www.reddit.com/r/Bowling/comments/1hdpcbn/",
+     "label": "S",
+     "title": "r/Bowling: how to hook (beginner)"
+    },
+    {
+     "key": "r_hook3",
+     "url": "https://www.reddit.com/r/Bowling/comments/1ll5n5s/",
+     "label": "S",
+     "title": "r/Bowling: same ball hooks one night, not the next"
+    },
+    {
+     "key": "bcom_hook",
+     "url": "https://www.bowling.com/knowledge-hub/questions/bowling-tips/hooking-a-bowling-ball/question_10_why-isn-t-my-bowling-ball-hooking-even-when-i-try-to-rotate-my-wrist",
+     "label": "S",
+     "title": "bowling.com, Why isn't my ball hooking (retailer)"
+    },
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    },
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "Probably the most common beginner question in the sources.",
+   "evidence": "Several Reddit threads from beginners (S). Retailer FAQ (S). USBC Fundamentals (F): handshake release, oily lanes. PBA (F): a conventional grip is harder to hook.",
+   "weak_evidence": false,
+   "v1_rank": 1
+  },
+  {
+   "id": "bm-speed",
+   "tree": "Ball Motion",
+   "term": "Ball speed",
+   "level": "Intermediate",
+   "bubble": "More speed = longer skid and less hook. Slowing down a little is a common fix when the ball won't turn.",
+   "glossary": "How fast the ball travels. Speed trades off against hook. A consistent speed matters more than a high one.",
+   "placement": "Bubble (Lane (#/lane) ball path and phase labels) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "bv_phases",
+     "url": "https://www.bowlingball.com/BowlVersity/the-three-phases-of-bowling-ball-motion",
+     "label": "F",
+     "title": "bowlingball.com BowlVersity, Three phases of ball motion (retailer)"
+    },
+    {
+     "key": "btm_speed",
+     "url": "https://www.bowlingthismonth.com/quick-tips/generating-less-ball-speed/",
+     "label": "S",
+     "title": "Bowling This Month, Generating less ball speed"
+    },
+    {
+     "key": "r_speed1",
+     "url": "https://www.reddit.com/r/Bowling/comments/9dvv2h/advice_on_ball_speedrev_rate/",
+     "label": "S",
+     "title": "r/Bowling: ball speed / rev rate"
+    }
+   ],
+   "level_why": "'Am I too fast?' threads.",
+   "evidence": "BowlVersity (F): higher speed lengthens skid. Bowling This Month (S): about 0.5–1 mph change from a shorter or lower setup.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "bm-revs",
+   "tree": "Ball Motion",
+   "term": "Rev rate",
+   "level": "Intermediate",
+   "bubble": "More revs = more hook potential. Revs and speed work as a pair; the match matters more than the rev number.",
+   "glossary": "How many times the ball rotates per minute. More revs give the ball more hook potential, but no rev rate is the 'right' one.",
+   "placement": "Bubble (Lane (#/lane) ball path and phase labels) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "bv_phases",
+     "url": "https://www.bowlingball.com/BowlVersity/the-three-phases-of-bowling-ball-motion",
+     "label": "F",
+     "title": "bowlingball.com BowlVersity, Three phases of ball motion (retailer)"
+    },
+    {
+     "key": "r_speed2",
+     "url": "https://www.reddit.com/r/Bowling/comments/1p9pxot/speed_matched_rev_dominant_ranges/",
+     "label": "S",
+     "title": "r/Bowling: speed / matched / rev-dominant ranges"
+    }
+   ],
+   "level_why": "People compare their rev rate to others'.",
+   "evidence": "BowlVersity (F): more revs and rotation mean more hook. Reddit (S).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "bm-matchup",
+   "tree": "Ball Motion",
+   "term": "Speed / rev match",
+   "level": "Advanced",
+   "bubble": null,
+   "glossary": "Speed-dominant bowlers get more length and less hook. Rev-dominant bowlers hook more and earlier. 'Matched' is in between. There's no verified number for a match.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "r_speed2",
+     "url": "https://www.reddit.com/r/Bowling/comments/1p9pxot/speed_matched_rev_dominant_ranges/",
+     "label": "S",
+     "title": "r/Bowling: speed / matched / rev-dominant ranges"
+    },
+    {
+     "key": "addicts_thumbless",
+     "url": "https://www.bowlingaddicts.com/thumbless-vs-two-handed/",
+     "label": "F",
+     "title": "Bowling Addicts, Thumbless vs two-handed (retailer blog; RPM figures not verified)"
+    }
+   ],
+   "level_why": "Advanced bowlers talk about being 'speed dominant'.",
+   "evidence": "Weak. One Reddit rule of thumb (S), about 350 rpm at 15 mph, has no independent source. Kept out of bubbles.",
+   "weak_evidence": true,
+   "v1_rank": null
+  },
+  {
+   "id": "bm-early-hook",
+   "tree": "Ball Motion",
+   "term": "Early hook / burning up",
+   "level": "Intermediate",
+   "bubble": "Hooking early and dying? Move deeper and keep your breakpoint, add a little speed, or switch to a pearl or polished ball.",
+   "glossary": "The ball reads the dry track too soon, uses up its energy and has nothing left at the pins. Usually a sign the lane has broken down.",
+   "placement": "Bubble (Tonight › read buttons (\"hooking early\")) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "storm_burn",
+     "url": "https://www.stormbowling.com/read/cracking-the-code-of-the-burn",
+     "label": "F",
+     "title": "Storm, Cracking the code of the burn (manufacturer)"
+    },
+    {
+     "key": "r_burn1",
+     "url": "https://www.reddit.com/r/Bowling/comments/bv8ndn/how_to_play_on_burned_out_lanes/",
+     "label": "S",
+     "title": "r/Bowling: burned-out lanes"
+    },
+    {
+     "key": "r_burn2",
+     "url": "https://www.reddit.com/r/Bowling/comments/dzibfq/struggling_with_early_hook_when_lanes_burnup/",
+     "label": "S",
+     "title": "r/Bowling: early hook when lanes burn up"
+    }
+   ],
+   "level_why": "A top league complaint.",
+   "evidence": "Storm (F): move deeper, add speed, or use pearl, higher grit or a higher-RG ball. Reddit (S).",
+   "weak_evidence": false,
+   "v1_rank": 14
+  },
+  {
+   "id": "bm-dying",
+   "tree": "Ball Motion",
+   "term": "Ball 'dies' / hits weak",
+   "level": "Intermediate",
+   "bubble": "A ball that rolls out early has no energy left and deflects, often leaving the 10 pin (right-handers). Try a later-reacting ball or a deeper line.",
+   "glossary": "The ball reaches its roll phase too soon and deflects off the pins instead of driving through them.",
+   "placement": "Bubble (Lane (#/lane) ball path and phase labels) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "bv_phases",
+     "url": "https://www.bowlingball.com/BowlVersity/the-three-phases-of-bowling-ball-motion",
+     "label": "F",
+     "title": "bowlingball.com BowlVersity, Three phases of ball motion (retailer)"
+    },
+    {
+     "key": "repo_tpt",
+     "url": "docs/TEAM_PROMPT_TARGETING.md",
+     "label": "repo",
+     "title": "Repo: move rules, 2-and-1, drift, breakpoint 8-10 @ 39-41 ft (sources and labels listed there)"
+    }
+   ],
+   "level_why": "Common league phrasing.",
+   "evidence": "BowlVersity (F): an early roll deflects. Repo (F): more entry angle carries better.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "bm-over-under",
+   "tree": "Ball Motion",
+   "term": "Over/under",
+   "level": "Intermediate",
+   "bubble": null,
+   "glossary": "One shot hooks too much, the next not enough, from what feels like the same delivery. Often a matchup or consistency issue rather than the lanes.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "addicts_thumbless",
+     "url": "https://www.bowlingaddicts.com/thumbless-vs-two-handed/",
+     "label": "F",
+     "title": "Bowling Addicts, Thumbless vs two-handed (retailer blog; RPM figures not verified)"
+    }
+   ],
+   "level_why": "A classic league frustration.",
+   "evidence": "Weak. Retail blog (F) and common usage. No authoritative definition fetched.",
+   "weak_evidence": true,
+   "v1_rank": null
+  },
+  {
+   "id": "bm-axis-rotation",
+   "tree": "Ball Motion",
+   "term": "Axis rotation",
+   "level": "Intermediate",
+   "bubble": "Axis rotation = how much side roll. 0° is end over end; most bowlers are 10–45°. More rotation = longer skid and more backend.",
+   "glossary": "The horizontal angle of the ball's spin axis. Your release controls it.",
+   "placement": "Bubble (Lane (#/lane) ball path and phase labels) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "bv_axis",
+     "url": "https://www.bowlingball.com/BowlVersity/bowling-ball-axis-tilt-and-axis-of-rotation",
+     "label": "F",
+     "title": "bowlingball.com BowlVersity, Axis tilt and axis of rotation (retailer)"
+    }
+   ],
+   "level_why": "Shows up in coaching talk.",
+   "evidence": "BowlVersity (F): 0° is end over end, 90° is all side roll, and most bowlers fall in 10–45°.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "bm-axis-tilt",
+   "tree": "Ball Motion",
+   "term": "Axis tilt",
+   "level": "Intermediate",
+   "bubble": "Axis tilt = how 'spinny' the ball is. More tilt = longer skid and a later hook; less tilt = it rolls sooner.",
+   "glossary": "The vertical angle of the spin axis. A high tilt means a smaller track, farther from the holes.",
+   "placement": "Bubble (Lane (#/lane) ball path and phase labels) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "bv_axis",
+     "url": "https://www.bowlingball.com/BowlVersity/bowling-ball-axis-tilt-and-axis-of-rotation",
+     "label": "F",
+     "title": "bowlingball.com BowlVersity, Axis tilt and axis of rotation (retailer)"
+    },
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "Shows up in coaching talk.",
+   "evidence": "BowlVersity (F): spinners, with more tilt, go farther before hooking. PBA (F): tilt ranges 0–90°; less tilt rolls sooner.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "bm-breakpoint",
+   "tree": "Ball Motion",
+   "term": "Breakpoint",
+   "level": "Intermediate",
+   "bubble": "Breakpoint = where the ball turns hardest toward the pocket. On a typical house shot that's around board 8–10, near 40 ft.",
+   "glossary": "The farthest point from the pocket on your ball path, where the hook takes over. The app uses it for its targeting.",
+   "placement": "Bubble (Targeting (#/target) break box) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "repo_tpt",
+     "url": "docs/TEAM_PROMPT_TARGETING.md",
+     "label": "repo",
+     "title": "Repo: move rules, 2-and-1, drift, breakpoint 8-10 @ 39-41 ft (sources and labels listed there)"
+    }
+   ],
+   "level_why": "The app's targeting uses it.",
+   "evidence": "Repo targeting doc: NBA house-shot breakpoint about board 8–10 at 39–41 ft. Human Kinetics breakpoint area of about 3 boards.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "bm-entry-angle",
+   "tree": "Ball Motion",
+   "term": "Entry angle",
+   "level": "Advanced",
+   "bubble": null,
+   "glossary": "The angle the ball enters the pocket at. More angle (within limits) generally carries better. Sources disagree on the ideal number.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "repo_tpt",
+     "url": "docs/TEAM_PROMPT_TARGETING.md",
+     "label": "repo",
+     "title": "Repo: move rules, 2-and-1, drift, breakpoint 8-10 @ 39-41 ft (sources and labels listed there)"
+    },
+    {
+     "key": "bv_phases",
+     "url": "https://www.bowlingball.com/BowlVersity/the-three-phases-of-bowling-ball-motion",
+     "label": "F",
+     "title": "bowlingball.com BowlVersity, Three phases of ball motion (retailer)"
+    }
+   ],
+   "level_why": "Advanced carry talk.",
+   "evidence": "Repo (F): IBPSIA and USBC say more angle carries better; the repo uses a 4–6° window. BowlVersity (F) cites 6–7°. The sources conflict, so it stays out of bubbles.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "bm-myth-harder",
+   "tree": "Ball Motion",
+   "term": "'Throw harder = more pins'",
+   "level": "Beginner",
+   "bubble": "Harder isn't better: extra speed cuts the hook and the angle into the pocket. Accuracy and a repeatable speed knock down more pins.",
+   "glossary": "A common misconception. Pin action depends on hitting the pocket at an angle more than on raw speed.",
+   "placement": "Bubble (Lane (#/lane) ball path and phase labels) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "r_harder1",
+     "url": "https://www.reddit.com/r/Bowling/comments/4mwput/does_rolling_the_ball_harder_increase_the_odds_of/",
+     "label": "S",
+     "title": "r/Bowling: does throwing harder help"
+    },
+    {
+     "key": "r_harder2",
+     "url": "https://www.reddit.com/r/Bowling/comments/175hwn2/any_downsides_to_throwing_the_ball_too_fast/",
+     "label": "S",
+     "title": "r/Bowling: downsides of throwing too fast"
+    },
+    {
+     "key": "bv_phases",
+     "url": "https://www.bowlingball.com/BowlVersity/the-three-phases-of-bowling-ball-motion",
+     "label": "F",
+     "title": "bowlingball.com BowlVersity, Three phases of ball motion (retailer)"
+    }
+   ],
+   "level_why": "A recurring beginner assumption.",
+   "evidence": "Reddit threads (S). BowlVersity (F): speed reduces hook.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "bm-flare",
+   "tree": "Ball Motion",
+   "term": "Flare",
+   "level": "Intermediate",
+   "bubble": null,
+   "glossary": "The ball's track migrating from its first axis toward its final one as it travels, which exposes fresh cover. It's linked to differential.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "Spec-sheet word.",
+   "evidence": "PBA (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "bm-pap",
+   "tree": "Ball Motion",
+   "term": "PAP (positive axis point)",
+   "level": "Advanced",
+   "bubble": null,
+   "glossary": "The pole of the bowler's starting spin axis, used by pro shops to lay out a ball.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "Drilling term.",
+   "evidence": "PBA (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "bm-loft",
+   "tree": "Ball Motion",
+   "term": "Loft",
+   "level": "Intermediate",
+   "bubble": null,
+   "glossary": "Releasing the ball past the foul line so it lands a little way down the lane.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "Seen on dry lanes.",
+   "evidence": "PBA (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "tg-arrows",
+   "tree": "Targeting & Spares",
+   "term": "Aim at the arrows, not the pins",
+   "level": "Beginner",
+   "bubble": "Look at the arrows (about 15–16 ft away), not the pins (60 ft). A small miss at the arrows becomes a big miss at the pins.",
+   "glossary": "The seven arrows on the lane are your aiming marks. They're closer than the pins, so they're easier to hit consistently.",
+   "placement": "Bubble (Targeting (#/target)) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_entry",
+     "url": "https://bowl.com/news/approach-position-for-entry-level-bowlers",
+     "label": "F",
+     "title": "USBC, Approach position for entry-level bowlers (Learn, 2009)"
+    },
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    },
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    },
+    {
+     "key": "r_aim1",
+     "url": "https://www.reddit.com/r/Bowling/comments/1c7ahpx/how_exactly_do_you_aim/",
+     "label": "S",
+     "title": "r/Bowling: how exactly do you aim"
+    },
+    {
+     "key": "r_aim2",
+     "url": "https://www.reddit.com/r/Bowling/comments/1dv2csv/general_aiming_advicetips/",
+     "label": "S",
+     "title": "r/Bowling: aiming tips"
+    }
+   ],
+   "level_why": "The first tip most coaches give.",
+   "evidence": "USBC (F): use the dots and arrows. PBA (F): seven arrows in a triangle starting 16 ft past the foul line. Reddit (S) agrees.",
+   "weak_evidence": false,
+   "v1_rank": 2
+  },
+  {
+   "id": "tg-start-target",
+   "tree": "Targeting & Spares",
+   "term": "Beginner starting line",
+   "level": "Beginner",
+   "bubble": "Start with the inside of your slide foot on board 20 (the center dot) and aim at the 2nd arrow from your gutter. Adjust from there.",
+   "glossary": "USBC's suggested first setup for most beginners. It leaves room for error on both sides.",
+   "placement": "Bubble (Targeting (#/target)) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    },
+    {
+     "key": "usbc_entry",
+     "url": "https://bowl.com/news/approach-position-for-entry-level-bowlers",
+     "label": "F",
+     "title": "USBC, Approach position for entry-level bowlers (Learn, 2009)"
+    }
+   ],
+   "level_why": "'Where do I stand and aim' is a top beginner question.",
+   "evidence": "USBC Fundamentals (F): stand on board 20 using the inside of the slide shoe and aim at the 2nd arrow from your gutter. USBC entry article (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "tg-move-miss",
+   "tree": "Targeting & Spares",
+   "term": "Move toward the miss",
+   "level": "Beginner",
+   "bubble": "Missed left? Move your feet left. Missed right? Move right. Keep the same target.",
+   "glossary": "USBC's Golden Rule: keep your target as the pivot and shift your feet in the direction the ball missed.",
+   "placement": "Bubble (Targeting (#/target) move suggestions) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    },
+    {
+     "key": "repo_tpt",
+     "url": "docs/TEAM_PROMPT_TARGETING.md",
+     "label": "repo",
+     "title": "Repo: move rules, 2-and-1, drift, breakpoint 8-10 @ 39-41 ft (sources and labels listed there)"
+    }
+   ],
+   "level_why": "The basic adjustment.",
+   "evidence": "USBC Fundamentals (F): 'the Golden Rule', keeping the same target. Repo targeting doc.",
+   "weak_evidence": false,
+   "v1_rank": 3
+  },
+  {
+   "id": "tg-2and1",
+   "tree": "Targeting & Spares",
+   "term": "2-and-1 move",
+   "level": "Intermediate",
+   "bubble": "Feet 2 boards, eyes 1 board, both in the same direction. That changes your angle while keeping the breakpoint close.",
+   "glossary": "A paired adjustment that moves your feet twice as far as your target. Other ratios exist.",
+   "placement": "Bubble (Targeting (#/target) move suggestions) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "repo_tpt",
+     "url": "docs/TEAM_PROMPT_TARGETING.md",
+     "label": "repo",
+     "title": "Repo: move rules, 2-and-1, drift, breakpoint 8-10 @ 39-41 ft (sources and labels listed there)"
+    }
+   ],
+   "level_why": "League bowlers hear it from teammates.",
+   "evidence": "bowl.com via the repo targeting doc. Reddit (S): 3-and-1 and 4-and-2 variants.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "tg-drift",
+   "tree": "Targeting & Spares",
+   "term": "Drift",
+   "level": "Intermediate",
+   "bubble": "Drift = how far you walk left or right on the approach. 1–2 boards is fine if it's the same every time.",
+   "glossary": "Sideways movement during the approach. Consistency matters more than walking perfectly straight.",
+   "placement": "Bubble (Targeting (#/target)) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "repo_tpt",
+     "url": "docs/TEAM_PROMPT_TARGETING.md",
+     "label": "repo",
+     "title": "Repo: move rules, 2-and-1, drift, breakpoint 8-10 @ 39-41 ft (sources and labels listed there)"
+    },
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "People worry they 'walk crooked'.",
+   "evidence": "bowl.com via the repo: 1–2 boards is fine if consistent. PBA (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "tg-key-pin",
+   "tree": "Targeting & Spares",
+   "term": "Key pin",
+   "level": "Beginner",
+   "bubble": "Key pin = the pin closest to you, usually the lowest number. Hit it and the rest usually follow.",
+   "glossary": "The pin to aim at in a spare leave: the single standing pin, or the front pin of a cluster.",
+   "placement": "Bubble (Quick log leave) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    }
+   ],
+   "level_why": "The first step of any spare system.",
+   "evidence": "USBC Fundamentals (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "tg-369",
+   "tree": "Targeting & Spares",
+   "term": "3-6-9 spare system",
+   "level": "Beginner",
+   "bubble": "Same target; move your feet 3 boards per column the key pin is from the headpin, opposite the pin. 10 pin = 9 boards left (right-handers).",
+   "glossary": "USBC's spare system for straighter or slight-hook bowlers. Know your strike board, find the key pin, move 3, 6 or 9 boards, and roll across the lane at it.",
+   "placement": "Bubble (Targeting (#/target) spare mode / Quick log leave) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    },
+    {
+     "key": "repo_fdr",
+     "url": "docs/FEATURE_DEMAND_RESEARCH.md",
+     "label": "repo",
+     "title": "Repo: USBC 3-6-9 table (F there); Reddit items S there"
+    }
+   ],
+   "level_why": "The most-cited basic spare system.",
+   "evidence": "USBC Fundamentals (F) and the repo's USBC 3-6-9 table (F there).",
+   "weak_evidence": false,
+   "v1_rank": 5
+  },
+  {
+   "id": "tg-10pin",
+   "tree": "Targeting & Spares",
+   "term": "10 pin (RH) / 7 pin (LH)",
+   "level": "Beginner",
+   "bubble": "Shoot across the lane at it with a flatter release or a plastic ball, so it can't hook into the gutter. Right-handers: move 9 boards left (3-6-9).",
+   "glossary": "The corner pin on the far side from your hand. It's hard because a hooking ball tends to curve away from it.",
+   "placement": "Bubble (Quick log leave (10 / 7 pin)) + Glossary",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "r_10pin1",
+     "url": "https://www.reddit.com/r/Bowling/comments/11gtz57/tips_for_picking_up_10_pin/",
+     "label": "S",
+     "title": "r/Bowling: picking up the 10 pin"
+    },
+    {
+     "key": "r_10pin2",
+     "url": "https://www.reddit.com/r/Bowling/comments/98dqrf/tips_for_getting_the_10_pin_as_a_righty/",
+     "label": "S",
+     "title": "r/Bowling: 10 pin as a righty"
+    },
+    {
+     "key": "bv_10pin",
+     "url": "https://www.bowlingball.com/BowlVersity/how-to-convert-the-ten-pin-spare",
+     "label": "S",
+     "title": "bowlingball.com, Converting the 10 pin (retailer)"
+    },
+    {
+     "key": "usbc_fund",
+     "url": "https://bowl.com/coaching/fundamental",
+     "label": "F",
+     "title": "USBC Coaching, Fundamental tips"
+    }
+   ],
+   "level_why": "The most-asked single spare.",
+   "evidence": "Reddit threads (S). Retailer article (S). The 3-6-9 move is from USBC (F).",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "tg-leaves",
+   "tree": "Targeting & Spares",
+   "term": "Common leave names",
+   "level": "Beginner",
+   "bubble": null,
+   "glossary": "Baby split: 2-7 or 3-10. Big Four: 4-6-7-10. Sleeper: a pin hidden behind another, like the 2-8. Washout: a leave with the headpin standing plus other pins, like 1-2-10. It isn't a split.",
+   "placement": "Glossary only",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "F",
+     "title": "PBA, Bowling Lingo"
+    }
+   ],
+   "level_why": "Slang people hear on the lanes.",
+   "evidence": "PBA (F): baby split, Big Four, sleeper and washout definitions.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "tg-laydown",
+   "tree": "Targeting & Spares",
+   "term": "Laydown & geometry",
+   "level": "Advanced",
+   "bubble": null,
+   "glossary": "Laydown is the board where the ball lands. Feet, offset and drift set it. The Rule of 31 is one book's way to estimate a target from the breakpoint.",
+   "placement": "Glossary only",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "repo_tpt",
+     "url": "docs/TEAM_PROMPT_TARGETING.md",
+     "label": "repo",
+     "title": "Repo: move rules, 2-and-1, drift, breakpoint 8-10 @ 39-41 ft (sources and labels listed there)"
+    }
+   ],
+   "level_why": "The app's Find tool uses it.",
+   "evidence": "Repo targeting doc: Breakdown Bowling (laydown = feet − offset + drift) and Human Kinetics (Rule of 31).",
+   "weak_evidence": false,
+   "v1_rank": null
+  }
+ ]
+}
