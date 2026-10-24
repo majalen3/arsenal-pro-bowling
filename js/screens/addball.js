@@ -10,6 +10,7 @@ import { norm } from '../data/match.js';
 import * as A from '../cc/addball.js';
 import * as G from '../cc/bag.js';
 import { HOUSE_ASSUMED } from '../cc/rank.js';
+import { openNight } from '../cc/night.js';
 const prov = (p, t) => h('span', { class: 'prov', 'data-prov': p || null, text: t });
 const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const WEIGHTS = [16, 15, 14, 13, 12];
@@ -118,7 +119,7 @@ export async function render() {
         segmented('Oil strength', [['5', 'Heavy'], ['4', 'Med-hvy'], ['3', 'Medium'], ['2', 'Med-lt'], ['1', 'Light']], st.level ? String(st.level) : null, v => { st.level = +v; draw(); }, 'wide')) : null));
     // ---- 3. engine card
     const b = P.bowler || {}, num = f => { const v = f && typeof f === 'object' ? f.v : f; return v == null || isNaN(+v) ? null : +v; };
-    const s = (P.sessions || {})['tonight-' + today()] || {}, ft = s.ft != null ? s.ft : HOUSE_ASSUMED.ft, patName = s.ft != null ? (s.patternName || s.patternSlug || 'Tonight') : 'House shot (assumed)';
+    const s = (P.sessions || {})[openNight(P) || ''] || {}, ft = s.ft != null ? s.ft : HOUSE_ASSUMED.ft, patName = s.ft != null ? (s.patternName || s.patternSlug || 'Tonight') : 'House shot (assumed)';
     const speed = num(b.speed) || 15, rev = num(b.rev) || 220, eng = h('div', { class: 'card', id: 'abEngine' }, h('h2', { class: 'card-title', text: '3. Ball motion vs the benchmark' }));
     const miss = A.missing(fields);
     if (miss.length) eng.append(h('p', { class: 'small', id: 'abNoEngine', text: `Spec TBD: no engine run. Missing ${miss.join(', ')}.` }));

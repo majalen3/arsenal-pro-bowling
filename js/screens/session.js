@@ -3,7 +3,7 @@
 import { h, icon, toast, emptyState } from '../ui.js';
 import { go, back } from '../router.js';
 import { ready, proj, add } from '../hub.js';
-import { on } from '../store.js';
+import { on, prefs, setPrefs } from '../store.js';
 import { catOf } from '../cc/cats.js';
 import * as C from '../cc/card.js';
 export const ballName = (P, id) => { const o = id && P.owned && P.owned[id]; return o ? (o.name || (catOf(o.catalogId) || {}).name || 'Ball') : id ? ((catOf(id) || {}).name || id) : null; };
@@ -24,13 +24,18 @@ export async function render({ params }) {
     body.append(h('p', { class: 'bc-sub muted', id: 'sessWhen', text: `${fmtDate(s.date)} \u00b7 ${s.source}${s.ballId ? ' \u00b7 ' + ballName(P, s.ballId) : ''}` }),
       h('div', { class: 'card bc-head', id: 'sessRecap' }, h('p', { class: 'bc-headline', id: 'sessHead', text: r.head }),
         r.support.length ? h('dl', { class: 'bc-figs' }, ...r.support.map(x => h('div', { class: 'bc-fig', 'data-k': x.k }, h('dt', { text: x.label }), h('dd', { text: x.text })))) : null,
-        r.focus ? h('p', { class: 'bc-focus', id: 'sessFocus', text: r.focus.text }) : null));
+        r.focus ? h('p', { class: 'bc-focus', id: 'sessFocus', text: r.focus.text }) : null,
+        r.focus ? (() => { const fc = prefs().focus, set = !!(fc && fc.from === id && fc.text === r.focus.text);
+          return h('button', { class: 'btn ghost block', id: 'sessSetFocus', 'aria-pressed': String(set), onclick: () => { setPrefs({ focus: set ? null : { text: r.focus.text, from: id, ts: Date.now() } }); toast(set ? 'Focus cleared.' : 'Saved. It shows on Tonight next time.'); draw(); } }, set ? 'Next-time focus saved \u2713' : 'Make this my next focus'); })() : null));
     if (s.games.length || s.scores.length) body.append(h('div', { class: 'card', id: 'sessGames' }, h('h2', { class: 'card-title', text: s.games.length + s.scores.length === 1 ? 'Game' : `Games \u00b7 ${st.series != null ? st.series + ' series' : ''}` }),
       ...s.games.map(g => h('div', { class: 'bc-game' }, h('div', { class: 'row between' }, h('b', { text: `Game ${g.game}` }), h('span', { class: 'bc-score', text: g.score != null ? String(g.score) + (g.complete ? '' : ' (in progress)') : '\u2014' })), marksRow(g))),
       ...s.scores.map(x => h('div', { class: 'row between bc-game' }, h('b', { text: `Game ${x.game || ''}` }), h('span', { class: 'bc-score', text: String(x.score) })))));
     // Details: everything that passes usability but only sometimes changes a decision.
     const det = h('details', { class: 'card bc-more', id: 'sessDetails' }, h('summary', { text: 'Details' }));
     const T = st.throws;
+    // Game by game (sim bug 7): score, ball(s), moves, with the sample size of each line.
+    if (r.perGame.length) det.append(h('h3', { class: 'section-title', text: 'Game by game' }), h('ul', { class: 'plain small', id: 'sessPerGame' },
+      ...r.perGame.map(x => h('li', { text: `Game ${x.game}: ${x.score != null ? x.score : 'not finished'} \u00b7 ${x.balls.map(b => ballName(P, b)).join(', ') || 'ball not set'} \u00b7 ${x.moves} ${x.moves === 1 ? 'move' : 'moves'} \u00b7 ${x.throws} balls thrown` }))));
     if (r.cmp.length) det.append(h('h3', { class: 'section-title', text: 'Compared with' }), h('table', { class: 'bc-tbl', id: 'sessCmp' },
       h('thead', {}, h('tr', {}, h('th', { text: '' }), h('th', { text: 'Tonight' }), h('th', { text: 'Last' }), h('th', { text: 'Your avg' }))),
       h('tbody', {}, ...r.cmp.map(x => h('tr', {}, h('th', { text: x.label }), h('td', { text: x.v + (x.unit || '') }), h('td', { text: x.dPrev != null ? sign(x.dPrev, x.unit) : '\u2014' }), h('td', { text: x.dMean != null ? sign(x.dMean, x.unit) : '\u2014' }))))));

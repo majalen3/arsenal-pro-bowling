@@ -27,6 +27,10 @@ async def page(c, errs):
     p.on('pageerror', lambda e: errs.append(str(e)))
     return p
 
+async def qtap(p, sel):
+    # Tonight ignores a repeat throw tap within 400 ms (sim bug 2), so scripted throws wait like a real bowler does.
+    await p.wait_for_timeout(420); await p.click(sel)
+
 async def shot(p, name):
     if SHOTS: os.makedirs(SHOTS, exist_ok=True); await p.screenshot(path=os.path.join(SHOTS, name + '.png'))
 
@@ -39,9 +43,10 @@ async def run(b, kind):
     # onboarding: first visit -> welcome, skippable, never shown again
     await p.goto(BASE); await p.evaluate(WIPE); await p.goto(BASE + '?fresh'); await p.wait_for_timeout(600)
     check('#/welcome' in p.url, t + 'first visit opens welcome'); await shot(p, f'{kind}-welcome')
-    await p.click('#welSkip'); await p.wait_for_selector('#ballBtn')
-    check('#/lane' in p.url, t + 'skip lands on lane')
-    await p.goto(BASE); await p.wait_for_selector('#ballBtn'); check('#/welcome' not in p.url, t + 'welcome not repeated')
+    await p.click('#welSkip'); await p.wait_for_selector('#tonightBody')
+    check('#/tonight' in p.url, t + 'skip lands on Tonight (home screen; sim bug 8: not Lane)')
+    await p.goto(BASE); await p.wait_for_selector('#tonightBody'); check('#/welcome' not in p.url, t + 'welcome not repeated')
+    await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ballBtn')
     await shot(p, f'{kind}-lane')
     # pin deck close-up: readable size, real pocket, text alternative, tone by result
     bb = await (await p.query_selector('#deck')).bounding_box()
@@ -174,10 +179,10 @@ async def migration(b):
       localStorage.setItem('ap_device','d-test-0000');
       localStorage.setItem('ap_state', JSON.stringify({ball:'hy-road',speed:'17',rev:'300',release:'20',aim:'4',oil:'1.2',finish:'2000',pattern:'sport'}));
       localStorage.setItem('ap_lines', JSON.stringify([{ballId:'hy-road',name:'v1 line',release:20,aim:4,speed:17,rev:300,oil:1.2,finish:'2000',pattern:'sport',note:'',updatedAt:1,synced:true,id:7}]));""")
-    await p.goto(BASE + '?m'); await p.wait_for_selector('#ballBtn')
+    await p.goto(BASE + '?m#/lane'); await p.wait_for_selector('#ballBtn')
     check('welcome' not in p.url and await p.locator('#ballBtn').is_visible(), '[migrate] v1 user skips welcome')
     check('Hy-Road' in await p.text_content('.ball-btn-name'), '[migrate] v1 ball restored')
-    check(int(await p.text_content('#lineSum b')) == 20, '[migrate] v1 feet restored')
+    check(int(await p.get_attribute('#lineSum', 'data-release')) == 20, '[migrate] v1 feet restored')
     check(await p.evaluate("localStorage.getItem('ap_device')") == 'd-test-0000', '[migrate] backup code kept')
     await p.goto(BASE + '#/sessions'); await p.wait_for_selector('.line-card')
     check('v1 line' in await p.text_content('#lineList'), '[migrate] v1 saved lines listed')
@@ -193,12 +198,12 @@ async def data_cycle(b):
     await p.evaluate("""localStorage.setItem('ap_prefs', JSON.stringify({onboarded:true})); localStorage.setItem('ap_device','d-test-0001');
       localStorage.setItem('ap_lines', JSON.stringify([{ballId:'hy-road',name:'league line',release:22,aim:9,speed:16,rev:300,oil:1.2,finish:'2000',pattern:'house',note:'',updatedAt:5,synced:true,id:9}]));
       localStorage.setItem('ap_notes', JSON.stringify([{lane:'7-8',oil:'fresh',adjustment:'2 left',synced:true}]));""")
-    await p.goto(BASE + '?d0#/more'); await p.wait_for_function(DATA_READY)
+    await p.goto(BASE + '?d0#/more'); await p.wait_for_function("() => window.__apData && window.__apData.events() >= 12")
     d = await p.evaluate("({backend: window.__apData.backend, boot: window.__apData.bootMs, n: window.__apData.events(), h: window.__apData.hash()})")
     check(d['backend'] == 'indexedDB', f"[data] event log on IndexedDB ({d['backend']}, opened+migrated in {d['boot']} ms after first paint)")
     check(d['n'] >= 2 + 10, f"[data] v0 keys migrated + reported arsenal seeded once ({d['n']} events)")
-    await p.wait_for_function("() => document.querySelector('#dataInfo').textContent.includes('events on this phone')")
-    check('owned balls' in await p.text_content('#dataInfo'), '[data] More shows the data card')
+    await p.wait_for_function("() => document.querySelector('#dataCounts').textContent.includes('On this phone')")
+    dc = (await p.text_content('#dataCard')).lower(); check(' balls' in await p.text_content('#dataCounts') and not any(w in dc for w in ['events', 'indexeddb', 'pre-2.1', 'v1 ', 'tracker']), '[data] More shows the data card in plain words')
     await shot(p, 'phone-more-data')
     async with p.expect_download() as dl: await p.click('#dlBackup')
     path = await (await dl.value).path(); bk = json.load(open(path))
@@ -317,7 +322,8 @@ async def tonight_cycle(b):
     why = await p.eval_on_selector_all('#tnWhy li', 'els => els.map(e => !!e.querySelector(".prov"))')
     check(len(why) >= 2 and all(why), f'[tonight] >=2 why-lines, every one labelled ({len(why)})')
     m = await p.text_content('#tnModel'); check('2-D model' in m and 'of 6' in m, '[tonight] model line with "holds x of 6"')
-    check('Rule of 31' in await p.text_content('#tnR31'), '[tonight] Rule of 31 shown')
+    check(await p.query_selector('#tnR31') is None and 'Rule of 31' not in await p.text_content('#tonightBody'), '[tonight] Rule of 31 cut from Tonight (sim bug 8)')
+    check(await p.eval_on_selector('#tnPickMore', 'e => !e.open') and await p.is_visible('#tnStand'), '[tonight] specs/model behind one tap; feet + eyes up front')
     ms = await p.evaluate("() => window.__apTonightMs"); check(ms is not None and ms < 1000, f'[tonight] render {ms} ms < 1 s')
     await axe_ok(p, '[tonight]'); await p.wait_for_timeout(200)
     small = await p.evaluate(SMALL); check(not small, f'[tonight] targets >= 44px {small[:6]}')
@@ -325,8 +331,7 @@ async def tonight_cycle(b):
     await shot(p, 'phone-tonight')
     await p.click('[data-read=early]'); await p.wait_for_function("() => !document.querySelector('#tnPickName').textContent.includes('Big Bite')")
     check('Ordnance C4' in await p.text_content('#tnPickName'), '[tonight] "Too early" -> one step weaker (C4) in 1 tap')
-    await p.fill('#tnPattern', '2026 PBA Badger'); await p.dispatch_event('#tnPattern', 'change'); await p.wait_for_function("() => document.querySelector('#tnR31').textContent.includes('50 ft')")
-    check('Both shown' in await p.text_content('#tnR31'), '[tonight] long pattern: Rule of 31 vs 13-16 band conflict shown')
+    await p.fill('#tnPattern', '2026 PBA Badger'); await p.dispatch_event('#tnPattern', 'change'); await p.wait_for_function("() => document.querySelector('#tnLevel') && document.querySelector('#tnLevel').textContent.includes('demand 5')")
     await p.fill('#tnCenter', 'Test Lanes'); await p.dispatch_event('#tnCenter', 'change'); await p.wait_for_timeout(300)
     await p.click('#tnSetup [role=radio][data-v=synthetic]'); await p.wait_for_timeout(300)
     t = await p.text_content('#tnPickName'); co = await p.text_content('#tnCoach'); st = await p.text_content('#tnPick [data-alt=Stronger]')
@@ -334,15 +339,11 @@ async def tonight_cycle(b):
     # LaneTrax measurement -> accept on Tonight
     await p.goto(BASE + '?tn#/import?kind=lanetrax'); await p.wait_for_selector('#impPick'); await p.set_input_files('#impFile', synth)
     await p.wait_for_selector('#impPreview[data-kind=lanetrax]'); await p.click('#impCommit'); await p.wait_for_selector('#impDone')
-    await p.goto(BASE + '?tn#/tonight'); await p.wait_for_selector('#tnMeas')
-    n = await p.evaluate("() => document.querySelectorAll('#tnMeas [data-accept]').length"); check(n == 4, f'[tonight] 4 LaneTrax measurements waiting ({n})')
-    check('LaneTrax \u00b7 2000-01-01' in await p.text_content('#tnMeas'), '[tonight] measurements labelled "LaneTrax \u00b7 date"')
-    rev_btn = await p.query_selector('#tnMeas div:has-text("Rev rate") [data-accept]'); await rev_btn.click()
-    await p.wait_for_function("() => document.querySelectorAll('#tnMeas [data-accept]').length === 3")
-    rel = await p.text_content('#tnRelease'); check('231.43 rpm' in rel and 'LaneTrax \u00b7 2000-01-01' in rel, '[tonight] accepted rev shows with device provenance')
+    await p.goto(BASE + '?tn#/tonight'); await p.wait_for_selector('#tnMeasNudge')
+    check('LaneTrax' in await p.text_content('#tnMeasNudge') and await p.get_attribute('#tnMeasNudge', 'href') == '#/card', '[tonight] pending LaneTrax numbers: one quiet link to the Bowler Card (accept lives there)')
     pick0 = await p.text_content('#tnPickName')
     await p.reload(); await p.wait_for_selector('#tnPick')
-    check(await p.text_content('#tnPickName') == pick0 and '231.43 rpm' in await p.text_content('#tnRelease'), '[tonight] session + accepted release survive reload')
+    check(await p.text_content('#tnPickName') == pick0, '[tonight] session survives reload')
     check(not errs, '[tonight] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
@@ -396,9 +397,10 @@ async def targeting_cycle(b):
     # Targeting: feet/eyes -> unchanged engine path -> break box + pocket call; missed high -> one cited move, engine-verified, 1 tap;
     # save as my line -> back to saved; walkthrough dismiss/replay; lefty mirror; axe, 44 px, 360 px.
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
-    await seed(p); await p.goto(BASE + '?tg#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnTarget')
-    await p.click('#tnTarget'); await p.wait_for_selector('#tgTour')
-    check('#/target' in p.url and 'Big Bite' in await p.eval_on_selector('#tgBall', 'e => e.selectedOptions[0].textContent'), '[target] Tonight link opens Targeting with tonight\'s ball')
+    await seed(p); await p.goto(BASE + '?tg#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnFind')
+    await p.click('#tnFind'); await p.wait_for_selector('#tgFindCard')
+    check('#/target' in p.url and 'Big Bite' in await p.eval_on_selector('#tgBall', 'e => e.selectedOptions[0].textContent'), '[target] Tonight "Find my strike line" opens Targeting with tonight\'s ball and runs Find')
+    await p.goto(BASE + '?tg#/target'); await p.wait_for_selector('#tgTour')
     check(await p.query_selector('#tabs a[href="#/lane"][aria-current=page]') is not None, '[target] lives under the Lane tab')
     await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())"); await shot(p, 'phone-target-walkthrough')
     await axe_ok(p, '[target] walkthrough')
@@ -551,27 +553,28 @@ async def quicklog_cycle(b):
     where = lambda: p.text_content('#qlWhere')
     fr = lambda n: p.text_content(f'#qlFrames [data-f="{n}"] b')
     taps = 0
-    await p.click('#qlStrike'); taps += 1; await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 2')")
+    await qtap(p, '#qlStrike'); taps += 1; await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 2')")
     check(taps == 1 and (await fr(1)).strip() == 'X', '[quicklog] strike logged in 1 tap')
     taps = 0
     await p.click('#qlPins [data-pin="10"]'); taps += 1
-    hint = await p.text_content('#qlHint'); check('stand 29' in hint and 'move 9 left' in hint, f'[quicklog] 3-6-9 for the leave shows before logging ({hint.strip()[:60]})')
-    await p.click('#qlLeave'); taps += 1; await p.wait_for_selector('#qlSpare')
-    await p.click('#qlSpare'); taps += 1; await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 3')")
+    sf = int((await p.text_content('#tnStand')).split()[1])   # sim bug 1: hints count from the real strike stand, not board 20
+    hint = await p.text_content('#qlHint'); check(f'stand {sf + 9}' in hint and 'move 9 left' in hint and f'strike stand {sf}' in hint, f'[quicklog] 3-6-9 for the leave shows before logging ({hint.strip()[:60]})')
+    await qtap(p, '#qlLeave'); taps += 1; await p.wait_for_selector('#qlSpare')
+    await qtap(p, '#qlSpare'); taps += 1; await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 3')")
     check(taps == 3 and (await fr(2)).strip() == '9 /', f'[quicklog] 10-pin spare in 3 taps ({(await fr(2)).strip()})')
     check((await p.text_content('#qlFrames [data-f="1"] .num')).strip() == '20', '[quicklog] frame 1 = X + 9/ = 20')
     await p.click('#qlPins [data-pin="7"]'); await p.click('#qlPins [data-pin="10"]')
-    check(await p.query_selector('#qlSplit') is not None and 'stand 11' in await p.text_content('#qlHint') and 'stand 29' in await p.text_content('#qlHint'), '[quicklog] 7-10 flagged as a split, both key-pin moves shown')
-    await p.click('#qlLeave'); await p.wait_for_selector('#qlMiss')
+    check(await p.query_selector('#qlSplit') is not None and f'stand {sf - 9}' in await p.text_content('#qlHint') and f'stand {sf + 9}' in await p.text_content('#qlHint'), '[quicklog] 7-10 flagged as a split, both key-pin moves shown')
+    await qtap(p, '#qlLeave'); await p.wait_for_selector('#qlMiss')
     check((await p.query_selector_all('#qlPins .pin:not([disabled])')).__len__() == 2, '[quicklog] second ball: only the 7 and 10 can be tapped')
-    await p.click('#qlMiss'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 4')")
+    await qtap(p, '#qlMiss'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 4')")
     check((await fr(3)).strip() == '\u25CB8 -', f'[quicklog] split mark + miss shown ({(await fr(3)).strip()})')
     await p.click('#qlUndo'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 3 \u00b7 ball 2')")
     check(True, '[quicklog] undo voids the last ball')
-    await p.click('#qlMiss'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 4')")
+    await qtap(p, '#qlMiss'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 4')")
     # triggers: 2 of 3 first balls high
     for _ in range(2):
-        f0 = await where(); await p.click('#tnLog [role=radio][data-v=high]'); await p.click('#qlPins [data-pin="4"]'); await p.click('#qlLeave'); await p.wait_for_selector('#qlSpare'); await p.click('#qlSpare')
+        f0 = await where(); await p.click('#tnLog [role=radio][data-v=high]'); await p.click('#qlPins [data-pin="4"]'); await qtap(p, '#qlLeave'); await p.wait_for_selector('#qlSpare'); await qtap(p, '#qlSpare')
         await p.wait_for_function(f"() => document.querySelector('#qlWhere').textContent !== {json.dumps(f0)} && document.querySelector('#qlStrike')")
     tr = await p.text_content('#qlTrigger'); check('2 of 3 high' in tr and 'feet 2 left' in tr, f'[quicklog] trigger: 2 of 3 high -> move left ({tr.strip()[:50]})')
     await axe_ok(p, '[quicklog]'); small = await p.evaluate(SMALL); check(not small, f'[quicklog] targets >= 44px {small[:6]}')
@@ -579,20 +582,20 @@ async def quicklog_cycle(b):
     await p.eval_on_selector('#tnLog', 'e => e.scrollIntoView()'); await shot(p, 'phone-quicklog')
     # tab kill: log 3 more balls, kill the page the moment the UI moves on, reopen
     for _ in range(3):
-        f0 = await where(); await p.click('#qlStrike'); await p.wait_for_function(f"() => document.querySelector('#qlWhere').textContent !== {json.dumps(f0)}")
+        f0 = await where(); await qtap(p, '#qlStrike'); await p.wait_for_function(f"() => document.querySelector('#qlWhere').textContent !== {json.dumps(f0)}")
     shown = await p.eval_on_selector_all('#qlFrames .fr b', 'els => els.map(e => e.textContent)')
     await p.close(run_before_unload=False)
     p = await page(c, errs); await p.goto(BASE + '?ql#/tonight'); await p.wait_for_selector('#tnLog')
     again = await p.eval_on_selector_all('#qlFrames .fr b', 'els => els.map(e => e.textContent)')
     check(again == shown and (await p.text_content('#qlWhere')).strip() == 'Frame 9 \u00b7 ball 1', f'[quicklog] tab killed -> 0 throws lost ({again})')
     # finish: X in 9, 10th X 7 / -> final
-    await p.click('#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 10')")
-    await p.click('#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('ball 2')")
-    await p.click('#qlPins [data-pin="3"]'); await p.click('#qlPins [data-pin="6"]'); await p.click('#qlPins [data-pin="10"]'); await p.click('#qlLeave')
-    await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('ball 3')"); await p.click('#qlSpare'); await p.wait_for_selector('#qlNext')
+    await qtap(p, '#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 10')")
+    await qtap(p, '#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('ball 2')")
+    await p.click('#qlPins [data-pin="3"]'); await p.click('#qlPins [data-pin="6"]'); await p.click('#qlPins [data-pin="10"]'); await qtap(p, '#qlLeave')
+    await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('ball 3')"); await qtap(p, '#qlSpare'); await p.wait_for_selector('#qlNext')
     tot = (await p.text_content('#qlWhere')).strip(); check((await fr(10)).strip() == 'X 7 /' and tot.startswith('Final'), f'[quicklog] 10th X 7 / ends the game ({tot})')
     n1 = await p.evaluate("() => window.__apData.events()")
-    check(n1 - n0 == 18, f'[quicklog] one event per ball: 16 balls + 1 undone + 1 void = 18 ({n1 - n0})')
+    check(n1 - n0 == 19, f'[quicklog] one event per ball: 16 balls + 1 undone + 1 void + 1 night record (sim bug 3) = 19 ({n1 - n0})')
     await p.click('#qlNext'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 1')")
     check('game 2' in await p.text_content('#tnLog'), '[quicklog] next game starts clean')
     check(not errs, '[quicklog] no page errors ' + ' | '.join(errs[:2]))
@@ -648,12 +651,12 @@ async def sync_cycle(b):
     await p.close()  # tab killed while offline
     p = await page(c, errs); await p.goto(BASE + '?sync2#/more'); await p.wait_for_function("() => window.__apData && window.__apSync && window.__apData.events() > 0")
     check(await apx(p, "window.__apData.events()") == n and await apx(p, "window.__apSync.outbox()") == n, '[sync] after the kill: 0 events lost, outbox intact')
-    await p.wait_for_function("() => document.querySelector('#dataInfo').textContent.includes('waiting to sync')")
+    await p.wait_for_function("() => document.querySelector('#dataInfo').textContent.includes('waiting to back up')")
     m.online = True; await apx(p, "window.__apSync.run()")
     await p.wait_for_function("() => window.__apSync.outbox() === 0", timeout=15000)
     srv = {r[2]['id'] for r in m.mine('d-e2e-sync-0001')}
     check(len(srv) == n, f'[sync] back online: all {n} events on the server ({len(srv)}), in <=15 kB batches')
-    await p.wait_for_function("() => document.querySelector('#dataInfo').textContent.includes('All synced')"); await shot(p, 'phone-more-synced')
+    await p.wait_for_function("() => document.querySelector('#dataInfo').textContent.includes('Backed up')"); await shot(p, 'phone-more-synced')
     await p.evaluate(WIPE); await p.evaluate("localStorage.setItem('ap_prefs', JSON.stringify({onboarded:true})); localStorage.setItem('ap_device', 'd-e2e-sync-0001')")
     await p.goto(BASE + '?sync3#/more'); await p.wait_for_function(f"() => window.__apData && window.__apData.events() === {n}", timeout=15000)
     check(await apx(p, "window.__apData.hash()") == h0, '[sync] wiped phone + same backup code: pull restores the identical projection')
@@ -733,7 +736,7 @@ async def card_cycle(b):
     # score one game on Tonight (test data): X, 9/ (10 pin) alternating, 10th X X X
     await p.goto(BASE + '?bc#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnLog')
     async def nxt(sel):
-        f0 = await p.text_content('#qlWhere'); await p.click(sel); await p.wait_for_function(f"() => !document.querySelector('#qlWhere') || document.querySelector('#qlWhere').textContent !== {json.dumps(f0)}")
+        f0 = await p.text_content('#qlWhere'); await qtap(p, sel); await p.wait_for_function(f"() => !document.querySelector('#qlWhere') || document.querySelector('#qlWhere').textContent !== {json.dumps(f0)}")
     for f in range(1, 10):
         if f % 2: await nxt('#qlStrike')
         else:
@@ -785,15 +788,45 @@ async def card_cycle(b):
     check(not errs, '[card] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
+async def sim_cycle(b):
+    # Sim bugs (5:35 steering): home = Tonight; lefty hints; double tap = one throw; game-open layout + reload; offline chip;
+    # one stand/aim on Tonight and Lane; recap + focus; plain-words data card is checked in [data].
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.evaluate("localStorage.setItem('ap_profile', JSON.stringify({hand:'left', style:'one', speed:15, rev:220}))")
+    await p.goto(BASE + '?sim'); await p.wait_for_selector('#noBag')
+    check(await p.query_selector('#tabs a[href="#/tonight"][aria-current=page]') is not None, '[sim] app opens on Tonight, not Lane')
+    await p.click('#loadStarter'); await p.wait_for_selector('#tnStand')
+    feet = int((await p.text_content('#tnStand')).split()[1])
+    box = await p.query_selector('#qlStrike'); await box.scroll_into_view_if_needed(); await p.wait_for_timeout(300); bb = await box.bounding_box(); x, y = bb['x'] + bb['width'] / 2, bb['y'] + bb['height'] / 2
+    await p.mouse.click(x, y); await p.wait_for_timeout(120); await p.mouse.click(x, y); await p.wait_for_timeout(600)
+    wh = await p.text_content('#qlWhere'); check('Frame 2' in wh, f'[sim] double tap on X logs one strike ({wh!r})')
+    check(await p.is_visible('#tnNow') and await p.eval_on_selector('#tnMore', 'e => !e.open') and await p.query_selector('#tnMore #tnPick') is not None, '[sim] game open: ball/feet/aim + scoring up front, the rest behind one tap')
+    check(f'feet {feet}' in await p.text_content('#tnNowLine'), '[sim] game-open line uses the same stand as the pick card')
+    await axe_ok(p, '[sim] game open'); await shot(p, 'phone-tonight-game-open')
+    await p.click('#qlPins [data-pin="7"]'); await p.wait_for_selector('#qlHint')
+    hint = await p.text_content('#qlHint'); check('lefty' in hint and f'strike stand {feet}' in hint, f'[sim] lefty spare hint uses hand + real strike stand ({hint[:90]!r})')
+    await p.reload(); await p.wait_for_selector('#tnNow'); check(await p.is_visible('#tnLog') and 'Frame 2' in await p.text_content('#qlWhere'), '[sim] scoring card restored after reload')
+    aim = (await p.text_content('#tnNowLine')).split('aim')[-1].strip()
+    await c.set_offline(True); await p.evaluate("() => window.dispatchEvent(new Event('offline'))"); await p.wait_for_selector('#netChip:not([hidden])')
+    check('Offline' in await p.text_content('#netChip'), '[sim] offline chip shows'); await shot(p, 'phone-tonight-offline')
+    await c.set_offline(False); await p.evaluate("() => window.dispatchEvent(new Event('online'))"); await p.wait_for_selector('#netChip', state='hidden')
+    await p.goto(BASE + '?sim#/lane'); await p.wait_for_selector('#lineSum[data-stand]'); await p.wait_for_timeout(400)
+    ls = await p.text_content('#lineSum'); st = await p.get_attribute('#lineSum', 'data-stand')
+    check(int(st) == feet and aim in ls, f'[sim] Lane shows the same stand/aim as Tonight (lane {st}/{ls!r}, tonight {feet}/{aim})')
+    check(not errs, '[sim] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
 async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('sim', lambda: sim_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)
-            except Exception as e: check(False, f'[{name}] crashed or timed out: {type(e).__name__} {str(e)[:160]}')
+            except Exception as e:
+                import traceback; tb = [l for l in traceback.format_exc().splitlines() if 'e2e.py", line' in l][-1:]
+                check(False, f'[{name}] crashed or timed out: {type(e).__name__} {str(e)[:160]} {tb}')
         await b.close()
     print(f'\n{len(passes)} passed, {len(fails)} failed')
     for f in fails: print('  FAIL', f)

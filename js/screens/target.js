@@ -11,7 +11,8 @@ import { catOf } from '../cc/cats.js';
 import { createLane } from '../lane.js';
 import { createDeck, describe } from '../deck.js';
 import { HOUSE_ASSUMED, rule31 } from '../cc/rank.js';
-import { modelLine } from '../cc/model.js';
+import { lineFor } from '../cc/line.js';
+import { openNight } from '../cc/night.js';
 import { arrowsBoard } from '../cc/geom.js';
 import * as T from '../cc/target.js';
 import * as F from '../cc/strikeline.js';
@@ -26,7 +27,7 @@ const TOUR = [
 export async function render({ query } = {}) {
   await ready();
   const P = proj(), b = P.bowler || {}, lefty = () => (profile() && profile().hand === 'left') || b.hand === 'left';
-  const sess = (P.sessions || {})['tonight-' + today()] || {};
+  const sess = (P.sessions || {})[openNight(P) || ''] || {};   // the open night (sim bug 3), not the calendar day
   const ft = sess.ft != null ? +sess.ft : HOUSE_ASSUMED.ft;
   const speed = num(b.speed) || +S.speed || 15, rev = num(b.rev) || +S.rev || 220;
   const relSrc = k => { const f = b[k]; return f && f.prov ? (f.prov.kind === 'device' ? ['device', f.prov.label || 'LaneTrax'] : ['user', 'your profile']) : ['assumed', 'assumed']; };
@@ -37,8 +38,9 @@ export async function render({ query } = {}) {
   // tv 2 = eyes in real arrows boards (DECISIONS #26). Older saved eyes used the v1 "1 board per aim unit" label, so they are dropped.
   const pt0 = prefs().target || {}, saved = pt0.tv === 2 ? pt0 : {};
   const ctx = { speed, rev, ft };
-  const seed = () => { const ml = specOK(cat) ? modelLine(cat, { speed, rev, ft, finish: 'factory', target31: rule31(ft).target }) : { none: true };
-    return ml.none ? {} : { feet: ml.feet + T.DEFAULTS.offset - T.DEFAULTS.drift, eyes: ml.target }; };
+  // Same stand/aim as Tonight and Lane (js/cc/line.js, sim bug 5).
+  const seed = () => { const L = specOK(cat) ? lineFor(cat, { speed: num(b.speed) || 15, rev: num(b.rev) || 220, ft: sess.ft != null ? +sess.ft : null }) : null;
+    return !L || !L.stand ? {} : { feet: L.stand.feet, eyes: L.ml.target }; };
   let t = Object.assign({}, T.DEFAULTS, saved.t || seed());
   let box = null, r = null, sug = null;
 

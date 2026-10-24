@@ -15,6 +15,10 @@ import { openBallSheet, openConditions, openTune, openLines, tunePanel } from '.
 import { PATTERN_LABEL, FINISH_LABEL, CALL_LABEL, CALL_TONE, f1, fmtBoard } from '../labels.js';
 import { profile } from '../store.js';
 import { houseRule } from '../cc/target.js';
+import { prefs, setPrefs } from '../store.js';
+import { ready, proj } from '../hub.js';
+import { lineFor, standOf } from '../cc/line.js';
+import { openNight } from '../cc/night.js';
 export function render() {
   const ballBtn = h('button', { class:'ball-btn', id:'ballBtn', 'aria-haspopup':'dialog', onclick:openBallSheet });
   const saveBtn = h('button', { class:'icon-btn', id:'saveBtn', 'aria-label':'Save this line', onclick:quickSave });
@@ -74,7 +78,9 @@ export function render() {
     setTile(tAngle, a.angle == null ? '\u2014' : f1(a.angle) + '\u00b0', 'need 4\u20136\u00b0 drawn', a.angle != null && a.angle >= 4 && a.angle <= 6 ? 'good' : 'warn');
     const r31 = a.bpBoard == null ? null : ruleOf31(S.pattern, a.bpBoard);
     setTile(tBp, a.bpBoard == null ? '\u2014' : f1(a.bpBoard), a.bpFeet == null ? 'no hook' : `@ ${Math.round(a.bpFeet)} ft`, r31 && Math.abs(r31.d) <= 2 ? 'good' : 'warn');
-    lineSum.innerHTML = `<span class="sr-only">Tune shot. </span><span><b class="num">${S.release}</b><small>Feet</small></span><span class="arrow" aria-hidden="true">→</span><span><b class="num">${fmtBoard(target())}</b><small>Target</small></span><span><b class="num">${S.speed}</b><small>mph</small></span><span><b class="num">${S.rev}</b><small>rpm</small></span>${icon('tune', 'ls-ic')}`;
+    // One stand/aim source (sim bug 5): Stand = laydown + offset − drift, the same number Tonight and Targeting show.
+    const sd = standOf(S.release); lineSum.dataset.release = S.release; lineSum.dataset.stand = sd.feet;
+    lineSum.innerHTML = `<span class="sr-only">Tune shot. </span><span><b class="num">${sd.feet}</b><small>Stand \u00b7 lay ${S.release}</small></span><span class="arrow" aria-hidden="true">→</span><span><b class="num">${fmtBoard(target())}</b><small>Aim</small></span><span><b class="num">${S.speed}</b><small>mph</small></span><span><b class="num">${S.rev}</b><small>rpm</small></span>${icon('tune', 'ls-ic')}`;
     const sens = sensitivity(b), n = +sens.split(' ')[0];
     hold.innerHTML = `<span class="hold-bar" aria-hidden="true">${Array.from({ length:6 }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span><span>Margin: <b>${sens}</b> small misses still strike</span>`;
     hold.dataset.tone = !a.strike ? 'off' : n >= 4 ? 'good' : 'warn';
@@ -122,7 +128,21 @@ export function render() {
   function doMiss(k) { const r = miss(k); toast(r.text, { action:{ label:'Undo', run:() => restore(r.before) } }); }
   let rq = 0, ranim = false;
   const queue = d => { ranim = ranim || !!(d && d.animate); if (rq) return; rq = requestAnimationFrame(() => { rq = 0; const a = ranim; ranim = false; update({ animate:a }); }); };
-  const offs = [on('state', queue), on('lines', () => update()), on('prefs', () => { qKey = ''; queue(); }), on('status', drawSync)];
+  // Lane opens on the bowler's own starting line for this ball (the same js/cc/line.js line as Tonight), until they move it.
+  const lineSig = () => `${S.release}|${S.aim}`;
+  function seedLine() {
+    const P = proj(); if (!P || !Object.keys(P.owned || {}).length) return;
+    // Seed only an untouched line: first time only from the engine start (12 / -4), later only if still at our last seed.
+    // A restored v1 line or any line the bowler moved is left alone.
+    const ls = prefs().laneSeed; if (ls ? ls !== lineSig() : lineSig() !== '12|-4') return;
+    const b = P.bowler || {}, v = f => { const x = f && typeof f === 'object' ? f.v : f; return x == null || x === '' || isNaN(+x) ? null : +x; };
+    const sess = (P.sessions || {})[openNight(P) || ''] || {};
+    const L = lineFor(app.ball, { speed: v(b.speed), rev: v(b.rev), ft: sess.ft != null ? +sess.ft : null }); if (!L.stand) return;
+    if (S.release !== L.ml.feet || S.aim !== L.ml.aim) adjust({ release: L.ml.feet, aim: L.ml.aim });
+    setPrefs({ laneSeed: lineSig() });
+  }
+  ready().then(seedLine).catch(() => {});
+  const offs = [on('ball', seedLine), on('state', queue), on('lines', () => update()), on('prefs', () => { qKey = ''; queue(); }), on('status', drawSync)];
   return { el, title:'Lane', mounted() { update({ animate:true }); drawSync(); }, destroy() { cancelAnimationFrame(rq); offs.forEach(f => f()); lane.destroy(); deck.destroy(); } };
 }
 

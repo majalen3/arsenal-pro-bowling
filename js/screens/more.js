@@ -23,19 +23,23 @@ export function render() {
   async function downloadBackup() {
     const db = await ready(); const b = await buildBackup(db, { prefs:prefs(), legacy:db.meta.legacySnapshot || null });
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(b)], { type:'application/json' })); a.download = BACKUP_NAME; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    await db.setMeta('backupDownloadedAt', Date.now()); toast(`Backup saved: ${b.events.length} events`); paintData();
+    await db.setMeta('backupDownloadedAt', Date.now()); toast('Backup file saved.'); paintData();
   }
   const dataInfo = h('p', { class:'small', id:'dataInfo', text:'Loading your history\u2026' });
+  const dataCounts = h('p', { class:'small', id:'dataCounts' });
   function paintData() {
     const db = hub.db; if (!db) return; const P = db.projection(), m = db.meta;
     const unsynced = db.events().filter(e => !e.synced).length;
-    dataInfo.textContent = `${db.events().length} events on this phone (${db.backend.kind}). ${Object.keys(P.owned).length} owned balls, ${P.games.length} games, ${P.aggregates.length} tracker sessions. ${syncLine(m.sync, unsynced)}${m.backupDownloadedAt ? '' : ' No v1 backup downloaded yet: your pre-2.1 data is kept as a snapshot until you download one.'}`;
+    // Plain words (sim bug 8): what is safe and what to do, counts behind a tap. No developer terms.
+    const legacy = !m.backupDownloadedAt && db.meta.legacySnapshot;
+    dataInfo.textContent = syncLine(m.sync, unsynced) + (legacy ? ' Your data from the older app version is also kept here until you download a backup file.' : '');
+    dataCounts.textContent = `On this phone: ${Object.keys(P.owned).length} balls, ${P.games.length} games, ${P.aggregates.length} LaneTrax reports (${db.events().length} saved changes).`;
   }
   // Server sync of the event log (D3). The quota message comes from the server; the phone keeps everything regardless.
   function syncLine(st, unsynced) {
-    if (st && st.quota && st.quota.full) return `Server backup is full (${st.quota.limit} events); ${unsynced} newer events are kept only on this phone. Download a backup below.`;
-    if (!unsynced) return st && st.lastPushAt ? 'All synced.' : 'Nothing to sync.';
-    return `${unsynced} waiting to sync${st && st.lastError ? ' (offline, will retry)' : ''}.`;
+    if (st && st.quota && st.quota.full) return `Server backup is full; your ${unsynced} newest ${unsynced === 1 ? 'change is' : 'changes are'} kept only on this phone. Download a backup file below.`;
+    if (!unsynced) return st && st.lastPushAt ? 'Backed up to the server.' : 'Saved on this phone. Nothing to back up yet.';
+    return `Saved on this phone; ${unsynced} ${unsynced === 1 ? 'change' : 'changes'} waiting to back up${st && st.lastError ? ' (offline, will retry)' : ''}.`;
   }
   ready().then(paintData);
   function draw() {
@@ -45,7 +49,7 @@ export function render() {
       h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Bowler profile' }), h('button', { class:'btn sm ghost', id:'editProfile', onclick:editProfile }, h('span', { html:icon('edit') }), 'Edit')),
         pr ? h('p', { text:`${pr.hand === 'left' ? 'Left' : 'Right'}-handed ${pr.style === 'two' ? 'two-hander' : pr.style}, ${(+pr.speed).toFixed(1)} mph, ${pr.rev} rpm${pr.pap ? ', PAP ' + pr.pap : ''}${pr.tilt ? ', tilt ' + pr.tilt : ''}.` }) : h('p', { class:'muted', text:'Not set. The lane uses its defaults (15 mph, 220 rpm).' }),
         h('div', { class:'row between' }, h('span', { text:`My bag: ${pr && pr.owned && pr.owned.length ? pr.owned.length + ' balls' : 'all 22'}` }), h('button', { class:'btn sm ghost', id:'editBag', onclick:editBag }, 'Choose'))),
-      h('div', { class:'card', id:'dataCard' }, h('h2', { class:'card-title', text:'Your data' }), dataInfo,
+      h('div', { class:'card', id:'dataCard' }, h('h2', { class:'card-title', text:'Your data' }), dataInfo, h('details', { class:'tn-more', id:'dataMore' }, h('summary', { text:'What\u2019s saved' }), dataCounts),
         h('div', { class:'btn-grid' }, h('a', { class:'btn ghost', href:'#/import', id:'goImport' }, 'Import a file'), h('a', { class:'btn ghost', href:'#/import?kind=lanetrax', id:'goLaneTrax' }, 'LaneTrax report'), h('a', { class:'btn ghost', href:'#/card', id:'goCardMore' }, 'My Bowler Card'), h('a', { class:'btn ghost', href:'#/sessions', id:'goNights' }, 'Past sessions'))),
       h('div', { class:'card' }, h('h2', { class:'card-title', text:'Appearance' }), segmented('Theme', [['dark', 'Alley dark'], ['light', 'Light'], ['system', 'System']], prefs().theme || 'dark', v => { setPrefs({ theme:v }); applyTheme(v); }, 'wide')),
       h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Sync & backup' }), stat),

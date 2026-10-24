@@ -57,4 +57,4 @@ export function hydrateMirror() {
   if (n) emit('alley');
   return n;
 }
-export async function loadStarter() { await ready(); const P = db.projection(); if (Object.values(P.owned).some(o => o.importId && o.importId.startsWith(SEED_ID))) return []; const n = Object.keys(P.imports).filter(k => k.startsWith(SEED_ID)).length; return db.append(seedEvents({ deviceId: deviceId(), importId: n ? SEED_ID + '-' + (n + 1) : SEED_ID })); }
+export async function loadStarter() { await ready(); const P = db.projection(); if (Object.values(P.owned).some(o => o.importId && o.importId.startsWith(SEED_ID))) return []; const n = Object.keys(P.imports).filter(k => k.startsWith(SEED_ID)).length; const keep = Object.keys(P.bowler || {}).filter(k => P.bowler[k] != null && P.bowler[k] !== ''); return db.append(seedEvents({ deviceId: deviceId(), importId: n ? SEED_ID + '-' + (n + 1) : SEED_ID, keep })); }

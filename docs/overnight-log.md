@@ -54,3 +54,30 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - **What changed:** `js/deck.js`. The pin-deck text alternative now starts "Model estimate: Enters board …". The on-screen angle already says "model".
 - **Why it matters:** the 2-D numbers are labelled as model output.
 - **Left for the lane-screen owner:** the lane canvas aria-label and the Entry/Break pt tiles in `js/screens/lane.js` (edits in progress by another worker) should get the same "(model)" note.
+
+## 2026-10-24 — Sim-bug fixes (parent 5:35 steering, items 1–8)
+- **Lefty spare hints:** these now use the bowler's hand and their real strike stand from lineFor/standOf (js/cc/line.js). Hint example: "lefty · strike stand 17" (before: RH "stand 11").
+- **Double tap:** X/leave/spare/miss taps are guarded for 400 ms (TAP_GUARD_MS). In sim_cycle a double tap advances one frame.
+- **Midnight:** sessions are now nights (js/cc/night.js: idle 4 h, resume an unfinished game within 24 h, End night, ids night-YYYY-MM-DD-n). The midnight2 re-verify went from 23:50 Frame 6 to 00:10 Frame 6 ball 1, in the same night.
+- **Tonight in game:** only ball/feet/aim, the ball-change line, the scoring card and Weaker/Stronger show; the rest is behind a tap (#tnMore). This is restored after a reload.
+- **One stand/aim source:** Tonight, Lane and the hints all use line.js. Lane seeding never overwrites a restored or user-moved line.
+- **Offline chip** on Tonight.
+- **Night recap:**
+  - Contents: series vs average, strikes/pocket, spares, pins lost, ball and moves per game, one takeaway, an optional next focus carried to Tonight, and sample sizes.
+  - Insights now opens on the last 10 games (practice excluded); the arsenal charts are behind a tap.
+- **§3 cuts:**
+  - Removed from Tonight: 3-6-9, Plan A/B/C, Your release, Rule of 31, and the extra Find/Check link.
+  - Specs, laydown/breakpoint, Holds, source chips and Lane physics are behind a tap.
+  - The app opens on Tonight (not Lane).
+  - More > Your data is in plain language.
+- **Tests:** unit 167/0 (plus night.test.mjs, 5 tests), engine equivalence 7500/0, e2e 343 passed / 0 failed (new sim_cycle step).
+- **Lighthouse (local):**
+  - #/tonight: 95/100/100/100.
+  - #/arsenal/insights: 93–94/100/100/100 (perf noise: LCP 3.0 s throttled, TBT 0).
+  - axe: 0 serious.
+- **Sim re-verify (/workspace/ux/fix1/, adapted from sim1):**
+  - lefty: OK.
+  - midnight: OK.
+  - overload: Tonight after the starter is 8 numbers / 90 words (was 20 / 117); Insights is 1 screen (was 2.5).
+- **Shots:** /workspace/ux-shots/sim-fix, /workspace/ux-shots/fix1.
+- **Service worker:** cache bumped to v23.

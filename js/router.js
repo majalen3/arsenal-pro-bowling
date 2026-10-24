@@ -21,10 +21,10 @@ export function start(el, tabCb) {
   render();
 }
 async function render() {
-  const raw = location.hash.replace(/^#/, '') || '/lane';
+  const raw = location.hash.replace(/^#/, '') || '/tonight';   // Tonight is the home screen (GAP §2c: don't open on Lane)
   const [path, qs] = raw.split('?'); const query = new URLSearchParams(qs || '');
   let m = null, r = routes.find(x => (m = path.match(x.re)));
-  if (!r) { r = routes[0]; m = ['/lane']; }
+  if (!r) { r = routes.find(x => x.re.test('/tonight')) || routes[0]; m = ['/tonight']; }
   const token = {}; latest = token;
   const mod = await r.load();
   if (latest !== token) return;

@@ -27,7 +27,7 @@ export function ownedPicker(p) {
 export function render() {
   const p = Object.assign({ hand:'right', style:'tweener', speed:+S.speed, rev:+S.rev, pap:'', tilt:'', owned:[] }, profile() || {});
   let step = 0;
-  const finish = (skip) => { if (!skip) { setProfile(p); adjust({ speed:p.speed, rev:p.rev }); } setPrefs({ onboarded:true }); go('#/lane', { replace:true }); toast(skip ? 'You can set your profile any time in More.' : 'Profile saved. Your lane is ready.'); };
+  const finish = (skip) => { if (!skip) { setProfile(p); adjust({ speed:p.speed, rev:p.rev }); } setPrefs({ onboarded:true }); go('#/tonight', { replace:true }); toast(skip ? 'You can set your profile any time in More.' : 'Profile saved. Tonight is ready.'); };
   const f = profileForm(p);
   const steps = [
     ['How do you bowl?', 'Two quick questions. Skip any time.', [f.hand, f.style]],

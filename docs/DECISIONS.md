@@ -95,3 +95,15 @@ Short ADR-style notes. Each: decision · why · consequence.
     - **Style.** Shown with both sources and "No style is better than another." No ranking.
     - **Insights.** The static v1 assessment (fixed profile, uncited 8.5/10 ratings, ball shopping list) is removed (GAP f); one computed line from the card replaces it.
     - **Navigation.** No new tab: Sessions gains a "Nights" segment ("Shots" → "Lane taps", "Alley notes" → "Notes"). The card is reached from Sessions, More, Insights and Tonight's release card.
+
+29. **Sim-bug fixes: nights, one stand/aim, Tonight by moment (2026-10-24, from docs/user-simulations.md).**
+    - **Lefty hints.** Root cause: loading the starter arsenal re-seeded the bowler record over the user's welcome choices (hand → right). The seed now keeps fields the user already set. Spare hints use the bowler's hand and their real strike stand (the same stand Tonight shows); board 20 is used, and labelled "assumed", only when there is no stand.
+    - **Double tap.** A second throw tap within 400 ms, or while the last write is in flight, is ignored (`TAP_GUARD_MS`).
+    - **Nights, not days.** Sessions are `night-YYYY-MM-DD-n`. A night stays open across midnight. A new night starts only after "End night", or when the last game is finished and the night has been idle 4 h. An unfinished game resumes for up to 24 h. The first throw writes the `session.created` record, so shots are never orphaned. Older day-keyed sessions are unchanged.
+    - **One stand/aim.** `js/cc/line.js` (`lineFor`, `standOf`) is the single source for Tonight, Targeting's seed, and the Lane. The Lane is seeded once from it, only when its line is still the engine start (12/−4) or our last seed; a line the bowler moved, or a restored v1 line, is never overwritten. The Lane summary now reads Stand · lay → Aim. `simulatePath` is unchanged (equivalence 7 500/0).
+    - **Home is Tonight.** The empty hash, unknown routes and the welcome finish go to `#/tonight`. The Lane is a tab, not the landing page.
+    - **Tonight cuts (GAP §2c).** Removed from Tonight: the 3-6-9 card, Plan A/B/C, Your release, Rule of 31, the second Targeting link. LaneTrax numbers waiting for review are one link to the Bowler Card, where accepting already lives.
+    - **Recap after the night.** It uses the series vs the game-weighted average of other sessions, first-ball strikes/pocket, spares made and pins left on misses, plus per-game ball/moves in Details and an opt-in next focus (`prefs.focus`) shown on the next night's Tonight. Every figure carries its n.
+    - **Insights** opens on the last 10 finished games, with practice nights left out; arsenal charts are behind one tap.
+    - **More › Your data** is in plain words: what's safe, what's waiting, counts behind a tap. No "events", "IndexedDB", "v1" or "tracker sessions".
+    - **Offline.** An "Offline · saved on this phone" chip shows on Tonight.

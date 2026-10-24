@@ -44,3 +44,28 @@
 | Insights · static ratings "8.5/10" | ✗ | ✗ (uncited) | **cut** |
 
 **Pruned along the way:** Insights' static assessment, removed. Sessions segments renamed to plain words ("Lane taps", "Notes").
+
+## Sim-bug fixes: Tonight by moment, night recap, Insights last 10 (2026-10-24)
+
+**Why (SDT).** *Competence:* during a game the screen answers only "what am I throwing, where do I stand, where do I look", and the next tap is the scoring card, so the bowler never has to search mid-approach. *Autonomy:* the recap offers a next focus that the bowler chooses to keep ("Make this my next focus"); nothing is assigned. Lost pins are framed as fixable ("k pins left on misses"), never as a grade. Copy is informational only, with no "good job".
+
+**3-second beginner check:** game open on Tonight shows one line ("Big Bite · feet 17 · aim 10.7"), the scoring card and Weaker/Stronger. A first-timer can tell what to do next within 3 s. Everything else is behind "Bag, lanes and line details".
+
+| Moment · screen · figure | U | A (decision it changes) | Placement |
+|---|---|---|---|
+| During game · ball · feet · aim | ✓ | ✓ where to stand and look | first line |
+| During game · "Then: B if it hooks early → C later" | ✓ | ✓ ball change | under the line |
+| During game · scoring card + spare hint (own hand, own strike stand) | ✓ | ✓ spare stand | second |
+| During game · Weaker / Stronger | ✓ | ✓ ball change | third |
+| During game · bag advisor, coach, why/specs/model, reads, setup | partial | partial | behind one tap |
+| Between games · pick: name, feet · eyes, Find | ✓ | ✓ start line | pick card |
+| Between games · level/demand, why-lines, laydown, breakpoint, holds | partial | partial | behind one tap (cut for beginners' first view) |
+| Between games · 3-6-9 card, Plan A/B/C, Your release, Rule of 31 | partial | ✗ duplicate of other figures | **cut** from Tonight (3-6-9 lives in the spare hint; release on the Bowler Card; Rule of 31 in Targeting) |
+| After session · series vs your average (B×N) | ✓ | ✓ league talk / handicap | recap head |
+| After session · first-ball strikes s of f, pocket p of t tagged | ✓ | ✓ line/ball | recap |
+| After session · spares made m of n, k pins left on misses | ✓ | ✓ spare practice | recap |
+| After session · per game: score, balls, moves | partial | ✓ what changed in game 2/3 | session Details |
+| After session · next focus (opt-in), carries to Tonight | ✓ | ✓ practice | recap, then Tonight top |
+| Insights · last 10 games avg/high/low, strikes, spares, n | ✓ | ✓ trend check | first card |
+| Insights · oil coverage, core map, bag builder | partial | partial | behind one tap |
+| More · Your data counts | partial | ✗ | behind "What's saved"; the line shown is safety status in plain words |

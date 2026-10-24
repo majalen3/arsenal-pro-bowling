@@ -76,7 +76,8 @@ test('recap: one headline change, ≤2 supporting stats, one fixable focus (test
   const P = project(base().concat(game('test-sess-1', 2, { ts: 5000 }), game('test-sess-2', 6, { ts: 90000, mixed: true })));
   for (const [id, d] of [['test-sess-1', '2026-01-01'], ['test-sess-2', '2026-01-08']]) P.sessions[id] = { id, date: d };
   const list = C.sessionsOf(P), r = C.recapOf(list, 'test-sess-2');
-  assert.match(r.head, /pins over last session|points/); assert.ok(r.support.length <= 2);
+  assert.match(r.head, /^\d+ game: (\d+ pins (over|under)|right on) your \d+ average\.$/); assert.ok(r.support.length <= 2);
+  assert.match(r.support[0].text, /^\d+ of \d+/); assert.equal(r.support[1].label, 'Spares made'); assert.equal(r.perGame.length, 1);
   assert.match(r.focus.text, /^Next focus: the 10 pin, 2 of 4 made tonight\.$/);
   assert.doesNotMatch(JSON.stringify(r), /good job|great|awesome/i);
   const p = planLaneTrax({ record: EXPECTED, now: 9000, deviceId: 'd' }); const P2 = project(base().concat(p.events)); const l2 = C.sessionsOf(P2);

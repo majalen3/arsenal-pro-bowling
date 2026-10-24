@@ -40,7 +40,7 @@ export function walk(throws) {
 }
 // ---- per-throw-set stats: strikes, spares (single vs multi), opens, per-leave conversion, pocket
 export function throwStats(games) {
-  let first = 0, firstPins = 0, pocketNS = 0, strikes = 0, single = 0, singleMade = 0, multi = 0, multiMade = 0, frames = 0, opens = 0, tagged = 0, pocket = 0;
+  let first = 0, firstPins = 0, pocketNS = 0, strikes = 0, single = 0, singleMade = 0, multi = 0, multiMade = 0, frames = 0, opens = 0, tagged = 0, pocket = 0, leftUp = 0;
   const byLeave = {};
   for (const g of games) {
     const d = walk(g.throws);
@@ -48,7 +48,7 @@ export function throwStats(games) {
       if (x.rack) { first++; firstPins += x.down; if (x.strike) strikes++;
         const m = x.t.miss; if (x.strike || m === 'pocket' || m === 'high' || m === 'light') { tagged++; if (x.strike || m === 'pocket') pocket++; if (!x.strike && m === 'pocket') pocketNS++; } }
       else if (x.facing.length) {
-        const k = x.facing.join('-'); const L = byLeave[k] = byLeave[k] || { leave: k, n: 0, made: 0 }; L.n++; if (x.made) L.made++;
+        const k = x.facing.join('-'); const L = byLeave[k] = byLeave[k] || { leave: k, n: 0, made: 0 }; L.n++; if (x.made) L.made++; else leftUp += x.facing.length - (x.t.foul ? 0 : Math.min(x.down, x.facing.length));
         if (x.facing.length === 1) { single++; if (x.made) singleMade++; } else { multi++; if (x.made) multiMade++; }
       }
     }
@@ -57,7 +57,7 @@ export function throwStats(games) {
   }
   const spare = single + multi, spareMade = singleMade + multiMade;
   return { first, strikes, strikePct: pct(strikes, first), firstAvg: first ? r1(firstPins / first) : null, carryN: strikes + pocketNS, carryPct: pocket && tagged > strikes ? pct(strikes, strikes + pocketNS) : null, spare, spareMade, sparePct: pct(spareMade, spare), single, singleMade, singlePct: pct(singleMade, single),
-    multi, multiMade, multiPct: pct(multiMade, multi), frames, opens, openPct: pct(opens, frames), tagged, pocket, pocketPct: pct(pocket, tagged),
+    multi, multiMade, multiPct: pct(multiMade, multi), leftUp, frames, opens, openPct: pct(opens, frames), tagged, pocket, pocketPct: pct(pocket, tagged),
     leaves: Object.values(byLeave).sort((a, b) => b.n - a.n || (a.leave < b.leave ? -1 : 1)) };
 }
 // ---- sessions: quick-log/CSV games and LaneTrax aggregates, one row per session id
@@ -227,15 +227,41 @@ export function recapOf(list, id) {
   const word = { strikePct: 'Strikes', sparePct: 'Spares made', openPct: 'Open frames' };
   let head = null;
   const a = by('avg');
-  if (a && a.dPrev != null && Math.abs(a.dPrev) >= 5) head = `${a.v} average, ${Math.abs(Math.round(a.dPrev))} pins ${a.dPrev > 0 ? 'over' : 'under'} last session (${a.prev}).`;
+  // Sim bug 7: lead with the series against the bowler's average (other sessions), the number league bowlers check first.
+  const done = me.games.filter(g => g.complete && g.score != null);
+  const oth = list.filter(x => x.id !== id && x.stats.avg != null && x.stats.games), og = oth.reduce((n, x) => n + x.stats.games, 0);
+  if (done.length && og) { const ser = done.reduce((x, g) => x + g.score, 0), base = Math.round(oth.reduce((n, x) => n + x.stats.avg * x.stats.games, 0) / og), d = ser - base * done.length;
+    head = done.length === 1 ? `${ser} game: ${d === 0 ? 'right on' : Math.abs(d) + ' pins ' + (d > 0 ? 'over' : 'under')} your ${base} average.`
+      : `${ser} series over ${done.length} games: ${d === 0 ? 'right on' : Math.abs(d) + ' pins ' + (d > 0 ? 'over' : 'under')} your ${base} average (${base * done.length}).`; }
+  if (!head && a && a.dPrev != null && Math.abs(a.dPrev) >= 5) head = `${a.v} average, ${Math.abs(Math.round(a.dPrev))} pins ${a.dPrev > 0 ? 'over' : 'under'} last session (${a.prev}).`;
   if (!head) for (const k of ['sparePct', 'strikePct', 'openPct']) { const x = by(k); if (x && x.dPrev != null && Math.abs(x.dPrev) >= 5) { head = `${word[k]}: ${x.v}%, ${x.dPrev > 0 ? 'up' : 'down'} ${Math.abs(x.dPrev)} points from last session.`; break; } }
   if (!head && a && a.dPrev != null) head = `${a.v} average, about the same as last session (${a.prev}).`;
   if (!head) head = s.avg != null ? `${s.avg} average over ${PLURAL(s.games, 'game')}${s.high != null && s.games > 1 ? `, high ${s.high}` : ''}.`
     : s.ltx ? `${s.ltx.strikes} strikes on ${s.ltx.first} first balls; ${s.ltx.spareMade} of ${s.ltx.spare} spares made.` : t ? `${t.strikes} strikes on ${t.first} first balls.` : 'Session saved.';
   const sup = [];
-  if (t && t.single) sup.push({ k: 'single', label: 'Single-pin spares', text: `${t.singleMade} of ${t.single}` });
-  else if (s.ltx && s.ltx.spare) sup.push({ k: 'spare', label: 'Spares made', text: `${s.ltx.spareMade} of ${s.ltx.spare}` });
-  if (t && t.first) sup.push({ k: 'firstAvg', label: 'First-ball average', text: `${t.firstAvg} pins` });
-  else if (s.ltx && s.ltx.first) sup.push({ k: 'strike', label: 'Strikes', text: `${s.ltx.strikes} of ${s.ltx.first}` });
-  return { head, support: sup.slice(0, 2), focus: focusOf(s), cmp };
+  // Sim bug 7: first-ball strikes (pocket when tagged) and spares made with the pins they left, each with its sample size.
+  if (t && t.first) sup.push({ k: 'strike', label: 'First-ball strikes', text: `${t.strikes} of ${t.first}` + (t.tagged ? ` \u00b7 pocket ${t.pocket} of ${t.tagged} tagged` : '') });
+  if (t && t.spare) sup.push({ k: 'spare', label: 'Spares made', text: `${t.spareMade} of ${t.spare}` + (t.leftUp ? ` \u00b7 ${t.leftUp} ${t.leftUp === 1 ? 'pin' : 'pins'} left on misses` : '') });
+  else if (!t && s.ltx && s.ltx.spare) sup.push({ k: 'spare', label: 'Spares made', text: `${s.ltx.spareMade} of ${s.ltx.spare}` });
+  if (!t && s.ltx && s.ltx.first) sup.push({ k: 'strike', label: 'Strikes', text: `${s.ltx.strikes} of ${s.ltx.first}` });
+  // Per game: score, balls thrown and moves (lane reads logged while the game was open + ball changes). Shown behind a tap.
+  const reads = (me.meta && me.meta.reads) || [];
+  const perGame = me.games.map(g => { const ts = g.throws.map(x => x.ts).filter(Number.isFinite), a0 = ts.length ? Math.min(...ts) : 0, a1 = ts.length ? Math.max(...ts) : 0;
+    let ch = 0; for (let i = 1; i < g.throws.length; i++) if (g.throws[i].ballId && g.throws[i - 1].ballId && g.throws[i].ballId !== g.throws[i - 1].ballId) ch++;
+    return { game: g.game, score: g.complete ? g.score : null, balls: g.balls, moves: reads.filter(r => r.ts >= a0 && r.ts <= a1).length + ch, throws: g.throws.length }; });
+  return { head, support: sup.slice(0, 2), focus: focusOf(s), cmp, perGame };
+}
+// Insights lead (sim bug 7): the last N finished games, practice nights left out. Scored games carry strikes/spares; logged
+// scores carry the score only. Every figure comes with its sample size.
+export function lastGames(P, n = 10) {
+  const out = [];
+  for (const s of sessionsOf(P)) {
+    if ((s.meta && s.meta.event) === 'practice') continue;
+    for (const g of s.games.slice().reverse()) if (g.complete && g.score != null) out.push({ score: g.score, ts: g.ts, game: g, date: s.date });
+    for (const x of s.scores.slice().reverse()) if (Number.isFinite(+x.score)) out.push({ score: +x.score, ts: x.ts || s.ts, date: s.date });
+  }
+  out.sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.ts - a.ts);
+  const L = out.slice(0, n); if (!L.length) return null;
+  const sc = L.map(x => x.score), t = throwStats(L.filter(x => x.game).map(x => x.game));
+  return { n: L.length, avg: Math.round(sc.reduce((a, b) => a + b, 0) / sc.length), high: Math.max(...sc), low: Math.min(...sc), scored: t.first ? t : null, scoredGames: L.filter(x => x.game).length };
 }
