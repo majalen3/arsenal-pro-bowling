@@ -151,3 +151,13 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - Tests: unit +2 (188/0). New e2e step `alley` (15 checks):
   - wake lock stub: held only mid-game, released at the final frame, none when Off;
   - XL: 20 px rem base, pad fits at 360, no sideways scroll on 8 screens, axe, 44 px, survives reload.
+
+## Loop 1 re-measure (2026-10-24)
+- The same 10-frame game was re-run on live v30 at 360×740 and 390×844 (script /workspace/ux/loop1-mine/journey_after.py, shots in /workspace/ux-shots/loop1-after/). Results are in docs/LOOP1_REMEASURE.md:
+  - 18 → 16 taps;
+  - thumb-zone taps 6 → 13;
+  - quick-log top after a reload 709 → 154 px;
+  - fixing an older frame: impossible → 3 taps;
+  - app adds about 30 ms per frame.
+- Open item: one scroll before the first ball (the pre-game advisor stays open by design).
+- sw.js now also precaches js/cc/wake.js.

@@ -125,3 +125,6 @@
   - Wake lock, during game: U = invisible. A = yes, it removes an unlock per frame.
   - Text size, before the game: U = yes, 3 choices. A = yes, for alley lighting and older eyes.
 - **3-second beginner check:** nothing new on Tonight. The two settings live in More → Appearance.
+
+## Loop 1 re-measure (2026-10-24)
+- This item measures the app and changes no UI. The tap and reach gains above support **competence**: fewer taps, the pad stays under the thumb, and a mistake can be fixed. The one remaining friction point (a scroll before frame 1) is logged as open rather than patched with something extra.
