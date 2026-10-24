@@ -25,3 +25,8 @@ test('persistence: the pref object round-trips through JSON (prefs storage)', ()
   const p = { on: true, preset: 'custom', b1: 5, b2: 9, ft: 44, depth: 3 };
   assert.deepEqual(A.boxOf(JSON.parse(JSON.stringify(p)), 'house'), A.boxOf(p, 'house'));
 });
+test("sim2 #2: Sport uses tonight's picked length, not the engine preset", () => {
+  const s = A.boxOf({ on: true }, 'shark', 48); assert.deepEqual([s.b1, s.b2, s.ft1, s.ft2, s.len], [15.5, 18.5, 50, 52, 48]);
+  assert.match(A.source(s), /48 ft oil \u2212 31 = board 17/);
+  const n = A.boxOf({ on: true }, 'shark', null); assert.equal(n.len, 45);
+});

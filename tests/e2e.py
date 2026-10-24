@@ -1081,6 +1081,14 @@ async def aimbox_cycle(b):
     await shot(p, 'phone-aimbox-lefty')
     await p.goto(BASE + '#/target'); await p.wait_for_selector('#tgOvBtn'); await p.wait_for_timeout(700)
     check(not await p.eval_on_selector('#tgAimPill', 'e => e.hidden'), '[aimbox] Targeting shows the Aim Box read')
+    # sim2 #2: on tonight's 2026 PBA Shark (48 ft) the Sport box is board 17 at 50-52 ft, not the 45 ft preset's board 14.
+    await p.goto(BASE + '?ab2#/tonight'); await p.wait_for_timeout(500)
+    if await p.query_selector('#loadStarter'): await p.click('#loadStarter')
+    await p.wait_for_selector('#tnPattern'); await p.fill('#tnPattern', '2026 PBA Shark'); await p.press('#tnPattern', 'Enter'); await p.wait_for_timeout(500)
+    await p.goto(BASE + '?ab3#/target'); await p.wait_for_selector('#tgOvBtn'); await p.click('#tgOvBtn'); await p.wait_for_selector('#ovSheet')
+    await p.click('#ovSheet [aria-label="Aim Box preset"] [data-v="sport"]'); await p.wait_for_selector('#ovBoxTxt')
+    txt = await p.text_content('#ovBoxTxt'); check('48 ft oil' in txt and 'board 17' in txt and '50\u201352 ft' in txt, f'[aimbox] Sport uses tonight\'s 48 ft length ({txt[:90]})')
+    await p.keyboard.press('Escape'); await p.wait_for_timeout(300)
     # Off again: lane pixels back to the default
     await p.evaluate("localStorage.setItem('ap_profile', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('ap_profile') || '{}'), {hand: 'right'})))")
     await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ovBtn'); await p.click('#ovBtn'); await p.click('#ovSheet [aria-label="Aim Box"] [data-v="off"]')

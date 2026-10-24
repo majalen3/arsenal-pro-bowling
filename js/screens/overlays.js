@@ -4,12 +4,15 @@ import { h, sheet, segmented, stepper } from '../ui.js';
 import { prefs, setPrefs } from '../store.js';
 import * as AB from '../cc/aimbox.js';
 export const aimPref = () => prefs().aimBox || {};
+// A pattern getter may return the engine preset name or { preset, ft } (ft = tonight's picked length, sim2 #2).
+const pat = g => { const v = g(); return v && typeof v === 'object' ? v : { preset: v, ft: null }; };
+const boxFor = (pref, g) => { const q = pat(g); return AB.boxOf(pref, q.preset, q.ft); };
 const setAim = p => setPrefs({ aimBox: Object.assign({}, aimPref(), p) });
 // Lane hook: returns null when off, so the lane draws nothing extra.
-export const aimLayer = pattern => result => { const box = AB.boxOf(aimPref(), pattern()); return box ? { box, ok: AB.through(box, result && result.points) } : null; };
+export const aimLayer = pattern => result => { const box = boxFor(aimPref(), pattern); return box ? { box, ok: AB.through(box, result && result.points) } : null; };
 // Status pill: hidden when off; "Through zone" (good) or "Outside zone" (warn), the same tones as the pocket read.
 export function paintPill(pill, pattern, result) {
-  const box = AB.boxOf(aimPref(), pattern());
+  const box = boxFor(aimPref(), pattern);
   pill.hidden = !box; if (!box) return '';
   const ok = AB.through(box, result && result.points);
   pill.textContent = ok ? 'Through zone' : 'Outside zone'; pill.dataset.tone = ok ? 'good' : 'warn';
@@ -23,7 +26,7 @@ export function openOverlays(pattern) {
   const body = h('div', { class: 'stack', id: 'ovSheet' });
   const paint = () => {
     const ae = document.activeElement, grp = ae && ae.closest && ae.closest('[role=radiogroup]'), gl = grp && grp.getAttribute('aria-label');
-    const p = aimPref(), box = AB.boxOf(Object.assign({}, p, { on: true }), pattern()), preset = p.preset || box.preset;
+    const p = aimPref(), box = boxFor(Object.assign({}, p, { on: true }), pattern), preset = p.preset || box.preset;
     const kids = [
       h('div', { class: 'fld' }, h('span', { text: 'Aim Box' }), segmented('Aim Box', [['off', 'Off'], ['on', 'On']], p.on ? 'on' : 'off', v => { setAim({ on: v === 'on' }); paint(); })),
       h('p', { class: 'muted small', id: 'ovTip', text: AB.TIP })];
@@ -32,7 +35,7 @@ export function openOverlays(pattern) {
         setAim(v === 'custom' && !p.b1 ? { preset: v, b1: box.b1, b2: box.b2, ft: box.ft, depth: box.depth } : { preset: v }); paint(); }, 'wide')),
         h('p', { class: 'small', id: 'ovBoxTxt' }, h('b', { text: `Boards ${AB.label(box)}. ` }), AB.source(box)));
       if (preset === 'custom') {
-        const st = (id, label, k, min, max, step, unit) => stepper({ id, label, unit, min, max, step, value: box[k], onChange: v => { const c = AB.boxOf(Object.assign({}, aimPref(), { on: true, preset: 'custom' }), pattern()), q = { preset: 'custom', b1: c.b1, b2: c.b2, ft: c.ft, depth: c.depth, [k]: v }; if (q.b2 <= q.b1) q.b2 = q.b1 + 1; setAim(q); } });
+        const st = (id, label, k, min, max, step, unit) => stepper({ id, label, unit, min, max, step, value: box[k], onChange: v => { const c = boxFor(Object.assign({}, aimPref(), { on: true, preset: 'custom' }), pattern), q = { preset: 'custom', b1: c.b1, b2: c.b2, ft: c.ft, depth: c.depth, [k]: v }; if (q.b2 <= q.b1) q.b2 = q.b1 + 1; setAim(q); } });
         kids.push(st('ovB1', 'Outside edge (board)', 'b1', 1, 30, .5, ''), st('ovB2', 'Inside edge (board)', 'b2', 2, 31, .5, ''), st('ovFt', 'Distance (centre)', 'ft', 30, 55, 1, 'ft'), st('ovDepth', 'Depth', 'depth', 1, 6, 1, 'ft'));
       }
       kids.push(h('p', { class: 'muted small', text: 'Aims for roughly 4\u20136\u00b0 model entry (drawn units, about 1\u00b0 real). Saved on this device.' }));

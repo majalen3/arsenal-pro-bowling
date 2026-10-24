@@ -96,7 +96,7 @@ export async function render({ query } = {}) {
 
   const lane = createLane(canvas, { lefty,
     state: () => ({ release: r ? r.lay : 10, aim: r ? r.aim : 0, pattern: r ? r.preset : 'house' }),
-    aimBox: aimL(() => r ? r.preset : 'house'),
+    aimBox: aimL(() => ({ preset: r ? r.preset : 'house', ft: sess.ft != null ? +sess.ft : null })),
     onAdjust: ch => {
       if (ch.release != null) t.feet = Math.round(ch.release + t.offset - t.drift);
       else if (ch.aim != null) { const arrows = Math.round(arrowsBoard(r.lay, ch.aim) * 10) / 10; t.eyes = t.mode === 'dots' ? Math.round((r.lay + (arrows - r.lay) * T.DOTS_FT / T.ARROWS_FT) * 10) / 10 : arrows; }
@@ -156,7 +156,7 @@ export async function render({ query } = {}) {
     coach, limits, findBtn, findOut,
     h('div', { class: 'tg-grid' },
       h('div', { class: 'tg-lane-col' }, canvas),
-      h('div', { class: 'tg-side' }, h('div', { class: 'row', role: 'group', 'aria-label': 'Result' }, callPill, boxPill, aimPill, helpDot('tg-arrows', 'Aim at the arrows')), overlaysBtn(() => r ? r.preset : 'house', 'tgOvBtn'), deckCv, h('p', { class: 'small', id: 'tgDeckRead' }))),
+      h('div', { class: 'tg-side' }, h('div', { class: 'row', role: 'group', 'aria-label': 'Result' }, callPill, boxPill, aimPill, helpDot('tg-arrows', 'Aim at the arrows')), overlaysBtn(() => ({ preset: r ? r.preset : 'house', ft: sess.ft != null ? +sess.ft : null }), 'tgOvBtn'), deckCv, h('p', { class: 'small', id: 'tgDeckRead' }))),
     sugBox, sum, warnBox, dock,
     h('div', { class: 'row tg-actions' }, saveBtn, backBtn),
     setup,
@@ -194,7 +194,7 @@ export async function render({ query } = {}) {
     el.querySelector('#tgAssume').textContent = `Ball offset ${t.offset} and drift ${t.drift || 0} are ${saved.t ? 'yours' : 'assumed (Breakdown Bowling example: 7)'}; set them from a few shots on video. Box: ${box.from === 'model' ? `tonight\u2019s model strike line, ${box.board} @ ${box.ft} ft` : box.from === 'yours' ? 'your target' : 'Rule of 31 (no model line)'}, 3 boards \u00d7 2 ft (Human Kinetics; NBA 8\u201310 at 39\u201341 ft). ${box.r31.text}.`;
     const d = describe(r.a, L);
     el.querySelector('#tgDeckRead').textContent = d.text;
-    paintPill(aimPill, () => r.preset, r.a);
+    paintPill(aimPill, () => ({ preset: r.preset, ft: sess.ft != null ? +sess.ft : null }), r.a);
     lane.draw({ ball: cat, result: r.a }, { animate });
     deck.draw({ res: r.a, lefty: L, tone: CALL[r.call][1], color: cat.color }, { animate });
     canvas.setAttribute('aria-label', `Lane: feet ${t.feet}, laydown ${r.lay}, eyes ${t.eyes} at the ${t.mode}. ${coach.textContent}`);

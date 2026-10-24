@@ -10,7 +10,8 @@ export const PRESETS = { house: 'House', sport: 'Sport', custom: 'Custom' };
 export const HOUSE = { b1: 4.5, b2: 9.5, ft: 45, depth: 3 };
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 // pref: { on, preset: 'house'|'sport'|'custom'|undefined, b1, b2, ft, depth }. Returns null when off (no drawing, no work).
-export function boxOf(pref, pattern) {
+// patLen: tonight's picked pattern length in ft when known (sim2 #2: a 48 ft Shark must give board 17, not the 45 ft preset's 14).
+export function boxOf(pref, pattern, patLen) {
   const p = pref || {};
   if (!p.on) return null;
   const preset = p.preset || (pattern === 'house' ? 'house' : 'sport');
@@ -19,7 +20,7 @@ export function boxOf(pref, pattern) {
     return { preset, b1, b2, ft1: ft - depth / 2, ft2: ft + depth / 2, ft, depth, from: 'yours' };
   }
   if (preset === 'sport') {
-    const len = OIL_LEN[pattern] || 38, c = len - 31, ft = len + 3;
+    const len = Math.round(+patLen > 0 ? +patLen : (OIL_LEN[pattern] || 38)), c = len - 31, ft = len + 3;
     return { preset, b1: c - 1.5, b2: c + 1.5, ft1: ft - 1, ft2: ft + 1, ft, depth: 2, from: 'r31', len };
   }
   return { preset: 'house', b1: HOUSE.b1, b2: HOUSE.b2, ft1: HOUSE.ft - HOUSE.depth / 2, ft2: HOUSE.ft + HOUSE.depth / 2, ft: HOUSE.ft, depth: HOUSE.depth, from: 'baker' };

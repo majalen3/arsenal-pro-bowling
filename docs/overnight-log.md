@@ -213,3 +213,8 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
   4. Finished games can't be fixed.
   5. At 360×740, Undo, Fix and the spare hint are below the fold.
 - **Next:** #2 and #3 are S-effort and safe; #1 needs one stand/aim source shared by Tonight, Targeting and Aim Box.
+
+## Sim2 #2: Aim Box Sport uses tonight's pattern length (2026-10-24)
+- `aimbox.boxOf(pref, preset, patLen)`: on Targeting, the Sport box uses the night's picked length. 2026 PBA Shark at 48 ft now gives board 17 at 50–52 ft; before, the 45 ft engine preset gave board 14 at 47–49 ft. The Lane and Compare views keep the preset they draw.
+- Tests: unit aimbox +1 (204 total); e2e aimbox +1 (Shark → "48 ft oil − 31 = board 17").
+- Sim2 #1 (three different "where do I stand" answers) is still open and needs one shared line source. See the final report.
