@@ -202,7 +202,7 @@ async def data_cycle(b):
     d = await p.evaluate("({backend: window.__apData.backend, boot: window.__apData.bootMs, n: window.__apData.events(), h: window.__apData.hash()})")
     check(d['backend'] == 'indexedDB', f"[data] event log on IndexedDB ({d['backend']}, opened+migrated in {d['boot']} ms after first paint)")
     check(d['n'] >= 2 + 10, f"[data] v0 keys migrated + reported arsenal seeded once ({d['n']} events)")
-    await p.wait_for_function("() => document.querySelector('#dataCounts').textContent.includes('On this phone')")
+    await p.wait_for_function("() => (document.querySelector('#dataCounts')?.textContent || '').includes('On this phone')")
     dc = (await p.text_content('#dataCard')).lower(); check(' balls' in await p.text_content('#dataCounts') and not any(w in dc for w in ['events', 'indexeddb', 'pre-2.1', 'v1 ', 'tracker']), '[data] More shows the data card in plain words')
     await shot(p, 'phone-more-data')
     async with p.expect_download() as dl: await p.click('#dlBackup')
