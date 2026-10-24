@@ -81,3 +81,9 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
   - overload: Tonight after the starter is 8 numbers / 90 words (was 20 / 117); Insights is 1 screen (was 2.5).
 - **Shots:** /workspace/ux-shots/sim-fix, /workspace/ux-shots/fix1.
 - **Service worker:** cache bumped to v23.
+
+## 2026-10-24: Lane model labels (parent add-on)
+- **What changed:** the lane canvas aria-label now starts "Lane preview (model)." The Entry, Angle and Break tiles each show a subtle "(model)" second line (normal weight, not uppercase).
+- **Break pt renamed:** "Break pt" became "Break" because it was truncated at 360 px.
+- **Service worker:** cache bumped to v24.
+- **Tests:** e2e on phone, desktop, deck, lefty, migrate, target and sim: 172 passed / 0 failed. Shot: /workspace/ux-shots/sim-fix/lane-tiles-model.png.

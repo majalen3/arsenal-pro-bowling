@@ -36,8 +36,8 @@ export function render() {
   const coach = h('p', { class:'coach', id:'coach', 'aria-live':'polite' });
   const deckCv = h('canvas', { class:'deck', id:'deck', role:'img' });
   const deckRead = h('div', { class:'deck-read', id:'deckRead' });
-  const tile = (id, label) => h('div', { class:'tile', id }, h('div', { class:'tile-label', text:label }), h('div', { class:'tile-val num' }), h('div', { class:'tile-sub' }));
-  const tEntry = tile('tEntry', 'Entry'), tAngle = tile('tAngle', 'Angle (model)'), tBp = tile('tBp', 'Break pt');
+  const tile = (id, label, model) => h('div', { class:'tile', id }, h('div', { class:'tile-label' }, label, ...(model ? [h('span', { class:'tile-model', text:' (model)' })] : [])), h('div', { class:'tile-val num' }), h('div', { class:'tile-sub' }));
+  const tEntry = tile('tEntry', 'Entry', 1), tAngle = tile('tAngle', 'Angle', 1), tBp = tile('tBp', 'Break', 1);
   const lineSum = h('button', { class:'line-sum', id:'lineSum', onclick:() => { tune = openTune(); } });
   const hold = h('div', { class:'hold', id:'hold' });
   const more = h('div', { class:'more-read', id:'moreRead' });
@@ -87,7 +87,7 @@ export function render() {
     const ph = a.phases, n0 = v => Math.round(v);
     more.innerHTML = (ph ? `<div><span class="dot" style="background:${C_SKID}"></span>Skid <b>0\u2013${n0(ph.skid)} ft</b> · <span class="dot" style="background:${C_HOOK}"></span>Hook <b>${n0(ph.skid)}\u2013${n0(ph.roll)} ft</b> · <span class="dot" style="background:${C_ROLL}"></span>Roll <b>${n0(ph.roll)}\u2013${n0(ph.end)} ft</b></div>` : '') +
       `<div>Rolls at ~<b>${rollMph(+S.speed).toFixed(1)} mph</b> (est.)${r31 ? ' · ' + r31.text : ''}</div>`;
-    canvas.setAttribute('aria-label', `Lane preview. ${CALL_LABEL[a.call]}. Entry board ${f1(a.entryBoard)}, angle ${f1(a.angle)} degrees, breakpoint board ${f1(a.bpBoard)} at ${a.bpFeet == null ? 'none' : Math.round(a.bpFeet) + ' feet'}. ${isLefty() ? 'Mirrored for left hand. ' : ''}Arrow keys move feet and target.`);
+    canvas.setAttribute('aria-label', `Lane preview (model). ${CALL_LABEL[a.call]}. Entry board ${f1(a.entryBoard)}, angle ${f1(a.angle)} degrees, breakpoint board ${f1(a.bpBoard)} at ${a.bpFeet == null ? 'none' : Math.round(a.bpFeet) + ' feet'}. ${isLefty() ? 'Mirrored for left hand. ' : ''}Arrow keys move feet and target.`);
     const same = l => l.release === +S.release && l.aim === +S.aim && l.speed === +S.speed && l.rev === +S.rev && l.pattern === S.pattern && l.finish === S.finish && +l.oil === +S.oil;
     const mine = linesForBall(), saved = mine.some(same), bl = backLine(mine);
     backBtn.hidden = !bl || same(bl);

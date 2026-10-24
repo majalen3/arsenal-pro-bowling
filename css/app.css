@@ -159,6 +159,7 @@ details.card summary{cursor:pointer;font-weight:800;min-height:28px;display:flex
 .tile-label{font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tile-val{font-size:var(--fs-num);font-weight:800;line-height:1.15;letter-spacing:-.01em}
 .tile-sub{font-size:11px;color:var(--text-2)}
+.tile-model{display:block;font-weight:400;text-transform:none;letter-spacing:0}
 .tile[data-tone=good] .tile-val{color:var(--good)} .tile[data-tone=warn] .tile-val{color:var(--warn)}
 .line-sum{display:flex;align-items:center;gap:var(--s3);min-height:56px;padding:var(--s2) var(--s4);border-radius:var(--r-md);background:var(--surface);border:1px solid var(--line);text-align:left}
 .line-sum:hover{border-color:var(--line-2)}
