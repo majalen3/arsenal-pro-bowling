@@ -1,10 +1,38 @@
 # Team prompt: ball-reaction engine verification (physics and bowling domain)
 
-This is the owner's prompt as the dispatching agent passed it on (24 Oct 2026). The first part reached this repo **truncated**: the message cut off at "3. Check each 'Non-Negot…". The opening, which includes the "Real-Life Ball Reaction Model" section and the start of the phase list, could not be recovered. It is marked below and not reconstructed. **Owner: paste the original opening over the marker.** Everything after the marker is verbatim. `[PASTE HERE]` is filled at the end with a description of both engines as they stand. The findings are in `docs/ENGINE_VERIFICATION_REPORT.md`, and the plots are in `docs/engine-verify/`.
+This is the owner's prompt, verbatim (24 Oct 2026). `[PASTE HERE]` is filled at the end with a description of both engines as they stand. Findings: `docs/ENGINE_VERIFICATION_REPORT.md`; plots: `docs/engine-verify/`.
 
 ---
 
-> **[segment not recoverable — owner to paste original]** (opening: "You are a specialized physics and bowling domain team. Verify that the ball reaction engine behaves like real life from the moment the ball leaves the hand until it hits the pins. …", the "Real-Life Ball Reaction Model" section, and the heading of the phase list, which ends "…ing motion (must emerge from the interaction)**")
+You are a specialized physics and bowling domain team. Verify that the ball reaction engine behaves like real life from the moment the ball leaves the hand until it hits the pins. Friction, oil, coverstock properties, and loft are continuous interacting elements — not separate toggles.
+
+### Real-Life Ball Reaction Model (research-aligned)
+A real shot is the continuous interaction of:
+
+**Delivery at release**
+- Ball speed
+- Rev rate
+- Axis rotation (side roll)
+- Axis tilt (spin)
+- PAP location relative to the grip
+- Loft distance and trajectory (typical range ~6 inches to 3 feet). Loft determines the first-contact point on the oil pattern and therefore shifts the entire friction timeline.
+
+**Ball properties (coverstock is dominant per USBC Ball Motion Study)**
+- Surface roughness / grit (primary driver of early friction)
+- On-lane and dry-lane coefficient of friction
+- Oil absorption rate (porous reactive covers absorb oil; plastic does not)
+- Coverstock family: plastic, urethane, solid reactive, pearl reactive, hybrid
+- Core: RG, total differential, intermediate differential (asymmetric)
+- Layout: pin-to-PAP distance (controls flare potential and transition timing)
+
+**Lane and oil (dynamic interaction)**
+- Oil volume, length, and distribution create a friction map that varies board-to-board and front-to-back.
+- Friction is a continuous function of local oil thickness + coverstock roughness + absorption.
+- Heavy oil = low friction / long skid; thinning or dry boards = rising friction / earlier hook.
+- Oil breaks down and is carried down the lane across successive shots.
+- Once the ball lands (after loft), friction reduces linear speed, increases rev rate, and drives axis migration.
+
+**Resulting motion (must emerge from the interaction)**
 
 1. Skid — after the lofted landing point, high oil / low friction, speed dominates.
 2. Hook — friction rises, axis rotation converts into direction change; breakpoint forms.
