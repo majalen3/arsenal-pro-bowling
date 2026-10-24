@@ -1,6 +1,6 @@
 # Gap review 1 — what Arsenal Pro is still missing (2026-10-24)
 
-Prompt: owner message "what do you think we are missing. What does the team say". Roles from `docs/TEAM_PROMPT_PRODUCT_LOOP.md`. Inputs: `PRODUCT_LOOP_ITERATION_1.md`, `ROADMAP_NEXT.md`, `COMMAND_CENTER_PLAN.md`, `DATA_SYSTEM.md`, `FEATURE_DEMAND_RESEARCH.md`, `IMPORTS_RESEARCH.md`, `ENGINE_VERIFICATION_REPORT.md`, `DECISIONS.md`, the education docs, and the code at `cdb36b3`.
+Prompt: owner message "what do you think we are missing. What does the team say". Roles from `docs/TEAM_PROMPT_PRODUCT_LOOP.md`. Inputs: `PRODUCT_LOOP_ITERATION_1.md`, `ROADMAP_NEXT.md`, `COMMAND_CENTER_PLAN.md`, `DATA_SYSTEM.md`, `FEATURE_DEMAND_RESEARCH.md`, `IMPORTS_RESEARCH.md`, `ENGINE_VERIFICATION_REPORT.md`, `DECISIONS.md`, the education docs, and the code at `cdb36b3`. **Revised after the sim1 baseline simulations** (`docs/user-simulations.md`: 6 personas plus a midnight edge case, run on the live build `a36776e` / sw v21). §2 now includes the simulation findings, §2b is the session-data recommendation, and §2c is the data-overload pruning.
 
 **Source labels** (same as the other research docs):
 - **F** = page fetched and read.
@@ -76,22 +76,130 @@ Owner constraints every item below respects: free; offline-first; one-handed sco
 3. **"What works where" compare is LaneTalk's paid hook, and we could give it free.** LaneTalk's Pro "Compare Everything" covers ball × pattern × center × lane (lanetalk.com, S). This is the payoff of center memory plus ball attribution, so it comes after the Games view.
 4. **Practice mode is table stakes for serious bowlers.** LaneLogic (F) and Victory Bowling (free-frame practice, S) have it. Same item as Domain #4.
 
-## 2. Merged, ranked top 8
+## 1b. What the simulations added (sim1, live app, all evidence in `docs/user-simulations.md`)
+
+- **QA, new bug:**
+  - Lefty spare hints use right-hand boards. With the profile set to left, the 7-pin hint says "stand 11 (move 9 right)". The app's own `leaveHint(…,'left')` gives 29, so the quick log isn't passing the profile hand (`lefty-06-lefty-hint.png`).
+- **QA, reproduced:**
+  - Midnight split. Set the clock to 23:50, log 5 frames, move to 00:10 and reload: the game in progress shows as "Frame 1 · ball 1". The shots are still stored under yesterday's session (`midnight-after-0010.png`).
+- **QA, new bug:**
+  - A double-tap on X Strike logs two strikes. There's no debounce (`beginner-08-FAIL.png`).
+- **UX, new:**
+  - Tonight is overloaded. The scoring card starts 983–1,809 px down the page (1.3–2.4 screens), and the page is 4.9 screens long with about 10 cards of spec, model and setup text.
+  - Reload resets the scroll, so the scoring card is off-screen mid-game.
+  - Lane (the post-welcome landing screen) shows a different stand number from Tonight for the same ball: Feet 12 → 12.4 versus feet 17 / aim 10.7.
+- **Behavioral, confirmed:**
+  - After 3 games, Sessions says "No saved lines yet", and nowhere shows the series, the average or game 1's score.
+- **Domain, confirmed:**
+  - A custom pattern is rejected ("Pick a pattern from the list").
+  - Every roll, spares included, is credited to the current pick. That's queued as ball attribution, so it isn't counted as a new gap.
+- **Timing (KLM):**
+
+  | Frame | Time |
+  |---|---|
+  | Strike | 2.65 s |
+  | One-pin spare | 6.6 s |
+  | 2-4-7 then 7 | 10.5 s |
+  | 5-pin leave | 13.1 s |
+
+  Measured app latency is 61–104 ms mean and 194 ms max. The tap count, not the app, is the cost.
+
+## 2. Merged, ranked top 8 (revised with the simulation findings)
 
 | # | Gap | What to build (all outside active scoring unless noted) | Impact | Effort | Roles | Sources |
 |---|---|---|---|---|---|---|
-| 1 | **Data can vanish on iOS Safari** | `navigator.storage.persist()`; "Protected / Not protected" in More; one-time install prompt after the first saved game; backup nudge on the recap; "Last backup" line | **Blocker-class trust**: a weekly bowler in a Safari tab can lose everything with no warning | S | QA, UX | webkit.org/tracking-prevention (F); WebKit storage-policy post (S); repo grep (no `persist`, no last-backup) |
-| 2 | **Spare hints assume strike board 20** | Strike position from tonight's line or Targeting feet, or a once-a-night "I stand on __" stepper; 3-6-9 recomputed from it, mirrored for lefties | High: every spare hint is currently wrong for most bowlers | S | Domain | repo `tonight.js:128`; USBC 3-6-9 PDF (F, via FDR §3) |
-| 3 | **Games can't leave the app** | "Export games CSV" (game, frame and roll rows) on More with the existing `toCSV`; formula-injection guard; later a PinPal importer once a sample file exists | High: demand #1, and the switching path from PinPal | S (CSV) / M (PinPal) | QA, Strategy | FDR §1 #1 (repo, 9 sources); LaneLogic free export + PinPal import (F); Tournament Sense imports (S); r/Bowling PinPal threads (S) |
-| 4 | **Centers and lane pairs remember nothing** | Center profile: lane pair (optional), last pattern, surface, bag, line and moves, and one carry-forward note. Shown on arrival; pre-fills setup | High: the moat (arsenal + pattern + center), and the habit loop | M | Domain, Behavioral, Strategy | Victory Bowling lane-pair notes (S); LaneTalk center/lane tags (S); StrikeMaster lane pairs (S); LaneLogic per-center stats (F); repo `rank.js:75` |
-| 5 | **Can't enter your own or house pattern** | "My house shot": name plus optional ft, mL and ratio; "Unknown — typical house" default; Brunswick names allowed; saved per center; nearest-preset mapping labelled as today | High for league bowlers off the Kegel list | M | Domain, UX | repo `tonight.js:78–80`; Brunswick Pattern Library (S); r/Bowling "refused the pattern sheet" (S); BowlersMart ranges (S); Tournament Sense library (S) |
-| 6 | **Alley mode: screen awake + bigger text** | Wake lock while a game is open (auto-release); Large / Extra-large text setting for the scoring surface and recap | Medium-high: removes unlocks from the 1–3 s loop; glanceability; accessibility | S | UX | WebKit bug 254545 / MDN (S); repo css (13 fixed 10–11 px rules); WCAG 1.4.4 (A) |
-| 7 | **Session boundaries are calendar days** | `night-<date>-<n>`, "End night", 4 h idle auto-close; required spec for the queued league mode; practice excluded from averages | Medium-high: series split at midnight, mixed outings | S | QA, Domain | repo `tonight.js:31`, `store.js:128`; FDR §1 #9 (repo) |
-| 8 | **Spare drill mode + one process goal** | Pick a leave and shoot reps, kept out of averages, with conversion by leave and ball. One optional personal goal (e.g. single-pin %) shown on the recap and on the drill screen | Medium: practice → progress loop; serious-bowler table stakes | M | Domain, Behavioral, Strategy | LaneLogic Spare Drill/Practice (F); Pinlytics goals (S); Bowly milestones (S); r/Bowling drill threads (S); FDR §1 #9 (repo) |
+| 1 | **Scoring-path correctness** | (a) Pass the profile hand to the quick-log leave hint; (b) strike position from tonight's line or Targeting feet instead of board 20; (c) ignore a second tap on the same scoring button within about 400 ms (A threshold) | **High**: every lefty and every non-board-20 bowler gets wrong spare numbers today; a double-tap silently adds a strike | S | QA, Domain | sim1 `lefty-06`, `beginner-08` (repo, live); `tonight.js:128` (repo); USBC 3-6-9 PDF (F, via FDR §3) |
+| 2 | **Data can vanish on iOS Safari** | `navigator.storage.persist()`; "Protected / Not protected"; one install prompt after the first saved game; backup nudge on the recap; "Last backup" line written in plain words (see §2c More) | **Blocker-class trust** | S | QA, UX | webkit.org/tracking-prevention (F); WebKit storage-policy post (S); repo grep |
+| 3 | **Alley-first Tonight: prune, then keep the screen awake** | While a game is open: start line (ball · feet · eyes) + "Then" line + scoring card + Weaker/Stronger, and everything else behind a tap (§2c); restore scroll to the scoring card after a reload; wake lock while a game is open; Large text option; one stand number across Lane / Tonight / Targeting | **High**: the scoring card is 1.3–2.4 screens down; reload hides it; unlocks between frames | S–M | UX, Behavioral, QA | sim1 `overload.json`, `league-07-after-reload.png`; WebKit bug 254545 / MDN wake lock (S) |
+| 4 | **Sessions are nights, with a recap** | Session = night (`night-<date>-<n>`, "End night", 4 h idle close), not the calendar date; a post-session recap as the payoff (§2b) | **High**: the midnight loss is reproduced; there's no payoff after 3 games | M | QA, Behavioral, Domain | sim1 `midnight-after-0010.png`, `league-10-sessions-after-3.png`; `tonight.js:31`, `store.js:128` (repo); Bowly recap (S); FDR §1 #9 (repo) |
+| 5 | **Games can't leave the app** | "Export games CSV" (game, frame and roll rows) using the existing `toCSV`; formula-injection guard; PinPal importer later, once a sample file exists | High: demand #1; the coach persona got only a JSON backup | S | QA, Strategy | FDR §1 #1 (repo, 9 sources); LaneLogic free export (F); sim1 coach |
+| 6 | **Centers and lane pairs remember nothing** | Center profile: lane pair, last pattern, surface, bag, line and moves, plus one carry-forward note, shown on arrival | High: the moat and the habit loop | M | Domain, Behavioral, Strategy | Victory Bowling (S); LaneTalk (S); LaneLogic per-center stats (F); repo `rank.js:75`; sim1 (no lane-pair field) |
+| 7 | **Can't enter your own or house pattern** | "My house shot": name plus optional ft / mL / ratio; "Unknown — typical house" default; saved per center | High for league bowlers off the Kegel list | M | Domain, UX | sim1 `advanced-06-pattern-custom.png`; `tonight.js:78–80` (repo); Brunswick library (S); BowlersMart (S) |
+| 8 | **Spare drill mode + one process goal** | Drill a chosen leave, kept out of averages; one optional goal (e.g. single-pin %) shown on the recap with n | Medium: the practice → progress loop | M | Domain, Behavioral, Strategy | LaneLogic Spare Drill (F); Pinlytics goals (S); r/Bowling drill threads (S) |
 
-Just below the line:
-- **Onboarding trim to hand-only** (Behavioral #3). S, no external source.
-- **"What works where" compare** (Strategy #3). M, and it depends on #4 and the queued Games view.
+**Changes from the pre-simulation list:**
+- The old #2 (board 20) is folded into the new #1, together with the two scoring-path bugs found live.
+- Old #6 (alley mode) and the new Tonight overload finding merge into #3.
+- Old #7 (session boundaries) moves up to #4, because the midnight loss is reproduced and the recap is attached to it.
+
+**Just below the line:**
+- Faster multi-pin entry for beginners. Each standing pin costs 1.3 s, so a 5-pin leave is about 13 s. One option to test (A): a "count" fallback for leaves of 4+ pins. It trades leave detail for speed, so Domain wants it opt-in.
+- An offline cue on Tonight.
+- Trimming onboarding to hand only.
+- The "what works where" compare.
+
+## 2b. Session data: what to do with it
+
+What the app already has:
+- **What exists:** every ball is a `shot.logged` event with game, frame, roll, leave, foul, split, ball, and an optional Pocket/High/Light tag. Reads (Too early …) are stored too.
+- **What already uses it:** the Bag Advisor shows per-ball first-ball results with n, and gates on 21 games ("100% pocket, 54% strikes over 1 session (n=13 first balls); app estimate (2 of 21 games)"; sim1 `league-07-after-reload.png`).
+- **What doesn't:** Sessions shows Lane lines, not nights. Insights shows the arsenal, not the bowler. No series, average, recap or trend exists.
+
+**1. The recap: shown once after the last game, or on "End night". Never during scoring.** Plain language, one screen:
+- Games and series, vs your average over the last N nights (with n; hidden until there are 3 or more nights).
+- First-ball: strikes, pocket %, and the most-left pin.
+- Spares: made/attempted, single-pin %, and "pins left on the lane by missed spares" (the Bowly-style plain insight, S).
+- Ball by game, and the moves you made (feet/eyes changes and ball switches, which already come from the trigger and read events).
+- **One** takeaway sentence and **one** optional "focus for next time" pick. That pick becomes the carry-forward line on the next arrival.
+- A backup nudge if the data isn't protected (top-8 #2).
+
+**2. Insights: from sessions to trends.**
+- Insights leads with *your* numbers over the last 10 games or 5 nights:
+  - average;
+  - first-ball pocket %;
+  - single-pin %;
+  - open %.
+- These are the stats r/Bowling coaches say they track (S).
+- Practice and drills are excluded from averages (FDR #9).
+- Every number shows n. Advice that re-orders anything waits for the same 21-game minimum the advisor uses.
+- Arsenal analytics move under "Arsenal ›".
+
+**3. Goals.**
+- Make goals process goals (single-pin %, first-ball pocket %, clean game), not just score.
+- Progress shows on the recap and the drill screen only.
+- No streaks or badges in v1 (§5).
+
+**4. Adjustments.**
+- Per center and lane pair, keep "what worked": the ball, feet/eyes after the moves, and the reads.
+- Pre-fill the next visit (#6). Later, compare measured vs predicted lines once a Ruby/LaneTrax CSV exists (ROADMAP N3).
+
+**5. Plumbing that makes it trustworthy.**
+- Night-based session ids (#4).
+- Correct ball credit, which is queued (attribution).
+- A games CSV (#5).
+- Durable storage (#2).
+
+## 2c. Data overload: what to keep up front, what goes behind a tap, what to cut
+
+The owner rule is "not drowning in data; intuitive". There's no number cap. Every element was scored for **usability** (understood within seconds, in plain bowling language) and **applicability** (it changes a real decision: ball, feet/target, spare, practice focus) per persona. The full element tables are in `docs/user-simulations.md` §3.
+
+Up front, while a game is open:
+- **KEEP:** start line (ball · feet · eyes), "Then" ball-change line, scoring card, Weaker/Stronger, leave hint (once fixed).
+- **TAP:**
+  - pick-card specs (Level/demand, RG/diff, Motiv source);
+  - laydown and breakpoint;
+  - "Holds 4 of 6";
+  - provenance chips;
+  - bag list after ball 1;
+  - Lanes-tonight setup after ball 1;
+  - "Why this bag";
+  - Lane physics tiles (entry, angle, deflection) for beginners and league bowlers;
+  - Targeting's model readouts;
+  - More's data counts and the backup code.
+- **CUT:**
+  - the standalone Spares 3-6-9 card (the quick-log hint covers it);
+  - the Plan A/B/C card (it duplicates the advisor's "Then" line; triggers show only when they fire);
+  - "Your release" on Tonight (it lives in the profile);
+  - Rule of 31 on Tonight;
+  - one of the two "Find / Check" links;
+  - static Insights "Assessment" prose;
+  - developer words in More: "events", "indexedDB", "v1", "pre-2.1", "tracker sessions".
+
+**Worst screens:**
+1. Tonight during a game.
+2. Lane as the first screen.
+3. Sessions / Insights after a night.
+4. More → Your data.
 
 ## 3. Cut or defer
 
@@ -122,6 +230,10 @@ Just below the line:
 5. **Count mode** (Strategy vs Domain). Unresolved, so deferred (§3).
 6. **PinPal import** (Strategy vs QA). Strategy wants it now; QA and the ROADMAP rule say no preset without a real sample file. *Resolved:* ship CSV export now; ask the owner or a tester for a PinPal export file before building the importer.
 
+7. **What stays up front on Tonight** (Domain vs UX/Behavioral, sim1). Domain wants the pick card's specs and "Holds 4 of 6" visible, because they justify the line. UX and Behavioral: during a game they push the scoring card 1.3–2.4 screens down and change no decision. *Resolved:* the start line stays; the specs move behind "Why this ball ›"; pre-game, the full advisor stays open.
+8. **Lane physics for beginners** (Domain vs UX, sim1). *Resolved:* entry, angle and deflection go behind a tap by default and stay up front when the profile says advanced, or once the user opens Details (the choice is remembered).
+9. **Count-mode fallback for big leaves** (UX vs Domain). UX: a 5-pin leave is about 13 s. Domain: count entry loses the leave data that spare stats need. *Unresolved:* test an opt-in fallback with real beginners before building it.
+
 ## 6. Source list
 
 **Fetched (F):**
@@ -142,5 +254,7 @@ Just below the line:
 - Brunswick Pattern Library and an NCAA Brunswick pattern sheet
 - BowlersMart oil-pattern guide
 - r/Bowling threads: "Best bowling apps" (2024), "Best bowling tracker app?" (2025–26), "Best way to track individual frames?", "Are the league president or secretary supposed to tell us what the pattern is…", spare-drill and practice-routine threads
+
+**Simulations (repo, live):** `docs/user-simulations.md`; scripts and JSON in `/workspace/ux/sim1/`; screenshots in `/workspace/ux-shots/sim1/`.
 
 **Not found:** no fetched or search source this run for LaneTrax or Ruby adding center memory, goals or pattern entry. Ruby's session tagging is as recorded in FDR §1 #9.
