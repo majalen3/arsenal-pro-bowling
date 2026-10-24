@@ -3,6 +3,7 @@ import { rgTxt, coverKind } from '../data.js';
 import { app, on, saveLine, renameLine, linesForBall, applyLine, status } from '../store.js';
 import { h, icon, toast, sheet } from '../ui.js';
 import { createLane } from '../lane.js';
+import { go } from '../router.js';
 import { createDeck, describe } from '../deck.js';
 // left-handers see a mirrored lane, so the engine's right-hander directions are swapped for display
 const isLefty = () => !!(profile() && profile().hand === 'left');
@@ -16,6 +17,7 @@ import { profile } from '../store.js';
 export function render() {
   const ballBtn = h('button', { class:'ball-btn', id:'ballBtn', 'aria-haspopup':'dialog', onclick:openBallSheet });
   const saveBtn = h('button', { class:'icon-btn', id:'saveBtn', 'aria-label':'Save this line', onclick:quickSave });
+  const tgBtn = h('button', { class:'icon-btn', id:'targetBtn', 'aria-label':'Targeting: feet, eyes, break box', html:icon('target'), onclick:() => go('#/target') });
   const linesBtn = h('button', { class:'icon-btn', id:'linesBtn', 'aria-label':'Saved lines for this ball', html:icon('sessions'), onclick:openLines });
   const syncDot = h('span', { class:'sync-dot', id:'syncDot', role:'img' });
   const patChip = h('button', { class:'chip cond', id:'patChip', onclick:openConditions, 'aria-haspopup':'dialog' });
@@ -40,7 +42,7 @@ export function render() {
     h('div', { class:'miss-btns' }, ...['left', 'high', 'light', 'right'].map(k => h('button', { class:'miss-btn', 'data-miss':k, 'aria-label':`Missed ${MISSES[k].label}: ${MISSES[k].move}`, onclick:() => doMiss(k) },
       h('span', { class:'miss-ic', html:icon(k === 'left' ? 'left' : k === 'right' ? 'right' : k === 'high' ? 'up' : 'downArrow') }), h('span', { text:MISSES[k].label })))));
   const el = h('section', { class:'screen lane-screen' },
-    h('header', { class:'appbar' }, h('h1', { class:'sr-only', id:'laneH1' }), ballBtn, h('div', { class:'appbar-actions' }, syncDot, linesBtn, saveBtn)),
+    h('header', { class:'appbar' }, h('h1', { class:'sr-only', id:'laneH1' }), ballBtn, h('div', { class:'appbar-actions' }, syncDot, tgBtn, linesBtn, saveBtn)),
     h('div', { class:'ctl-bar' }, qRow,
     h('div', { class:'cond-row' }, backBtn, h('div', { class:'cond-grp', role:'group', 'aria-label':'Lane conditions' }, patChip, surfChip, oilChip, tuneChip))),
     h('div', { class:'lane-grid' },

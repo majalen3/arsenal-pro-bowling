@@ -7,8 +7,9 @@
 import { LW, LH, boardToX, xToBoard, yToFeet, FOUL_Y, PX_FT, HEAD_Y, OIL_LEN, C_SKID, C_HOOK, C_ROLL, S, RANGES } from './engine.js';
 import { reduced } from './ui.js';
 const LX0 = 14, LX1 = LW - 14, LY0 = 20, LY1 = LH - 6;
-export function createLane(canvas, { onAdjust, lefty = () => false } = {}) {
+export function createLane(canvas, { onAdjust, lefty = () => false, state = null, overlay = null, baker = true } = {}) {
   const isL = typeof lefty === 'function' ? lefty : () => !!lefty;
+  const ss = () => state ? state() : S;   // Targeting passes its own release/aim/pattern; geometry is unchanged
   const g = canvas.getContext('2d');
   let W = 0, H = 0, dpr = 1, last = null, anim = null;
   const pad = { l: 30, r: 8, t: 10, b: 24 };
@@ -41,7 +42,7 @@ export function createLane(canvas, { onAdjust, lefty = () => false } = {}) {
     // approach
     g.fillStyle = css('--lane-approach') || '#0d2a1e'; g.fillRect(L0, Y(FOUL_Y), lw, Y(LY1) - Y(FOUL_Y));
     // oil zone sheen (pattern length)
-    const oilFt = OIL_LEN[S.pattern] || 40, oilY = Y(FOUL_Y - oilFt * PX_FT);
+    const oilFt = OIL_LEN[ss().pattern] || 40, oilY = Y(FOUL_Y - oilFt * PX_FT);
     const og = g.createLinearGradient(0, Y(FOUL_Y), 0, oilY); og.addColorStop(0, 'rgba(125,211,252,.10)'); og.addColorStop(1, 'rgba(125,211,252,.02)');
     g.fillStyle = og; g.fillRect(L0, oilY, lw, Y(FOUL_Y) - oilY);
     g.strokeStyle = 'rgba(125,211,252,.35)'; g.setLineDash([2, 4]); g.lineWidth = 1; g.beginPath(); g.moveTo(L0, oilY); g.lineTo(L1, oilY); g.stroke(); g.setLineDash([]);
@@ -56,9 +57,11 @@ export function createLane(canvas, { onAdjust, lefty = () => false } = {}) {
     g.strokeStyle = 'rgba(255,255,255,.30)'; g.lineWidth = 1; [10, 15, 20, 25, 30].forEach(b => { const x = X(boardToX(b, LW)); g.beginPath(); g.moveTo(x, rngY); g.lineTo(x, rngY + 8); g.stroke(); });
     g.fillStyle = 'rgba(0,0,0,.6)'; for (let i = 5; i <= 35; i += 5) { g.beginPath(); g.arc(X(boardToX(i, LW)), Y(LH - 10), 2, 0, 7); g.fill(); }
     g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(L0, Y(FOUL_Y)); g.lineTo(L1, Y(FOUL_Y)); g.stroke();
-    // Baker box boards 5-8 at 42-46 ft
+    // Baker box boards 5-8 at 42-46 ft (Targeting draws its own break box instead)
+    if (baker) {
     const bx1 = Math.min(X(boardToX(8, LW)), X(boardToX(5, LW))), bx2 = Math.max(X(boardToX(8, LW)), X(boardToX(5, LW))), by = Y(FOUL_Y - 46 * PX_FT), bh = Y(FOUL_Y - 42 * PX_FT) - by;
     g.fillStyle = 'rgba(218,175,55,.16)'; g.fillRect(bx1, by, bx2 - bx1, bh); g.strokeStyle = 'rgba(218,175,55,.7)'; g.strokeRect(bx1 + .5, by + .5, bx2 - bx1 - 1, bh - 1);
+    }
     // pins around board 20 (v1 layout, uniform scale so the rack keeps its shape)
     const cx = X(boardToX(20, LW)), by0 = Y(HEAD_Y), sp = 14 * sx * 0.95, kv = Math.min(1, (by0 - 4) / (sp * 2.85 + 6));
     const pins = [[0,0],[-.85,.95],[.85,.95],[-1.7,1.9],[0,1.9],[1.7,1.9],[-2.55,2.85],[-.85,2.85],[.85,2.85],[2.55,2.85]];
@@ -68,7 +71,7 @@ export function createLane(canvas, { onAdjust, lefty = () => false } = {}) {
     // pocket target ring (board 17.5)
     g.strokeStyle = 'rgba(218,175,55,.8)'; g.lineWidth = 1.5; g.beginPath(); g.arc(X(boardToX(17.5, LW)), by0 - sp * kv * .45, pr * 2.1, 0, 7); g.stroke();
     // aim line: release (feet) to target at arrows
-    const rel = +S.release, aimB = Math.max(1, Math.min(39, rel - +S.aim)), relX = X(boardToX(rel, LW));
+    const rel = +ss().release, aimB = Math.max(1, Math.min(39, rel - +ss().aim)), relX = X(boardToX(rel, LW));
     g.setLineDash([4, 4]); g.strokeStyle = 'rgba(218,175,55,.85)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(relX, Y(FOUL_Y - 4)); g.lineTo(X(boardToX(aimB, LW)), arrY); g.stroke(); g.setLineDash([]);
     g.strokeStyle = '#DAAF37'; g.lineWidth = 2; g.beginPath(); g.arc(X(boardToX(aimB, LW)), arrY, 7, 0, 7); g.stroke();
     g.fillStyle = '#DAAF37'; g.beginPath(); g.arc(relX, Y(FOUL_Y - 4), 5, 0, 7); g.fill();
@@ -81,6 +84,7 @@ export function createLane(canvas, { onAdjust, lefty = () => false } = {}) {
     const bp = result.breakpoint, bpShown = bp && pts.findIndex(p => p === bp || (p.x === bp.x && p.y === bp.y)) < n;
     if (bp && (prog >= 1 || bpShown)) { g.fillStyle = '#ff6b35'; g.beginPath(); g.arc(X(bp.x), Y(bp.y), 5.5, 0, 7); g.fill(); g.strokeStyle = '#0b0f0d'; g.lineWidth = 1.5; g.stroke(); }
     if (pts.length) { const p = pts[n - 1]; g.beginPath(); g.arc(X(p.x), Y(p.y), Math.max(4, pr * 1.1), 0, 7); g.fillStyle = ball.color; g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); }
+    if (overlay) { g.save(); overlay({ g, bx: b => X(boardToX(b, LW)), fy: ft => Y(FOUL_Y - ft * PX_FT), foulY: Y(FOUL_Y), approachY: Y(LH - 10), W, H, sx, lefty: isL(), done: prog >= 1 }); g.restore(); }
     // ---- text pass (fixed CSS px)
     g.font = '600 10px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = ink;
     const bStep = lw < 150 ? 10 : 5; for (let b = bStep; b <= 35; b += bStep) g.fillText(String(b), X(boardToX(b, LW)), H - pad.b / 2);
@@ -108,14 +112,14 @@ export function createLane(canvas, { onAdjust, lefty = () => false } = {}) {
   const apply = e => {
     const p = logical(e), board = xToBoard(Math.max(14, Math.min(LW - 14, p.x)));
     if (mode === 'release') onAdjust && onAdjust({ release: Math.max(5, Math.min(30, Math.round(board))), keepTarget: true });
-    else onAdjust && onAdjust({ aim: Math.max(-8, Math.min(8, Math.round((+S.release - board) * 2) / 2)) });
+    else onAdjust && onAdjust({ aim: Math.max(-8, Math.min(8, Math.round((+ss().release - board) * 2) / 2)) });
   };
   canvas.addEventListener('pointerdown', e => { const p = logical(e); mode = (FOUL_Y - p.y) / PX_FT < 9 ? 'release' : 'aim'; startE = e; moved = false; if (e.pointerType === 'mouse') { try { canvas.setPointerCapture(e.pointerId); } catch(_) {} apply(e); e.preventDefault(); } });
   canvas.addEventListener('pointermove', e => { if (!mode) return; if (e.pointerType === 'mouse') { apply(e); return; } if (!moved && Math.abs(e.clientX - startE.clientX) > 3) { moved = true; try { canvas.setPointerCapture(e.pointerId); } catch(_) {} } if (moved) apply(e); });
   const end = e => { if (mode && e.type === 'pointerup' && e.pointerType !== 'mouse' && !moved) apply(e); mode = null; };
   canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
   canvas.addEventListener('keydown', e => {
-    const k = e.key, r = +S.release, a = +S.aim;
+    const k = e.key, r = +ss().release, a = +ss().aim;
     const dl = isL() ? -1 : 1;   // screen-left = higher boards for a right-hander, lower for a mirrored lefty lane
     if (k === 'ArrowLeft') onAdjust({ release: Math.max(5, Math.min(30, r + dl)), keepTarget: true }); else if (k === 'ArrowRight') onAdjust({ release: Math.max(5, Math.min(30, r - dl)), keepTarget: true });
     else if (k === 'ArrowUp') onAdjust({ aim: Math.min(8, a + .5) }); else if (k === 'ArrowDown') onAdjust({ aim: Math.max(-8, a - .5) }); else return;

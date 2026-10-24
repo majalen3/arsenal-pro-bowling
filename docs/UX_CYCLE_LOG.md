@@ -190,3 +190,28 @@ Each cycle: change → test → independent review → commit+push. Scores are 1
 
 - Fixes during the cycle: brand-word false matches (see DECISIONS 24); the typed model name keeps its case ("Phaze II", not "Phaze Ii"); the source link gets a 44 px target; the weight picker always offers 12–16 lb.
 - Screenshots: `phone-addball-confirm.png`, `phone-addball-engine.png`, `phone-addball-grid.png`.
+
+## TG — Targeting + Find my strike line (2026-10-24)
+- **Flow (`#/target`, Lane tab; linked from Tonight and the Lane bar).**
+  - Use ◀ ▶ or drag to set feet and eyes. The shot runs on the unchanged engine.
+  - The break box turns green when the shot goes through it and gold when it misses.
+  - The pocket call shows the numbers, and one cited move can be applied with one tap.
+  - Also on the screen: a summary, save / back to saved line, lefty mirroring, and a 3-step walkthrough with a "?" button to replay it.
+- **Find my strike line** (Targeting and Tonight) gives "Stand 18, aim 18 at the arrows. Pocket 60% (model estimate, assumed accuracy ±1.5 bds, no LaneTrax import; 200 simulated shots)", plus a second option, a why line, inputs and sources, and one tap to apply.
+- **Targets:**
+
+| Target | Result |
+|---|---|
+| Find speed (e2e, 4× CPU throttle) | 70 ms (< 1.5 s) |
+| Pocket % vs arrows spread 0.5/1.5/3 bds (Big Bite, house) | 78 / 60 / 41 (monotonic, unit-tested) |
+| e2e `[target]` + `[find]` | 35/35 (axe 0 serious, 44 px, no overflow at 360, dock in the thumb zone) |
+| Full e2e | 278/0 |
+| Unit tests | all suites 142/0 (targeting 11/11) |
+| Engine | 7 500/0 |
+| Lighthouse `#/target` | 97/100/100/100 |
+| Service worker | v18 |
+
+- **Fixes:**
+  - The full-width Find button overflowed the 360 px viewport by 16 px, so mobile zoomed out to 392. Changed it to auto width.
+  - The walkthrough screenshot is now taken after the toast clears.
+- **Screenshots:** `phone-target-pocket`, `phone-target-high-move`, `phone-target-walkthrough`, `phone-target-find`, `phone-target-find-applied`.

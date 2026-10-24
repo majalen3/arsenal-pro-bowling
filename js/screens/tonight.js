@@ -92,6 +92,8 @@ export async function render() {
         h('div', { class: 'row between' }, h('span', { class: 'ball-name', id: 'tnPickName', text: cur.name }), h('span', { class: 'pill gold', text: cur.level != null ? `Level ${cur.level} \u00b7 demand ${d.demand}` : `spec TBD \u00b7 demand ${d.demand}` })),
         h('ul', { class: 'why', id: 'tnWhy' }, ...cur.why.concat(d.why.slice(0, 2)).map(w => h('li', {}, w.t, provChip(SRC_PROV[w.src] || null, w.src)))),
         lineBox,
+        ml && !ml.none ? h('button', { class: 'btn primary block', id: 'tnFind', onclick: () => go('#/target?find=1&ball=' + encodeURIComponent(cur.catalogId || '')) }, 'Find my strike line \u203a') : null,
+        ml && !ml.none ? h('button', { class: 'btn block', id: 'tnTarget', onclick: () => go('#/target?ball=' + encodeURIComponent(cur.catalogId || '')) }, 'Check feet and eyes on the lane \u203a') : null,
         h('p', { class: 'small', id: 'tnR31' }, r31.text, provChip('usbc', 'bowl.com'), pat ? null : provChip('assumed', 'length assumed')),
         ml && !ml.none ? h('p', { class: 'muted small', text: `Model runs on the nearest preset (${ml.preset}, ${ml.presetLen} ft) with your ${num(b.speed) || 15} mph and ${num(b.rev) || 220} rpm. An estimate, not a promise.` }) : null,
         h('div', { class: 'alts' }, alt(r.weaker && cur === r.pick ? r.weaker : R.readMove(r, cur.id, 'early'), 'Weaker'), alt(r.stronger && cur === r.pick ? r.stronger : R.readMove(r, cur.id, 'weak'), 'Stronger'))));

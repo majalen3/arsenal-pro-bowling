@@ -10,6 +10,7 @@ export function applyTheme(t = prefs().theme || 'dark') {
 applyTheme(); matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme());
 restoreState(); deviceId();
 route(/^\/lane$/, 'lane', () => import('./screens/lane.js'));
+route(/^\/target$/, 'lane', () => import('./screens/target.js'));
 route(/^\/arsenal$/, 'arsenal', () => import('./screens/arsenal.js'));
 route(/^\/arsenal\/insights$/, 'arsenal', () => import('./screens/insights.js'));
 route(/^\/ball\/([\w-]+)$/, 'arsenal', () => import('./screens/ball.js'));

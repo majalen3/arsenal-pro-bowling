@@ -488,3 +488,37 @@ noscript p{padding:24px}
 .grid5 .gtag{display:block;font-size:var(--fs-xs);line-height:1.15;text-align:center;color:var(--text-2)}
 .grid5 .gtag.over{color:var(--warn)} .grid5 .gtag.new{color:var(--accent-ink);font-weight:800}
 .srclink{display:inline-flex;align-items:center;min-height:var(--tap)}
+
+/* ---- Targeting (#/target) */
+.target-screen{padding-bottom:calc(var(--tab-h) + var(--s4))}
+.target-screen>*:not(.appbar){margin-inline:var(--s4)}
+.tg-top{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center}
+.tg-ball{min-height:var(--tap);flex:1 1 200px;max-width:100%;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:var(--r-md);padding:0 var(--s3);font:inherit}
+.tg-grid{display:grid;grid-template-columns:minmax(120px,42%) 1fr;gap:var(--s3);align-items:start}
+.tg-lane{height:min(calc(100dvh - 330px),560px);min-height:380px}
+.tg-side{display:grid;gap:var(--s2);min-width:0}
+.tg-side .row{flex-wrap:wrap;gap:6px}
+.pill[data-tone=good]{background:var(--good-soft);color:var(--good)} .pill[data-tone=warn]{background:var(--warn-soft);color:var(--warn)} .pill[data-tone=bad]{background:var(--bad-soft);color:var(--bad)}
+.tg-sum{list-style:none;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md)}
+.tg-sum li{display:grid;justify-items:center;padding:6px 2px;position:relative;text-align:center;min-width:0}
+.tg-sum li+li::before{content:"\203A";position:absolute;left:-4px;top:50%;transform:translateY(-50%);color:var(--text-3)}
+.tg-sum small{font-size:11px;color:var(--text-3)} .tg-sum b{font-size:var(--fs-sm);overflow-wrap:anywhere}
+.tg-sug{display:grid;gap:4px}
+.tg-sug:not(:empty){background:var(--surface);border:1px solid var(--warn);border-radius:var(--r-md);padding:var(--s3)}
+.tg-sug .row{gap:var(--s2);align-items:center}
+.tg-dock{position:sticky;bottom:calc(var(--tab-h) + 4px);z-index:5;display:grid;gap:6px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--s2);box-shadow:var(--shadow-2)}
+.tg-ctl{display:grid;grid-template-columns:minmax(70px,1fr) var(--tap) minmax(56px,auto) var(--tap);gap:6px;align-items:center}
+.tg-lbl{font-weight:700;font-size:var(--fs-sm)}
+.tg-btn{min-width:var(--tap);min-height:var(--tap);display:grid;place-items:center;border-radius:var(--r-md);background:var(--surface-3);color:var(--text);border:1px solid var(--line);cursor:pointer}
+.tg-btn:active{background:var(--accent-soft)}
+.tg-val{text-align:center;font-size:var(--fs-lg);font-weight:800}
+.tg-mode .seg-opt{min-height:var(--tap)}
+.tg-actions{gap:var(--s2);flex-wrap:wrap} .tg-actions .btn{flex:1 1 140px;min-height:var(--tap)}
+.tg-setup{display:grid;gap:6px} .tg-setup summary{min-height:var(--tap);display:flex;align-items:center;cursor:pointer}
+.tg-tour{border:2px solid var(--gold)} .tg-tour .row{gap:var(--s2)}
+#tgHelp{font-weight:800;font-size:var(--fs-lg)}
+#tgSources summary{min-height:var(--tap);display:flex;align-items:center;cursor:pointer}
+@media (min-width:900px){.target-screen{max-width:880px;margin-inline:auto}.tg-lane{height:calc(100dvh - 260px)}}
+.target-screen>.btn.block{width:auto;display:flex;justify-content:center;gap:var(--s2);margin-block:var(--s2)}
+.tg-find{display:grid;gap:var(--s2)}
+.tg-find details ul{padding-left:1.1em;margin:var(--s1) 0}

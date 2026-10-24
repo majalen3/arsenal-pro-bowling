@@ -3,7 +3,7 @@ usage: python tests/e2e.py [BASE_URL] [--shots DIR]
 Runs every core job at phone (390x844) and desktop (1280x800), plus routing/back, v1 localStorage
 migration, offline (service worker), axe (0 serious/critical) and 44px target checks.
 The live API is blocked so tests never write to the server (saves stay queued locally)."""
-import asyncio, json, os, sys
+import asyncio, json, os, re, sys
 from playwright.async_api import async_playwright
 BASE = next((a for a in sys.argv[1:] if a.startswith('http')), 'http://127.0.0.1:8300/')
 SHOTS = sys.argv[sys.argv.index('--shots') + 1] if '--shots' in sys.argv else None
@@ -389,6 +389,90 @@ async def bag_cycle(b):
 
 FX = os.path.join(os.path.dirname(__file__), 'data', 'fixtures')
 def fx(n): return open(os.path.join(FX, n)).read()
+async def targeting_cycle(b):
+    # Targeting: feet/eyes -> unchanged engine path -> break box + pocket call; missed high -> one cited move, engine-verified, 1 tap;
+    # save as my line -> back to saved; walkthrough dismiss/replay; lefty mirror; axe, 44 px, 360 px.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.goto(BASE + '?tg#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnTarget')
+    await p.click('#tnTarget'); await p.wait_for_selector('#tgTour')
+    check('#/target' in p.url and 'Big Bite' in await p.eval_on_selector('#tgBall', 'e => e.selectedOptions[0].textContent'), '[target] Tonight link opens Targeting with tonight\'s ball')
+    check(await p.query_selector('#tabs a[href="#/lane"][aria-current=page]') is not None, '[target] lives under the Lane tab')
+    await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())"); await shot(p, 'phone-target-walkthrough')
+    await axe_ok(p, '[target] walkthrough')
+    await p.click('#tgTourNext'); await p.click('#tgTourNext'); t3 = await p.text_content('#tgTour'); await p.click('#tgTourNext')
+    check('3 of 3' in t3 and await p.query_selector('#tgTour') is None, '[target] 3-step walkthrough, dismissible')
+    await p.reload(); await p.wait_for_selector('#tgCoach'); await p.wait_for_timeout(300)
+    check(await p.query_selector('#tgTour') is None, '[target] walkthrough not repeated after dismissal')
+    await p.click('#tgHelp'); check(await p.query_selector('#tgTour') is not None, '[target] "?" replays the walkthrough'); await p.click('#tgTourSkip')
+    # default = tonight's model line: feet 17 (offset 7 assumed) -> laydown 10, eyes 17 at the arrows
+    coach = (await p.text_content('#tgCoach')).strip()
+    check(coach.startswith('Through the box at') and 'Pocket' in coach and coach.count('. ') <= 1, f'[target] in box + pocket, numbers first, <=2 sentences [{coach}]')
+    check((await p.text_content('#tgCall')).startswith('Pocket') and await p.text_content('#tgBox') == 'In the box', '[target] pocket + in-box pills')
+    sm = await p.text_content('#tgSum'); check(all(k in sm for k in ['Feet', 'Laydown', 'Arrows', 'Break', 'Entry']), f'[target] bird\'s-eye summary feet -> laydown -> aim -> breakpoint -> entry')
+    check('1-3' in (await p.get_attribute('#tgDeck', 'aria-label') or '') or 'pocket' in (await p.get_attribute('#tgDeck', 'aria-label') or ''), '[target] pin deck read for the shot')
+    check('assumed' in await p.text_content('#tgCond'), '[target] release / pattern sources labelled')
+    await axe_ok(p, '[target] pocket'); await p.wait_for_timeout(200)
+    small = await p.evaluate(SMALL); check(not small, f'[target] targets >= 44px {small[:6]}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= w[0], f'[target] no horizontal overflow at 360 {w}')
+    db = await (await p.query_selector('#tgDock')).bounding_box(); check(db['y'] + db['height'] <= 780, f'[target] feet/eyes controls in the thumb zone (dock bottom {round(db["y"] + db["height"])})')
+    await shot(p, 'phone-target-pocket')
+    # save as my line, then move away
+    await p.click('#tgSave'); await p.wait_for_timeout(300)
+    lines = await p.evaluate("JSON.parse(localStorage.getItem('ap_lines')||'[]').map(l=>l.name+'|'+l.release+'|'+l.aim)")
+    check(any(x.startswith('Target 17\u219217|10|-7') for x in lines), f'[target] "Save as my line" stores a Lane line (release 10, aim -7) {lines}')
+    # missed high: feet 6 left, eyes 1 left (RH screen-left = higher boards)
+    for _ in range(6): await p.click('#tgFeet button[aria-label="Feet 1 board left"]')
+    await p.click('#tgEyes button[aria-label="Eyes 1 board left"]'); await p.wait_for_timeout(200)
+    coach = (await p.text_content('#tgCoach')).strip()
+    check(await p.text_content('#tgFeetVal') == '23' and coach.startswith('High by') and 'Move feet' in coach, f'[target] missed high, move in coach voice [{coach}]')
+    sg = await p.text_content('#tgSug'); check(any(r in sg for r in ['2-and-1', '3-and-1', '4-and-2', 'parallel']) and 'Model after the move: pocket' in sg, f'[target] cited move, engine-verified to pocket [{sg[:140]}]')
+    check('move toward the miss' in sg, '[target] disclosure when the model disagrees with the house-shot rule')
+    await shot(p, 'phone-target-high-move')
+    await p.click('#tgApply'); await p.wait_for_timeout(250)
+    check((await p.text_content('#tgCall')).startswith('Pocket'), '[target] one tap applies the move and re-runs: pocket')
+    await p.click('#tgBack'); await p.wait_for_timeout(250)
+    check(await p.text_content('#tgFeetVal') == '17' and await p.text_content('#tgEyesVal') == '17', '[target] back to saved line restores feet/eyes')
+    # dots mode keeps the same line
+    await p.click('.tg-mode [data-v=dots]'); await p.wait_for_timeout(200)
+    check(await p.text_content('#tgEyesVal') == '13.5' and (await p.text_content('#tgCall')).startswith('Pocket'), f'[target] dots (7.5 ft) aim converts on the same straight line [{await p.text_content("#tgEyesVal")}]')
+    await p.click('.tg-mode [data-v=arrows]')
+    # Find my strike line from Tonight: stand / aim / Pocket % with basis, apply -> lane + box; phone-speed budget
+    cdp = None
+    try: cdp = await c.new_cdp_session(p); await cdp.send('Emulation.setCPUThrottlingRate', {'rate': 4})
+    except Exception: cdp = None
+    await p.goto(BASE + '?tg#/tonight'); await p.wait_for_selector('#tnFind'); await p.click('#tnFind'); await p.wait_for_selector('#tgFindLine', timeout=15000)
+    fl = (await p.text_content('#tgFindLine')).strip(); ms = int(await p.get_attribute('#tgFindOut', 'data-ms') or 99999)
+    if cdp: await cdp.send('Emulation.setCPUThrottlingRate', {'rate': 1})
+    check('find=1' in p.url and re.match(r'^Stand \d+, aim [\d.]+ at the arrows\. Pocket \d+% \(model estimate, assumed accuracy \u00b11\.5 bds, no LaneTrax import; 200 simulated shots\)\.$', fl) is not None, f'[find] Tonight -> stand, aim, Pocket % with basis + n [{fl}]')
+    check(ms < 1500, f'[find] search under 1.5 s at 4x CPU throttle ({ms} ms{"" if cdp else ", no throttle"})')
+    allf = await p.text_content('#tgFindCard'); check('strike' not in fl.lower() and 'No strike % shown' in allf and 'Not higher' in allf or 'High because' in allf, '[find] no strike %, says why; why-lower/higher note')
+    check('17\u201318' in allf and 'nationalbowlingacademy.com' in (await p.inner_html('#tgFindInputs')) and 'not a guarantee' in allf, '[find] window + source + inputs + "not a guarantee"')
+    check(await p.query_selector('#tgFindAlt') is not None, '[find] second option (more room / next best)')
+    await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())"); await p.evaluate("() => window.scrollTo(0, 0)"); await shot(p, 'phone-target-find')
+    await axe_ok(p, '[find] result')
+    m = re.match(r'^Stand (\d+), aim ([\d.]+)', fl); await p.click('#tgFindApply'); await p.wait_for_timeout(300)
+    fv, ev = await p.text_content('#tgFeetVal'), await p.text_content('#tgEyesVal')
+    check(fv == m.group(1) and float(ev) == float(m.group(2)), f'[find] one tap applies stand/aim to the lane ({fv}/{ev})')
+    check((await p.text_content('#tgBox')) == 'In the box' and (await p.text_content('#tgCall')).startswith('Pocket'), f'[find] applied line: through the box, pocket [{await p.text_content("#tgCall")}]')
+    await shot(p, 'phone-target-find-applied')
+    await p.evaluate("() => document.querySelector('#tgBoxReset').click()")
+    # Lane entry point
+    await p.goto(BASE + '?tg#/lane'); await p.wait_for_selector('#targetBtn'); await p.click('#targetBtn'); await p.wait_for_selector('#tgCoach')
+    check('#/target' in p.url, '[target] reachable from the Lane screen')
+    # lefty: lane mirrors, screen-left lowers the board, words flip
+    await p.evaluate("localStorage.setItem('ap_profile', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('ap_profile')||'{}'), {hand:'left'})))")
+    await p.reload(); await p.wait_for_selector('#tgCoach'); await p.click('#tgBack'); await p.wait_for_timeout(200)
+    await p.click('#tgFeet button[aria-label="Feet 1 board right"]'); await p.wait_for_timeout(100)
+    check(await p.text_content('#tgFeetVal') == '18', '[target] lefty: screen-right = higher board (own numbering)')
+    for _ in range(5): await p.click('#tgFeet button[aria-label="Feet 1 board right"]')
+    await p.click('#tgEyes button[aria-label="Eyes 1 board right"]'); await p.wait_for_timeout(200)
+    coach = (await p.text_content('#tgCoach')).strip()
+    check(coach.startswith('High by') and 'feet 4 left' in coach, f'[target] lefty: same shot, mirrored move words [{coach}]')
+    await p.click('#tgFind'); await p.wait_for_selector('#tgFindLine'); await p.click('#tgFindApply'); await p.wait_for_timeout(250)
+    check((await p.text_content('#tgCall')).startswith('Pocket') and (await p.text_content('#tgBox')) == 'In the box', '[find] lefty: found line applies, pocket in the box (own board numbering)')
+    check(not errs, f'[target] no page errors {errs[:2]}')
+    await c.close()
+
 async def addball_cycle(b):
     # Add a ball: name -> maker lookup (mocked from real parsed responses) -> confirm with source chips -> engine card vs
     # Rattler Big Bite on tonight's pattern -> grid placement -> save as benched. Plus candidates, spec TBD and offline paths.
@@ -590,7 +674,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

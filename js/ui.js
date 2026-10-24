@@ -25,7 +25,7 @@ const P = {
   down:'<path d="M6 9l6 6 6-6"/>', back:'<path d="M15 5l-7 7 7 7"/>', close:'<path d="M6 6l12 12M18 6L6 18"/>',
   search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>', check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   left:'<path d="M14 6l-6 6 6 6"/>', right:'<path d="M10 6l6 6-6 6"/>', up:'<path d="M6 14l6-6 6 6"/>', downArrow:'<path d="M6 10l6 6 6-6"/>',
-  compare:'<path d="M8 4v16M16 4v16M4 8h8M12 16h8"/>', plus:'<path d="M12 5v14M5 12h14"/>', minus:'<path d="M5 12h14"/>',
+  compare:'<path d="M8 4v16M16 4v16M4 8h8M12 16h8"/>', plus:'<path d="M12 5v14M5 12h14"/>', target:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>', minus:'<path d="M5 12h14"/>',
   trash:'<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>', edit:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/>', info:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v6M12 7.5v.5"/>',
   sync:'<path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3M18 3v4h-4M6 21v-4h4"/>', cloudOff:'<path d="M3 3l18 18M7 18h10a4 4 0 0 0 1.3-7.8A6 6 0 0 0 8 8"/>',
   star:'<path d="M12 4l2.4 5 5.4.6-4 3.7 1.1 5.3L12 16l-4.9 2.6 1.1-5.3-4-3.7 5.4-.6L12 4z"/>', bag:'<path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
