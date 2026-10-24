@@ -174,8 +174,10 @@ export const profile = () => objGet(LS.profile);
 export const setProfile = p => {
   lsSet(LS.profile, p);
   const f = {}; if (p.hand) f.hand = p.hand; if (p.style) f.style = p.style;
-  if (Number.isFinite(+p.speed) && p.speed !== '') f.speed = { v:+p.speed, unit:'mph', at:'unknown', prov:{ kind:'user' } };
-  if (Number.isFinite(+p.rev) && p.rev !== '') f.rev = { v:+p.rev, unit:'rpm', prov:{ kind:'user' } };
+  // Sim2 #11: a welcome default the bowler never touched is saved with prov.ref 'default', so it is labelled 'default (not entered)', not 'you reported'.
+  const pv = k => p.entered && !p.entered[k] ? { kind:'user', ref:'default' } : { kind:'user' };
+  if (Number.isFinite(+p.speed) && p.speed !== '') f.speed = { v:+p.speed, unit:'mph', at:'unknown', prov:pv('speed') };
+  if (Number.isFinite(+p.rev) && p.rev !== '') f.rev = { v:+p.rev, unit:'rpm', prov:pv('rev') };
   if (p.pap) f.pap = { v:String(p.pap), unit:'in', prov:{ kind:'user' } }; if (p.tilt) f.tilt = { v:String(p.tilt), unit:null, prov:{ kind:'user' } };
   record('bowler.edited', 'me', { fields:f });
   emit('profile');

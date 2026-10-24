@@ -127,7 +127,7 @@ const fv = f => (f == null ? null : typeof f === 'object' ? (f.v == null || f.v 
 // ---- the card
 export function bowlerCard(P, opts = {}) {
   const list = opts.sessions || sessionsOf(P), aggs = (P.aggregates || []).filter(a => a.source === 'LaneTrax');
-  const b = Object.assign({}, opts.profile || {}, P.bowler || {}), typed = (k, u) => fv(b[k]) == null ? null : { v: fv(b[k]), unit: u, src: b[k] && b[k].prov && b[k].prov.kind === 'device' ? { label: b[k].prov.label || 'device', how: 'measured, accepted by you' } : { label: 'you reported', how: 'typed' }, n: null, dates: null };
+  const b = Object.assign({}, opts.profile || {}, P.bowler || {}), typed = (k, u) => fv(b[k]) == null ? null : { v: fv(b[k]), unit: u, src: b[k] && b[k].prov && b[k].prov.kind === 'device' ? { label: b[k].prov.label || 'device', how: 'measured, accepted by you' } : b[k] && b[k].prov && b[k].prov.ref === 'default' ? { label: 'default (not entered)', how: 'default' } : { label: 'you reported', how: 'typed' }, n: null, dates: null };
   const S = k => a => a.summary && a.summary[k] && (a.summary[k].unit === 'mph' || a.summary[k].unit === 'board' || a.summary[k].unit === 'ft' || a.summary[k].unit === '°') ? a.summary[k].mean : null;
   const KPI = k => a => { const x = (a.kpis || []).find(z => z.key === k); return x ? x.value : null; };
   const mk = (m, unit, src) => m ? { v: m.v, unit, src, n: m.n, nLabel: `${m.n} shots, ${m.sessions} session${m.sessions === 1 ? '' : 's'}`, dates: m.dates, enough: m.n >= MIN_SHOTS } : null;
@@ -210,7 +210,7 @@ export function figures(c) {
   if (T && T.carryPct != null && T.carryN >= 5) out.push({ k: 'carry', label: 'Carry', v: T.carryPct, unit: '%', n: T.carryN, nUnit: 'pocket hits', src: 'strikes ÷ pocket hits you tagged', why: 'ball change vs line change' });
   const st = c.strike.games || c.strike.ltx; if (st) out.push({ k: 'strike', label: 'Strikes', v: st.v, unit: '%', n: st.n, nUnit: 'first balls', src: st.src.label, why: 'scoring pace' });
   const rv = c.rev.measured || c.rev.typed, sp = c.speed.measured || c.speed.typed;
-  if (sp && rv) out.push({ k: 'release', label: 'Speed · revs', v: `${sp.v} mph · ${Math.round(rv.v)}`, unit: 'rpm', n: (c.rev.measured || {}).n || null, nUnit: 'shots', src: c.rev.measured ? 'LaneTrax' : 'you reported', why: 'ball choice' });
+  if (sp && rv) out.push({ k: 'release', label: 'Speed · revs', v: `${sp.v} mph · ${Math.round(rv.v)}`, unit: 'rpm', n: (c.rev.measured || {}).n || null, nUnit: 'shots', src: c.rev.measured ? 'LaneTrax' : [c.speed.typed, c.rev.typed].some(x => x && x.src.how === 'default') ? 'default (not entered)' : 'you reported', why: 'ball choice' });
   for (const f of out) if (f.n === 1 && f.nUnit) f.nUnit = f.nUnit.replace(/s$/, '');
   return out.slice(0, 6);
 }

@@ -6,7 +6,7 @@ import { adjust } from '../ctl.js';
 import { go } from '../router.js';
 export const STYLES = [['stroker', 'Stroker'], ['tweener', 'Tweener'], ['cranker', 'Cranker'], ['two', 'Two-handed']];
 export function profileForm(p, onChange) {
-  const set = (k, v) => { p[k] = v; onChange && onChange(p); };
+  const set = (k, v) => { p[k] = v; if (p.entered) p.entered = Object.assign({}, p.entered, { [k]: true }); onChange && onChange(p); };   // Sim2 #11: what was touched
   return {
     hand: h('div', { class:'fld' }, h('span', { class:'label', text:'Bowling hand' }), segmented('Bowling hand', [['right', 'Right'], ['left', 'Left']], p.hand, v => set('hand', v), 'wide')),
     style: h('div', { class:'fld' }, h('span', { class:'label', text:'Style' }), segmented('Style', STYLES, p.style, v => set('style', v), 'wide')),
@@ -25,7 +25,7 @@ export function ownedPicker(p) {
   return h('div', { class:'stack' }, h('div', { class:'row between' }, h('span', { class:'muted small', text:'Tap to toggle. \u201cMy bag\u201d filters use this.' }), all), list);
 }
 export function render() {
-  const p = Object.assign({ hand:'right', style:'tweener', speed:+S.speed, rev:+S.rev, pap:'', tilt:'', owned:[] }, profile() || {});
+  const p = Object.assign({ hand:'right', style:'tweener', speed:+S.speed, rev:+S.rev, pap:'', tilt:'', owned:[] }, profile() || { entered:{} });
   let step = 0;
   const finish = (skip) => { if (!skip) { setProfile(p); adjust({ speed:p.speed, rev:p.rev }); } setPrefs({ onboarded:true }); go('#/tonight', { replace:true }); toast(skip ? 'You can set your profile any time in More.' : 'Profile saved. Tonight is ready.'); };
   const f = profileForm(p);

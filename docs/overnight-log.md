@@ -228,3 +228,6 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 
 ## Sim2 #7: Card average leaves practice out (2026-10-24)
 - `bowlerCard` builds avgTrend and the Average figure from non-practice sessions only. The Average row's source reads "your games, practice left out" when practice exists. Insights shows "Only practice so far. Practice stays out of your average…" instead of "Score a game…" when every game so far is practice. This matches USBC (averages are certified play only) and Insights' last 10 games. Strike and spare figures still include practice, because they are skill data. Unit +1 (207); e2e card+advisor 44/0. No sw bump.
+
+## Sim2 #11: untouched defaults are labelled as defaults (2026-10-24)
+- Welcome now tracks which fields the bowler touched (`p.entered`). An untouched speed or rev saves as `prov {kind:'user', ref:'default'}`. This is backward compatible, because PROV_KINDS is unchanged. The Card shows "default (not entered)" in the speed/rev rows and the Speed · revs figure. Targeting's chip shows "assumed · default (not entered)", and schema `chip()` matches. Profiles saved before this change, and any value the bowler edits, still read "you reported". Unit +1 (208); e2e phone/target/card 117/0; an ad-hoc welcome run (accept defaults → Card) showed the new label. No sw bump.

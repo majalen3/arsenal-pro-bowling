@@ -14,7 +14,7 @@ export function chip(p) {
     case 'usbc': return 'USBC';
     case 'catalog': return 'catalog';
     case 'device': return (p.device || 'device') + (p.date ? ' · ' + p.date : '') + ' · n=' + (p.n == null ? '?' : p.n);
-    case 'user': return p.ref === 'user-reported' ? 'you (reported)' : 'you';
+    case 'user': return p.ref === 'user-reported' ? 'you (reported)' : p.ref === 'default' ? 'default (not entered)' : 'you';
     case 'model': return 'estimate';
     case 'derived': return 'calc';
     case 'assumed': return 'assumed';

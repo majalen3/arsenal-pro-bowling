@@ -106,3 +106,14 @@ test('Sim2 #7: the Card average leaves practice out and says so', () => {
   const c2 = C.bowlerCard(project(ev)), a = C.figures(c2).find(x => x.k === 'avg');
   assert.ok(a); assert.equal(a.n, 1); assert.equal(a.src, 'your games, practice left out'); assert.equal(a.v, C.lastGames(project(ev)).avg);
 });
+
+test('Sim2 #11: untouched welcome defaults read "default (not entered)", typed values "you reported"', () => {
+  const dflt = { v: 15, unit: 'mph', prov: { kind: 'user', ref: 'default' } }, dr = { v: 220, unit: 'rpm', prov: { kind: 'user', ref: 'default' } };
+  const ev = base(); ev.push(mkEvent('bowler.edited', 'me', { fields: { speed: dflt, rev: dr } }, { ts: 3000 }));
+  const c = C.bowlerCard(project(ev));
+  assert.equal(c.speed.typed.src.label, 'default (not entered)');
+  assert.equal(C.figures(c).find(x => x.k === 'release').src, 'default (not entered)');
+  ev.push(mkEvent('bowler.edited', 'me', { fields: { speed: { v: 16, unit: 'mph', prov: { kind: 'user' } }, rev: { v: 300, unit: 'rpm', prov: { kind: 'user' } } } }, { ts: 3100 }));
+  const c2 = C.bowlerCard(project(ev));
+  assert.equal(c2.speed.typed.src.label, 'you reported'); assert.equal(C.figures(c2).find(x => x.k === 'release').src, 'you reported');
+});
