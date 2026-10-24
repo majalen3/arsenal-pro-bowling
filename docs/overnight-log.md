@@ -262,3 +262,16 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - **Tests:** new unit file tests/data/aimdrag.test.mjs (25→15, 35→10, 10→5, within-reach, range/half-board); unit tests 230/0. New e2e `aimdrag` step: phone touch-drag for RH and LH, no snap back, survives reload (15/0).
 - **Other test changes:** the deck "move left until high" loop now allows 16 moves, because 2-and-1 now moves the real target. The sim test compares Lane's half-board aim with Tonight's tenth-board model value. Full e2e is 540 passed; the 1 failure is fixed, and the sim step is now 10/0. sw v41.
 - **Known limits:** lines synced down from the server carry no eyes, so their target is derived from release/aim as before. The stand is the laydown + offset (7 by default) − drift.
+
+## Flow & IA pass 1: docs only (2026-10-24)
+- **Owner ask:** "Bag builder isn't intuitive either… flow and be organized better."
+- **New docs:**
+  - TEAM_PROMPT_FLOW_IA.md (reusable prompt)
+  - FLOW_IA_RESEARCH.md (28 sourced lessons, labelled F/S/repo/A)
+  - IA_AUDIT_1.md (live audit at 360×740 with the API blocked; screen map; top-12 tap counts; duplicated / buried / confusing items)
+  - IA_PLAN.md (5 tabs by moment; bag builder redesign; label glossary; Help/Guide; P1–P3 with acceptance criteria and e2e checks; 5-role review; personas)
+  - ia-wireframes/00–05
+- **Key finding:** Tonight's "Pack this" (3 balls) and the Bag screen ("6 packed") are different bags. Bag size has 3 controls. Lock/Exclude overlaps with Status.
+- **Tap counts:** ≈38 taps + 8 scrolls → ≈31 taps + 0 scrolls (KLM estimate).
+- **No code touched.** Another worker owns js/, css and sw.js.
+- **Needs owner approval:** the plan proposes overriding DECISIONS #31 and #32 in P2.
