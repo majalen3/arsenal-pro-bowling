@@ -24,3 +24,14 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
   - Sessions and Insights show nothing about the night after 3 games.
 - **Why it matters:** trust on the scoring path, and the owner's "not drowning in data" rule.
 - **Tests:** 8 simulated games, all scored correctly (10th frames included). App latency 61–104 ms mean, 194 ms max. Screenshots are in `/workspace/ux-shots/sim1/`. App code was not changed.
+
+## 3. Bowler Card + import results + Nights (BC)
+- **What shipped:**
+  - Import done card → "See results" → session view: one headline, ≤2 stats, one next focus. Games come with frame marks; comparison, single/multi spares, LaneTrax levels and import notes sit behind Details.
+  - "Which ball was this?" tags a LaneTrax session to a ball, so it counts in Bag Advisor.
+  - Sessions → Nights lists scored, imported and logged sessions (iteration-1 W2 "Sessions empty after a game").
+  - `#/card` My Bowler Card: headline + 4–6 figures with source and n, trend sparkline, collapsed sections, measured rev/speed only after confirm (≥30 shots, app estimate), PNG share; the empty state says what to import.
+  - Insights' static assessment was removed (GAP f) and replaced by one computed line.
+- **Why it matters:** "what happened tonight and what do I work on" is one sentence, with no data dump.
+- **Tests:** see the commit entry below.
+- **Tests:** e2e 335/0 (new `card` cycle, 24 checks); unit 162/0; engine 7 500/0; axe 0 serious; Lighthouse `#/card` 93/100/100/100 and `#/sessions` 91–94/100/100/100. Perf is noisy: box load average was 14, and `#/tonight` scored 94 in the same run. Fixed along the way: a heading-order a11y issue in the shared empty state (h3 → h2). Screenshots: `/workspace/ux-shots/bowler-card/phone-card-*.png`, `phone-session-*.png`.

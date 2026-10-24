@@ -48,6 +48,7 @@ export function project(events) {
     }
   }
   for (const i of imps) if (P.imports[i]) P.imports[i].undone = true;
+  for (const a of P.aggregates) { const ss = P.sessions[a.sessionId]; if (ss && ss.ballId && !a.ballId) a.ballId = ss.ballId; }   // BC: a LaneTrax report tagged to a ball
   for (const m of P.measurements) if (accepted.has(m.id)) { m.accepted = true; m.acceptedTs = accepted.get(m.id).ts; }
   P.games = gamesOf(P.shots);
   P.health = healthOf(P);

@@ -5,12 +5,16 @@ import { go } from '../router.js';
 import { arrowsBoard } from '../cc/geom.js';
 import { PATTERN_LABEL, FINISH_LABEL, fmtBoard } from '../labels.js';
 import { FINISHES } from '../engine.js';
-const st = { tab:'lines', q:'' };
+import { ready, proj } from '../hub.js';
+import * as C from '../cc/card.js';
+const st = { tab:null, q:'' };   // first open: Nights if any session exists, else Lines if you saved one
 const MISS_LABEL = { left:'Left', right:'Right', high:'High', light:'Light' };
 const ago = t => { const s = (Date.now() - t) / 1000; return s < 60 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : new Date(t).toLocaleDateString(); };
-export function render() {
+export async function render() {
+  await ready();
+  if (!st.tab) { const P = proj(); st.tab = P && C.sessionsOf(P).length ? 'nights' : allLines().length ? 'lines' : 'nights'; }
   const body = h('div', { class:'stack', id:'sessBody' });
-  const seg = segmented('Session view', [['lines', 'Lines'], ['shots', 'Shots'], ['notes', 'Alley notes']], st.tab, v => { st.tab = v; draw(); }, 'wide');
+  const seg = segmented('Session view', [['nights', 'Nights'], ['lines', 'Lines'], ['shots', 'Lane taps'], ['notes', 'Notes']], st.tab, v => { st.tab = v; draw(); }, 'wide');
   function lines() {
     const q = h('input', { type:'search', class:'search', placeholder:'Search lines, balls, patterns', 'aria-label':'Search saved lines', value:st.q });
     const list = h('div', { class:'stack', id:'lineList' });
@@ -54,9 +58,22 @@ export function render() {
           h('label', { class:'fld' }, h('span', { text:'Center / lanes' }), lane), h('label', { class:'fld' }, h('span', { text:'Oil' }), oil), h('label', { class:'fld' }, h('span', { text:'What worked' }), adj), h('button', { class:'btn primary', type:'submit' }, 'Save note')),
         ns.length ? h('ul', { class:'plain' }, ...ns.slice(0, 30).map(x => h('li', {}, h('b', { text:x.lane }), ` \u00b7 ${x.oil}: ${x.adjustment}`))) : h('p', { class:'muted', text:'No notes yet.' }))];
   }
-  function draw() { body.innerHTML = ''; body.append(...(st.tab === 'lines' ? lines() : st.tab === 'shots' ? shots() : notes())); }
+  // Nights (BC): every scored or imported session, newest first. One line each: what you'd check first (average or strikes).
+  function nights() {
+    const P = proj(), list = P ? C.sessionsOf(P) : [];
+    if (!list.length) return [emptyState('No sessions yet', 'Score a game on Tonight, or import a LaneTrax report. Each night shows up here with what changed.', { label:'Go to Tonight', run:() => go('#/tonight') })];
+    const fmt = d => { if (!d) return 'Undated'; const t = new Date(d + 'T12:00:00'); return isNaN(t) ? d : t.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' }); };
+    const line = x => { const s = x.stats; if (s.avg != null) return `${s.games} game${s.games === 1 ? '' : 's'} \u00b7 ${s.avg} avg${s.games > 1 ? ' \u00b7 ' + s.series + ' series' : ''}`;
+      if (s.ltx) return `${s.ltx.shots} shots \u00b7 ${s.ltx.strikes} strikes \u00b7 ${s.ltx.spareMade}/${s.ltx.spare} spares`;
+      const t = s.throws; return t ? `In progress \u00b7 ${t.strikes} strikes on ${t.first} first balls` : 'Saved'; };
+    return [h('a', { class:'btn ghost block', href:'#/card', id:'goCard' }, 'My Bowler Card'),
+      h('ul', { class:'plain night-list', id:'nightList' }, ...list.map(x => h('li', {}, h('a', { class:'night-row', href:'#/session/' + encodeURIComponent(x.id), 'data-sid':x.id },
+        h('span', { class:'line-text' }, h('span', { class:'line-name', text:fmt(x.date) }), h('span', { class:'line-meta', text:line(x) })),
+        h('span', { class:'pill', text:x.source === 'Scored on Tonight' ? 'Scored' : x.source }))))) ];
+  }
+  function draw() { body.innerHTML = ''; body.append(...(st.tab === 'nights' ? nights() : st.tab === 'lines' ? lines() : st.tab === 'shots' ? shots() : notes())); }
   draw();
-  const offs = [on('lines', () => st.tab === 'lines' && draw()), on('alley', () => st.tab === 'notes' && !body.contains(document.activeElement) && draw())];
+  const offs = [on('data', () => st.tab === 'nights' && draw()), on('lines', () => st.tab === 'lines' && draw()), on('alley', () => st.tab === 'notes' && !body.contains(document.activeElement) && draw())];
   const el = h('section', { class:'screen list-screen' }, h('header', { class:'appbar' }, h('h1', { class:'title', text:'Sessions' })), h('div', { class:'list-tools' }, seg), body);
   return { el, title:'Sessions', destroy() { offs.forEach(f => f()); } };
 }

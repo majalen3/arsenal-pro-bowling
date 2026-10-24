@@ -24,7 +24,7 @@ async function init() {
   if (!db.meta.seeded) { if (r.ran && r.added > 0 && !Object.keys(db.projection().owned).length) await db.append(seedEvents({ deviceId: deviceId() }), { silent: true }); await db.setMeta('seeded', Date.now()); }
   on('profile', syncOwnedFromProfile);
   db.on(() => emit('data'));
-  window.__apData = { backend: be.kind, bootMs: Math.round(performance.now() - t0), events: () => db.events().length, hash: () => db.hash() };
+  window.__apData = { backend: be.kind, bootMs: Math.round(performance.now() - t0), events: () => db.events().length, hash: () => db.hash(), projection: () => db.projection() };
   emit('data');
   import('./sync.js').then(m => m.startOutbox(db)).catch(() => {});
   return db;

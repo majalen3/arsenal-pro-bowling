@@ -183,7 +183,7 @@ async def migration(b):
     check('v1 line' in await p.text_content('#lineList'), '[migrate] v1 saved lines listed')
     await c.close()
 
-NEW_ROUTES = ['#/import']
+NEW_ROUTES = ['#/import', '#/card', '#/session/none']
 SMALL = """[...document.querySelectorAll('button, a[href], input:not([type=file]), select, label.btn, [role=slider]')].filter(e=>{const r=e.getBoundingClientRect(); return r.width>0 && r.height>0 && getComputedStyle(e).visibility!=='hidden' && !e.closest('.sr-only') && (r.width<44||r.height<44) && !(e.type==='range')}).map(e=>(e.id||e.className||e.tagName)+' '+Math.round(e.getBoundingClientRect().width)+'x'+Math.round(e.getBoundingClientRect().height))"""
 DATA_READY = "() => window.__apData && window.__apData.events() > 0"
 async def data_cycle(b):
@@ -717,11 +717,79 @@ async def advisor_cycle(b):
     check(not errs, '[advisor] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
+async def card_cycle(b):
+    # BC: empty card says what to import; score a game -> Nights lists it -> session results (1 headline, <=2 stats, 1 focus);
+    # LaneTrax import -> "See results" -> tag ball (feeds advisor); card: <=6 figures with sources, measured rev replaces typed only after confirm.
+    import tempfile, subprocess
+    d = tempfile.mkdtemp(); synth = os.path.join(d, 'session-report.pdf')
+    subprocess.run(['node', '-e', f"""import('{os.path.abspath('tests/data/make_pdf.mjs')}').then(m=>{{const fs=require('fs');const W=JSON.parse(fs.readFileSync('tests/fixtures/lanetrax/session-report.words.json')).words;fs.writeFileSync('{synth}', m.buildPdf(W));}})"""], check=True)
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 740})
+    await seed(p); await p.goto(BASE + '?bc#/card'); await p.wait_for_selector('#bcHeadline')
+    check('Score a game' in await p.text_content('#bcHeadline') and await p.query_selector('#bcFigs') is None, '[card] empty: headline says what to do, no invented figures')
+    empties = await p.eval_on_selector_all('.bc-empty', 'e=>e.map(x=>x.textContent)'); check(len(empties) >= 3 and all(('Import' in t or 'Score' in t or 'type' in t) for t in empties), f'[card] each empty section says what to log/import ({len(empties)})')
+    await axe_ok(p, '[card] empty'); await shot(p, 'phone-card-empty')
+    await p.goto(BASE + '?bc#/sessions'); await p.wait_for_selector('#sessBody')
+    check('No sessions yet' in await p.text_content('#sessBody'), '[card] Nights empty state points to Tonight')
+    # score one game on Tonight (test data): X, 9/ (10 pin) alternating, 10th X X X
+    await p.goto(BASE + '?bc#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnLog')
+    async def nxt(sel):
+        f0 = await p.text_content('#qlWhere'); await p.click(sel); await p.wait_for_function(f"() => !document.querySelector('#qlWhere') || document.querySelector('#qlWhere').textContent !== {json.dumps(f0)}")
+    for f in range(1, 10):
+        if f % 2: await nxt('#qlStrike')
+        else:
+            await p.click('#qlPins [data-pin="10"]'); await nxt('#qlLeave'); await p.wait_for_selector('#qlSpare')
+            if f == 4: await nxt('#qlMiss')
+            else: await nxt('#qlSpare')
+    for _ in range(3):
+        if await p.query_selector('#qlStrike'): await nxt('#qlStrike')
+    await p.wait_for_timeout(300)
+    await p.goto(BASE + '?bc2#/sessions'); await p.wait_for_selector('#nightList')
+    rows = await p.eval_on_selector_all('#nightList .night-row', 'e=>e.map(x=>x.textContent)'); check(len(rows) == 1 and 'Scored' in rows[0], f'[card] scored game listed in Sessions > Nights {rows}')
+    await p.click('#nightList .night-row'); await p.wait_for_selector('#sessRecap')
+    head = await p.text_content('#sessHead'); sup = await p.query_selector_all('#sessRecap .bc-fig')
+    check(len(sup) <= 2 and await p.query_selector('#sessFocus') is not None, f'[card] session recap: 1 headline, {len(sup)} supporting stats, 1 focus ({head!r})')
+    foc = await p.text_content('#sessFocus'); check('10 pin' in foc and '3 of 4' in foc, f'[card] focus names the leave with made/total ({foc!r})')
+    check(await p.query_selector('#sessGames .bc-frames') is not None, '[card] game frames visible in the session')
+    check(not await p.is_visible('#sessSSO'), '[card] strike/spare/open detail behind "Details"')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[card] session no horizontal overflow {w}')
+    await axe_ok(p, '[card] session'); await shot(p, 'phone-session-scored')
+    # LaneTrax import -> See results -> tag a ball
+    await p.goto(BASE + '?bc#/import?kind=lanetrax'); await p.wait_for_selector('#impPick'); await p.set_input_files('#impFile', synth)
+    await p.wait_for_selector('#impPreview[data-kind=lanetrax]'); await p.click('#impCommit'); await p.wait_for_selector('#impResults')
+    await p.click('#impResults'); await p.wait_for_selector('#sessRecap')
+    check('6 strikes on 47 first balls; 8 of 39 spares made' in await p.text_content('#sessHead'), '[card] LaneTrax results headline from the report')
+    await p.click('#sessDetails summary'); await p.wait_for_selector('#sessLtx')
+    t = await p.text_content('#sessDetails'); check('Level' in t and 'Import notes' in t, '[card] LaneTrax levels and import notes behind Details')
+    await shot(p, 'phone-session-lanetrax')
+    opt = await p.eval_on_selector('#sessBall', 'e=>e.options[1].value'); await p.select_option('#sessBall', opt); await p.wait_for_timeout(400)
+    tagged = await p.evaluate("() => window.__apData.projection().aggregates.map(a => a.ballId)"); check(opt in tagged, f'[card] LaneTrax session tagged to a ball (feeds advisor) {tagged}')
+    # the card
+    await p.goto(BASE + '?bc3#/card'); await p.wait_for_selector('#bcFigs')
+    figs = await p.eval_on_selector_all('#bcFigs .bc-fig', 'e=>e.map(x=>[x.dataset.k, x.querySelector(".bc-n").textContent])')
+    check(4 <= len(figs) <= 6 and all(f[1] for f in figs), f'[card] 4-6 headline figures, each with source/n {figs}')
+    check([f[0] for f in figs][:2] == ['avg', 'single'], f'[card] average and single-pin spares lead (what league bowlers check)')
+    await axe_ok(p, '[card] populated'); await p.wait_for_timeout(200)
+    small = await p.evaluate(SMALL); check(not small, f'[card] targets >= 44px {small[:6]}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[card] no horizontal overflow at 360 {w}')
+    await shot(p, 'phone-card-populated')
+    await p.click('#bcRelease summary'); await p.wait_for_selector('[data-use=rev]')
+    await shot(p, 'phone-card-release')
+    await p.click('[data-use=rev]'); await p.click('.sheet .btn.primary'); await p.wait_for_timeout(500)
+    rev = await p.evaluate("() => { const r = window.__apData.projection().bowler.rev; return r && r.v; }")
+    check(rev == 231.4, f'[card] measured rev replaces typed only after confirm ({rev})')
+    check(await p.query_selector('#bcShare') is not None, '[card] share-as-image offered')
+    await p.goto(BASE + '?bc#/arsenal/insights'); await p.wait_for_selector('#insHead')
+    check('8.5/10' not in await p.text_content('main') and len(await p.text_content('#insHead')) > 10, '[card] Insights static assessment replaced by computed line')
+    await p.reload(); await p.goto(BASE + '?bc4#/sessions'); await p.wait_for_selector('#nightList')
+    check(len(await p.query_selector_all('#nightList .night-row')) == 2, '[card] both sessions persist after reload')
+    check(not errs, '[card] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
 async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

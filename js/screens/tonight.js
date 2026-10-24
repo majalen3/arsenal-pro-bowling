@@ -240,7 +240,7 @@ export async function render() {
     const val = (f, u) => { if (f == null) return '\u2014'; const v = typeof f === 'object' ? f.v : f; return (f.approx ? '~' : '') + v + (u ? ' ' + u : ''); };
     const rows = [['Hand', b.hand], ['Style', b.style], ['Speed', b.speed, 'mph'], ['Rev rate', b.rev, 'rpm'], ['PAP', b.pap, 'in'], ['Tilt', b.tilt], ['Rotation', b.rotation]];
     const pend = P.measurements.filter(m => !m.accepted && m.source === 'lanetrax');
-    return h('div', { class: 'card', id: 'tnRelease' }, h('h2', { class: 'card-title', text: 'Your release' }),
+    return h('div', { class: 'card', id: 'tnRelease' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: 'Your release' }), h('a', { class: 'btn sm ghost', href: '#/card', id: 'tnToCard' }, 'Bowler Card')),
       h('dl', { class: 'kv' }, ...rows.flatMap(([k, f, u]) => [h('dt', { text: k }), h('dd', {}, val(f, u), lab(typeof f === 'object' ? f : f == null ? null : { v: f }))])),
       b.speed && b.speed.at === 'unknown' ? h('p', { class: 'muted small', text: 'Speed measurement point unknown (release or impact).' }) : null,
       pend.length ? h('div', { class: 'stack', id: 'tnMeas' }, h('h3', { class: 'section-title', text: 'From your LaneTrax import' }),

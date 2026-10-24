@@ -3,6 +3,9 @@ import { h } from '../ui.js';
 import { setBall } from '../ctl.js';
 import { go } from '../router.js';
 import { backBar } from './ball.js';
+import { proj } from '../hub.js';
+import { profile } from '../store.js';
+import { bowlerCard, headline } from '../cc/card.js';
 // v1 text, kept verbatim
 function gapsText() {
   const oils = ['heavy', 'medium', 'light'];
@@ -11,14 +14,8 @@ function gapsText() {
   const tbd = balls.filter(b => !specOK(b)).length;
   return { cnt, thin, tbd };
 }
-const ASSESS = `<div><b>Profile:</b> right-handed tweener, ~15 mph, ~220 rpm, PAP 5 1/8, medium tilt and rotation.</div>
-<div><b>Strengths:</b> medium-volume house. Benchmark and control. Transition and burn. Multiple motion shapes in the Hy-Road and Rattler families.</div>
-<div><b>Gaps:</b></div><ul>
-<li>No modern strong symmetrical pearl. Look at IQ Tour A.I. Pearl, Phaze A.I., No Doubt Pearl.</li>
-<li>No heavy-oil control benchmark. Black Widow 3.0, Ion Pro Solid.</li>
-<li>No modern urethane alternative. Purple Pearl Urethane, The Spy, Motiv Tank.</li>
-<li>No high-RG angular ball for cliffed conditions. Attention Star, VEBO, Lightning Blackout. AstroPhysiX is aging.</li></ul>
-<div class="rating">League 8.5/10. Tournament coverage 7.5/10. Best add: one modern strong pearl and one newer heavy-oil benchmark, not another benchmark.</div>`;
+// GAP (f): the v1 static "Assessment" (fixed profile text and uncited x/10 ratings) is removed. In its place, one computed
+// line from the Bowler Card (js/cc/card.js) with a link; it says what to do when there is no data yet.
 export function render() {
   const g = gapsText();
   const cv = h('canvas', { class:'chart', id:'rgChart', role:'img', 'aria-label':`Chart of core RG (across) against differential (up) for ${balls.filter(specOK).length} balls. Tap a dot to open the ball. The Arsenal list has every ball with its specs.` });
@@ -27,7 +24,8 @@ export function render() {
   const el = h('section', { class:'screen detail' }, backBar('Arsenal insights', '#/arsenal'),
     h('div', { class:'card' }, h('h2', { class:'card-title', text:'Coverage by oil' }), bars, h('p', { class:'muted small', text:`Thinnest is ${g.thin}. ${g.tbd ? g.tbd + ' ball' + (g.tbd === 1 ? '' : 's') + ' still spec TBD.' : 'All 22 balls have specs.'}` })),
     h('div', { class:'card' }, h('h2', { class:'card-title', text:'Core map: RG vs differential' }), h('div', { class:'chart-wrap' }, cv), h('p', { class:'muted small', text:'Low RG = revs up earlier. High differential = more flare / hook potential.' })),
-    h('div', { class:'card assess', html:'<h2 class="card-title">Assessment</h2>' + ASSESS }),
+    (() => { const P = proj(), hd = P ? headline(bowlerCard(P, { profile:profile() || {} })) : { text:'Score a game on Tonight to see your numbers here.' };
+      return h('div', { class:'card', id:'insGame' }, h('h2', { class:'card-title', text:'Your game' }), h('p', { id:'insHead', text:hd.text }), h('a', { class:'btn ghost', href:'#/card' }, 'My Bowler Card')); })(),
     h('div', { class:'card' }, h('h2', { class:'card-title', text:'Bag builder' }), ...BAGS.map(([t, l]) => h('div', { class:'bagset' }, h('h3', { text:t }), h('div', { class:'bag-row' }, ...l.map(([id, r]) => { const b = balls.find(x => x.id === id); return h('button', { class:'sugg-ball', 'data-ball':id, onclick:() => { setBall(b); go('#/lane'); } }, h('span', { class:'swatch', style:{ background:b.color } }), h('span', {}, b.name, h('small', { text:r }))); }))))));
   let pts = [];
   function draw() {

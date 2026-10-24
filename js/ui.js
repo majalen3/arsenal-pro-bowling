@@ -121,6 +121,6 @@ export function stepper({ id, label, unit='', min, max, step, value, fmt=v=>v, o
   return row;
 }
 export function emptyState(title, text, action) {
-  return h('div', { class:'empty' }, h('div', { class:'empty-art', html:icon('lane') }), h('h3', { text:title }), h('p', { class:'muted', text }), action ? h('button', { class:'btn primary', onclick:action.run }, action.label) : null);
+  return h('div', { class:'empty' }, h('div', { class:'empty-art', html:icon('lane') }), h('h2', { text:title }), h('p', { class:'muted', text }), action ? h('button', { class:'btn primary', onclick:action.run }, action.label) : null);
 }
 export function skeleton(n=3) { return h('div', { class:'skel-list', 'aria-busy':'true', 'aria-label':'Loading' }, ...Array.from({length:n}, () => h('div', { class:'skel' }))); }
