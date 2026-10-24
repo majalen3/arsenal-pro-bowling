@@ -87,3 +87,13 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - **Break pt renamed:** "Break pt" became "Break" because it was truncated at 360 px.
 - **Service worker:** cache bumped to v24.
 - **Tests:** e2e on phone, desktop, deck, lefty, migrate, target and sim: 172 passed / 0 failed. Shot: /workspace/ux-shots/sim-fix/lane-tiles-model.png.
+
+## 2026-10-24: Scoring fix 1 (pad, two-tap spare, Saved, frame time)
+- **What shipped:**
+  - While a game is open, the pad (pins and buttons) is kept in the lower screen above the tab bar.
+  - One-pin spares take 2 taps through `#qlSpareNow`, which writes the leave and the spare as two shot.logged events.
+  - A quiet "Saved ✓ frame N" status line.
+  - The app records per-frame entry time in `window.__apFrameMs` (used by the loop1 re-measure).
+- **Tests:**
+  - New e2e step `scoring`: pad position, 2-tap spare, Saved line, frame time < 3.5 s, axe, 44 px targets.
+  - e2e on scoring, quicklog, sim, phone, tonight, advisor and card: all green. Unit tests 167/0.

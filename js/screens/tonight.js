@@ -37,7 +37,7 @@ export async function render() {
   const setNet = () => { net.hidden = navigator.onLine; };
   window.addEventListener('online', setNet); window.addEventListener('offline', setNet);
   const ql = { leave: new Set(), foul: false, tag: null };   // quick-log taps not yet written
-  let swapOpen = null, lastTap = 0, busy = false, moreOpen = false;
+  let swapOpen = null, lastTap = 0, busy = false, moreOpen = false, savedMsg = '', frameT0 = 0;
   let local = {};   // UI state not yet written (avoids re-render churn while typing)
   const sess = () => Object.assign({ kind: 'tonight', patternSlug: null, ft: null, ml: null, ratio: null, centerId: null, surface: 'unknown', stage: 'fresh', bagId: null, game: 1, pickId: null, reads: [] }, (proj().sessions || {})[curSid()], local);
   async function save(fields) {
@@ -138,6 +138,7 @@ export async function render() {
         thenLine), quickLog(P, s, cur, b, hand, stand, g), alts || '',
         h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: 'Bag, lanes and line details' }),
           advisorCard(P, s, b), h('p', { class: 'coach', id: 'tnCoach', text: coach }), pick || '', reads || '', setup));
+      requestAnimationFrame(padToThumb);
       return;
     }
     // ---- before a game / between games
@@ -157,18 +158,27 @@ export async function render() {
   // IndexedDB before the screen moves on, so killing the tab loses nothing already shown.
   function quickLog(P, s, cur, b, hand, stand, g) {
     const { game, mine, st } = g, facingLeave = st.standing.length < 10, sid = curSid();
-    const log = async kind => {
+    // Writes one or more throws (the two-tap spare writes two) as shot.logged events, then shows "Saved".
+    const write = async throws => {
       // sim bug 2: a repeat tap inside 400 ms (or while the last write is still in flight) is a double tap, not a second ball.
       const now = performance.now(); if (st.done || busy || now - lastTap < TAP_GUARD_MS) return; lastTap = now; busy = true;
       try {
-        const t = Q.throwOf(kind, st.standing, { leave: [...ql.leave], foul: ql.foul });
-        const split = !facingLeave && !t.foul && t.leave.length > 0 && Q.leaveHint(t.leave).split;
         if (!proj().sessions[sid]) await addMany([mkEvent('session.created', sid, Object.assign({ kind: 'tonight', date: dayKey(Date.now()) }, sess(), { editTs: Date.now() }), { deviceId: deviceId(), prov: { kind: 'user' } })]);   // first throw opens the night
-        await add('shot.logged', sid, { sessionId: sid, game, frame: st.frame, roll: st.roll, down: t.down, leave: t.leave, foul: !!t.foul, split: !!split,
-          ballId: cur ? cur.id : null, catalogId: cur ? cur.catalogId : null, miss: !facingLeave ? ql.tag : null });
+        let seq = mine.map(x => ({ down: x.down, leave: x.leave || [], foul: !!x.foul })), at = st;
+        for (const t of throws) {
+          const facing = at.standing.length < 10, split = !facing && !t.foul && t.leave.length > 0 && Q.leaveHint(t.leave).split;
+          await add('shot.logged', sid, { sessionId: sid, game, frame: at.frame, roll: at.roll, down: t.down, leave: t.leave, foul: !!t.foul, split: !!split,
+            ballId: cur ? cur.id : null, catalogId: cur ? cur.catalogId : null, miss: !facing ? ql.tag : null });
+          seq = seq.concat([t]); at = Q.stateOf(seq);
+        }
+        if (at.frame !== st.frame || at.done) { const tf = Date.now(); if (frameT0) (window.__apFrameMs = window.__apFrameMs || []).push(tf - frameT0); frameT0 = tf; }
+        savedMsg = at.done ? `Saved \u2713 game ${game}` : `Saved \u2713 frame ${st.frame}`;
       } finally { busy = false; }
       ql.leave.clear(); ql.foul = false; ql.tag = null; draw();
     };
+    const log = kind => write([Q.throwOf(kind, st.standing, { leave: [...ql.leave], foul: ql.foul })]);
+    // Two-tap spare (scoring fix 1): pins left on ball 1, then one tap writes the leave and the spare.
+    const spareNow = () => { const t1 = Q.throwOf('leave', st.standing, { leave: [...ql.leave] }); return write([t1, { down: t1.leave.length, leave: [], foul: false }]); };
     const frames = h('div', { class: 'frames', id: 'qlFrames', role: 'list', 'aria-label': `Game ${game} frames` }, ...Array.from({ length: 10 }, (_, i) => {
       const fr = st.frames[i], cls = 'fr' + (!st.done && i === st.frame - 1 ? ' cur' : '');
       const mk = fr ? fr.marks.join(' ') : '';
@@ -177,7 +187,8 @@ export async function render() {
     }));
     const head = h('div', { class: 'row between' }, h('h2', { class: 'card-title', text: `Quick log \u00b7 game ${game}` }),
       h('span', { class: 'pill', id: 'qlWhere', text: st.done ? `Final ${st.total}` : `Frame ${st.frame} \u00b7 ball ${st.roll}` }));
-    const card = h('div', { class: 'card', id: 'tnLog' }, head, frames);
+    const saved = h('p', { class: 'ql-saved small', id: 'qlSaved', role: 'status', text: savedMsg });
+    const card = h('div', { class: 'card', id: 'tnLog' }, head, frames, saved);
     if (st.done) {
       card.append(h('p', { class: 'coach', text: `${st.total} in game ${game}.` }));
       const rc = nightRecap(P, sid);
@@ -191,11 +202,12 @@ export async function render() {
             onclick: () => { ql.leave.has(pin) ? ql.leave.delete(pin) : ql.leave.add(pin); draw(); } }, String(pin)); }));
       const n = ql.leave.size;
       const btns = h('div', { class: 'btn-grid', id: 'qlBtns' },
-        facingLeave ? h('button', { class: 'btn primary', id: 'qlSpare', onclick: () => log('all') }, '/ Spare') : h('button', { class: 'btn primary', id: 'qlStrike', onclick: () => log('all') }, 'X Strike'),
+        facingLeave ? h('button', { class: 'btn primary', id: 'qlSpare', onclick: () => log('all') }, '/ Spare') : n ? null : h('button', { class: 'btn primary', id: 'qlStrike', onclick: () => log('all') }, 'X Strike'),
+        !facingLeave && n && !ql.foul && (st.roll === 1 || (st.frame === 10 && st.roll === 2)) ? h('button', { class: 'btn primary', id: 'qlSpareNow', onclick: spareNow }, `${n === 1 ? 'Pin' : n + ' pins'} left, then / spare`) : null,
         h('button', { class: 'btn ghost', id: 'qlLeave', disabled: !n, onclick: () => log('leave') }, n ? `Log ${n} standing` : 'Tap pins standing'),
         facingLeave ? h('button', { class: 'btn ghost', id: 'qlMiss', onclick: () => log('none') }, '\u2013 Missed all') : null,
         h('button', { class: 'btn ghost', id: 'qlFoul', 'aria-pressed': String(ql.foul), onclick: () => { ql.foul = !ql.foul; draw(); } }, 'F Foul'));
-      card.append(pins, btns);
+      card.append(h('div', { class: 'ql-pad', id: 'qlPad' }, pins, btns));
       if (!facingLeave) card.append(h('div', { class: 'fld' }, h('span', { text: 'First ball hit (optional, for triggers)' }),
         segmented('First ball hit', [['pocket', 'Pocket'], ['high', 'High'], ['light', 'Light']], ql.tag, v => { ql.tag = ql.tag === v ? null : v; draw(); }, 'wide')));
       // sim bug 1: hints from the bowler's own hand and strike stand (the same stand as the start line), 20 only when unknown.
@@ -274,12 +286,19 @@ export async function render() {
         h('ol', { class: 'small' }, ...pl.rows.map(x => h('li', {}, h('b', { text: x.name }), ` \u00b7 ${x.role}`))))); }
     return card;
   }
+  // Scoring fix 1: keep the pad in the lower half (thumb reach) while a game is open, unless "details" is open.
+  function padToThumb() {
+    const pad = document.getElementById('qlPad'); if (!pad || moreOpen) return;
+    const r = pad.getBoundingClientRect(), tb = document.getElementById('tabs'), tr = tb ? tb.getBoundingClientRect() : null;
+    const room = (tr && tr.top > innerHeight / 2 ? tr.top : innerHeight) - 8;
+    if (r.bottom > room || r.top < innerHeight * 0.3) window.scrollBy(0, r.bottom - room);
+  }
   function bowlerOf(P) { return P.bowler || {}; }
   function num(f) { const v = f && typeof f === 'object' ? f.v : f; return v === '' || v == null || isNaN(+v) ? null : +v; }
   draw();
   if (!IDX) loadIndex().then(x => { IDX = x; TERT = R.tertiles(x); draw(); }).catch(() => {});
   const offs = [on('data', () => { if (!body.contains(document.activeElement) || document.activeElement.tagName === 'BUTTON') draw(); })];
   window.__apTonightMs = Math.round(performance.now() - t0);
-  return { el, title: 'Tonight', mounted() { const lg = document.getElementById('tnNow') && document.getElementById('tnLog'); if (lg) lg.scrollIntoView({ block: 'nearest' }); },
+  return { el, title: 'Tonight', mounted() { if (document.getElementById('tnNow')) padToThumb(); },
     destroy() { offs.forEach(f => f()); window.removeEventListener('online', setNet); window.removeEventListener('offline', setNet); } };
 }

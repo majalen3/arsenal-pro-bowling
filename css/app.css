@@ -572,3 +572,8 @@ noscript p{padding:24px}
 .tn-focus{background:var(--info-soft);border-radius:12px;padding:0 0 0 var(--s3);gap:var(--s2)}
 .tn-focus p{margin:0}
 .tn-recap{display:grid;gap:var(--s2);margin:var(--s2) 0}
+
+/* Scoring fix 1: the pad sits within thumb reach while a game is open; a quiet Saved line confirms each write. */
+#tonightBody .tn-now ~ #tnLog .ql-pad{position:sticky;bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--s2));z-index:2;background:var(--surface);padding-top:var(--s2);display:grid;gap:var(--s2)}
+.ql-pad{display:grid;gap:var(--s2)}
+.ql-saved{margin:0;min-height:1.2em;color:var(--text-2)}

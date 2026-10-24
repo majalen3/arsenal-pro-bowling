@@ -69,3 +69,11 @@
 | Insights · last 10 games avg/high/low, strikes, spares, n | ✓ | ✓ trend check | first card |
 | Insights · oil coverage, core map, bag builder | partial | partial | behind one tap |
 | More · Your data counts | partial | ✗ | behind "What's saved"; the line shown is safety status in plain words |
+
+## Scoring fix 1: pad within thumb reach, two-tap spare, Saved line (2026-10-24)
+- **Competence.** The "Saved ✓ frame N" line gives immediate, informational feedback that the frame is on the phone. It never praises.
+- **Low cognitive load.** A one-pin spare now takes 2 taps (pin, then "Pin left, then / spare"). The X button hides once pins are tapped, so the screen never offers two contradictory actions. The pad stays in the lower part of the screen while a game is open.
+- **U/A (during game):**
+  - Saved line: U = yes, one glance confirms the write. A = yes, the bowler acts on it by moving to the next frame.
+  - Two-tap spare: U = yes. A = yes, it is the most common frame shape.
+  - Nothing new was added outside the pad.

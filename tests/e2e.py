@@ -816,11 +816,34 @@ async def sim_cycle(b):
     check(not errs, '[sim] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
+async def scoring_cycle(b):
+    # Scoring fixes: (1) pad within thumb reach, two-tap spare, Saved line, frame time; (2) any-frame edit + undo in <= 4 taps;
+    # (3) ball chip + spare-ball rule, Games by ball/leave, games CSV; (4) league/Baker + USBC handicap (only my frames feed stats).
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.goto(BASE + '?sc#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnLog')
+    where = lambda: p.text_content('#qlWhere'); fr = lambda n: p.text_content(f'#qlFrames [data-f="{n}"] b')
+    await qtap(p, '#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 2')")
+    check('Saved' in await p.text_content('#qlSaved') and 'frame 1' in await p.text_content('#qlSaved'), '[scoring] Saved line confirms the write')
+    pad = await p.eval_on_selector('#qlPad', 'e => { const r = e.getBoundingClientRect(); return [r.top, r.bottom, innerHeight]; }')
+    check(pad[1] <= pad[2] - 60 and pad[0] >= pad[2] * 0.25, f'[scoring] pad sits in the lower screen, above the tab bar {[round(x) for x in pad]}')
+    await p.click('#qlPins [data-pin="10"]'); await qtap(p, '#qlSpareNow'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 3')")
+    check((await fr(2)).strip() == '9 /', f'[scoring] one-pin spare in 2 taps (pin, then spare) ({(await fr(2)).strip()})')
+    t0 = await p.evaluate('performance.now()')
+    for _ in range(3):
+        f0 = await where(); await p.click('#qlPins [data-pin="7"]'); await qtap(p, '#qlSpareNow'); await p.wait_for_function(f"() => document.querySelector('#qlWhere').textContent !== {json.dumps(f0)}")
+    ms = await p.evaluate('window.__apFrameMs || []')
+    check(len(ms) >= 3 and max(ms[-3:]) < 3500, f'[scoring] frame entry under 3.5 s each (app-side, incl. test waits) {ms[-3:]}')
+    await axe_ok(p, '[scoring] pad'); small = await p.evaluate(SMALL); check(not small, f'[scoring] targets >= 44px {small[:6]}')
+    await shot(p, 'phone-scoring-pad')
+    #EDIT
+    check(not errs, '[scoring] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
 async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('sim', lambda: sim_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('sim', lambda: sim_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)
