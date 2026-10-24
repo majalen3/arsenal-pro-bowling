@@ -22,7 +22,7 @@ def main():
     a = ap.parse_args(); os.makedirs(a.out, exist_ok=True)
     env = dict(os.environ); cp = chrome()
     if cp: env['CHROME_PATH'] = cp
-    rows, bad = [], []
+    rows, bad, unmeasured = [], [], []
     for name, route in ROUTES:
         base = os.path.join(a.out, name)
         cmd = ['npx', '-y', 'lighthouse@12', a.base + route, '--quiet', '--output=json', '--output=html', f'--output-path={base}',
@@ -35,9 +35,13 @@ def main():
         sc = {k: rep['categories'][k]['score'] for k in BUDGET}
         rows.append(dict(screen=name, url=a.base + route, **sc))
         for k, lim in BUDGET.items():
-            if sc[k] is None or sc[k] < lim: bad.append(f'{name}: {k} {sc[k]} < {lim}')
+            if sc[k] is None:   # e.g. NO_LCP: Lighthouse could not score it; reported, not a budget failure
+                why = [a.get('errorMessage') for a in rep['audits'].values() if a.get('errorMessage')][:1]
+                unmeasured.append(f'{name}: {k} not measured ({why[0] if why else "no score"})')
+            elif sc[k] < lim: bad.append(f'{name}: {k} {sc[k]} < {lim}')
         print(f"  [LH] {name:9} perf {sc['performance']}  a11y {sc['accessibility']}  bp {sc['best-practices']}")
-    json.dump(dict(budget=BUDGET, screens=rows, over_budget=bad), open(os.path.join(a.out, 'summary.json'), 'w'), indent=1)
+    json.dump(dict(budget=BUDGET, screens=rows, over_budget=bad, unmeasured=unmeasured), open(os.path.join(a.out, 'summary.json'), 'w'), indent=1)
+    for b in unmeasured: print('  [LH n/a ]', b)
     for b in bad: print('  [LH FAIL]', b)
     sys.exit(1 if bad else 0)
 

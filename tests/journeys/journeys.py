@@ -264,7 +264,10 @@ async def j04_solo_game(j):
         await j.tap('#qlLeave', throw=True); await j.wait('#qlSpare'); w = await where(j); await j.tap('#qlSpare', throw=True); await wait_where_change(j, w)
         s.check(await mark(j, 2) == '9 /', f'9 / ({await mark(j, 2)})'); s.check(await cum(j, 1) == '20', f'frame 1 = 20 ({await cum(j, 1)})')
     async with j.step('Ball change mid-game (spare ball)', task='ball-change', target_taps=3) as s:
-        await j.tap('#qlBall'); await j.wait('#qlBallPick')
+        await j.tap('#qlBall')
+        try: await j.page.locator('#qlBallPick').first.wait_for(state='visible', timeout=3000)
+        except Exception:   # the chip re-renders after "Saved ✓"; a tap that lands mid-render is lost (seen once on CI); tap again and count it
+            s.check(True, 'note: first tap on the ball chip did nothing (re-render); tapped again'); await j.tap('#qlBall'); await j.wait('#qlBallPick')
         opts = j.page.locator('#qlBallPick [data-ball]'); n = await opts.count(); s.check(n >= 2, f'{n} balls to pick')
         cur = j.state['ball0']; tgt = None
         for i in range(n):

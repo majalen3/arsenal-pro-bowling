@@ -26,7 +26,7 @@ on:
         type: boolean
 
 concurrency:
-  group: journeys-${{ github.event_name }}-${{ github.ref }}
+  group: journeys-${{ github.event_name }}-${{ github.event.deployment_status.state || 'run' }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -96,6 +96,7 @@ jobs:
               L = json.load(open(lh)); print('\n### Lighthouse\n\n| screen | perf | a11y | best practices |\n|---|---|---|---|')
               for r in L['screens']: print(f"| {r['screen']} | {r['performance']} | {r['accessibility']} | {r['best-practices']} |")
               for b in L['over_budget']: print(f'- over budget: {b}')
+              for b in L.get('unmeasured', []): print(f'- not measured: {b}')
           PY
 
       - uses: actions/upload-artifact@v4
