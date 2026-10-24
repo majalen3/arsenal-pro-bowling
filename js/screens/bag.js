@@ -121,7 +121,9 @@ export async function render() {
       h('p', { class: 'small', id: 'bagHealth' }, hl ? `${hl.games} games logged. Since refresh: ${hl.since.refresh ?? 'not logged'}; resurface: ${hl.since.resurface ?? 'not logged'}.` : 'No games logged with this ball yet.', prov(null, 'from your log')),
       h('p', { class: 'muted small' }, `Targets (${care.family === 'none' ? 'no brand guidance' : care.family}): ${SVC.filter(([t]) => care[t]).map(([t, l]) => `${l.toLowerCase()} ${care[t]}`).join(', ')} games.`, prov(null, care.src)),
       h('div', { class: 'fld' }, h('span', { text: 'Status' }), segmented('Status', STATUS, cx.status, async v => { await add('ownedBall.edited', careId, { fields: { status: v } }); draw(); }, 'wide')),
-      h('div', { class: 'btn-grid' }, ...SVC.map(([t, l]) => h('button', { class: 'btn', 'data-svc': t, onclick: async () => { await add('ball.serviced', 'svc-' + careId + '-' + Date.now(), { ballId: careId, type: t }); toast(`${cx.name}: ${l.toLowerCase()} logged.`); draw(); } }, 'Log ' + l.toLowerCase())))));
+      h('div', { class: 'btn-grid' }, ...SVC.map(([t, l]) => h('button', { class: 'btn', 'data-svc': t, onclick: async () => { await add('ball.serviced', 'svc-' + careId + '-' + Date.now(), { ballId: careId, type: t }); toast(`${cx.name}: ${l.toLowerCase()} logged.`); draw(); } }, 'Log ' + l.toLowerCase()))),
+      // Scoring fix 4 / education: USBC Rule 18 (and 18/2: competition starts with the first ball thrown for score).
+      h('p', { class: 'muted small', id: 'bagRule18' }, 'Sand, polish or clean before league or tournament play starts. Once any bowler throws a ball for score, no abrasive, cleaner, rosin or powder on any ball; a dry towel is fine.', prov('usbc', 'USBC Rule 18'))));
   }
   draw();
   return { el, title: 'Bag' };

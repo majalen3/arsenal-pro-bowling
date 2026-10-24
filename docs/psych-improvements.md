@@ -96,3 +96,13 @@
   - By leave, after session: U = yes. A = yes, which spares to practise.
   - CSV, after session: U = yes. A = yes, league secretary / own records.
 - **3-second beginner check:** a new bowler sees only the pad plus one chip. They can ignore the chip and still score.
+
+## Scoring fix 4: league team, Baker, USBC handicap (2026-10-24)
+- **Relatedness without comparison.** The bowler can score the whole team on one phone, so the night stays social. Teammates' frames are kept apart from the bowler's own stats. The board shows plain numbers (scratch, handicap, total) and never ranks bowlers or uses words like best or worst.
+- **Low load during the game.** The only addition while bowling is the pill "Up: Ann · frame 3". The ball chip, first-ball tag and spare hints show only on the bowler's own frames, because they describe the bowler's own stand and hand. The team board sits behind one tap. Setup lives with the other lane settings and is never shown mid-frame.
+- **Autonomy and transparency.** Basis and percent are the league's choice. The rule line says plainly that USBC's default is 100%. Absentee and vacancy figures name their rule (112).
+- **U/A:**
+  - "Up:" pill, during game: U = yes, one glance. A = yes, it tells the scorer whose ball to enter.
+  - Team board, between games: U = yes, 4 columns. A = yes, a handicap total to check against the house sheet.
+  - Setup, before the game: U = yes. A = yes, it is needed for the handicap.
+- **3-second beginner check:** "Just me" is the default, so a solo bowler sees nothing new.

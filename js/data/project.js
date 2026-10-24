@@ -18,7 +18,7 @@ function lww(target, stamps, fields, e) {
 export function project(events) {
   const evs = events.filter(e => e && e.type).slice().sort(order);
   const { ids: voided, imps } = voidedSet(evs);
-  const P = { bowler: {}, owned: {}, lines: {}, notes: [], surface: [], service: [], shots: [], sessions: {}, centers: {}, bags: {}, aggregates: [], measurements: [], imports: {}, gamesLogged: [], scores: [] };
+  const P = { bowler: {}, owned: {}, lines: {}, notes: [], surface: [], service: [], shots: [], teamShots: [], sessions: {}, centers: {}, bags: {}, aggregates: [], measurements: [], imports: {}, gamesLogged: [], scores: [] };
   const st = { bowler: {}, owned: {}, sessions: {}, centers: {}, bags: {} }, accepted = new Map();
   for (const e of evs) {
     if (voided.has(e.id) || e.type === 'event.voided' || e.type === 'import.voided') continue;
@@ -34,7 +34,7 @@ export function project(events) {
       case 'ball.serviced': P.service.push(Object.assign({ id: e.id, ts: e.ts }, d)); break;
       case 'ball.gamesLogged': P.gamesLogged.push(Object.assign({ id: e.id, ts: e.ts }, d)); break;
       case 'game.logged': P.scores.push(Object.assign({ id: e.id, ts: e.ts, importId: e.importId || null }, d)); break;
-      case 'shot.logged': P.shots.push(Object.assign({ id: e.id, ts: e.ts, importId: e.importId || null }, d)); break;
+      case 'shot.logged': (d.who && d.who !== 'me' ? P.teamShots : P.shots).push(Object.assign({ id: e.id, ts: e.ts, importId: e.importId || null }, d)); break;
       case 'session.created': if (!P.sessions[id]) { P.sessions[id] = { id, ts: e.ts }; st.sessions[id] = {}; } lww(P.sessions[id], st.sessions[id], d, e); break;
       case 'session.edited': if (P.sessions[id]) lww(P.sessions[id], st.sessions[id], d.fields, e); break;
       case 'center.created': case 'center.edited': if (!P.centers[id]) { P.centers[id] = { id }; st.centers[id] = {}; } lww(P.centers[id], st.centers[id], d.fields || d, e); break;
@@ -50,6 +50,8 @@ export function project(events) {
   for (const i of imps) if (P.imports[i]) P.imports[i].undone = true;
   for (const a of P.aggregates) { const ss = P.sessions[a.sessionId]; if (ss && ss.ballId && !a.ballId) a.ballId = ss.ballId; }   // BC: a LaneTrax report tagged to a ball
   for (const m of P.measurements) if (accepted.has(m.id)) { m.accepted = true; m.acceptedTs = accepted.get(m.id).ts; }
+  // Scoring fix 4: teammates' and Baker throws (data.who) live in P.teamShots, so only the bowler's own frames feed stats
+  // (USBC Rule 3a: Baker games are not in averages).
   P.games = gamesOf(P.shots);
   P.health = healthOf(P);
   return P;

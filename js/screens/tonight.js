@@ -17,6 +17,7 @@ import { packList } from '../cc/bag.js';
 import { standOf, lineFor } from '../cc/line.js';
 import { openNight, newNightId, dayKey } from '../cc/night.js';
 import { sessionsOf, recapOf } from '../cc/card.js';
+import * as LG from '../cc/league.js';
 export { standOf };
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
 const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
@@ -38,7 +39,7 @@ export async function render() {
   const setNet = () => { net.hidden = navigator.onLine; };
   window.addEventListener('online', setNet); window.addEventListener('offline', setNet);
   const ql = { leave: new Set(), foul: false, tag: null };   // quick-log taps not yet written
-  let swapOpen = null, lastTap = 0, busy = false, moreOpen = false, savedMsg = '', frameT0 = 0, edit = null, lastEdit = null, pickFix = false, ballOpen = false;
+  let swapOpen = null, lastTap = 0, busy = false, moreOpen = false, savedMsg = '', frameT0 = 0, edit = null, lastEdit = null, pickFix = false, ballOpen = false, teamOpen = null;
   let local = {};   // UI state not yet written (avoids re-render churn while typing)
   const sess = () => Object.assign({ kind: 'tonight', patternSlug: null, ft: null, ml: null, ratio: null, centerId: null, surface: 'unknown', stage: 'fresh', bagId: null, game: 1, pickId: null, reads: [] }, (proj().sessions || {})[curSid()], local);
   async function save(fields) {
@@ -57,8 +58,8 @@ export async function render() {
       return { ownedId: id, catalogId: o.catalogId || null, name: short(o.name || (c && c.name)), benchmark: !!o.benchmark, finish: o.finish || 'factory' }; });
     return { bag, bags, list, spare: spare && P.owned[spare] ? P.owned[spare] : null };
   }
-  const gameOf = (P, s) => { const game = s.game || 1, mine = playOrder(P.shots.filter(x => x.sessionId === curSid() && x.frame != null && (x.game || 1) === game));
-    return { game, mine, st: Q.stateOf(mine.map(x => ({ down: x.down, leave: x.leave || [], foul: !!x.foul }))) }; };
+  const gameOf = (P, s, who = 'me') => { const game = s.game || 1, src = who === 'me' ? P.shots : (P.teamShots || []).filter(x => x.who === who), mine = playOrder(src.filter(x => x.sessionId === curSid() && x.frame != null && (x.game || 1) === game));
+    return { game, who, mine, st: Q.stateOf(mine.map(x => ({ down: x.down, leave: x.leave || [], foul: !!x.foul }))) }; };
   function draw() {
     const P = proj(), s = sess(), b = bowlerOf(P), hand = handOf(P);
     const keepOpen = document.getElementById('tnMore'); if (keepOpen) moreOpen = keepOpen.open;
@@ -80,7 +81,9 @@ export async function render() {
     const cur = r.order.find(x => x.id === s.pickId) || r.pick;
     const L = cur ? lineFor(cur.cat, { speed: num(b.speed), rev: num(b.rev), ft: pat ? pat.ft : null }) : null;
     const ml = L ? L.ml : null, stand = L ? L.stand : null;
-    const g = gameOf(P, s), gameOpen = g.mine.length > 0 && !g.st.done;
+    // Scoring fix 4: league team (frames in lineup order) or Baker (one team game). One pad; the pill says who is up.
+    const team = teamOf(P, s), g = team ? team.g : gameOf(P, s);
+    const gameOpen = (team ? team.started : g.mine.length > 0) && !g.st.done;
     // ---- coach line (≤ 2 sentences, starts with a ball name)
     const coach = !cur ? 'Add balls to a bag to get a pick.' : cur === r.pick && bf && cur.benchmark ? `${cur.name} first: ${bf}, so start with your benchmark and read it.`
       : `${cur.name} for demand ${d.demand} of 5${cur.level != null ? ' (level ' + cur.level + ')' : ''}.` + (stand ? ` Stand ${stand.feet}, eyes ${ml.target} at the arrows.` : '');
@@ -99,6 +102,8 @@ export async function render() {
         h('div', { class: 'fld' }, h('span', { text: 'Lane condition' }), segmented('Lane condition', [['fresh', 'Fresh'], ['transition', 'Transition'], ['burn', 'Burned']], s.stage, v => save({ stage: v, pickId: null }))),
         bags.length > 1 ? h('div', { class: 'fld' }, h('span', { text: 'Bag' }), segmented('Bag', bags.map(x => [x.id, x.name]), bag.id, v => save({ bagId: v, pickId: null }))) : null,
         h('div', { class: 'fld' }, h('span', { text: 'Game' }), segmented('Game', [[1, '1'], [2, '2'], [3, '3'], [4, '4+']], s.game || 1, v => save({ game: +v }), 'wide')),
+        h('div', { class: 'fld' }, h('span', { text: 'Scoring' }), segmented('Scoring', [['solo', 'Just me'], ['league', 'League team'], ['baker', 'Baker']], s.mode || 'solo', v => save({ mode: v }), 'wide')),
+        (s.mode || 'solo') !== 'solo' ? teamSetup(s) : null,
         h('button', { class: 'btn ghost block', id: 'tnBagLink', onclick: () => go('#/bag') }, 'Bag builder \u203a'));
     const alt = (x, lbl) => x ? h('button', { class: 'alt btn', 'data-alt': lbl, onclick: () => save({ pickId: x.id, throwId: null }) }, h('small', { class: 'muted', text: lbl + ' ' }), h('b', { text: x.name })) : h('div', { class: 'alt muted', text: `No ${lbl.toLowerCase()} ball in this bag` });
     const alts = cur ? h('div', { class: 'alts' }, alt(r.weaker && cur === r.pick ? r.weaker : R.readMove(r, cur.id, 'early'), 'Weaker'), alt(r.stronger && cur === r.pick ? r.stronger : R.readMove(r, cur.id, 'weak'), 'Stronger')) : null;
@@ -136,7 +141,7 @@ export async function render() {
       // ---- game open (sim bug 4): ball \u00b7 feet \u00b7 aim, the ball-change line, the scoring card, Weaker/Stronger. The rest behind one tap.
       body.append(h('div', { class: 'card tn-now', id: 'tnNow' },
         h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: cur ? cur.name : 'No ball' }), stand ? ` \u00b7 feet ${stand.feet} \u00b7 aim ${ml.target}` : ''),
-        thenLine), quickLog(P, s, cur, b, hand, stand, g), alts || '',
+        thenLine), quickLog(P, s, cur, b, hand, stand, g, team), alts || '',
         h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: 'Bag, lanes and line details' }),
           advisorCard(P, s, b), h('p', { class: 'coach', id: 'tnCoach', text: coach }), pick || '', reads || '', setup));
       requestAnimationFrame(padToThumb);
@@ -150,15 +155,65 @@ export async function render() {
     body.append(h('p', { class: 'coach', id: 'tnCoach', role: 'status', text: coach }));
     if (thenLine) body.append(thenLine);
     if (pick) body.append(pick);
-    body.append(quickLog(P, s, cur, b, hand, stand, g));
+    body.append(quickLog(P, s, cur, b, hand, stand, g, team));
     if (reads) body.append(reads);
     body.append(setup);
     if (measNudge) body.append(measNudge);
   }
   // ---- CC1 quick log: strike 1 tap; a one-pin spare 3 taps (pin, Log leave, /). Each tap is one shot.logged event in
   // IndexedDB before the screen moves on, so killing the tab loses nothing already shown.
-  function quickLog(P, s, cur, b, hand, stand, g) {
-    const { game, mine, st: live } = g, sid = curSid();
+  function teamOf(P, s) {
+    const mode = s.mode || 'solo'; if (mode === 'solo') return null;
+    const lg = Object.assign({}, LG.DEFAULTS, prefs().league || {}), lineup = LG.lineupOf(lg);
+    if (mode === 'baker') { const bg = gameOf(P, s, 'baker'); return { mode, lg, lineup, games: { baker: bg }, g: bg, started: bg.mine.length > 0, up: bg.st.done ? null : LG.bakerOwner(bg.st.frame, lineup) }; }
+    const games = {}; for (const x of lineup) if (x.status === 'in') games[x.who] = gameOf(P, s, x.who);
+    const done = {}; for (const [k, v] of Object.entries(games)) done[k] = v.st.done ? 10 : v.st.frame - 1;
+    const up = LG.nextUp(lineup, done);
+    return { mode, lg, lineup, games, g: up ? games[up.who] : games.me, started: Object.values(games).some(v => v.mine.length > 0), up };
+  }
+  // League settings (behind one tap, never during a frame): the bowler's average, handicap basis / %, up to 3 teammates.
+  function teamSetup(s) {
+    const lg = Object.assign({}, LG.DEFAULTS, prefs().league || {}), tm = (lg.team || []).slice(0, 3);
+    const setLg = patch => { setPrefs({ league: Object.assign({}, prefs().league || {}, patch) }); draw(); };
+    const setTm = (i, patch) => setLg({ team: tm.map((x, j) => j === i ? Object.assign({}, x, patch) : x) });
+    const numIn = (id, label, val, on) => h('input', { id, type: 'number', inputmode: 'numeric', min: 0, max: 300, 'aria-label': label, value: val == null ? '' : String(val), onchange: e => on(e.target.value === '' ? null : Math.trunc(+e.target.value)) });
+    return h('details', { class: 'tn-more', id: 'tnTeam', open: teamOpen == null ? !tm.length : teamOpen, ontoggle: e => { teamOpen = e.target.open; } }, h('summary', { text: 'Team and handicap' }),
+      h('label', { class: 'fld' }, h('span', { text: 'Your league average' }), numIn('lgMyAvg', 'Your league average', lg.myAvg, v => setLg({ myAvg: v }))),
+      h('div', { class: 'fld' }, h('span', { text: 'Handicap basis' }), segmented('Handicap basis', LG.BASES.map(x => [x, String(x)]), lg.basis, v => setLg({ basis: +v }), 'wide')),
+      h('div', { class: 'fld' }, h('span', { text: 'Handicap percent' }), segmented('Handicap percent', LG.PCTS.map(x => [x, x + '%']), lg.pct, v => setLg({ pct: +v }), 'wide')),
+      h('p', { class: 'muted small', id: 'lgRule', text: `Handicap = (basis \u2212 average) \u00d7 percent, fractions dropped. USBC uses ${LG.USBC_PCT}% unless your league rule says otherwise (Rule 100d-2).` }),
+      ...tm.map((t, i) => h('div', { class: 'lg-mate', 'data-mate': i },
+        h('div', { class: 'lg-row' },
+          h('label', { class: 'fld' }, h('span', { text: `Bowler ${i + 2}` }), h('input', { id: `lgName${i}`, autocomplete: 'off', value: t.name || '', disabled: t.status === 'vacancy', onchange: e => setTm(i, { name: e.target.value.trim().slice(0, 24) }) })),
+          h('label', { class: 'fld' }, h('span', { text: 'Average' }), numIn(`lgAvg${i}`, `Bowler ${i + 2} average`, t.avg, v => setTm(i, { avg: v }))),
+          h('button', { class: 'icon-btn', 'aria-label': `Remove bowler ${i + 2}`, html: icon('close'), onclick: () => setLg({ team: tm.filter((_, j) => j !== i) }) })),
+        segmented(`Bowler ${i + 2} status`, [['in', 'Bowling'], ['absent', 'Absent'], ['vacancy', 'Vacancy']], t.status || 'in', v => setTm(i, { status: v }), 'wide'))),
+      tm.length < 3 ? h('button', { class: 'btn ghost block', id: 'lgAdd', onclick: () => setLg({ team: tm.concat([{ who: 'tm-' + Date.now().toString(36), name: '', avg: null, status: 'in' }]) }) }, 'Add a bowler') : null,
+      h('p', { class: 'muted small', text: `Only your own frames count in your stats.${(s.mode || 'solo') === 'baker' ? ' Baker games are not in averages (USBC Rule 3a).' : ''}` }));
+  }
+  // Team board (behind one tap): scratch, handicap and total per spot, absentee / vacancy per USBC Rule 112.
+  function teamBoard(team, game) {
+    const run = st => { const c = st.frames.map(f => f.cum).filter(v => v != null); return c.length ? `${c[c.length - 1]} so far` : '\u2014'; };
+    const cfg = team.lg, rows = [];
+    let tt;
+    if (team.mode === 'baker') {
+      const st = team.games.baker.st, hd = team.lineup.reduce((a, b) => a + (b.status === 'in' ? LG.handicap(b.avg, cfg) || 0 : 0), 0);
+      rows.push(['Team game', st.done ? String(st.total) : run(st), String(hd), st.done ? String(st.total + hd) : '\u2014']);
+      tt = null;
+    } else {
+      const spots = team.lineup.map(b => { const g = team.games[b.who], x = LG.spotScore(b, g && g.st.done ? g.st.total : null, cfg);
+        rows.push([b.name, x.kind === 'bowled' ? (x.scratch != null ? String(x.scratch) : g ? run(g.st) : '\u2014') : `${x.scratch} (${x.kind === 'vacancy' ? 'vacancy' : 'absentee'})`, x.hdcp == null ? 'no average' : String(x.hdcp), LG.total(x) != null ? String(LG.total(x)) : '\u2014']); return x; });
+      tt = LG.teamTotal(spots);
+    }
+    return h('details', { class: 'tn-more', id: 'qlBoard', open: !!(team.g.st.done) }, h('summary', { text: `Team board \u00b7 game ${game}` }),
+      h('table', { class: 'bc-tbl', id: 'qlBoardTbl' }, h('thead', {}, h('tr', {}, h('th', { text: 'Bowler' }), h('th', { text: 'Scratch' }), h('th', { text: 'Hdcp' }), h('th', { text: 'Total' }))),
+        h('tbody', {}, ...rows.map(r => h('tr', {}, h('th', { text: r[0] }), ...r.slice(1).map(v => h('td', { text: v })))),
+          tt ? h('tr', { class: 'tot' }, h('th', { text: 'Team' }), h('td', { text: tt.done ? String(tt.scratch) : '\u2014' }), h('td', { text: String(tt.hdcp) }), h('td', { text: tt.done ? String(tt.total) : '\u2014' })) : null)),
+      h('p', { class: 'muted small', text: `Handicap ${cfg.pct}% of ${cfg.basis}, fractions dropped (USBC Rule 100d-2). ${team.mode === 'baker' ? 'Baker games are not in averages (Rule 3a); team handicap here is the sum of each bowler\u2019s, check your league rule.' : 'Absentee = average \u2212 10, vacancy = 120 (Rule 112).'}` }));
+  }
+  function quickLog(P, s, cur, b, hand, stand, g, team) {
+    const { game, mine, st: live, who } = g, sid = curSid(), meUp = !team || (team.mode !== 'baker' && (!team.up || team.up.who === 'me'));
+    const whoF = who && who !== 'me' ? { who } : {};
     if (edit && (edit.game !== game || edit.sid !== sid)) edit = null;
     const st = edit ? Q.editState(edit.f, edit.throws) : live, facingLeave = st.standing.length < 10;
     // Scoring fix 3: "Throwing this ball" chip. The pick is advice; this is the ball the throws are credited to. With the
@@ -177,8 +232,9 @@ export async function render() {
         let seq = mine.map(x => ({ down: x.down, leave: x.leave || [], foul: !!x.foul })), at = live;
         for (const t of throws) {
           const facing = at.standing.length < 10, split = !facing && !t.foul && t.leave.length > 0 && Q.leaveHint(t.leave).split;
-          await add('shot.logged', sid, { sessionId: sid, game, frame: at.frame, roll: at.roll, down: t.down, leave: t.leave, foul: !!t.foul, split: !!split,
-            ballId: (facing && spareBall ? spareBall : thrown || {}).id || null, catalogId: (facing && spareBall ? spareBall : thrown || {}).catalogId || null, miss: !facing ? ql.tag : null });
+          const cb = meUp ? (facing && spareBall ? spareBall : thrown || {}) : {};
+          await add('shot.logged', sid, Object.assign({ sessionId: sid, game, frame: at.frame, roll: at.roll, down: t.down, leave: t.leave, foul: !!t.foul, split: !!split,
+            ballId: cb.id || null, catalogId: cb.catalogId || null, miss: !facing && meUp ? ql.tag : null }, whoF));
           seq = seq.concat([t]); at = Q.stateOf(seq);
         }
         if (at.frame !== live.frame || at.done) { const tf = Date.now(); if (frameT0) (window.__apFrameMs = window.__apFrameMs || []).push(tf - frameT0); frameT0 = tf; }
@@ -196,10 +252,10 @@ export async function render() {
       try {
         const f = edit.f, old = mine.filter(x => x.frame === f), o = { deviceId: deviceId(), prov: { kind: 'user' } };
         const fresh = edit.throws.map((t, i) => { const was = old.find(x => x.roll === i + 1) || old[0] || {};
-          return mkEvent('shot.logged', sid, { sessionId: sid, game, frame: f, roll: i + 1, down: t.down, leave: t.leave, foul: !!t.foul,
-            split: i === 0 && !t.foul && t.leave.length > 0 && !!Q.leaveHint(t.leave).split, ballId: was.ballId || (thrown ? thrown.id : null), catalogId: was.catalogId || (thrown ? thrown.catalogId : null), miss: i === 0 ? (was.miss || null) : null }, o); });
+          return mkEvent('shot.logged', sid, Object.assign({ sessionId: sid, game, frame: f, roll: i + 1, down: t.down, leave: t.leave, foul: !!t.foul,
+            split: i === 0 && !t.foul && t.leave.length > 0 && !!Q.leaveHint(t.leave).split, ballId: was.ballId || (thrown && meUp ? thrown.id : null), catalogId: was.catalogId || (thrown && meUp ? thrown.catalogId : null), miss: i === 0 ? (was.miss || null) : null }, whoF), o); });
         await addMany(old.map(x => voidEvent(x.id, o)).concat(fresh));
-        lastEdit = { f, game, sid, added: fresh.map(e => e.id), old: old.map(x => ({ sessionId: x.sessionId, game: x.game, frame: x.frame, roll: x.roll, down: x.down, leave: x.leave || [], foul: !!x.foul, split: !!x.split, ballId: x.ballId || null, catalogId: x.catalogId || null, miss: x.miss || null })) };
+        lastEdit = { f, game, sid, added: fresh.map(e => e.id), old: old.map(x => Object.assign({ sessionId: x.sessionId, game: x.game, frame: x.frame, roll: x.roll, down: x.down, leave: x.leave || [], foul: !!x.foul, split: !!x.split, ballId: x.ballId || null, catalogId: x.catalogId || null, miss: x.miss || null }, whoF)) };
         savedMsg = `Saved \u2713 frame ${f} fixed`; edit = null;
       } finally { busy = false; }
       draw();
@@ -219,9 +275,9 @@ export async function render() {
         h('span', { class: 'muted', text: String(i + 1) }), h('b', { text: (fr && fr.split ? '\u25CB' : '') + mk }), h('span', { class: 'num', text: fr && fr.cum != null ? String(fr.cum) : '' }));
     }));
     const head = h('div', { class: 'row between' }, h('h2', { class: 'card-title', text: `Quick log \u00b7 game ${game}` }),
-      h('span', { class: 'pill', id: 'qlWhere', text: edit ? `Fixing frame ${edit.f} \u00b7 ball ${st.roll}` : st.done ? `Final ${st.total}` : `Frame ${st.frame} \u00b7 ball ${st.roll}` }));
+      h('span', { class: 'pill', id: 'qlWhere', text: edit ? `Fixing frame ${edit.f} \u00b7 ball ${st.roll}` : st.done ? `Final ${st.total}` : team && team.up ? `Up: ${team.up.name} \u00b7 frame ${st.frame}` : `Frame ${st.frame} \u00b7 ball ${st.roll}` }));
     const saved = h('p', { class: 'ql-saved small', id: 'qlSaved', role: 'status', text: savedMsg });
-    const chip = credit && !(live.done && !edit) ? h('button', { class: 'chip ql-ball', id: 'qlBall', 'aria-expanded': String(ballOpen), 'aria-controls': 'qlBallPick', onclick: () => { ballOpen = !ballOpen; draw(); } },
+    const chip = credit && meUp && !(live.done && !edit) ? h('button', { class: 'chip ql-ball', id: 'qlBall', 'aria-expanded': String(ballOpen), 'aria-controls': 'qlBallPick', onclick: () => { ballOpen = !ballOpen; draw(); } },
       h('span', { class: 'chip-k', text: credit === spareBall && facingLeave ? 'Spare ball ' : 'Ball ' }), credit.name, h('span', { class: 'sr-only', text: ', change' })) : null;
     const pickBall = ballOpen && chip ? h('div', { class: 'ql-ballpick', id: 'qlBallPick', role: 'group', 'aria-label': 'Throwing this ball' },
       ...balls.map(x => h('button', { class: 'btn ghost', 'data-ball': x.id, 'aria-pressed': String(thrown && x.id === thrown.id), onclick: () => { ballOpen = false; save({ throwId: x.id }); } }, x.name)),
@@ -230,7 +286,8 @@ export async function render() {
       h('button', { class: 'btn ghost ql-rule', id: 'qlBallDone', onclick: () => { ballOpen = false; draw(); } }, 'Back to scoring')) : null;
     const card = h('div', { class: 'card', id: 'tnLog' }, head, frames, h('div', { class: 'row between ql-sub' }, saved, chip || ''));
     if (live.done && !edit) {
-      card.append(h('p', { class: 'coach', text: `${st.total} in game ${game}.` }));
+      card.append(h('p', { class: 'coach', text: `${team && team.mode === 'baker' ? 'Team ' : ''}${st.total} in game ${game}.` }));
+      if (team) card.append(teamBoard(team, game));
       const rc = nightRecap(P, sid);
       if (rc) card.append(rc);
       card.append(h('button', { class: 'btn primary block', id: 'qlNext', onclick: () => save({ game: game + 1 }) }, `Start game ${game + 1}`),
@@ -250,11 +307,11 @@ export async function render() {
       // the ball picker takes the pad's place while open, so the sticky pad never covers it
       card.append(pickBall || h('div', { class: 'ql-pad', id: 'qlPad' }, pins, btns));
       if (edit) card.append(h('button', { class: 'btn ghost block', id: 'qlFixCancel', onclick: () => { edit = null; ql.leave.clear(); ql.foul = false; draw(); } }, `Cancel fix (frame ${edit.f} unchanged)`));
-      if (!facingLeave && !edit) card.append(h('div', { class: 'fld' }, h('span', { text: 'First ball hit (optional, for triggers)' }),
+      if (!facingLeave && !edit && meUp) card.append(h('div', { class: 'fld' }, h('span', { text: 'First ball hit (optional, for triggers)' }),
         segmented('First ball hit', [['pocket', 'Pocket'], ['high', 'High'], ['light', 'Light']], ql.tag, v => { ql.tag = ql.tag === v ? null : v; draw(); }, 'wide')));
       // sim bug 1: hints from the bowler's own hand and strike stand (the same stand as the start line), 20 only when unknown.
       const base = stand ? stand.feet : 20;
-      const hint = edit ? null : Q.leaveHint(facingLeave ? st.standing : [...ql.leave], base, hand);
+      const hint = edit || !meUp ? null : Q.leaveHint(facingLeave ? st.standing : [...ql.leave], base, hand);
       if (hint) card.append(h('p', { class: 'small', id: 'qlHint' }, hint.split ? h('span', { class: 'pill', id: 'qlSplit', text: 'Split' }) : null, ' ',
         `${hint.leave.join('-')}: ` + hint.keys.map(k => `key pin ${k.key} \u2192 stand ${k.board}${k.move === 'none' ? '' : ' (move ' + k.move + ')'}`).join('; or ') + '. Same target.',
         provChip(stand ? null : 'assumed', stand ? `${hand === 'left' ? 'lefty' : 'righty'} \u00b7 strike stand ${base}` : `${hand === 'left' ? 'lefty' : 'righty'} \u00b7 board 20 assumed`), provChip('usbc', 'USBC 3-6-9')));
@@ -264,11 +321,14 @@ export async function render() {
       .concat((s.reads || []).map(x => ({ ts: x.ts, read: x.read }))).sort((a, b) => a.ts - b.ts);
     const tr = R.trigger(seq, { hand });
     if (tr) card.append(h('div', { class: 'warn-box', id: 'qlTrigger', role: 'status' }, tr.text, provChip('assumed', 'team rule')));
+    if (team && !(live.done && !edit) && !edit) card.append(teamBoard(team, game));
     if (edit) return card;
-    const last = mine.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0))[mine.length - 1];
+    const pool = team ? Object.values(team.games).flatMap(v => v.mine) : mine;
+    const last = pool.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0))[pool.length - 1];
+    const lastWho = last && team && team.mode === 'league' ? ((team.lineup.find(x => x.who === (last.who || 'me')) || {}).name || '') + ', ' : '';
     const fixable = live.frames.filter(fr => fr.marks.length && (live.done || fr.f < live.frame)).map(fr => fr.f);
     if (lastEdit && lastEdit.game === game && lastEdit.sid === sid) card.append(h('button', { class: 'btn ghost block', id: 'qlUndoFix', onclick: undoFix }, `Undo fix (frame ${lastEdit.f})`));
-    else if (last) card.append(h('button', { class: 'btn ghost block', id: 'qlUndo', onclick: async () => { await addMany([voidEvent(last.id, { deviceId: deviceId(), prov: { kind: 'user' } })]); draw(); } }, `Undo last ball (frame ${last.frame})`));
+    else if (last) card.append(h('button', { class: 'btn ghost block', id: 'qlUndo', onclick: async () => { await addMany([voidEvent(last.id, { deviceId: deviceId(), prov: { kind: 'user' } })]); draw(); } }, `Undo last ball (${lastWho}frame ${last.frame})`));
     if (fixable.length) card.append(pickFix
       ? h('div', { class: 'fix-pick', id: 'qlFixPick', role: 'group', 'aria-labelledby': 'qlFixQ' }, h('p', { class: 'small muted', id: 'qlFixQ', text: 'Fix which frame?' }),
           h('div', { class: 'fix-grid' }, ...fixable.map(f => h('button', { class: 'btn ghost', 'data-fix': f, 'aria-label': `Fix frame ${f}`, onclick: () => startFix(f) }, String(f)))))

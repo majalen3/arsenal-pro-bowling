@@ -8,7 +8,8 @@ const pad = n => String(n).padStart(2, '0');
 export const dayKey = t => { const d = new Date(t); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
 export function nightInfo(P, s, now = Date.now()) {
   const shots = (P.shots || []).filter(x => x.sessionId === s.id && x.frame != null);
-  const last = Math.max(s.ts || 0, s.editTs || 0, ...shots.map(x => x.ts || 0));
+  const team = (P.teamShots || []).filter(x => x.sessionId === s.id && x.frame != null);   // league / Baker throws count as activity
+  const last = Math.max(s.ts || 0, s.editTs || 0, ...shots.map(x => x.ts || 0), ...team.map(x => x.ts || 0));
   const g = s.game || 1, mine = playOrder(shots.filter(x => (x.game || 1) === g));
   const st = mine.length ? stateOf(mine.map(x => ({ down: x.down, leave: x.leave || [], foul: !!x.foul }))) : null;
   return { id: s.id, last, inProgress: !!(st && !st.done), games: new Set(shots.map(x => x.game || 1)).size, shots: shots.length, idle: now - last };

@@ -117,3 +117,10 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - Session Details has "By ball" and "By leave" tables (card.js byBall).
 - Sessions has "Export games (CSV)" (card.js gamesRows + toCSV with formula guard; GAP c).
 - Tests: unit 174/0, engine 7500/0; e2e scoring step extended (chip, picker axe + 44 px, rule, by ball/leave, CSV contents).
+
+## Scoring fix 4 (2026-10-24)
+- Tonight setup has a "Scoring" choice: Just me / League team / Baker. "Team and handicap" (behind a tap) holds your average, basis 200/210/220, percent 80/90/100 (90% default; the line says USBC's default is 100%), and up to 3 teammates (Bowling / Absent / Vacancy).
+- One pad. The pill reads "Up: Name · frame N" (league: lineup order, absent skipped; Baker: frame f to the active lineup in turn). The team board is behind a tap: scratch, handicap, total, absentee avg−10, vacancy 120.
+- Teammates' and Baker throws carry `who` and go to P.teamShots, so only the bowler's frames feed stats (Rule 3a for Baker).
+- The Rule 18 note is on Bag → Ball status and care. Citations are in docs/LEAGUE_SCORING.md.
+- New js/cc/league.js with 6 unit tests (unit 180/0); e2e scoring step extended (league setup axe/44 px, rotation, absentee skip, board figures, stats isolation, Baker, reload).
