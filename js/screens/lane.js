@@ -20,6 +20,7 @@ import { ready, proj } from '../hub.js';
 import { lineFor, standOf } from '../cc/line.js';
 import { openNight } from '../cc/night.js';
 import { aimLayer, paintPill, overlaysBtn } from './overlays.js';
+import { helpDot } from './help.js';
 export function render() {
   const ballBtn = h('button', { class:'ball-btn', id:'ballBtn', 'aria-haspopup':'dialog', onclick:openBallSheet });
   const saveBtn = h('button', { class:'icon-btn', id:'saveBtn', 'aria-label':'Save this line', onclick:quickSave });
@@ -55,7 +56,7 @@ export function render() {
     h('div', { class:'lane-grid' },
       h('div', { class:'lane-col' }, canvas,
         h('div', { class:'legend', 'aria-hidden':'true' }, h('span', { html:`<i style="background:${C_SKID}"></i>Skid` }), h('span', { html:`<i style="background:${C_HOOK}"></i>Hook` }), h('span', { html:`<i style="background:${C_ROLL}"></i>Roll` }), h('span', { html:'<i class="bp"></i>Breakpoint' })),
-        h('div', { class:'row lane-tools' }, overlaysBtn(() => S.pattern), aimPill)),
+        h('div', { class:'row lane-tools' }, overlaysBtn(() => S.pattern), aimPill, helpDot('bm-shr', 'Skid, hook, roll'))),
       h('section', { class:'deck-card', id:'deckCard', 'aria-labelledby':'deckH' }, h('figure', { class:'deck-fig' }, deckCv), h('div', { class:'deck-side' }, h('h2', { class:'deck-h', id:'deckH', text:'Pin deck' }), callBadge, coach, deckRead, h('p', { class:'deck-cap', id:'deckCap' }))),
       h('div', { class:'read-col' },
         h('div', { class:'tiles' }, tEntry, tAngle, tBp),

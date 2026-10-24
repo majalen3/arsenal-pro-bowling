@@ -11,6 +11,7 @@ import * as A from '../cc/addball.js';
 import * as G from '../cc/bag.js';
 import { HOUSE_ASSUMED } from '../cc/rank.js';
 import { openNight } from '../cc/night.js';
+import { helpDot } from './help.js';
 const prov = (p, t) => h('span', { class: 'prov', 'data-prov': p || null, text: t });
 const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const WEIGHTS = [16, 15, 14, 13, 12];
@@ -109,7 +110,7 @@ export async function render() {
     }
     const lvl = G.cellOfCat(cat).level;
     const src = made && made.source.url ? h('p', { class: 'small', id: 'abSource' }, 'Source: ', h('a', { class: 'srclink', href: made.source.url, target: '_blank', rel: 'noopener noreferrer', text: made.source.ref }), ` \u00b7 read ${made.source.date}`) : null;
-    detail.append(h('div', { class: 'card', id: 'abConfirm' }, h('h2', { class: 'card-title', text: `2. Check ${e.brand} ${e.name}` }),
+    detail.append(h('div', { class: 'card', id: 'abConfirm' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: `2. Check ${e.brand} ${e.name}` }), helpDot('eq-cover-types', 'Cover types')),
       h('div', { class: 'fld' }, h('span', {}, 'Ball weight ', st.weightSet ? null : prov('assumed', 'assumed 15 lb')),
         segmented('Ball weight', wts.map(w => [String(w), w + ' lb']), String(st.weight), v => { st.weight = +v; st.weightSet = true; draw(); }, 'wide')),
       dl, src, e.flag ? h('p', { class: 'small', id: 'abFlag', text: e.flag }) : null,

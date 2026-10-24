@@ -30,6 +30,7 @@ route(/^\/welcome$/, null, () => import('./screens/welcome.js'));
 route(/^\/import$/, 'more', () => import('./screens/import.js'));
 route(/^\/tonight$/, 'tonight', () => import('./screens/tonight.js'));
 route(/^\/bag$/, 'tonight', () => import('./screens/bag.js'));
+route(/^\/glossary$/, 'more', () => import('./screens/help.js'));
 // tab bar / rail
 const TABS = [['tonight', 'Tonight'], ['lane', 'Lane'], ['arsenal', 'Arsenal'], ['patterns', 'Patterns'], ['sessions', 'Sessions'], ['more', 'More']];
 const nav = $('#tabs');

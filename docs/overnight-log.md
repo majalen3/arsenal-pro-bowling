@@ -189,6 +189,16 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
   - e2e `armory` 14/0: header, empty pedestal, 6-ball shelf, bench folded, no marks without games, catalog RG/Diff, no new tab, axe, 44 px, 360 px, retire → Hall of Fame, pedestal → ball page, no errors.
 - **Shots:** /workspace/ux-shots/armory/.
 
+## Help bubbles + Glossary (2026-10-24)
+- **Code:**
+  - js/cc/help.js (pure: load/cache, search, byTree, find, helpOn) and js/screens/help.js (`helpDot` + Glossary screen).
+  - The `#/glossary` route sits under More, with the More › Help card (Off/On plus a Glossary link).
+  - Dots: Lane tools, Targeting result, Bag care, Bag pack, Add ball confirm.
+  - CSS tokens only; SW precaches help.js, screens/help.js and data/glossary.json.
+- **Data:** read-only use of data/glossary.json (106 terms, 7 trees); nothing invented. Tonight is deferred (no extras during scoring), see DECISIONS #32.
+- **Tests:** unit help 5/5 (203 total); e2e `help` 17/0 (default off, toggle, Lane bubble text, axe, Glossary under More, search, sources, 44 px, 360 px, Targeting dot, none on Tonight, Bag one per card, off again).
+- **Shots:** /workspace/ux-shots/help/.
+
 ## Sim2: persona simulations, round 2 (2026-10-24)
 - **What:**
   - Six personas on the live build at 360×740 and 390×844: beginner, league team with Baker, lefty, advanced Sport, coach Practice + export, and midnight/offline.

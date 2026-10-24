@@ -7,6 +7,7 @@ import { balls } from '../data.js';
 import * as G from '../cc/bag.js';
 import { SRC } from '../cc/rank.js';
 import { catOf } from '../cc/cats.js';
+import { helpDot } from './help.js';
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
 const prov = (p, t) => h('span', { class: 'prov', 'data-prov': p || null, text: t });
 const SRC_PROV = { [SRC.assumed]: 'assumed', [SRC.usbc]: 'usbc', [SRC.tag]: 'catalog', [SRC.you]: null };
@@ -107,7 +108,7 @@ export async function render() {
     body.append(h('div', { class: 'card', id: 'bagBalls' }, h('h2', { class: 'card-title', text: 'Your balls' }),
       h('p', { class: 'muted small', text: 'Lock keeps a ball in when you fill. Exclude keeps it out.' }), h('div', { class: 'stack' }, ...all.map(rowOf))));
     // ---- pack list
-    body.append(h('div', { class: 'card', id: 'bagPack' }, h('h2', { class: 'card-title', text: 'Pack list' }),
+    body.append(h('div', { class: 'card', id: 'bagPack' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: 'Pack list' }), helpDot('eq-spareball', 'Spare ball')),
       h('dl', { class: 'kv' }, ...pack.rows.flatMap(r => [h('dt', { text: r.role }), h('dd', {}, h('b', { text: r.name }), h('div', { class: 'muted small', text: r.why }))])),
       pack.service.length ? h('div', { class: 'warn-box', id: 'bagService' }, h('b', { text: bag.eventDate ? `Service before ${bag.eventDate}` : 'Service due' }),
         ...pack.service.map(s => h('div', {}, `${s.name}: ${s.type} (${s.atLeast ? '\u2265' : ''}${s.n} of ${s.every} games)`, prov(null, s.src))), h('div', { class: 'small', text: 'Before the first ball for score.' })) : null,
@@ -116,7 +117,7 @@ export async function render() {
     careId = careId && P.owned[careId] ? careId : (items[0] || all[0]).ownedId;
     const cx = itemOf(P, careId), hl = P.health[careId] || (cx.catalogId && P.health[cx.catalogId]) || null, care = G.careOf(catOf(cx.catalogId));
     const sel = h('select', { id: 'bagCareBall', 'aria-label': 'Ball', onchange: e => { careId = e.target.value; draw(); } }, ...all.map(x => h('option', { value: x.ownedId, selected: x.ownedId === careId ? '' : null, text: x.name })));
-    body.append(h('div', { class: 'card', id: 'bagCare' }, h('h2', { class: 'card-title', text: 'Ball status and care' }),
+    body.append(h('div', { class: 'card', id: 'bagCare' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: 'Ball status and care' }), helpDot('eq-cleaning', 'Cleaning')),
       h('label', { class: 'fld' }, h('span', { text: 'Ball' }), sel),
       h('p', { class: 'small', id: 'bagHealth' }, hl ? `${hl.games} games logged. Since refresh: ${hl.since.refresh ?? 'not logged'}; resurface: ${hl.since.resurface ?? 'not logged'}.` : 'No games logged with this ball yet.', prov(null, 'from your log')),
       h('p', { class: 'muted small' }, `Targets (${care.family === 'none' ? 'no brand guidance' : care.family}): ${SVC.filter(([t]) => care[t]).map(([t, l]) => `${l.toLowerCase()} ${care[t]}`).join(', ')} games.`, prov(null, care.src)),

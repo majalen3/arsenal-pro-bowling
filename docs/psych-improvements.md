@@ -148,3 +148,13 @@
   - **Usability:** one takeaway, what's in the bag, shown on a lit shelf with gold nameplates (name, role, RG and Diff from the catalog). Bench and Hall of Fame are folded behind a tap. An empty pedestal is the Add ball button. Targets are ≥44 px, 360 px with no sideways scroll, axe 0.
   - **Applicability:** used between sessions and when packing. It isn't on the scoring screen, and the tab stays "Arsenal" (no new tab).
 - **3-second beginner check:** "these are my balls; the gold-ringed one is on the lane."
+
+## Help bubbles + Glossary (2026-10-24)
+- **SDT:**
+  - **Autonomy:** off by default and switched on by the bowler. Nothing explains itself unless asked, and the glossary is a place to browse, not a lesson.
+  - **Competence:** each bubble is one or two plain sentences (the v1 text), with "Glossary ›" for depth and sources the bowler can check (F/S labels). It's informational and never grades the bowler.
+  - **Relatedness:** sources are the ones bowlers already trust (USBC, coaches, r/Bowling threads), named in the entry.
+- **U/A:**
+  - **Usability:** one "?" per card at most, and a 44 px round target in the card header. A tap opens a sheet with one takeaway, and details are one more tap away. The glossary has search plus a count ("2 of 106 terms").
+  - **Applicability:** placed only where a beginner gets stuck while choosing or planning: the lane drawing, targeting, ball care, the spare ball, the cover on add-ball. Never on the scoring pad.
+- **3-second beginner check:** "the ? tells me what this card's word means."

@@ -126,3 +126,11 @@ Short ADR-style notes. Each: decision · why · consequence.
 - There is no Armory spec doc. The brief (owner, relayed) asks for a trophy room: lit shelves, gold nameplates with role and stats, the current bag highlighted, retired balls in a Hall of Fame, and milestones only when earned from logged games. With the "no new top-level tabs" rule, it lives at the top of the existing Arsenal screen, and the catalog stays below it unchanged (search, filters and compare keep working).
 - The bowler has no name field, so the header reads "Urbanek Honey Badgers · Armory". If a name is ever on file it becomes "<name>'s Armory".
 - A game counts toward a ball's marks when that ball threw most of the first balls in the game. Spare-ball throws don't credit the spare ball with the game.
+
+## 32. Help bubbles + Glossary wired from data/glossary.json (2026-10-24, docs/HELP_BUBBLES_V1.md)
+- **Default off.** More › Help › "Help bubbles" Off/On (`prefs.help`). When off, `helpDot()` renders nothing, so screens are unchanged.
+- **One "?" per card, v1 ids only.** Lane tools: `bm-shr` (Skid, hook, roll). Targeting result row: `tg-arrows`. Bag care card: `eq-cleaning`. Bag pack card: `eq-spareball`. Add ball confirm card: `eq-cover-types`. The bubble text is the glossary `bubble` field, word for word. A weak-evidence term shows its ⚠ line.
+- **Not on Tonight.** Rule: nothing new during active scoring. The Tonight scoring pad gets no "?". This is deferred, not dropped: if wanted, add it post-session on the Recap.
+- **Glossary screen** `#/glossary` sits under the More tab (no new tab). It has search over term, id and text (accent-insensitive), groups in glossary tree order, a level pill, and each term's sources with the F/S/A/repo labels from `_meta.labels`. `?t=<id>` opens and scrolls to the entry, and each bubble's "Glossary ›" link uses it.
+- **Read-only data.** data/glossary.json and HELP_BUBBLES_V1.md are not edited; the app only reads them (same-origin fetch, CSP-safe) and the SW precaches the file for offline use.
+- **No AI chat, no medical advice, no style ranking.** The glossary is shown as written, and the keep-out topics stay out.

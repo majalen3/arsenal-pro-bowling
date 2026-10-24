@@ -1015,6 +1015,38 @@ async def armory_cycle(b):
     check(True, '[armory] pedestal opens the ball page')
     check(not errs, f'[armory] no page errors {errs[:3]}'); await c.close()
 
+async def help_cycle(b):
+    # Help bubbles (off by default, one "?" per card, never on the scoring pad) + Glossary from More (no new tab, no AI chat).
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.goto(BASE + '?hp#/lane'); await p.wait_for_selector('.lane-tools')
+    check(await p.query_selector('.help-dot') is None, '[help] off by default: no "?" on Lane')
+    await p.goto(BASE + '?hp#/more'); await p.wait_for_selector('#helpFld'); await p.click('#helpFld [data-v="on"]')
+    check(await p.evaluate("() => JSON.parse(localStorage.getItem('ap_prefs') || '{}').help === true"), '[help] More toggle turns it on (saved)')
+    await p.goto(BASE + '?hp2#/lane'); await p.wait_for_selector('.help-dot[data-help="bm-shr"]')
+    await p.click('.help-dot[data-help="bm-shr"]'); await p.wait_for_selector('#helpSheet #helpText')
+    txt = await p.text_content('#helpText'); check(txt.startswith('Every ball skids'), f'[help] Lane bubble shows the v1 text ({txt[:40]})')
+    await axe_ok(p, '[help] bubble'); await p.click('#helpMore'); await p.wait_for_selector('#gl-bm-shr[open]')
+    check(await p.query_selector('#tabs a[href="#/more"][aria-current=page]') is not None, '[help] Glossary lives under More (no new tab)')
+    await p.fill('#glSearch', 'handicap'); await p.wait_for_selector('#gl-sc-handicap')
+    cnt = await p.text_content('#glCount'); check('of 106 terms' in cnt, f'[help] glossary search ({cnt})')
+    await p.click('#gl-sc-handicap summary'); n = await p.evaluate("() => document.querySelectorAll('#gl-sc-handicap .gl-src li').length"); check(n >= 1, f'[help] entry lists its sources ({n})')
+    await axe_ok(p, '[help] glossary'); small = await p.evaluate(SMALL); check(not small, f'[help] targets >= 44px {small[:6]}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[help] no horizontal overflow at 360 {w}')
+    await shot(p, 'phone-glossary')
+    await p.goto(BASE + '?hp3#/target'); await p.wait_for_selector('#tgCall')
+    check(await p.query_selector('.help-dot[data-help="tg-arrows"]') is not None, '[help] Targeting has its "?"')
+    await p.goto(BASE + '?hp4#/tonight'); await p.wait_for_timeout(600)
+    check(await p.query_selector('.help-dot') is None, '[help] nothing on Tonight (scoring)')
+    await p.wait_for_selector('#loadStarter'); await p.click('#loadStarter'); await p.wait_for_selector('#tnBagLink')
+    check(await p.query_selector('.help-dot') is None, '[help] still nothing on Tonight with a bag loaded')
+    await p.goto(BASE + '?hp4b#/bag'); await p.wait_for_selector('#bagCare .help-dot[data-help="eq-cleaning"]')
+    many = await p.evaluate("() => [...document.querySelectorAll('.card')].filter(c => c.querySelectorAll('.help-dot').length > 1).length")
+    nd = await p.evaluate("() => document.querySelectorAll('.help-dot').length"); check(many == 0 and nd == 2, f'[help] Bag: 2 "?" (care, pack), at most one per card ({nd})')
+    await axe_ok(p, '[help] bag'); await shot(p, 'phone-bag-help')
+    await p.goto(BASE + '?hp5#/more'); await p.wait_for_selector('#helpFld'); await p.click('#helpFld [data-v="off"]')
+    await p.goto(BASE + '?hp6#/lane'); await p.wait_for_selector('.lane-tools'); check(await p.query_selector('.help-dot') is None, '[help] off again: gone')
+    check(not errs, f'[help] no page errors {errs[:3]}'); await c.close()
+
 async def aimbox_cycle(b):
     # Aim Box: default off (lane pixels unchanged, no pill); Overlays sheet turns it on; House = Baker 4.5-9.5 at 45 ft;
     # through/outside pill; Custom edges persist after reload; lefty mirror keeps the same read; Targeting + Compare show it.
@@ -1061,7 +1093,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('armory', lambda: armory_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

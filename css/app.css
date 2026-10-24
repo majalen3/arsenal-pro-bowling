@@ -616,3 +616,12 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .ped-empty{align-items:center;min-height:var(--tap)}.ped-empty .plate{border-top-style:dashed}
 .arm-fold summary{display:flex;justify-content:space-between;align-items:center;min-height:var(--tap);cursor:pointer;font-weight:700}
 .ped-link:focus-visible,.ped-empty:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+/* Help bubbles + glossary (HELP_BUBBLES_V1). Off by default; one "?" per card. */
+.help-dot{display:inline-grid;place-items:center;width:var(--tap);height:var(--tap);flex:none;border-radius:var(--r-pill);border:1px solid var(--line-2);background:var(--surface-2);color:var(--accent-ink);font-weight:800;font-size:var(--fs-md)}
+.help-dot:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.gl-list{display:flex;flex-direction:column;gap:var(--s2);padding:0 var(--s4) var(--s4)}
+.gl-item summary{display:flex;justify-content:space-between;align-items:center;gap:var(--s2);min-height:var(--tap);cursor:pointer}
+.gl-term{font-weight:700}
+.gl-src{display:flex;flex-direction:column;gap:0;padding-left:0;list-style:none;margin:var(--s1) 0 0}
+.gl-src li{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2)}
+.gl-src a{display:inline-flex;align-items:center;min-height:var(--tap);line-height:1.3}

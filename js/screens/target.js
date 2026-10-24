@@ -17,6 +17,7 @@ import { arrowsBoard } from '../cc/geom.js';
 import * as T from '../cc/target.js';
 import * as F from '../cc/strikeline.js';
 import { aimLayer as aimL, paintPill, overlaysBtn } from './overlays.js';
+import { helpDot } from './help.js';
 const num = f => f == null ? null : typeof f === 'object' ? (Number.isFinite(+f.v) ? +f.v : null) : (Number.isFinite(+f) ? +f : null);
 const prov = (p, label) => h('span', { class: 'prov', 'data-prov': p || null, text: label });
 const CALL = { pocket: ['Pocket', 'good'], high: ['High', 'warn'], light: ['Light', 'warn'], gutter: ['Gutter', 'bad'] };
@@ -155,7 +156,7 @@ export async function render({ query } = {}) {
     coach, limits, findBtn, findOut,
     h('div', { class: 'tg-grid' },
       h('div', { class: 'tg-lane-col' }, canvas),
-      h('div', { class: 'tg-side' }, h('div', { class: 'row', role: 'group', 'aria-label': 'Result' }, callPill, boxPill, aimPill), overlaysBtn(() => r ? r.preset : 'house', 'tgOvBtn'), deckCv, h('p', { class: 'small', id: 'tgDeckRead' }))),
+      h('div', { class: 'tg-side' }, h('div', { class: 'row', role: 'group', 'aria-label': 'Result' }, callPill, boxPill, aimPill, helpDot('tg-arrows', 'Aim at the arrows')), overlaysBtn(() => r ? r.preset : 'house', 'tgOvBtn'), deckCv, h('p', { class: 'small', id: 'tgDeckRead' }))),
     sugBox, sum, warnBox, dock,
     h('div', { class: 'row tg-actions' }, saveBtn, backBtn),
     setup,
