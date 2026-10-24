@@ -11,13 +11,20 @@ const setAim = p => setPrefs({ aimBox: Object.assign({}, aimPref(), p) });
 // Lane hook: returns null when off, so the lane draws nothing extra.
 export const aimLayer = pattern => result => { const box = boxFor(aimPref(), pattern); return box ? { box, ok: AB.through(box, result && result.points) } : null; };
 // Status pill: hidden when off; "Through zone" (good) or "Outside zone" (warn), the same tones as the pocket read.
-export function paintPill(pill, pattern, result) {
+// sim2 #1: ctx() = { cat, speed, rev, finish, oil } lets the pill check whether ANY modelled strike line can pass the box.
+// When none can (the model's breakpoints sit nearer than a 45 ft house box), it says "Beyond model" (neutral, explained in
+// its title and the lane's label) instead of marking the app's own recommended line "Outside zone".
+export function paintPill(pill, pattern, result, ctx) {
   const box = boxFor(aimPref(), pattern);
-  pill.hidden = !box; if (!box) return '';
-  const ok = AB.through(box, result && result.points);
-  pill.textContent = ok ? 'Through zone' : 'Outside zone'; pill.dataset.tone = ok ? 'good' : 'warn';
-  pill.title = `Aim Box ${AB.label(box)}`;
-  return ` Aim Box ${AB.label(box)}: ${ok ? 'path goes through it' : 'path misses it'}.`;
+  pill.hidden = !box; if (!box) { delete pill.dataset.state; pill.dataset.why = ''; return ''; }
+  const ok = AB.through(box, result && result.points), c = !ok && ctx ? ctx() : null, q = pat(pattern);
+  const rc = c && c.cat ? AB.reach(box, c.cat, { speed: c.speed, rev: c.rev, preset: q.preset, finish: c.finish, oil: c.oil }) : null;
+  const beyond = !!(rc && !rc.any), why = beyond ? AB.beyondWhy(box, rc) : '';
+  pill.textContent = ok ? 'Through zone' : beyond ? 'Beyond model' : 'Outside zone';
+  if (beyond) delete pill.dataset.tone; else pill.dataset.tone = ok ? 'good' : 'warn';
+  pill.dataset.state = ok ? 'through' : beyond ? 'beyond' : 'outside'; pill.dataset.why = why;
+  pill.title = `Aim Box ${AB.label(box)}${beyond ? '. ' + why : ''}`;
+  return ` Aim Box ${AB.label(box)}: ${ok ? 'path goes through it' : beyond ? why : 'path misses it'}.`;
 }
 export function overlaysBtn(pattern, id = 'ovBtn') {
   return h('button', { class: 'chip', id, 'aria-haspopup': 'dialog', onclick: () => openOverlays(pattern) }, 'Overlays');

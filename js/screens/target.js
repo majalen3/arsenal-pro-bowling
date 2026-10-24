@@ -31,7 +31,7 @@ export async function render({ query } = {}) {
   const P = proj(), b = P.bowler || {}, lefty = () => (profile() && profile().hand === 'left') || b.hand === 'left';
   const sess = (P.sessions || {})[openNight(P) || ''] || {};   // the open night (sim bug 3), not the calendar day
   const ft = sess.ft != null ? +sess.ft : HOUSE_ASSUMED.ft;
-  const speed = num(b.speed) || +S.speed || 15, rev = num(b.rev) || +S.rev || 220;
+  const speed = num(b.speed) || 15, rev = num(b.rev) || 220;   // sim2 #1: the same release as Tonight's line (js/cc/line.js defaults)
   const relSrc = k => { const f = b[k]; return f && f.prov ? (f.prov.kind === 'device' ? ['device', f.prov.label || 'LaneTrax'] : f.prov.ref === 'default' ? ['assumed', 'default (not entered)'] : ['user', 'your profile']) : ['assumed', 'assumed']; };
   // balls: owned (not pro shop / retired) + the Lane ball; ?ball= picks one (Tonight link)
   const owned = Object.values(P.owned || {}).filter(o => !['proShop', 'retired'].includes(o.status)).map(o => catOf(o.catalogId)).filter(Boolean);
@@ -41,9 +41,13 @@ export async function render({ query } = {}) {
   const pt0 = prefs().target || {}, saved = pt0.tv === 2 ? pt0 : {};
   const ctx = { speed, rev, ft };
   // Same stand/aim as Tonight and Lane (js/cc/line.js, sim bug 5).
-  const seed = () => { const L = specOK(cat) ? lineFor(cat, { speed: num(b.speed) || 15, rev: num(b.rev) || 220, ft: sess.ft != null ? +sess.ft : null }) : null;
-    return !L || !L.stand ? {} : { feet: L.stand.feet, eyes: L.ml.target }; };
-  let t = Object.assign({}, T.DEFAULTS, saved.t || seed());
+  // sim2 #1: feet/eyes start on tonight's line for THIS ball and length; a saved line is kept only for the same ball + length.
+  const startOf = () => { const L = specOK(cat) ? lineFor(cat, { speed, rev, ft: sess.ft != null ? +sess.ft : null }) : null; return L && L.ml && !L.ml.none ? L.ml : null; };
+  const seed = base => { const ml = startOf(); if (!ml) return {};
+    const off = +base.offset || T.DEFAULTS.offset, dr = +base.drift || 0, lay = ml.feet, arr = ml.target;
+    return { feet: Math.round(lay + off - dr), eyes: base.mode === 'dots' ? Math.round((lay + (arr - lay) * T.DOTS_FT / T.ARROWS_FT) * 10) / 10 : arr, bpBoard: null, bpFt: null }; };
+  const same = saved.t && saved.ball === cat.id && saved.ft === ft;
+  let t = Object.assign({}, T.DEFAULTS, saved.t || {}); if (!same) Object.assign(t, seed(t));
   let box = null, r = null, sug = null;
 
   const canvas = h('canvas', { id: 'tgLane', class: 'lane-canvas tg-lane', tabindex: '0', role: 'img' });
@@ -64,7 +68,7 @@ export async function render({ query } = {}) {
   const warnBox = h('div', { class: 'muted small', id: 'tgWarn' });
   const tourBox = h('div', { id: 'tgTourHost' });
   const ballSel = h('select', { id: 'tgBall', 'aria-label': 'Ball', class: 'tg-ball' }, ...list.map(c => h('option', { value: c.id, text: c.name + (specOK(c) ? '' : ' (spec TBD)') })));
-  ballSel.value = cat.id; ballSel.onchange = () => { cat = catOf(ballSel.value) || cat; box = null; findOut.replaceChildren(); update(true); };
+  ballSel.value = cat.id; ballSel.onchange = () => { cat = catOf(ballSel.value) || cat; t = Object.assign({}, t, seed(t)); box = null; findOut.replaceChildren(); update(true); };
   // ---- Find my strike line: grid + Monte Carlo on the unchanged engine (js/cc/strikeline.js)
   const findOut = h('div', { id: 'tgFindOut', 'aria-live': 'polite' });
   const findBtn = h('button', { class: 'btn primary block', id: 'tgFind', html: icon('target') + '<span>Find my strike line</span>', onclick: () => runFind() });
@@ -72,9 +76,9 @@ export async function render({ query } = {}) {
     if (!specOK(cat)) { findOut.replaceChildren(h('p', { class: 'coach', text: `${cat.name}: spec TBD, so no model line to search.` })); return; }
     findBtn.disabled = true; findBtn.lastChild.textContent = 'Searching\u2026';
     setTimeout(() => {
-      const t0 = performance.now(), sd = F.spreadFrom(P), res = F.find(cat, { speed, rev, ft, spread: sd }), ms = Math.round(performance.now() - t0);
+      const t0 = performance.now(), sd = F.spreadFrom(P), st = startOf(), res = F.find(cat, { speed, rev, ft, spread: sd, start: st ? { lay: st.feet, arr: st.target } : null }), ms = Math.round(performance.now() - t0);
       findBtn.disabled = false; findBtn.lastChild.textContent = 'Find my strike line';
-      const w = F.say(res, t); findOut.dataset.ms = ms;
+      const w = F.say(res, Object.assign({}, t, { ball: cat.name })); findOut.dataset.ms = ms;
       if (res.none) { findOut.replaceChildren(h('div', { class: 'card tg-find', id: 'tgFindCard' }, h('p', { class: 'coach', id: 'tgFindLine', text: `${w.line} Try another ball or move by hand below.` }))); return; }
       const use = (c, feet, eye, label) => () => { t = Object.assign({}, t, { feet, eyes: eye, bpBoard: c.bp != null ? Math.round(c.bp) : null, bpFt: c.bpFt }); box = null; update(true); toast(`${label}: feet ${feet}, ${t.mode} ${eye}.`); canvas.scrollIntoView({ block: 'start', behavior: 'smooth' }); };
       const sp = relSrc('speed'), rv = relSrc('rev'), S2 = res.spread;
@@ -83,13 +87,13 @@ export async function render({ query } = {}) {
         h('p', { class: 'small', id: 'tgFindWhy', text: w.why }),
         h('p', { class: 'muted small', id: 'tgFindLimit', text: T.bookLineFor((profile() || {}).style || b.style) }),
         h('div', { class: 'row' }, h('button', { class: 'btn primary', id: 'tgFindApply', onclick: use(res.best, w.feet, w.eye, 'Strike line') }, `Use stand ${w.feet}, aim ${w.eye}`)),
-        w.alt ? h('p', { class: 'small', id: 'tgFindAlt' }, w.alt, ' ', h('button', { class: 'btn ghost sm', id: 'tgFindAltApply', onclick: use(res.alt, w.altFeet, w.altEye, res.alt.kind === 'room' ? 'More room' : 'Next best') }, 'Use it')) : '',
+        w.alt ? h('p', { class: 'small', id: 'tgFindAlt' }, w.alt, ' ', h('button', { class: 'btn ghost sm', id: 'tgFindAltApply', onclick: use(res.alt, w.altFeet, w.altEye, res.alt.kind === 'higher' ? 'Higher pocket %' : res.alt.kind === 'room' ? 'More room' : 'Next best') }, 'Use it')) : '',
         h('details', { class: 'small', id: 'tgFindInputs' }, h('summary', { text: 'Inputs and method' }),
           h('ul', {},
             h('li', { text: `${w.window} Source: ` }, h('a', { href: F.SRC.window.url, target: '_blank', rel: 'noopener', class: 'srclink' }, F.SRC.window.label), '. No strike % shown: the only published carry number we found (85% strikes at board 17.5) is not a curve by board and angle.'),
             h('li', { text: `Release: ${speed} mph (${sp[1]}), ${rev} rpm (${rv[1]}); ${res.preset} preset (${ft} ft, ${sess.ft != null ? 'tonight' : 'assumed'}); ${cat.name}.` }),
             h('li', { text: `Shot-to-shot spread (1 SD): arrows ${S2.arrows.v} bds (${S2.arrows.label}${S2.arrows.date ? ', ' + S2.arrows.date : ''}); laydown ${S2.laydown.label}; speed ${S2.speed.label}; rev ${S2.rev.label}.` }),
-            h('li', { text: `Searched ${res.tried} lines in the window, scored the ${res.scored} with the most miss room by ${res.n} simulated shots each (seed ${res.seed}). Highest pocket % wins; within 3 points the line with more room wins. Feet = laydown + ball offset ${t.offset} \u2212 drift ${t.drift}. ${ms} ms.` })),
+            h('li', { text: `Searched ${res.tried} lines in the window, scored the ${res.scored} with the most miss room by ${res.n} simulated shots each (seed ${res.seed}). ${res.best.kind === 'start' ? `The headline is your starting line, the same as Tonight (js/cc/line.js); the search\u2019s best line is shown only when its pocket % is more than 3 points higher.` : 'Highest pocket % wins; within 3 points the line with more room wins.'} Feet = laydown + ball offset ${t.offset} \u2212 drift ${t.drift}. ${ms} ms.` })),
           h('p', { class: 'muted', text: 'A model estimate from the ball motion engine, not a guarantee. Import a LaneTrax session to use your measured accuracy.' }))));
     }, 30);
   }
@@ -148,7 +152,7 @@ export async function render({ query } = {}) {
   const helpBtn = h('button', { class: 'icon-btn', id: 'tgHelp', 'aria-label': 'How targeting works', text: '?', onclick: () => tour(0) });
   const dock = h('div', { class: 'tg-dock', id: 'tgDock' }, modeSeg, feetRow, eyesRow);
 
-  const aimPill = h('span', { class: 'pill', id: 'tgAimPill', hidden: true });
+  const aimPill = h('span', { class: 'pill', id: 'tgAimPill', hidden: true }), aimWhy = h('p', { class: 'muted small', id: 'tgAimWhy', hidden: true });
   const el = h('section', { class: 'screen target-screen', id: 'target' },
     h('header', { class: 'appbar' }, h('button', { class: 'icon-btn', 'aria-label': 'Back to Lane', html: icon('back'), onclick: () => go('#/lane') }), h('h1', { class: 'title', text: 'Targeting' }), helpBtn),
     tourBox,
@@ -157,7 +161,7 @@ export async function render({ query } = {}) {
     h('div', { class: 'tg-grid' },
       h('div', { class: 'tg-lane-col' }, canvas),
       h('div', { class: 'tg-side' }, h('div', { class: 'row', role: 'group', 'aria-label': 'Result' }, callPill, boxPill, aimPill, helpDot('tg-arrows', 'Aim at the arrows')), overlaysBtn(() => ({ preset: r ? r.preset : 'house', ft: sess.ft != null ? +sess.ft : null }), 'tgOvBtn'), deckCv, h('p', { class: 'small', id: 'tgDeckRead' }))),
-    sugBox, sum, warnBox, dock,
+    aimWhy, sugBox, sum, warnBox, dock,
     h('div', { class: 'row tg-actions' }, saveBtn, backBtn),
     setup,
     h('details', { class: 'card', id: 'tgSources' }, h('summary', { class: 'card-title', text: 'Rules and sources' }),
@@ -194,12 +198,13 @@ export async function render({ query } = {}) {
     el.querySelector('#tgAssume').textContent = `Ball offset ${t.offset} and drift ${t.drift || 0} are ${saved.t ? 'yours' : 'assumed (Breakdown Bowling example: 7)'}; set them from a few shots on video. Box: ${box.from === 'model' ? `tonight\u2019s model strike line, ${box.board} @ ${box.ft} ft` : box.from === 'yours' ? 'your target' : 'Rule of 31 (no model line)'}, 3 boards \u00d7 2 ft (Human Kinetics; NBA 8\u201310 at 39\u201341 ft). ${box.r31.text}.`;
     const d = describe(r.a, L);
     el.querySelector('#tgDeckRead').textContent = d.text;
-    paintPill(aimPill, () => ({ preset: r.preset, ft: sess.ft != null ? +sess.ft : null }), r.a);
+    paintPill(aimPill, () => ({ preset: r.preset, ft: sess.ft != null ? +sess.ft : null }), r.a, () => ({ cat, speed, rev, finish: 'factory', oil: 1 }));
+    aimWhy.hidden = aimPill.dataset.state !== 'beyond'; aimWhy.textContent = aimPill.dataset.why || '';
     lane.draw({ ball: cat, result: r.a }, { animate });
     deck.draw({ res: r.a, lefty: L, tone: CALL[r.call][1], color: cat.color }, { animate });
     canvas.setAttribute('aria-label', `Lane: feet ${t.feet}, laydown ${r.lay}, eyes ${t.eyes} at the ${t.mode}. ${coach.textContent}`);
     deckCv.setAttribute('aria-label', d.text);
-    setPrefs({ target: Object.assign({}, prefs().target, { t, ball: cat.id, tv: 2 }) });
+    setPrefs({ target: Object.assign({}, prefs().target, { t, ball: cat.id, ft, tv: 2 }) });
   }
   async function saveMine() {
     if (!r) return;

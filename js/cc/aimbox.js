@@ -4,7 +4,7 @@
 // Depth is 3 ft (secondary description of his poster, excerpt). Sport: the Rule of 31 board at oil length + 3 ft (Baker's
 // spacing: 42 ft oil, tape at 45), with a shorter box of 3 boards by 2 ft (Human Kinetics break box, already cited in Targeting).
 // That is a starting point, not a rule. See docs/DECISIONS.md "Aim Box".
-import { OIL_LEN, xToBoard, yToFeet } from '../engine.js';
+import { OIL_LEN, xToBoard, yToFeet, S, analyze } from '../engine.js';
 export const TIP = 'Optional visual target zone for the ball\u2019s breakpoint. Best used on house shots to help achieve optimal pocket entry angle.';
 export const PRESETS = { house: 'House', sport: 'Sport', custom: 'Custom' };
 export const HOUSE = { b1: 4.5, b2: 9.5, ft: 45, depth: 3 };
@@ -47,3 +47,24 @@ export function rectOf(box, bx, fy) {
 export const label = box => !box ? '' : `${box.b1}\u2013${box.b2} at ${box.ft1}\u2013${box.ft2} ft`;
 export const source = box => !box ? '' : box.from === 'baker' ? 'Mark Baker\u2019s house-shot box (tape at 45 ft, boards 4.5\u20139.5).'
   : box.from === 'r31' ? `Starting point: Rule of 31 (${box.len} ft oil \u2212 31 = board ${box.len - 31}), 3 ft past the oil.` : 'Your box.';
+// sim2 #1: can ANY modelled strike line pass through this box? The 2-D model's breakpoints sit nearer than a real house
+// shot (about 37 ft on the house preset, see Targeting "Model limit"), so a box at 45 ft can be out of the model's reach.
+// Same grid as modelLine (laydown 5-30, aim -8..8 by 0.5, the engine's own strike rule). When false, the pill says
+// "Beyond model" (neutral) instead of marking the app's own line "Outside zone". Memoised per box + ball + release.
+const reachMemo = new Map();
+export function reach(box, cat, { speed = 15, rev = 220, preset = 'house', finish = 'factory', oil = 1 } = {}) {
+  if (!box || !cat) return null;
+  const k = [box.b1, box.b2, box.ft1, box.ft2, cat.id, speed, rev, preset, finish, oil].join('|');
+  if (reachMemo.has(k)) return reachMemo.get(k);
+  const keep = { pattern: S.pattern, finish: S.finish, oil: S.oil }; let out = { any: false, n: 0, bpFt: null };
+  try {
+    S.pattern = preset; S.finish = finish; S.oil = oil;
+    for (let rel = 5; rel <= 30; rel++) for (let aim = -8; aim <= 8; aim += 0.5) {
+      const a = analyze(cat, { speed, rev, release: rel, aim }); if (!a.strike) continue;
+      if (a.bpFeet != null) out.bpFt = Math.max(out.bpFt || 0, Math.round(a.bpFeet));
+      if (through(box, a.points)) { out.any = true; out.n++; }
+    }
+  } finally { Object.assign(S, keep); }
+  reachMemo.set(k, out); return out;
+}
+export const beyondWhy = (box, rc) => `No modelled strike line reaches this box: the model\u2019s breakpoints sit nearer${rc && rc.bpFt ? ` (about ${rc.bpFt} ft)` : ''} than ${box.ft1}\u2013${box.ft2} ft. The box stays a visual guide; see Model limit in Targeting.`;

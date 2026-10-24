@@ -5,10 +5,16 @@ import { createLane } from '../lane.js';
 import { setBall } from '../ctl.js';
 import { profile } from '../store.js';
 import { aimLayer } from './overlays.js';
+import { proj } from '../hub.js';
+import { openNight } from '../cc/night.js';
+import { presetFor } from '../cc/model.js';
 import { go } from '../router.js';
 import { backBar } from './ball.js';
 import { readMed, ballRow } from './pickers.js';
 import { PATTERN_LABEL, FINISH_LABEL, CALL_LABEL, CALL_TONE, f1 } from '../labels.js';
+// sim2 #2: the Aim Box uses tonight's picked length when this preset is tonight's (same as Lane and Targeting)
+const patNow = () => { const P = proj(), sess = P ? ((P.sessions || {})[openNight(P) || ''] || {}) : {}, ft = sess.ft != null ? +sess.ft : null;
+  return { preset: S.pattern, ft: ft != null && presetFor(ft) === S.pattern ? ft : null }; };
 export function render({ query }) {
   const ids = (query.get('ids') || '').split(',').filter(Boolean).slice(0, 3);
   const ps = ids.map(id => balls.find(b => b.id === id)).filter(Boolean);
@@ -42,5 +48,5 @@ export function render({ query }) {
     h('p', { class:'muted small pad-x', text:`Same line for both: feet ${S.release}, ${S.speed} mph, ${S.rev} rpm on ${PATTERN_LABEL[S.pattern]}, ${FINISH_LABEL[S.finish]}. Highlighted rows differ; gold = closer to a strike.` }),
     h('div', { class:'cmp-body n' + ps.length }, h('div', { class:'cmp-cols n' + ps.length }, ...cols), h('div', { class:'table-wrap' }, table)));
   let ls = [];
-  return { el, title:'Compare', mounted() { ls = lanes.map(([cv, b, r]) => { const l = createLane(cv, { lefty:() => !!(profile() && profile().hand === 'left'), aimBox:aimLayer(() => S.pattern) }); l.draw({ ball:b, result:r }, { animate:true }); return l; }); }, destroy() { ls.forEach(l => l.destroy()); } };
+  return { el, title:'Compare', mounted() { ls = lanes.map(([cv, b, r]) => { const l = createLane(cv, { lefty:() => !!(profile() && profile().hand === 'left'), aimBox:aimLayer(patNow) }); l.draw({ ball:b, result:r }, { animate:true }); return l; }); }, destroy() { ls.forEach(l => l.destroy()); } };
 }

@@ -36,7 +36,10 @@ function shot(cat, lay, arr, sp, rv) {
   const a = analyze(cat, { speed: sp, rev: rv, release: rel, aim: f.aim }); return a.gutter ? null : a;
 }
 const AIMS = []; for (let x = -AIM_MAX; x <= AIM_MAX; x += 0.5) AIMS.push(x);
-export function find(cat, { speed = 15, rev = 220, ft = 38, spread, n = 200, seed = 31, top = 10 } = {}) {
+// start = { lay, arr }: the bowler's starting line from js/cc/line.js (sim2 #1: ONE answer to "where do I stand"). When given,
+// it is scored the same way and leads the result; the search's best line becomes a labelled alternative only when its
+// model pocket % is more than 3 points higher.
+export function find(cat, { speed = 15, rev = 220, ft = 38, spread, n = 200, seed = 31, top = 10, start = null } = {}) {
   if (!cat || !specOK(cat)) return { none: true, reason: 'spec TBD: no model line' };
   const sd = spread || spreadFrom(null), keep = { pattern: S.pattern, finish: S.finish, oil: S.oil }, preset = presetFor(ft), t0 = Date.now();
   try {
@@ -56,14 +59,15 @@ export function find(cat, { speed = 15, rev = 220, ft = 38, spread, n = 200, see
     if (!pool.length) pool.push(...byLay.values());
     for (const c of pool) { c.room = room(cat, c, speed, rev); }
     pool.sort((a, b) => b.room - a.room); const pick = pool.slice(0, top);
-    for (const c of pick) {
+    const mc = c => {
       const r = rng(seed); let hit = 0, angs = 0, k = 0;     // same seed per candidate: common random numbers, fair comparison
       for (let i = 0; i < n; i++) {
         const lay = c.lay + gauss(r) * sd.laydown.v, arr = c.arr + gauss(r) * sd.arrows.v, sp = speed + gauss(r) * sd.speed.v, rv = rev + gauss(r) * sd.rev.v;
         const a = shot(cat, lay, arr, sp, rv); if (inWin(a)) { hit++; angs += a.angle; k++; }
       }
       c.pocket = Math.round(hit / n * 100); c.angleAvg = k ? r1(angs / k) : null;
-    }
+    };
+    for (const c of pick) mc(c);
     // best = max pocket %; within 3 points prefer more room (margin)
     pick.sort((a, b) => b.pocket - a.pocket || b.room - a.room);
     const top1 = pick[0], close = pick.filter(c => top1.pocket - c.pocket <= 3).sort((a, b) => b.room - a.room || b.pocket - a.pocket);
@@ -71,6 +75,15 @@ export function find(cat, { speed = 15, rev = 220, ft = 38, spread, n = 200, see
     const others = pick.filter(c => c !== best && Math.abs(c.lay - best.lay) >= 2);
     const roomier = others.filter(c => c.room > best.room).sort((a, b) => b.pocket - a.pocket)[0];
     const alt = roomier ? Object.assign(roomier, { kind: 'room' }) : others[0] ? Object.assign(others[0], { kind: 'next' }) : null;
+    if (start && Number.isFinite(+start.lay) && Number.isFinite(+start.arr)) {
+      const st = { lay: +start.lay, arr: +start.arr, kind: 'start' }, a = shot(cat, st.lay, st.arr, speed, rev);
+      Object.assign(st, { entry: a ? a.entryBoard : null, angle: a ? a.angle : null, bp: a ? a.bpBoard : null, bpFt: a ? a.bpFeet : null });
+      st.room = room(cat, st, speed, rev); mc(st);
+      const better = best.pocket - st.pocket > 3 && (Math.abs(best.lay - st.lay) >= 1 || Math.abs(best.arr - st.arr) >= 0.5);
+      const sens = sensAt(cat, st, speed, rev, sd), angleWin = ANG; ANG = true;
+      return { none: false, angleWin, best: fmt(st), alt: better ? fmt(Object.assign({}, best, { kind: 'higher' })) : null, search: fmt(Object.assign({}, best, { kind: 'search' })),
+        preset, n, seed, spread: sd, sens, ms: Date.now() - t0, tried: cands.length, scored: pick.length + 1 };
+    }
     const sens = sensAt(cat, best, speed, rev, sd);
     const angleWin = ANG; ANG = true;
     return { none: false, angleWin, best: fmt(best), alt: alt ? fmt(alt) : null, preset, n, seed, spread: sd, sens, ms: Date.now() - t0, tried: cands.length, scored: pick.length };
@@ -90,15 +103,16 @@ function sensAt(cat, c, speed, rev, sd) {
 }
 const fmt = c => ({ kind: c.kind || 'best', lay: c.lay, arrows: c.arr, entry: r1(c.entry), angle: r1(c.angle), bp: c.bp == null ? null : r1(c.bp), bpFt: c.bpFt == null ? null : Math.round(c.bpFt), room: c.room, pocket: c.pocket, angleAvg: c.angleAvg });
 // coach voice, numbers first. feet = laydown + ball offset − drift (Breakdown Bowling); dots = straight line laydown → arrows.
-export function say(res, { offset = 7, drift = 0, mode = 'arrows' } = {}) {
+export function say(res, { offset = 7, drift = 0, mode = 'arrows', ball = '' } = {}) {
   if (res.none) return { line: res.reason, alt: '', why: '' };
   const where = c => { const feet = Math.round(c.lay + offset - drift), eye = mode === 'dots' ? r1(c.lay + (c.arrows - c.lay) * 0.5) : c.arrows; return { feet, eye, txt: `Stand ${feet}, aim ${eye} at the ${mode}` }; };
   const b = where(res.best), a = res.alt && where(res.alt), sd = res.spread.arrows;
   const basis = sd.src === 'device' ? `your accuracy \u00b1${sd.mean} bds${sd.n ? `, n=${sd.n}` : ''}` : `assumed accuracy \u00b1${sd.v} bds, no LaneTrax import`;
   return {
-    line: `${b.txt}. Pocket ${res.best.pocket}% (model estimate, ${basis}; ${res.n} simulated shots).`,
+    line: `${res.best.kind === 'start' ? `Your starting line${ball ? ' with ' + ball : ''} (same as Tonight): ` + b.txt.charAt(0).toLowerCase() + b.txt.slice(1) : b.txt}. Pocket ${res.best.pocket}% (model estimate, ${basis}; ${res.n} simulated shots).`,
     window: res.angleWin ? 'Pocket = entry board 17\u201318 at 4\u20136\u00b0 (model angle, drawn units).' : `Pocket = entry board 17\u201318 only: no line reaches 4\u20136\u00b0 with this ball here (best ${res.best.angle}\u00b0).`,
-    alt: a ? `${res.alt.kind === 'room' ? 'More room' : 'Next best'}: ${a.txt.charAt(0).toLowerCase() + a.txt.slice(1)}, ${res.alt.pocket}% (${res.alt.room ? `still in the window for a ${res.alt.room}-board miss at the arrows${res.alt.kind === 'room' ? `, vs ${res.best.room}` : ''}` : 'less room for a miss'}).` : '',
+    alt: a && res.alt.kind === 'higher' ? `Higher model pocket %: ${a.txt.charAt(0).toLowerCase() + a.txt.slice(1)}, ${res.alt.pocket}% (the model\u2019s own search of ${res.tried} lines; breakpoint board ${res.alt.bp} vs ${res.best.bp} on your starting line, which aims at the Rule of 31 board).`
+      : a ? `${res.alt.kind === 'room' ? 'More room' : 'Next best'}: ${a.txt.charAt(0).toLowerCase() + a.txt.slice(1)}, ${res.alt.pocket}% (${res.alt.room ? `still in the window for a ${res.alt.room}-board miss at the arrows${res.alt.kind === 'room' ? `, vs ${res.best.room}` : ''}` : 'less room for a miss'}).` : '',
     why: (() => { const top = res.sens[0], W = { arrows: `a ${res.spread.arrows.v}-board miss at the arrows`, laydown: `a ${res.spread.laydown.v}-board laydown miss`, speed: `${res.spread.speed.v} mph of speed change`, rev: `${res.spread.rev.v} rpm of rev change` };
       return res.best.pocket >= 85 ? `High because this line keeps the entry in 17\u201318 ${res.angleWin ? ' at 4\u20136\u00b0' : ''} for a ${res.best.room}-board miss either way at the arrows.`
         : `Not higher mostly because ${W[top.k]} moves the entry about ${top.v} boards, and the window is 1 board wide.`; })(),
