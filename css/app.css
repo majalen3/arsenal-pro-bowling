@@ -582,6 +582,13 @@ noscript p{padding:24px}
 .fix-pick{display:grid;gap:var(--s1)}
 .fix-pick p{margin:0}
 .fix-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--s2)}
+/* sim2 #3/#5: whose frame (league rows); Undo / Fix and the spare hint inside the pad, so they sit in thumb reach */
+.fix-row{display:grid;gap:var(--s1)}
+.fix-grid .btn{min-height:var(--tap)}
+.ql-btns{grid-template-columns:repeat(6,1fr)}
+.ql-btns .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15}
+.btn .btn-sub{display:block;font-size:var(--fs-xs);font-weight:500;color:var(--text-2)}
+.ql-pad .ql-hint{margin:0;font-size:var(--fs-xs);line-height:1.35}
 /* scoring fix 3: throwing-this-ball chip */
 .ql-sub{align-items:center;gap:var(--s2)}
 .ql-sub .ql-ball{max-width:60%;overflow:hidden;text-overflow:ellipsis}
