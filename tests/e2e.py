@@ -988,11 +988,53 @@ async def alley_cycle(b):
     check(not errs, '[alley] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
+async def aimbox_cycle(b):
+    # Aim Box: default off (lane pixels unchanged, no pill); Overlays sheet turns it on; House = Baker 4.5-9.5 at 45 ft;
+    # through/outside pill; Custom edges persist after reload; lefty mirror keeps the same read; Targeting + Compare show it.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 740})
+    await seed(p); await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ovBtn'); await p.wait_for_timeout(900)
+    px = lambda: p.evaluate("document.querySelector('#lane').toDataURL()")
+    off0 = await px()
+    check(await p.eval_on_selector('#aimPill', 'e => e.hidden'), '[aimbox] default off: no pill')
+    await p.click('#ovBtn'); await p.wait_for_selector('#ovSheet')
+    tip = await p.text_content('#ovTip'); check('Best used on house shots' in tip, '[aimbox] tooltip text')
+    await axe_ok(p, '[aimbox] overlays sheet (off)')
+    await p.click('#ovSheet [aria-label="Aim Box"] [data-v="on"]'); await p.wait_for_selector('#ovBoxTxt')
+    txt = await p.text_content('#ovBoxTxt'); check('4.5\u20139.5 at 43.5\u201346.5 ft' in txt and 'Baker' in txt, f'[aimbox] House preset = Baker box ({txt})')
+    await axe_ok(p, '[aimbox] overlays sheet (on)'); small = await p.evaluate(SMALL); check(not small, f'[aimbox] sheet targets >= 44px {small[:6]}')
+    await shot(p, 'phone-aimbox-sheet')
+    await p.keyboard.press('Escape'); await p.wait_for_timeout(700)
+    on1 = await px(); check(on1 != off0, '[aimbox] on: box drawn on the lane')
+    pill = await p.text_content('#aimPill'); check(pill in ('Through zone', 'Outside zone') and not await p.eval_on_selector('#aimPill', 'e => e.hidden'), f'[aimbox] pill shows the read ({pill})')
+    lbl = await p.get_attribute('#lane', 'aria-label'); check('Aim Box 4.5' in lbl, '[aimbox] canvas label includes the box')
+    await shot(p, 'phone-aimbox-lane')
+    # Custom: edges persist across reload
+    await p.click('#ovBtn'); await p.click('#ovSheet [aria-label="Aim Box preset"] [data-v="custom"]'); await p.wait_for_selector('#ovB1')
+    await p.click('#ovSheet [aria-label="Increase Outside edge (board)"]'); await p.wait_for_timeout(200)
+    await p.keyboard.press('Escape'); await p.reload(); await p.wait_for_selector('#aimPill'); await p.wait_for_timeout(700)
+    ab = await p.evaluate("JSON.parse(localStorage.getItem('ap_prefs')).aimBox")
+    check(ab['on'] and ab['preset'] == 'custom' and ab['b1'] == 5, f'[aimbox] custom box persists ({ab})')
+    check('Aim Box 5' in await p.get_attribute('#lane', 'aria-label'), '[aimbox] custom box drawn after reload')
+    pr = await p.text_content('#aimPill')
+    await p.evaluate("localStorage.setItem('ap_profile', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('ap_profile') || '{}'), {hand: 'left'})))")
+    await p.reload(); await p.wait_for_selector('#aimPill'); await p.wait_for_timeout(700)
+    check(await p.text_content('#aimPill') == pr, '[aimbox] lefty mirror: same read in own boards')
+    await shot(p, 'phone-aimbox-lefty')
+    await p.goto(BASE + '#/target'); await p.wait_for_selector('#tgOvBtn'); await p.wait_for_timeout(700)
+    check(not await p.eval_on_selector('#tgAimPill', 'e => e.hidden'), '[aimbox] Targeting shows the Aim Box read')
+    # Off again: lane pixels back to the default
+    await p.evaluate("localStorage.setItem('ap_profile', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('ap_profile') || '{}'), {hand: 'right'})))")
+    await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ovBtn'); await p.click('#ovBtn'); await p.click('#ovSheet [aria-label="Aim Box"] [data-v="off"]')
+    await p.keyboard.press('Escape'); await p.wait_for_timeout(900)
+    check(await p.eval_on_selector('#aimPill', 'e => e.hidden'), '[aimbox] off again: pill hidden')
+    check(not errs, '[aimbox] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
 async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

@@ -19,6 +19,7 @@ import { prefs, setPrefs } from '../store.js';
 import { ready, proj } from '../hub.js';
 import { lineFor, standOf } from '../cc/line.js';
 import { openNight } from '../cc/night.js';
+import { aimLayer, paintPill, overlaysBtn } from './overlays.js';
 export function render() {
   const ballBtn = h('button', { class:'ball-btn', id:'ballBtn', 'aria-haspopup':'dialog', onclick:openBallSheet });
   const saveBtn = h('button', { class:'icon-btn', id:'saveBtn', 'aria-label':'Save this line', onclick:quickSave });
@@ -46,19 +47,21 @@ export function render() {
     h('div', { class:'miss-lbl', id:'missLbl', text:'Your ball went' }),
     h('div', { class:'miss-btns' }, ...['left', 'high', 'light', 'right'].map(k => h('button', { class:'miss-btn', 'data-miss':k, 'aria-label':`Missed ${MISSES[k].label}: ${MISSES[k].move}`, onclick:() => doMiss(k) },
       h('span', { class:'miss-ic', html:icon(k === 'left' ? 'left' : k === 'right' ? 'right' : k === 'high' ? 'up' : 'downArrow') }), h('span', { text:MISSES[k].label })))));
+  const aimPill = h('span', { class:'pill', id:'aimPill', hidden:true, 'aria-live':'polite' });
   const el = h('section', { class:'screen lane-screen' },
     h('header', { class:'appbar' }, h('h1', { class:'sr-only', id:'laneH1' }), ballBtn, h('div', { class:'appbar-actions' }, syncDot, tgBtn, linesBtn, saveBtn)),
     h('div', { class:'ctl-bar' }, qRow,
     h('div', { class:'cond-row' }, backBtn, h('div', { class:'cond-grp', role:'group', 'aria-label':'Lane conditions' }, patChip, surfChip, oilChip, tuneChip))),
     h('div', { class:'lane-grid' },
       h('div', { class:'lane-col' }, canvas,
-        h('div', { class:'legend', 'aria-hidden':'true' }, h('span', { html:`<i style="background:${C_SKID}"></i>Skid` }), h('span', { html:`<i style="background:${C_HOOK}"></i>Hook` }), h('span', { html:`<i style="background:${C_ROLL}"></i>Roll` }), h('span', { html:'<i class="bp"></i>Breakpoint' }))),
+        h('div', { class:'legend', 'aria-hidden':'true' }, h('span', { html:`<i style="background:${C_SKID}"></i>Skid` }), h('span', { html:`<i style="background:${C_HOOK}"></i>Hook` }), h('span', { html:`<i style="background:${C_ROLL}"></i>Roll` }), h('span', { html:'<i class="bp"></i>Breakpoint' })),
+        h('div', { class:'row lane-tools' }, overlaysBtn(() => S.pattern), aimPill)),
       h('section', { class:'deck-card', id:'deckCard', 'aria-labelledby':'deckH' }, h('figure', { class:'deck-fig' }, deckCv), h('div', { class:'deck-side' }, h('h2', { class:'deck-h', id:'deckH', text:'Pin deck' }), callBadge, coach, deckRead, h('p', { class:'deck-cap', id:'deckCap' }))),
       h('div', { class:'read-col' },
         h('div', { class:'tiles' }, tEntry, tAngle, tBp),
         lineSum, hold, missRow, more, inlineTune)));
   let tune = null;
-  const lane = createLane(canvas, { onAdjust:ch => adjust(ch), lefty:isLefty });
+  const lane = createLane(canvas, { onAdjust:ch => adjust(ch), lefty:isLefty, aimBox:aimLayer(() => S.pattern) });
   const deck = createDeck(deckCv);
   function setTile(t, val, sub, tone) { t.querySelector('.tile-val').textContent = val; t.querySelector('.tile-sub').textContent = sub; t.dataset.tone = tone; }
   let lastKey = '';
@@ -87,7 +90,7 @@ export function render() {
     const ph = a.phases, n0 = v => Math.round(v);
     more.innerHTML = (ph ? `<div><span class="dot" style="background:${C_SKID}"></span>Skid <b>0\u2013${n0(ph.skid)} ft</b> · <span class="dot" style="background:${C_HOOK}"></span>Hook <b>${n0(ph.skid)}\u2013${n0(ph.roll)} ft</b> · <span class="dot" style="background:${C_ROLL}"></span>Roll <b>${n0(ph.roll)}\u2013${n0(ph.end)} ft</b></div>` : '') +
       `<div>Rolls at ~<b>${rollMph(+S.speed).toFixed(1)} mph</b> (est.)${r31 ? ' · ' + r31.text : ''}</div>`;
-    canvas.setAttribute('aria-label', `Lane preview (model). ${CALL_LABEL[a.call]}. Entry board ${f1(a.entryBoard)}, angle ${f1(a.angle)} degrees, breakpoint board ${f1(a.bpBoard)} at ${a.bpFeet == null ? 'none' : Math.round(a.bpFeet) + ' feet'}. ${isLefty() ? 'Mirrored for left hand. ' : ''}Arrow keys move feet and target.`);
+    canvas.setAttribute('aria-label', `Lane preview (model). ${CALL_LABEL[a.call]}. Entry board ${f1(a.entryBoard)}, angle ${f1(a.angle)} degrees, breakpoint board ${f1(a.bpBoard)} at ${a.bpFeet == null ? 'none' : Math.round(a.bpFeet) + ' feet'}. ${isLefty() ? 'Mirrored for left hand. ' : ''}Arrow keys move feet and target.${paintPill(aimPill, () => S.pattern, a)}`);
     const same = l => l.release === +S.release && l.aim === +S.aim && l.speed === +S.speed && l.rev === +S.rev && l.pattern === S.pattern && l.finish === S.finish && +l.oil === +S.oil;
     const mine = linesForBall(), saved = mine.some(same), bl = backLine(mine);
     backBtn.hidden = !bl || same(bl);

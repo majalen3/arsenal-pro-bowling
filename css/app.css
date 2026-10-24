@@ -595,3 +595,5 @@ noscript p{padding:24px}
 
 /* GAP (d): user text size (More → Appearance). Everything is rem-based, so this scales the scoring surface and recap. */
 html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
+.lane-tools{gap:var(--s2);align-items:center;margin-top:var(--s2)}
+#tgOvBtn{margin-top:var(--s2)}

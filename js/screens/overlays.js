@@ -1,0 +1,45 @@
+// Lane overlays menu (one per lane view). Today's only toggle is the Aim Box (default off). The oil line, feet,
+// arrows and entry tiles are always drawn. Everything here is between-games planning, never shown during scoring.
+import { h, sheet, segmented, stepper } from '../ui.js';
+import { prefs, setPrefs } from '../store.js';
+import * as AB from '../cc/aimbox.js';
+export const aimPref = () => prefs().aimBox || {};
+const setAim = p => setPrefs({ aimBox: Object.assign({}, aimPref(), p) });
+// Lane hook: returns null when off, so the lane draws nothing extra.
+export const aimLayer = pattern => result => { const box = AB.boxOf(aimPref(), pattern()); return box ? { box, ok: AB.through(box, result && result.points) } : null; };
+// Status pill: hidden when off; "Through zone" (good) or "Outside zone" (warn), the same tones as the pocket read.
+export function paintPill(pill, pattern, result) {
+  const box = AB.boxOf(aimPref(), pattern());
+  pill.hidden = !box; if (!box) return '';
+  const ok = AB.through(box, result && result.points);
+  pill.textContent = ok ? 'Through zone' : 'Outside zone'; pill.dataset.tone = ok ? 'good' : 'warn';
+  pill.title = `Aim Box ${AB.label(box)}`;
+  return ` Aim Box ${AB.label(box)}: ${ok ? 'path goes through it' : 'path misses it'}.`;
+}
+export function overlaysBtn(pattern, id = 'ovBtn') {
+  return h('button', { class: 'chip', id, 'aria-haspopup': 'dialog', onclick: () => openOverlays(pattern) }, 'Overlays');
+}
+export function openOverlays(pattern) {
+  const body = h('div', { class: 'stack', id: 'ovSheet' });
+  const paint = () => {
+    const ae = document.activeElement, grp = ae && ae.closest && ae.closest('[role=radiogroup]'), gl = grp && grp.getAttribute('aria-label');
+    const p = aimPref(), box = AB.boxOf(Object.assign({}, p, { on: true }), pattern()), preset = p.preset || box.preset;
+    const kids = [
+      h('div', { class: 'fld' }, h('span', { text: 'Aim Box' }), segmented('Aim Box', [['off', 'Off'], ['on', 'On']], p.on ? 'on' : 'off', v => { setAim({ on: v === 'on' }); paint(); })),
+      h('p', { class: 'muted small', id: 'ovTip', text: AB.TIP })];
+    if (p.on) {
+      kids.push(h('div', { class: 'fld' }, h('span', { text: 'Box' }), segmented('Aim Box preset', Object.entries(AB.PRESETS), preset, v => {
+        setAim(v === 'custom' && !p.b1 ? { preset: v, b1: box.b1, b2: box.b2, ft: box.ft, depth: box.depth } : { preset: v }); paint(); }, 'wide')),
+        h('p', { class: 'small', id: 'ovBoxTxt' }, h('b', { text: `Boards ${AB.label(box)}. ` }), AB.source(box)));
+      if (preset === 'custom') {
+        const st = (id, label, k, min, max, step, unit) => stepper({ id, label, unit, min, max, step, value: box[k], onChange: v => { const c = AB.boxOf(Object.assign({}, aimPref(), { on: true, preset: 'custom' }), pattern()), q = { preset: 'custom', b1: c.b1, b2: c.b2, ft: c.ft, depth: c.depth, [k]: v }; if (q.b2 <= q.b1) q.b2 = q.b1 + 1; setAim(q); } });
+        kids.push(st('ovB1', 'Outside edge (board)', 'b1', 1, 30, .5, ''), st('ovB2', 'Inside edge (board)', 'b2', 2, 31, .5, ''), st('ovFt', 'Distance (centre)', 'ft', 30, 55, 1, 'ft'), st('ovDepth', 'Depth', 'depth', 1, 6, 1, 'ft'));
+      }
+      kids.push(h('p', { class: 'muted small', text: 'Aims for roughly 4\u20136\u00b0 model entry (drawn units, about 1\u00b0 real). Saved on this device.' }));
+    }
+    body.replaceChildren(...kids);
+    if (gl) { const n = body.querySelector(`[role=radiogroup][aria-label="${gl}"] [aria-checked=true]`); n && n.focus({ preventScroll: true }); }   // keep focus in the sheet after a repaint
+  };
+  paint();
+  return sheet({ title: 'Lane overlays', body, id: 'ovSheetDlg' });
+}

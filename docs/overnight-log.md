@@ -161,3 +161,18 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
   - app adds about 30 ms per frame.
 - Open item: one scroll before the first ball (the pre-game advisor stays open by design).
 - sw.js now also precaches js/cc/wake.js.
+
+## Aim Box (2026-10-24)
+- **Code:**
+  - js/cc/aimbox.js (pure: presets, `boxOf`, `through`, `rectOf`).
+  - js/screens/overlays.js ("Overlays" chip → sheet: Aim Box Off/On, House/Sport/Custom, steppers for Custom).
+  - lane.js: the `aimBox` hook replaces the always-on 5–8 box. When it's off, nothing is drawn.
+  - Used on Lane, Targeting and Compare. The pill reads "Through zone" or "Outside zone".
+- **Verification:**
+  - House = Mark Baker's 4.5–9.5 at 45 ft (fetched transcript).
+  - The supplied 42–46 ft corrected to 43.5–46.5 (DECISIONS #30).
+  - Sport = Rule of 31 "starting point".
+- **Tests:**
+  - unit aimbox 5/5: off, presets, intersection incl. sparse path, mirror, persistence;
+  - e2e `aimbox` 15/0: default off, pixels, axe on the sheet, 44 px targets, custom persists, lefty same read, Targeting pill, off again.
+- **Shots:** /workspace/ux-shots/aimbox/.

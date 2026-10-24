@@ -4,7 +4,7 @@
 import { h, icon, toast } from '../ui.js';
 import { go } from '../router.js';
 import { ready, proj } from '../hub.js';
-import { app, today, profile, prefs, setPrefs, saveLine, linesForBall } from '../store.js';
+import { app, today, profile, prefs, setPrefs, saveLine, linesForBall, on } from '../store.js';
 import { S, RANGES } from '../engine.js';
 import { balls, specOK } from '../data.js';
 import { catOf } from '../cc/cats.js';
@@ -16,6 +16,7 @@ import { openNight } from '../cc/night.js';
 import { arrowsBoard } from '../cc/geom.js';
 import * as T from '../cc/target.js';
 import * as F from '../cc/strikeline.js';
+import { aimLayer as aimL, paintPill, overlaysBtn } from './overlays.js';
 const num = f => f == null ? null : typeof f === 'object' ? (Number.isFinite(+f.v) ? +f.v : null) : (Number.isFinite(+f) ? +f : null);
 const prov = (p, label) => h('span', { class: 'prov', 'data-prov': p || null, text: label });
 const CALL = { pocket: ['Pocket', 'good'], high: ['High', 'warn'], light: ['Light', 'warn'], gutter: ['Gutter', 'bad'] };
@@ -94,7 +95,7 @@ export async function render({ query } = {}) {
 
   const lane = createLane(canvas, { lefty,
     state: () => ({ release: r ? r.lay : 10, aim: r ? r.aim : 0, pattern: r ? r.preset : 'house' }),
-    baker: false,
+    aimBox: aimL(() => r ? r.preset : 'house'),
     onAdjust: ch => {
       if (ch.release != null) t.feet = Math.round(ch.release + t.offset - t.drift);
       else if (ch.aim != null) { const arrows = Math.round(arrowsBoard(r.lay, ch.aim) * 10) / 10; t.eyes = t.mode === 'dots' ? Math.round((r.lay + (arrows - r.lay) * T.DOTS_FT / T.ARROWS_FT) * 10) / 10 : arrows; }
@@ -146,6 +147,7 @@ export async function render({ query } = {}) {
   const helpBtn = h('button', { class: 'icon-btn', id: 'tgHelp', 'aria-label': 'How targeting works', text: '?', onclick: () => tour(0) });
   const dock = h('div', { class: 'tg-dock', id: 'tgDock' }, modeSeg, feetRow, eyesRow);
 
+  const aimPill = h('span', { class: 'pill', id: 'tgAimPill', hidden: true });
   const el = h('section', { class: 'screen target-screen', id: 'target' },
     h('header', { class: 'appbar' }, h('button', { class: 'icon-btn', 'aria-label': 'Back to Lane', html: icon('back'), onclick: () => go('#/lane') }), h('h1', { class: 'title', text: 'Targeting' }), helpBtn),
     tourBox,
@@ -153,7 +155,7 @@ export async function render({ query } = {}) {
     coach, limits, findBtn, findOut,
     h('div', { class: 'tg-grid' },
       h('div', { class: 'tg-lane-col' }, canvas),
-      h('div', { class: 'tg-side' }, h('div', { class: 'row', role: 'group', 'aria-label': 'Result' }, callPill, boxPill), deckCv, h('p', { class: 'small', id: 'tgDeckRead' }))),
+      h('div', { class: 'tg-side' }, h('div', { class: 'row', role: 'group', 'aria-label': 'Result' }, callPill, boxPill, aimPill), overlaysBtn(() => r ? r.preset : 'house', 'tgOvBtn'), deckCv, h('p', { class: 'small', id: 'tgDeckRead' }))),
     sugBox, sum, warnBox, dock,
     h('div', { class: 'row tg-actions' }, saveBtn, backBtn),
     setup,
@@ -191,6 +193,7 @@ export async function render({ query } = {}) {
     el.querySelector('#tgAssume').textContent = `Ball offset ${t.offset} and drift ${t.drift || 0} are ${saved.t ? 'yours' : 'assumed (Breakdown Bowling example: 7)'}; set them from a few shots on video. Box: ${box.from === 'model' ? `tonight\u2019s model strike line, ${box.board} @ ${box.ft} ft` : box.from === 'yours' ? 'your target' : 'Rule of 31 (no model line)'}, 3 boards \u00d7 2 ft (Human Kinetics; NBA 8\u201310 at 39\u201341 ft). ${box.r31.text}.`;
     const d = describe(r.a, L);
     el.querySelector('#tgDeckRead').textContent = d.text;
+    paintPill(aimPill, () => r.preset, r.a);
     lane.draw({ ball: cat, result: r.a }, { animate });
     deck.draw({ res: r.a, lefty: L, tone: CALL[r.call][1], color: cat.color }, { animate });
     canvas.setAttribute('aria-label', `Lane: feet ${t.feet}, laydown ${r.lay}, eyes ${t.eyes} at the ${t.mode}. ${coach.textContent}`);
@@ -224,5 +227,7 @@ export async function render({ query } = {}) {
         h('button', { class: 'btn ghost', id: 'tgTourSkip', onclick: () => tour(null) }, 'Skip'))));
     const nb = tourBox.querySelector('#tgTourNext'); nb && nb.focus({ preventScroll: true });
   }
-  return { el, title: 'Targeting', mounted() { if (!prefs().tgTour && !(query && query.get('find'))) tour(0); update(true); if (query && query.get('find')) runFind(); }, destroy() { lane.destroy(); deck.destroy(); } };
+  let aimSig = JSON.stringify(prefs().aimBox || {});
+  const offPrefs = on('prefs', () => { const sg = JSON.stringify(prefs().aimBox || {}); if (sg === aimSig || !r) return; aimSig = sg; update(false); });
+  return { el, title: 'Targeting', mounted() { if (!prefs().tgTour && !(query && query.get('find'))) tour(0); update(true); if (query && query.get('find')) runFind(); }, destroy() { offPrefs(); lane.destroy(); deck.destroy(); } };
 }

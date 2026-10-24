@@ -1,5 +1,5 @@
 // Lane renderer. Geometry is the v1 logical lane (220 x 880: pins at top, board 1 on the right,
-// dots 7.5 ft, arrows 15 ft, range 37 ft, Baker box boards 5-8 at 42-46 ft). Logical coords map to any
+// dots 7.5 ft, arrows 15 ft, range 37 ft; optional Aim Box overlay from cc/aimbox.js, default off). Logical coords map to any
 // CSS size (non-uniform scale), so analyze() numbers are unchanged; text is drawn at fixed CSS px.
 // Left-handers: the whole lane is mirrored at draw time (board 1 on the left). Only the logical->screen
 // x mapping, its inverse for drags, and the arrow-key direction change; the engine still runs its
@@ -7,8 +7,9 @@
 import { LW, LH, boardToX, xToBoard, yToFeet, FOUL_Y, PX_FT, HEAD_Y, OIL_LEN, C_SKID, C_HOOK, C_ROLL, S, RANGES } from './engine.js';
 import { reduced } from './ui.js';
 import { aimFor } from './cc/geom.js';
+import { rectOf } from './cc/aimbox.js';
 const LX0 = 14, LX1 = LW - 14, LY0 = 20, LY1 = LH - 6;
-export function createLane(canvas, { onAdjust, lefty = () => false, state = null, overlay = null, baker = true } = {}) {
+export function createLane(canvas, { onAdjust, lefty = () => false, state = null, overlay = null, aimBox = null } = {}) {
   const isL = typeof lefty === 'function' ? lefty : () => !!lefty;
   const ss = () => state ? state() : S;   // Targeting passes its own release/aim/pattern; geometry is unchanged
   const g = canvas.getContext('2d');
@@ -58,10 +59,12 @@ export function createLane(canvas, { onAdjust, lefty = () => false, state = null
     g.strokeStyle = 'rgba(255,255,255,.30)'; g.lineWidth = 1; [10, 15, 20, 25, 30].forEach(b => { const x = X(boardToX(b, LW)); g.beginPath(); g.moveTo(x, rngY); g.lineTo(x, rngY + 8); g.stroke(); });
     g.fillStyle = 'rgba(0,0,0,.6)'; for (let i = 5; i <= 35; i += 5) { g.beginPath(); g.arc(X(boardToX(i, LW)), Y(LH - 10), 2, 0, 7); g.fill(); }
     g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(L0, Y(FOUL_Y)); g.lineTo(L1, Y(FOUL_Y)); g.stroke();
-    // Baker box boards 5-8 at 42-46 ft (Targeting draws its own break box instead)
-    if (baker) {
-    const bx1 = Math.min(X(boardToX(8, LW)), X(boardToX(5, LW))), bx2 = Math.max(X(boardToX(8, LW)), X(boardToX(5, LW))), by = Y(FOUL_Y - 46 * PX_FT), bh = Y(FOUL_Y - 42 * PX_FT) - by;
-    g.fillStyle = 'rgba(218,175,55,.16)'; g.fillRect(bx1, by, bx2 - bx1, bh); g.strokeStyle = 'rgba(218,175,55,.7)'; g.strokeRect(bx1 + .5, by + .5, bx2 - bx1 - 1, bh - 1);
+    // Aim Box (optional, default off): amber dashed zone under the path; green when the modelled path goes through it.
+    const ab = aimBox ? aimBox(result) : null;
+    if (ab) {
+      const rc = rectOf(ab.box, b => X(boardToX(b, LW)), ft => Y(FOUL_Y - ft * PX_FT)), col = css(ab.ok ? '--good' : '--gold');
+      g.save(); g.globalAlpha = .14; g.fillStyle = col; g.fillRect(rc.x, rc.y, rc.w, rc.h);
+      g.globalAlpha = .9; g.strokeStyle = col; g.lineWidth = ab.ok ? 2 : 1.5; g.setLineDash([5, 4]); g.strokeRect(rc.x + .5, rc.y + .5, rc.w - 1, rc.h - 1); g.restore();
     }
     // pins around board 20 (v1 layout, uniform scale so the rack keeps its shape)
     const cx = X(boardToX(20, LW)), by0 = Y(HEAD_Y), sp = 14 * sx * 0.95, kv = Math.min(1, (by0 - 4) / (sp * 2.85 + 6));

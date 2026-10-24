@@ -107,3 +107,17 @@ Short ADR-style notes. Each: decision · why · consequence.
     - **Insights** opens on the last 10 finished games, with practice nights left out; arsenal charts are behind one tap.
     - **More › Your data** is in plain words: what's safe, what's waiting, counts behind a tap. No "events", "IndexedDB", "v1" or "tracker sessions".
     - **Offline.** An "Offline · saved on this phone" chip shows on Tonight.
+
+30. **Aim Box: optional, default off; Baker's own numbers win over the supplied baseline (2026-10-24, docs/TEAM_PROMPT_AIM_BOX.md).**
+    - **Verified sources:**
+      - **Mark Baker, fetched transcript** (YouTube short 3rDOswCFlmk, "House Shot & The Baker Box Explained"): "they oil right here to about 42 ft … I put my tape at 45 ft at 4 and 1/2 and 9 and 1/2 board. That's where I want the ball to go through on a house shot."
+      - **Box size, secondary excerpt** (r/Bowling description of his poster): "about 3' in length, 4 boards in width, 15' away from the pins, with the rightmost line at the 5 board".
+      - **USBC/NBA entry-angle research, excerpt** (nationalbowlingacademy.com): most bowlers get 3–4°, elite up to 6°, and the 17.5 board matters more than the angle.
+    - **Where the sources disagree:**
+      - The supplied 4.5–9.5 boards match Baker. The supplied 42–46 ft is not his: 42 ft is his *oil* length and his tape is at 45 ft. The House preset is therefore 4.5–9.5 at 45 ft ± 1.5 ft (3 ft deep, per the poster description).
+      - The old always-on Lane box (5–8 at 42–46 ft) is removed. By spec, the lane now draws no box unless the Aim Box is turned on.
+    - **Sport:** the Rule-of-31 board at oil length + 3 ft (Baker's 42 → 45 spacing), in a shorter 3-board × 2-ft box (the Human Kinetics break-box size already cited in Targeting). It is labelled "Starting point".
+    - **Auto-position:** the default preset is House on the House pattern and Sport on any other pattern. Custom saves edges, distance and depth.
+    - **Feedback:** the path is checked against the box using engine points plus interpolated band edges, so a sparse path can't skip the box. The result reads "Through zone" (good tone) or "Outside zone" (warn), and the outline turns green when the path goes through. Only the drawing is mirrored for lefties; boards stay in the bowler's own numbering.
+    - **Model angles:** the angle note says "4–6° model entry (drawn units, about 1° real)". `simulatePath` is unchanged.
+    - **Where it appears:** Lane, Targeting and Compare, behind an "Overlays" chip. There is no video overlay in the app, so nothing to register to. It is not shown during scoring (Tonight has no lane view).

@@ -128,3 +128,13 @@
 
 ## Loop 1 re-measure (2026-10-24)
 - This item measures the app and changes no UI. The tap and reach gains above support **competence**: fewer taps, the pad stays under the thumb, and a mistake can be fixed. The one remaining friction point (a scroll before frame 1) is logged as open rather than patched with something extra.
+
+## Aim Box (2026-10-24)
+- **SDT:**
+  - **Autonomy:** it's off by default, the bowler chooses to turn it on, and there are three presets plus Custom.
+  - **Competence:** one concrete visual target, and "Through zone / Outside zone" feedback in the same tones as the pocket read. The feedback is informational, never praise or blame.
+  - **Relatedness:** the box is named for its source (Mark Baker), the coach-style reference a league bowler will recognise.
+- **U/A:**
+  - **Usability:** one chip ("Overlays"), then one switch; the default preset needs no setup. The 3-second beginner check: a gold dashed box on the lane, and the pill says whether the line goes through it.
+  - **Applicability:** between games / practice planning only. It is never shown during active scoring.
+  - Tooltip text as specified.
