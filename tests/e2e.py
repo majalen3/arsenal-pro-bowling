@@ -793,9 +793,11 @@ async def sim_cycle(b):
     # one stand/aim on Tonight and Lane; recap + focus; plain-words data card is checked in [data].
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
     await seed(p); await p.evaluate("localStorage.setItem('ap_profile', JSON.stringify({hand:'left', style:'one', speed:15, rev:220}))")
-    await p.goto(BASE + '?sim'); await p.wait_for_selector('#noBag')
+    # a v1 ap_profile is migrated on first boot, and the migration may seed the starter bag itself (hub.js), so either state is fine
+    await p.goto(BASE + '?sim'); await p.wait_for_selector('#noBag, #tnStand')
     check(await p.query_selector('#tabs a[href="#/tonight"][aria-current=page]') is not None, '[sim] app opens on Tonight, not Lane')
-    await p.click('#loadStarter'); await p.wait_for_selector('#tnStand')
+    if await p.query_selector('#loadStarter'): await p.click('#loadStarter')
+    await p.wait_for_selector('#tnStand')
     feet = int((await p.text_content('#tnStand')).split()[1])
     box = await p.query_selector('#qlStrike'); await box.scroll_into_view_if_needed(); await p.wait_for_timeout(300); bb = await box.bounding_box(); x, y = bb['x'] + bb['width'] / 2, bb['y'] + bb['height'] / 2
     await p.mouse.click(x, y); await p.wait_for_timeout(120); await p.mouse.click(x, y); await p.wait_for_timeout(600)
@@ -835,7 +837,24 @@ async def scoring_cycle(b):
     check(len(ms) >= 3 and max(ms[-3:]) < 3500, f'[scoring] frame entry under 3.5 s each (app-side, incl. test waits) {ms[-3:]}')
     await axe_ok(p, '[scoring] pad'); small = await p.evaluate(SMALL); check(not small, f'[scoring] targets >= 44px {small[:6]}')
     await shot(p, 'phone-scoring-pad')
-    #EDIT
+    # (2) fix any frame in <= 4 taps, with undo
+    wf = lambda txt: p.wait_for_function(f"() => document.querySelector('#qlSaved').textContent.includes({json.dumps(txt)})")
+    await p.click('#qlFix'); await p.click('#qlFixPick [data-fix="2"]'); await p.wait_for_selector('#qlFixCancel')
+    check('Fixing frame 2' in await where(), f'[scoring] fix mode names the frame ({await where()})')
+    await axe_ok(p, '[scoring] fix mode'); small = await p.evaluate(SMALL); check(not small, f'[scoring] fix-mode targets >= 44px {small[:6]}')
+    await shot(p, 'phone-scoring-fix')
+    await qtap(p, '#qlStrike'); await wf('frame 2 fixed')
+    check((await fr(2)).strip() == 'X' and 'Frame 6' in await where(), f'[scoring] frame 2 fixed to X in 3 taps (Fix, 2, X); play resumes at frame 6 ({(await fr(2)).strip()}, {await where()})')
+    check((await p.text_content('#qlFrames [data-f="1"] .num')).strip() == '29', '[scoring] totals rescored after the fix (frame 1 = X X 9 = 29)')
+    await qtap(p, '#qlUndoFix'); await wf('frame 2 restored')
+    check((await fr(2)).strip() == '9 /' and (await p.text_content('#qlFrames [data-f="1"] .num')).strip() == '20', '[scoring] Undo fix puts frame 2 back (1 tap)')
+    await p.click('#qlFrames [data-f="3"]'); await p.wait_for_selector('#qlFixCancel'); await p.click('#qlPins [data-pin="1"]'); await p.click('#qlPins [data-pin="2"]'); await qtap(p, '#qlSpareNow'); await wf('frame 3 fixed')
+    check((await fr(3)).strip() == '8 /', f'[scoring] tap a frame cell, pins, spare: frame 3 = 8 / in 4 taps ({(await fr(3)).strip()})')
+    await p.click('#qlFix'); await p.click('#qlFixPick [data-fix="4"]'); await p.click('#qlPins [data-pin="5"]'); await p.click('#qlFixCancel')
+    check((await fr(4)).strip() == '9 /' and 'Frame 6' in await where(), '[scoring] Cancel fix leaves the frame unchanged')
+    await p.reload(); await p.wait_for_selector('#tnLog')
+    check((await fr(3)).strip() == '8 /' and 'Frame 6' in await where(), '[scoring] a fixed frame survives reload (stored as events)')
+    #FIX3
     check(not errs, '[scoring] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 

@@ -1,6 +1,7 @@
 // Nights (sim bug 3, GAP §2c): a Tonight session is a NIGHT, not a calendar day. A game that runs past midnight stays in the
 // same session. Pure: takes the projection and a clock, returns the session id to write to.
 import { stateOf } from './quicklog.js';
+import { playOrder } from '../data/scoring.js';
 export const IDLE_MS = 4 * 3600e3;      // a night closes itself after 4 h with no throws or edits
 export const RESUME_MS = 24 * 3600e3;   // an unfinished game is picked up again for up to a day, whatever the date
 const pad = n => String(n).padStart(2, '0');
@@ -8,7 +9,7 @@ export const dayKey = t => { const d = new Date(t); return d.getFullYear() + '-'
 export function nightInfo(P, s, now = Date.now()) {
   const shots = (P.shots || []).filter(x => x.sessionId === s.id && x.frame != null);
   const last = Math.max(s.ts || 0, s.editTs || 0, ...shots.map(x => x.ts || 0));
-  const g = s.game || 1, mine = shots.filter(x => (x.game || 1) === g);
+  const g = s.game || 1, mine = playOrder(shots.filter(x => (x.game || 1) === g));
   const st = mine.length ? stateOf(mine.map(x => ({ down: x.down, leave: x.leave || [], foul: !!x.foul }))) : null;
   return { id: s.id, last, inProgress: !!(st && !st.done), games: new Set(shots.map(x => x.game || 1)).size, shots: shots.length, idle: now - last };
 }

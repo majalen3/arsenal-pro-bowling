@@ -1,6 +1,6 @@
 // fold(events) → projection (DATA_SYSTEM §2.2). Pure; recomputed from the log, never edited in place.
 import { stable, fnv } from './schema.js';
-import { scoreGame } from './scoring.js';
+import { scoreGame, playOrder } from './scoring.js';
 export const order = (a, b) => (a.ts - b.ts) || ((a.seq || 0) - (b.seq || 0)) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 export function voidedSet(events) {
   const ids = new Set(), imps = new Set();
@@ -58,7 +58,7 @@ export function project(events) {
 export function gamesOf(shots) {
   const g = {};
   for (const s of shots) if (s.frame != null && s.sessionId) { const k = s.sessionId + '#' + (s.game || 1); (g[k] = g[k] || { key: k, sessionId: s.sessionId, game: s.game || 1, throws: [], balls: new Set() }).throws.push(s); if (s.ballId) g[k].balls.add(s.ballId); }
-  return Object.values(g).map(x => { const r = scoreGame(x.throws.map(t => ({ down: t.down, foul: !!t.foul }))); return { key: x.key, sessionId: x.sessionId, game: x.game, n: x.throws.length, balls: [...x.balls].sort(), score: r.ok ? r.total : null, complete: r.ok && r.complete, ts: x.throws[x.throws.length - 1].ts }; });
+  return Object.values(g).map(x => { x.throws = playOrder(x.throws); const r = scoreGame(x.throws.map(t => ({ down: t.down, foul: !!t.foul }))); return { key: x.key, sessionId: x.sessionId, game: x.game, n: x.throws.length, balls: [...x.balls].sort(), score: r.ok ? r.total : null, complete: r.ok && r.complete, ts: Math.max(...x.throws.map(t => t.ts || 0)) }; });
 }
 // Ball health: games since last service of each type = fold(events). Never typed by the user.
 export function healthOf(P) {

@@ -3,6 +3,7 @@
 // that labels are not definitive (USBC 2010 study, search excerpt); MOTIV speed↔rev balance rule (search excerpt);
 // USBC Rule 319a 21-game minimum (search excerpt). Anything else is labelled "app estimate".
 import { stateOf } from './quicklog.js';
+import { playOrder } from '../data/scoring.js';
 export const SRC = {
   levels: { label: 'LaneTrax Levels table', how: 'fetched', url: 'https://docs.lanetrax.app/ios/pastsessions/past-sessions' },
   style: { label: 'bowling.com ranges: stroker 200–300, tweener 300–400, cranker 400+ rpm', how: 'search excerpt', url: 'https://www.bowling.com/knowledge-hub/bowling-balls/bowler-types/all' },
@@ -66,7 +67,7 @@ export function sessionsOf(P) {
   const get = id => (S[id] = S[id] || { id, games: [], scores: [], agg: null, ts: 0, date: null, meta: (P.sessions || {})[id] || {} });
   const byGame = {};
   for (const s of P.shots || []) if (s.frame != null && s.sessionId) { const k = s.sessionId + '#' + (s.game || 1); (byGame[k] = byGame[k] || { sessionId: s.sessionId, game: s.game || 1, throws: [], balls: new Set(), ts: 0 }); byGame[k].throws.push(s); if (s.ballId) byGame[k].balls.add(s.ballId); byGame[k].ts = Math.max(byGame[k].ts, s.ts); }
-  for (const g of Object.values(byGame)) { const x = get(g.sessionId); const st = stateOf(g.throws); x.games.push({ game: g.game, throws: g.throws, balls: [...g.balls].sort(), score: st.ok ? st.total : null, complete: !!(st.ok && st.complete), frames: st.frames, ts: g.ts }); x.ts = Math.max(x.ts, g.ts); }
+  for (const g of Object.values(byGame)) { g.throws = playOrder(g.throws); const x = get(g.sessionId); const st = stateOf(g.throws); x.games.push({ game: g.game, throws: g.throws, balls: [...g.balls].sort(), score: st.ok ? st.total : null, complete: !!(st.ok && st.complete), frames: st.frames, ts: g.ts }); x.ts = Math.max(x.ts, g.ts); }
   for (const sc of P.scores || []) if (sc.sessionId) { const x = get(sc.sessionId); x.scores.push(sc); x.ts = Math.max(x.ts, sc.ts); if (sc.date) x.date = x.date || sc.date; }
   for (const a of P.aggregates || []) if (a.sessionId) { const x = get(a.sessionId); x.agg = a; x.ts = Math.max(x.ts, a.ts); x.date = a.date || x.date; }
   return Object.values(S).map(x => {

@@ -577,3 +577,8 @@ noscript p{padding:24px}
 #tonightBody .tn-now ~ #tnLog .ql-pad{position:sticky;bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--s2));z-index:2;background:var(--surface);padding-top:var(--s2);display:grid;gap:var(--s2)}
 .ql-pad{display:grid;gap:var(--s2)}
 .ql-saved{margin:0;min-height:1.2em;color:var(--text-2)}
+/* scoring fix 2: fix any frame */
+.frames .fr.fixable{cursor:pointer}
+.fix-pick{display:grid;gap:var(--s1)}
+.fix-pick p{margin:0}
+.fix-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--s2)}

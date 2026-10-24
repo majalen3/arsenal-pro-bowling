@@ -7,6 +7,7 @@ import { go } from '../router.js';
 import { ready, proj, add, addMany, loadStarter } from '../hub.js';
 import { on, today, deviceId, prefs, setPrefs, profile } from '../store.js';
 import { mkEvent, voidEvent } from '../data/events.js';
+import { playOrder } from '../data/scoring.js';
 import * as Q from '../cc/quicklog.js';
 import * as R from '../cc/rank.js';
 import { loadIndex } from '../patdata.js';
@@ -37,7 +38,7 @@ export async function render() {
   const setNet = () => { net.hidden = navigator.onLine; };
   window.addEventListener('online', setNet); window.addEventListener('offline', setNet);
   const ql = { leave: new Set(), foul: false, tag: null };   // quick-log taps not yet written
-  let swapOpen = null, lastTap = 0, busy = false, moreOpen = false, savedMsg = '', frameT0 = 0;
+  let swapOpen = null, lastTap = 0, busy = false, moreOpen = false, savedMsg = '', frameT0 = 0, edit = null, lastEdit = null, pickFix = false;
   let local = {};   // UI state not yet written (avoids re-render churn while typing)
   const sess = () => Object.assign({ kind: 'tonight', patternSlug: null, ft: null, ml: null, ratio: null, centerId: null, surface: 'unknown', stage: 'fresh', bagId: null, game: 1, pickId: null, reads: [] }, (proj().sessions || {})[curSid()], local);
   async function save(fields) {
@@ -56,7 +57,7 @@ export async function render() {
       return { ownedId: id, catalogId: o.catalogId || null, name: short(o.name || (c && c.name)), benchmark: !!o.benchmark, finish: o.finish || 'factory' }; });
     return { bag, bags, list, spare: spare && P.owned[spare] ? P.owned[spare] : null };
   }
-  const gameOf = (P, s) => { const game = s.game || 1, mine = P.shots.filter(x => x.sessionId === curSid() && x.frame != null && (x.game || 1) === game);
+  const gameOf = (P, s) => { const game = s.game || 1, mine = playOrder(P.shots.filter(x => x.sessionId === curSid() && x.frame != null && (x.game || 1) === game));
     return { game, mine, st: Q.stateOf(mine.map(x => ({ down: x.down, leave: x.leave || [], foul: !!x.foul }))) }; };
   function draw() {
     const P = proj(), s = sess(), b = bowlerOf(P), hand = handOf(P);
@@ -157,39 +158,64 @@ export async function render() {
   // ---- CC1 quick log: strike 1 tap; a one-pin spare 3 taps (pin, Log leave, /). Each tap is one shot.logged event in
   // IndexedDB before the screen moves on, so killing the tab loses nothing already shown.
   function quickLog(P, s, cur, b, hand, stand, g) {
-    const { game, mine, st } = g, facingLeave = st.standing.length < 10, sid = curSid();
+    const { game, mine, st: live } = g, sid = curSid();
+    if (edit && (edit.game !== game || edit.sid !== sid)) edit = null;
+    const st = edit ? Q.editState(edit.f, edit.throws) : live, facingLeave = st.standing.length < 10;
     // Writes one or more throws (the two-tap spare writes two) as shot.logged events, then shows "Saved".
     const write = async throws => {
       // sim bug 2: a repeat tap inside 400 ms (or while the last write is still in flight) is a double tap, not a second ball.
-      const now = performance.now(); if (st.done || busy || now - lastTap < TAP_GUARD_MS) return; lastTap = now; busy = true;
+      const now = performance.now(); if (live.done || busy || now - lastTap < TAP_GUARD_MS) return; lastTap = now; busy = true; lastEdit = null; pickFix = false;
       try {
         if (!proj().sessions[sid]) await addMany([mkEvent('session.created', sid, Object.assign({ kind: 'tonight', date: dayKey(Date.now()) }, sess(), { editTs: Date.now() }), { deviceId: deviceId(), prov: { kind: 'user' } })]);   // first throw opens the night
-        let seq = mine.map(x => ({ down: x.down, leave: x.leave || [], foul: !!x.foul })), at = st;
+        let seq = mine.map(x => ({ down: x.down, leave: x.leave || [], foul: !!x.foul })), at = live;
         for (const t of throws) {
           const facing = at.standing.length < 10, split = !facing && !t.foul && t.leave.length > 0 && Q.leaveHint(t.leave).split;
           await add('shot.logged', sid, { sessionId: sid, game, frame: at.frame, roll: at.roll, down: t.down, leave: t.leave, foul: !!t.foul, split: !!split,
             ballId: cur ? cur.id : null, catalogId: cur ? cur.catalogId : null, miss: !facing ? ql.tag : null });
           seq = seq.concat([t]); at = Q.stateOf(seq);
         }
-        if (at.frame !== st.frame || at.done) { const tf = Date.now(); if (frameT0) (window.__apFrameMs = window.__apFrameMs || []).push(tf - frameT0); frameT0 = tf; }
-        savedMsg = at.done ? `Saved \u2713 game ${game}` : `Saved \u2713 frame ${st.frame}`;
+        if (at.frame !== live.frame || at.done) { const tf = Date.now(); if (frameT0) (window.__apFrameMs = window.__apFrameMs || []).push(tf - frameT0); frameT0 = tf; }
+        savedMsg = at.done ? `Saved \u2713 game ${game}` : `Saved \u2713 frame ${live.frame}`;
       } finally { busy = false; }
       ql.leave.clear(); ql.foul = false; ql.tag = null; draw();
     };
-    const log = kind => write([Q.throwOf(kind, st.standing, { leave: [...ql.leave], foul: ql.foul })]);
+    // Scoring fix 2: fix any frame. The frame is re-entered on the same pad; when it is complete the old shots are voided and
+    // the new ones written in one append, so the log keeps both and "Undo fix" puts the old frame back.
+    const editPush = async throws => {
+      const now = performance.now(); if (busy || now - lastTap < TAP_GUARD_MS) return; lastTap = now;
+      edit.throws.push(...throws); ql.leave.clear(); ql.foul = false;
+      if (!Q.editState(edit.f, edit.throws).closed) return draw();
+      busy = true;
+      try {
+        const f = edit.f, old = mine.filter(x => x.frame === f), o = { deviceId: deviceId(), prov: { kind: 'user' } };
+        const fresh = edit.throws.map((t, i) => { const was = old.find(x => x.roll === i + 1) || old[0] || {};
+          return mkEvent('shot.logged', sid, { sessionId: sid, game, frame: f, roll: i + 1, down: t.down, leave: t.leave, foul: !!t.foul,
+            split: i === 0 && !t.foul && t.leave.length > 0 && !!Q.leaveHint(t.leave).split, ballId: was.ballId || (cur ? cur.id : null), catalogId: was.catalogId || (cur ? cur.catalogId : null), miss: i === 0 ? (was.miss || null) : null }, o); });
+        await addMany(old.map(x => voidEvent(x.id, o)).concat(fresh));
+        lastEdit = { f, game, sid, added: fresh.map(e => e.id), old: old.map(x => ({ sessionId: x.sessionId, game: x.game, frame: x.frame, roll: x.roll, down: x.down, leave: x.leave || [], foul: !!x.foul, split: !!x.split, ballId: x.ballId || null, catalogId: x.catalogId || null, miss: x.miss || null })) };
+        savedMsg = `Saved \u2713 frame ${f} fixed`; edit = null;
+      } finally { busy = false; }
+      draw();
+    };
+    const undoFix = async () => { const u = lastEdit; if (!u) return; lastEdit = null; const o = { deviceId: deviceId(), prov: { kind: 'user' } };
+      await addMany(u.added.map(id => voidEvent(id, o)).concat(u.old.map(d => mkEvent('shot.logged', u.sid, d, o)))); savedMsg = `Saved \u2713 frame ${u.f} restored`; draw(); };
+    const startFix = f => { edit = { f, game, sid, throws: [] }; ql.leave.clear(); ql.foul = false; ql.tag = null; pickFix = false; draw(); };
+    const push = throws => edit ? editPush(throws) : write(throws);
+    const log = kind => push([Q.throwOf(kind, st.standing, { leave: [...ql.leave], foul: ql.foul })]);
     // Two-tap spare (scoring fix 1): pins left on ball 1, then one tap writes the leave and the spare.
-    const spareNow = () => { const t1 = Q.throwOf('leave', st.standing, { leave: [...ql.leave] }); return write([t1, { down: t1.leave.length, leave: [], foul: false }]); };
+    const spareNow = () => { const t1 = Q.throwOf('leave', st.standing, { leave: [...ql.leave] }); return push([t1, { down: t1.leave.length, leave: [], foul: false }]); };
     const frames = h('div', { class: 'frames', id: 'qlFrames', role: 'list', 'aria-label': `Game ${game} frames` }, ...Array.from({ length: 10 }, (_, i) => {
-      const fr = st.frames[i], cls = 'fr' + (!st.done && i === st.frame - 1 ? ' cur' : '');
+      const fr = live.frames[i], fixable = fr && fr.marks.length && (live.done || i < live.frame - 1);
+      const cls = 'fr' + ((edit ? i === edit.f - 1 : !live.done && i === live.frame - 1) ? ' cur' : '') + (fixable ? ' fixable' : '');
       const mk = fr ? fr.marks.join(' ') : '';
-      return h('div', { class: cls, role: 'listitem', 'data-f': i + 1, 'aria-label': `Frame ${i + 1}: ${mk || 'not bowled'}${fr && fr.split ? ', split' : ''}${fr && fr.cum != null ? ', ' + fr.cum : ''}` },
+      return h('div', { class: cls, role: 'listitem', 'data-f': i + 1, onclick: fixable && !edit ? () => startFix(i + 1) : null, 'aria-label': `Frame ${i + 1}: ${mk || 'not bowled'}${fr && fr.split ? ', split' : ''}${fr && fr.cum != null ? ', ' + fr.cum : ''}` },
         h('span', { class: 'muted', text: String(i + 1) }), h('b', { text: (fr && fr.split ? '\u25CB' : '') + mk }), h('span', { class: 'num', text: fr && fr.cum != null ? String(fr.cum) : '' }));
     }));
     const head = h('div', { class: 'row between' }, h('h2', { class: 'card-title', text: `Quick log \u00b7 game ${game}` }),
-      h('span', { class: 'pill', id: 'qlWhere', text: st.done ? `Final ${st.total}` : `Frame ${st.frame} \u00b7 ball ${st.roll}` }));
+      h('span', { class: 'pill', id: 'qlWhere', text: edit ? `Fixing frame ${edit.f} \u00b7 ball ${st.roll}` : st.done ? `Final ${st.total}` : `Frame ${st.frame} \u00b7 ball ${st.roll}` }));
     const saved = h('p', { class: 'ql-saved small', id: 'qlSaved', role: 'status', text: savedMsg });
     const card = h('div', { class: 'card', id: 'tnLog' }, head, frames, saved);
-    if (st.done) {
+    if (live.done && !edit) {
       card.append(h('p', { class: 'coach', text: `${st.total} in game ${game}.` }));
       const rc = nightRecap(P, sid);
       if (rc) card.append(rc);
@@ -208,11 +234,12 @@ export async function render() {
         facingLeave ? h('button', { class: 'btn ghost', id: 'qlMiss', onclick: () => log('none') }, '\u2013 Missed all') : null,
         h('button', { class: 'btn ghost', id: 'qlFoul', 'aria-pressed': String(ql.foul), onclick: () => { ql.foul = !ql.foul; draw(); } }, 'F Foul'));
       card.append(h('div', { class: 'ql-pad', id: 'qlPad' }, pins, btns));
-      if (!facingLeave) card.append(h('div', { class: 'fld' }, h('span', { text: 'First ball hit (optional, for triggers)' }),
+      if (edit) card.append(h('button', { class: 'btn ghost block', id: 'qlFixCancel', onclick: () => { edit = null; ql.leave.clear(); ql.foul = false; draw(); } }, `Cancel fix (frame ${edit.f} unchanged)`));
+      if (!facingLeave && !edit) card.append(h('div', { class: 'fld' }, h('span', { text: 'First ball hit (optional, for triggers)' }),
         segmented('First ball hit', [['pocket', 'Pocket'], ['high', 'High'], ['light', 'Light']], ql.tag, v => { ql.tag = ql.tag === v ? null : v; draw(); }, 'wide')));
       // sim bug 1: hints from the bowler's own hand and strike stand (the same stand as the start line), 20 only when unknown.
       const base = stand ? stand.feet : 20;
-      const hint = Q.leaveHint(facingLeave ? st.standing : [...ql.leave], base, hand);
+      const hint = edit ? null : Q.leaveHint(facingLeave ? st.standing : [...ql.leave], base, hand);
       if (hint) card.append(h('p', { class: 'small', id: 'qlHint' }, hint.split ? h('span', { class: 'pill', id: 'qlSplit', text: 'Split' }) : null, ' ',
         `${hint.leave.join('-')}: ` + hint.keys.map(k => `key pin ${k.key} \u2192 stand ${k.board}${k.move === 'none' ? '' : ' (move ' + k.move + ')'}`).join('; or ') + '. Same target.',
         provChip(stand ? null : 'assumed', stand ? `${hand === 'left' ? 'lefty' : 'righty'} \u00b7 strike stand ${base}` : `${hand === 'left' ? 'lefty' : 'righty'} \u00b7 board 20 assumed`), provChip('usbc', 'USBC 3-6-9')));
@@ -222,8 +249,15 @@ export async function render() {
       .concat((s.reads || []).map(x => ({ ts: x.ts, read: x.read }))).sort((a, b) => a.ts - b.ts);
     const tr = R.trigger(seq, { hand });
     if (tr) card.append(h('div', { class: 'warn-box', id: 'qlTrigger', role: 'status' }, tr.text, provChip('assumed', 'team rule')));
-    const last = mine[mine.length - 1];
-    if (last) card.append(h('button', { class: 'btn ghost block', id: 'qlUndo', onclick: async () => { await addMany([voidEvent(last.id, { deviceId: deviceId(), prov: { kind: 'user' } })]); draw(); } }, `Undo last ball (frame ${last.frame})`));
+    if (edit) return card;
+    const last = mine.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0))[mine.length - 1];
+    const fixable = live.frames.filter(fr => fr.marks.length && (live.done || fr.f < live.frame)).map(fr => fr.f);
+    if (lastEdit && lastEdit.game === game && lastEdit.sid === sid) card.append(h('button', { class: 'btn ghost block', id: 'qlUndoFix', onclick: undoFix }, `Undo fix (frame ${lastEdit.f})`));
+    else if (last) card.append(h('button', { class: 'btn ghost block', id: 'qlUndo', onclick: async () => { await addMany([voidEvent(last.id, { deviceId: deviceId(), prov: { kind: 'user' } })]); draw(); } }, `Undo last ball (frame ${last.frame})`));
+    if (fixable.length) card.append(pickFix
+      ? h('div', { class: 'fix-pick', id: 'qlFixPick', role: 'group', 'aria-labelledby': 'qlFixQ' }, h('p', { class: 'small muted', id: 'qlFixQ', text: 'Fix which frame?' }),
+          h('div', { class: 'fix-grid' }, ...fixable.map(f => h('button', { class: 'btn ghost', 'data-fix': f, 'aria-label': `Fix frame ${f}`, onclick: () => startFix(f) }, String(f)))))
+      : h('button', { class: 'btn ghost block', id: 'qlFix', onclick: () => { pickFix = true; draw(); } }, 'Fix a frame'));
     return card;
   }
   // ---- between games / end of night (sim bug 7): series vs average, strikes, spares with pins left, one focus.

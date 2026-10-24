@@ -36,6 +36,12 @@ export function stateOf(throws) {
   frames.forEach((fr, i) => { fr.cum = sc.cum ? sc.cum[i] ?? null : null; });
   return { frame: Math.min(f, 10), roll, standing, done: f > 10, frames, total: sc.total, ok: sc.ok, errors: sc.errors, complete: sc.complete };
 }
+// Re-entering one frame (scoring fix 2): frames before it are treated as strikes so the walk starts on a fresh rack of
+// frame f; `closed` turns true when frame f is complete (for the 10th, when the game is).
+export function editState(f, throws) {
+  const st = stateOf(Array.from({ length: f - 1 }, () => ({ down: 10, leave: [], foul: false })).concat(throws));
+  return Object.assign(st, { closed: st.done || st.frame > f });
+}
 // The throw a button press makes, given the pins facing the delivery.
 export function throwOf(kind, standing, { leave = [], foul = false } = {}) {
   if (foul) return { down: 0, leave: standing.slice(), foul: true };

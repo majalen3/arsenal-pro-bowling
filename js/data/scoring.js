@@ -64,3 +64,6 @@ export function isSplit(standing) {
   for (const p of down) { const [x, y] = PIN[p]; const back = Object.keys(PIN).map(Number).filter(q => PIN[q][1] === y + 1 && Math.abs(PIN[q][0] - x) === 1); if (back.length === 2 && back.every(q => s.has(q))) return true; }
   return false;
 }
+// Play order of one game's quick-log throws: by frame, then ball, then time. An edited frame's replacement shots are written
+// later than the frames after it, so time order alone would score them in the wrong place (scoring fix 2).
+export const playOrder = shots => shots.slice().sort((a, b) => ((a.frame || 0) - (b.frame || 0)) || ((a.roll || 0) - (b.roll || 0)) || ((a.ts || 0) - (b.ts || 0)));

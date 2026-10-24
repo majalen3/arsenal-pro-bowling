@@ -97,3 +97,17 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - **Tests:**
   - New e2e step `scoring`: pad position, 2-tap spare, Saved line, frame time < 3.5 s, axe, 44 px targets.
   - e2e on scoring, quicklog, sim, phone, tonight, advisor and card: all green. Unit tests 167/0.
+
+## 2026-10-24: Scoring fix 2 (fix any frame + undo, ≤4 taps)
+- **Fix flow:**
+  - "Fix a frame" → pick the frame (5×2 grid, 44 px), or tap the frame cell.
+  - Re-enter the frame on the same pad. When the frame closes, one append voids the old shots and writes the new ones.
+  - "Undo fix" voids the new shots and writes back copies of the old ones. "Cancel fix" changes nothing.
+- **Play order:**
+  - `playOrder` (js/data/scoring.js) sorts by frame, then roll, then ts.
+  - Used in gamesOf, sessionsOf, nightInfo and Tonight, so a fixed frame scores in its place.
+  - A game's ts is now the latest throw.
+  - `editState` (quicklog.js) is pure.
+- **Tests:**
+  - Unit: 172/0 (new scoring_fix.test.mjs). Engine: 7500/0.
+  - e2e: full suite 349 passed. The one failure was a cold-start race in [sim]: hub.js may seed the starter bag while migrating a v1 profile. The test now accepts either state.

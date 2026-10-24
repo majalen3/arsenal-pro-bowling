@@ -77,3 +77,10 @@
   - Saved line: U = yes, one glance confirms the write. A = yes, the bowler acts on it by moving to the next frame.
   - Two-tap spare: U = yes. A = yes, it is the most common frame shape.
   - Nothing new was added outside the pad.
+
+## Scoring fix 2: fix any frame, with undo (2026-10-24)
+- **Autonomy and competence.** A mistyped frame is a fixable entry, not a failure. "Fix a frame", then the frame number, then the corrected throw: a strike takes 3 taps and a spare 3–4. One tap on "Undo fix" restores the old frame. Tapping a frame cell is a pointer shortcut to the same flow.
+- **Quiet by default.** Fix mode replaces the pad in place and shows "Fixing frame N". Hints and the first-ball tag are hidden while fixing. Nothing was added to the scoring screen except one ghost button under Undo.
+- **U/A (during game):**
+  - Fix a frame: U = yes, it reaches any closed frame in ≤4 taps. A = yes, the bowler acts on it right away (the score is correct again).
+  - Undo fix: U = yes. A = yes, it guards against a wrong correction.
