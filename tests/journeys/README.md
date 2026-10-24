@@ -19,6 +19,8 @@ You need Python 3.10+ and `pip install playwright pillow`, then `python -m playw
 - `0`: every step passed, or failed only as a known issue listed in `known_issues.json`. Visual diffs are within tolerance (2 % of pixels by default, set with `--visual-tolerance`).
 - `1`: there is a new failure.
 
+Entries whose value starts with `PENDING P1.x` are IA_PLAN §7 acceptance criteria for J13–J15 work that hasn't shipped yet. They are expected to fail until it does.
+
 When a known issue starts passing, the run prints "Known issues now passing". Remove that entry from `known_issues.json` so it is guarded from then on.
 
 ## Production safety

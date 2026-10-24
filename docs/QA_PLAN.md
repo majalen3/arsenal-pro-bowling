@@ -103,6 +103,17 @@ Score 3 frames, then go offline (c) → keep scoring → reload mid-game offline
 ### J12 Coach review (`coach`)
 Import the bowler's backup (c) → Sessions → a night → Card in ≤ 3 taps → share the Bowler Card (1 tap).
 
+### J13 Ball Status (`righty`, IA_PLAN §7 P1.3, PENDING)
+The four Status words (In my bag / At home / At the pro shop / Retired) are the only words on Arsenal, Bag, Tonight and the ball page. The old Exclude / Benched / Lock / Hall of Fame wording is gone. Set "At the pro shop" on the ball page in ≤ 2 taps. Without a reload, the builder's Why-not lists it as "pro shop", and Swap, Tonight and the score-pad ball chip never offer it. "At home" is still offered as "grab from home". Retired is never offered, but its page still opens. No confirm dialogs.
+
+### J14 One bag (`righty`, P1.1 / P1.2 / P1.4, PENDING)
+There is exactly one "Bring: N" control (the Tournament 6 / League 3 chips are gone), and "Other" takes 7. The builder has 3 step headings. Every pick has a role and a one-sentence why. Picks plus why-not cover every owned ball, each with a reason. "Pack these N" is in the first screen. Packing saves the one bag. After a reload, the Bag header ("N packed"), Tonight and the ball chip all show the same balls.
+
+### J15 Front door (`righty`, P1.5 / P1.6)
+Tonight says "Right-handed · change", and switching to Left takes ≤ 3 taps. Lane mirrors at once. League Tonight fits in 1.5 screens, with Start bowling and Add a bowler in the first viewport (PENDING P1.5). More shows Learn first, and the Glossary is ≤ 2 taps away with no scroll.
+
+**PENDING steps** are listed in `known_issues.json` with a "PENDING P1.x" value. They describe acceptance criteria for work that hasn't shipped yet. They keep CI green now, and they show up under "Known issues now passing" when the feature lands. Delete the entry then, so the criterion becomes a guard.
+
 ## 4. Flow-quality checks (every screen a journey visits)
 
 `j.audit(screen)` runs once per screen per journey. "Fail" means CI fails unless the item is listed in `known_issues.json` as `probe/<screen>/<kind>`.
@@ -117,6 +128,7 @@ Import the bowler's backup (c) → Sessions → a night → Card in ≤ 3 taps �
 | 4.6 | nothing extra while scoring | J04: no prep cards visible during the game (advisor, reads, last time, drill, protect, install, measure nudge); the usability score also caps the scoring view at 24 numbers above the fold | fail |
 | 4.7 | touch targets ≥ 44 px | every button, link, input, slider, radio and `summary`, < 43.5 px either way | fail (`targets`) |
 | 4.8 | no truncation at 360 px | ellipsis, clipped or off-screen text (horizontal carousels allowed) | fail (`truncation`) |
+| 4.8b | no horizontal scroll | `scrollWidth` > screen width on any screen (IA_PLAN §7) | fail (`hscroll`) |
 | 4.9 | no console errors or failed requests | per journey (the deliberate J11 offline errors are ignored) | fail (`console`, `requests`) |
 | 4.10 | accessibility | axe-core: 0 serious or critical violations | fail (`axe`) |
 | 4.11 | visual regression | 13 screens at 360x780 and 414x896, fixed clock, seeded data, > 2 % of pixels changed | fail |
