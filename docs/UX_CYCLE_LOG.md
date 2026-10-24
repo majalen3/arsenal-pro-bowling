@@ -215,3 +215,20 @@ Each cycle: change → test → independent review → commit+push. Scores are 1
   - The full-width Find button overflowed the 360 px viewport by 16 px, so mobile zoomed out to 392. Changed it to auto width.
   - The walkthrough screenshot is now taken after the toast clears.
 - **Screenshots:** `phone-target-pocket`, `phone-target-high-move`, `phone-target-walkthrough`, `phone-target-find`, `phone-target-find-applied`.
+
+
+## TG-fix: targeting investigation (2026-10-24)
+- **Questions:**
+  - (a) Is the high-miss fix opposite to house-shot advice?
+  - (b) Is "Stand 18, aim 18" for 15 mph/220 rpm too far right?
+- **Verdict:**
+  - (b) was a coordinate bug in the targeting layer. One aim unit was labelled as 1 board at the arrows; the engine's real figure is 0.1 board. Fixed app-wide via `js/cc/geom.js`. Find now gives "Stand 17, aim 11 at the arrows, Pocket 27%".
+  - (a) is an engine limitation: 3 flat oil zones plus a near-zero launch angle. Advice now follows the cited rule (move toward the miss). The model's read is shown alongside, with a disclosure when it disagrees. A "Model limit" panel cites the book lines.
+- **Results:**
+
+| Check | Result |
+|---|---|
+| Engine equivalence | 7 500/0 (`simulatePath` untouched) |
+| Unit | 145/0 (targeting 14) |
+| Lighthouse `#/target` | 98/100/100/100 |
+| Service worker | v19 |

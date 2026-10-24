@@ -94,7 +94,17 @@ All are search excerpts from 2026-10-24 unless marked as fetched.
 - **Also:** engine equivalence 0 mismatches; Lighthouse `#/target` ≥95.
 - **Screenshots:** `phone-target-pocket`, `phone-target-high-move`, `phone-target-walkthrough`, `phone-target-find`, `phone-target-find-applied`.
 
-## 6. Known gaps
-- Lane's older MISSES buttons ("left/high → feet 2 left") follow the house rule, which is the opposite of the engine's direction (see the disclosure).
-- Tonight's "Start feet N" is the engine laydown. Targeting's Feet is laydown + offset.
-- The high suggestion can be 4-and-2, which comes from a community source (labelled as such).
+## 6. Known gaps and the 2026-10-24 investigation (DECISIONS #26)
+- **Verdict:** a coordinate bug in the targeting layer (fixed) plus an engine limitation (labelled).
+  - **The bug:** "1 aim unit = 1 board at the arrows" was about 10× too large. `js/cc/geom.js` gives `arrows = release − 6.25·sin(aim°)`, verified against the engine path.
+  - **Find's output changed:** "Stand 18, aim 18" is now "Stand 17, aim 11 at the arrows, Pocket 27%" (Big Bite, 15/220, house).
+- **The engine limitation, in numbers:**
+  - The model reaches ±0.8 board off the laydown at the arrows.
+  - Its 4–6° pocket lines break at boards 12.3–14.7 near 37 ft, with ≤5.1 boards of hook (15/220).
+  - Book lines are stroker 13 → 10, tweener 14–15 → 10 and power 18 → 10 (bowlingball.com BowlVersity, search excerpt), and the house breakpoint is 8–10 at 39–41 ft (NBA, search excerpt).
+  - This is shown in the UI as "Model limit: straighter line, smaller hook than a real house shot" (`#tgLimits`), plus a line in the Find card.
+- **Miss direction:** always toward the miss, by the cited rule. The engine's read after the move is shown, and a disclosure appears when the 3-zone oil model says it gets worse. Lane's coach sentence and miss buttons follow the same rule.
+- Eyes moves in ½-board steps, stored to 0.1, because the model's whole launch range is ±0.8 board.
+- **Still open:**
+  - The real fix is engine v2 (launch angle + oil gradient). It needs owner approval, because `simulatePath` is frozen.
+  - Tonight's "Start feet N" is the engine laydown; the Bag Advisor phase shows feet = laydown + offset.

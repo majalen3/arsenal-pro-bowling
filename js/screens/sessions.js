@@ -2,6 +2,7 @@ import { balls } from '../data.js';
 import { allLines, applyLine, deleteLine, restoreLine, lsGet, LS, saveNote, logFinish, on, today } from '../store.js';
 import { h, icon, toast, confirmSheet, emptyState, segmented } from '../ui.js';
 import { go } from '../router.js';
+import { arrowsBoard } from '../cc/geom.js';
 import { PATTERN_LABEL, FINISH_LABEL, fmtBoard } from '../labels.js';
 import { FINISHES } from '../engine.js';
 const st = { tab:'lines', q:'' };
@@ -21,7 +22,7 @@ export function render() {
         list.append(h('div', { class:'line-card' },
           h('button', { class:'line-row', onclick:() => { applyLine(l); go('#/lane'); toast(`Loaded \u201c${l.name}\u201d`); } }, h('span', { class:'sr-only', text:'Load on lane: ' }),
             h('span', { class:'swatch', style:{ background:b ? b.color : '#888' } }),
-            h('span', { class:'line-text' }, h('span', { class:'line-name', text:l.name }), h('span', { class:'line-meta', text:`${b ? b.name : l.ballId} \u00b7 Feet ${l.release} \u2192 ${fmtBoard(l.release - l.aim)} \u00b7 ${l.speed} mph \u00b7 ${PATTERN_LABEL[l.pattern] || l.pattern}` }), l.note ? h('span', { class:'line-note', text:l.note }) : null),
+            h('span', { class:'line-text' }, h('span', { class:'line-name', text:l.name }), h('span', { class:'line-meta', text:`${b ? b.name : l.ballId} \u00b7 Feet ${l.release} \u2192 ${fmtBoard(+arrowsBoard(+l.release, +l.aim).toFixed(1))} \u00b7 ${l.speed} mph \u00b7 ${PATTERN_LABEL[l.pattern] || l.pattern}` }), l.note ? h('span', { class:'line-note', text:l.note }) : null),
             h('span', { class:'sync-ic', title:l.synced ? 'Synced' : 'Not synced yet', html:icon(l.synced ? 'check' : 'cloudOff') })),
           h('button', { class:'icon-btn', 'aria-label':`Delete ${l.name}`, html:icon('trash'), onclick:async () => {
             if (!await confirmSheet({ title:'Delete this line?', text:`\u201c${l.name}\u201d will be removed from this device and the server.` })) return;

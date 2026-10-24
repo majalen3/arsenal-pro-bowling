@@ -6,6 +6,7 @@
 // right-hander model and every number it returns is read in the bowler's own board numbering.
 import { LW, LH, boardToX, xToBoard, yToFeet, FOUL_Y, PX_FT, HEAD_Y, OIL_LEN, C_SKID, C_HOOK, C_ROLL, S, RANGES } from './engine.js';
 import { reduced } from './ui.js';
+import { aimFor } from './cc/geom.js';
 const LX0 = 14, LX1 = LW - 14, LY0 = 20, LY1 = LH - 6;
 export function createLane(canvas, { onAdjust, lefty = () => false, state = null, overlay = null, baker = true } = {}) {
   const isL = typeof lefty === 'function' ? lefty : () => !!lefty;
@@ -106,13 +107,13 @@ export function createLane(canvas, { onAdjust, lefty = () => false, state = null
     const step = t => { const p = Math.min(1, (t - t0) / dur); paint(st, 1 - Math.pow(1 - p, 3)); if (p < 1) anim = requestAnimationFrame(step); };
     anim = requestAnimationFrame(step);
   }
-  // ---- direct manipulation (v1 rules): press within 9 ft of the foul line moves feet (release 5-30), higher sets target at arrows
+  // ---- direct manipulation: press within 9 ft of the foul line moves feet (release 5-30), higher sets target at arrows
   let mode = null, startE = null, moved = false;
   const logical = e => { const r = canvas.getBoundingClientRect(); return { x: invX(e.clientX - r.left), y: invY(e.clientY - r.top) }; };
   const apply = e => {
     const p = logical(e), board = xToBoard(Math.max(14, Math.min(LW - 14, p.x)));
     if (mode === 'release') onAdjust && onAdjust({ release: Math.max(5, Math.min(30, Math.round(board))), keepTarget: true });
-    else onAdjust && onAdjust({ aim: Math.max(-8, Math.min(8, Math.round((+ss().release - board) * 2) / 2)) });
+    else onAdjust && onAdjust({ aim: Math.round(aimFor(+ss().release, board).aim * 2) / 2 });   // engine geometry (cc/geom.js), clamped ±8
   };
   canvas.addEventListener('pointerdown', e => { const p = logical(e); mode = (FOUL_Y - p.y) / PX_FT < 9 ? 'release' : 'aim'; startE = e; moved = false; if (e.pointerType === 'mouse') { try { canvas.setPointerCapture(e.pointerId); } catch(_) {} apply(e); e.preventDefault(); } });
   canvas.addEventListener('pointermove', e => { if (!mode) return; if (e.pointerType === 'mouse') { apply(e); return; } if (!moved && Math.abs(e.clientX - startE.clientX) > 3) { moved = true; try { canvas.setPointerCapture(e.pointerId); } catch(_) {} } if (moved) apply(e); });

@@ -3,6 +3,7 @@
 // discloses. Spec-TBD balls never get a model line. The engine's global state is restored after every call.
 import { S, OIL_LEN, PATTERNS, analyze } from '../engine.js';
 import { specOK } from '../data.js';
+import { arrowsBoard } from './geom.js';
 export function presetFor(ft) {
   let best = PATTERNS[0];
   for (const p of PATTERNS) if (Math.abs(OIL_LEN[p] - ft) < Math.abs(OIL_LEN[best] - ft)) best = p;
@@ -22,7 +23,7 @@ export function modelLine(cat, { speed = 15, rev = 220, ft = 38, finish = 'facto
     if (!best) return { none: true, reason: `No strike line found on the ${preset} preset`, preset, presetLen: OIL_LEN[preset] };
     const vars = [{ speed: speed + 0.5 }, { speed: speed - 0.5 }, { rev: rev + 20 }, { rev: rev - 20 }, { release: best.rel + 1 }, { release: best.rel - 1 }];
     const holds = vars.filter(v => analyze(cat, Object.assign({ speed, rev, release: best.rel, aim: best.aim }, v)).strike).length;
-    return { none: false, feet: best.rel, target: +(best.rel - best.aim).toFixed(1), aim: best.aim, bp: best.a.bpBoard == null ? null : +best.a.bpBoard.toFixed(1),
+    return { none: false, feet: best.rel, target: +arrowsBoard(best.rel, best.aim).toFixed(1), aim: best.aim, bp: best.a.bpBoard == null ? null : +best.a.bpBoard.toFixed(1),
       bpFt: best.a.bpFeet == null ? null : Math.round(best.a.bpFeet), holds, of: vars.length, preset, presetLen: OIL_LEN[preset] };
   } finally { Object.assign(S, keep); }
 }

@@ -153,7 +153,9 @@ async def deck_cases(b):
     await p.click('[data-miss=right]'); await p.click('[data-miss=right]'); await p.wait_for_timeout(500)
     check(await p.get_attribute('#deckCard', 'data-tone') == 'info' and 'Light' in await p.get_attribute('#deck', 'aria-label'), '[deck] light hit coloured as light')
     if SHOTS: await (await p.query_selector('#deckCard')).screenshot(path=os.path.join(SHOTS, 'phone-deck-light.png'))
-    for _ in range(4): await p.click('[data-miss=left]')
+    for _ in range(10):   # 2-and-1 moves (DECISIONS #26 geometry): keep moving left until the model reads high
+        await p.click('[data-miss=left]'); await p.wait_for_timeout(120)
+        if 'High' in (await p.get_attribute('#deck', 'aria-label') or ''): break
     await p.wait_for_timeout(500)
     check(await p.get_attribute('#deckCard', 'data-tone') == 'bad' and 'High' in await p.get_attribute('#deck', 'aria-label'), '[deck] high hit coloured as high')
     if SHOTS: await (await p.query_selector('#deckCard')).screenshot(path=os.path.join(SHOTS, 'phone-deck-high.png'))
@@ -220,6 +222,7 @@ async def data_cycle(b):
 CSV_WIDE = "Date,Ball,Game 1,Game 2,Game 3\r\n2026-10-18,Big Bite,201,188,=SUM(A1)\r\n2026-10-19,Ice Storm,150,,175\r\n"
 CSV_REL = "date;ball;speed (kph);rev rate\n2026-10-18;Hy-Road Pearl;27;240\n2026-10-18;Ice Storm;26,5;250\n"
 async def axe_ok(p, label):
+    await p.evaluate("Promise.race([Promise.all(document.getAnimations().filter(a => a.effect && a.effect.getTiming().iterations !== Infinity).map(a => a.finished.catch(() => 0))), new Promise(r => setTimeout(r, 2000))])")   # contrast mid-fade is a false positive
     await p.add_script_tag(url=BASE + 'tests/axe.min.js')
     res = await p.evaluate("axe.run(document,{resultTypes:['violations']}).then(r=>r.violations.filter(v=>['serious','critical'].includes(v.impact)).map(v=>v.id+':'+v.nodes.length))")
     check(not res, f'{label} axe serious/critical=0 {res}')
@@ -404,7 +407,7 @@ async def targeting_cycle(b):
     await p.reload(); await p.wait_for_selector('#tgCoach'); await p.wait_for_timeout(300)
     check(await p.query_selector('#tgTour') is None, '[target] walkthrough not repeated after dismissal')
     await p.click('#tgHelp'); check(await p.query_selector('#tgTour') is not None, '[target] "?" replays the walkthrough'); await p.click('#tgTourSkip')
-    # default = tonight's model line: feet 17 (offset 7 assumed) -> laydown 10, eyes 17 at the arrows
+    # default = tonight's model line: feet 17 (offset 7 assumed) -> laydown 10, eyes 10.7 at the arrows (engine geometry, DECISIONS #26)
     coach = (await p.text_content('#tgCoach')).strip()
     check(coach.startswith('Through the box at') and 'Pocket' in coach and coach.count('. ') <= 1, f'[target] in box + pocket, numbers first, <=2 sentences [{coach}]')
     check((await p.text_content('#tgCall')).startswith('Pocket') and await p.text_content('#tgBox') == 'In the box', '[target] pocket + in-box pills')
@@ -419,22 +422,24 @@ async def targeting_cycle(b):
     # save as my line, then move away
     await p.click('#tgSave'); await p.wait_for_timeout(300)
     lines = await p.evaluate("JSON.parse(localStorage.getItem('ap_lines')||'[]').map(l=>l.name+'|'+l.release+'|'+l.aim)")
-    check(any(x.startswith('Target 17\u219217|10|-7') for x in lines), f'[target] "Save as my line" stores a Lane line (release 10, aim -7) {lines}')
-    # missed high: feet 6 left, eyes 1 left (RH screen-left = higher boards)
+    check(any(x.startswith('Target 17\u219210.7|10|-7') for x in lines), f'[target] "Save as my line" stores a Lane line (release 10, aim -7) {lines}')
+    lim = await p.text_content('#tgLimits'); check('Model limit' in lim and 'No model line does that' in lim and 'bowlingball.com' in lim and 'laydown 14.5' in lim, '[target] engine limitation labelled + cited book lines')
+    # missed high: feet 6 left, eyes 12 half-boards left (RH screen-left = higher boards) -> laydown 16, arrows 16.7
     for _ in range(6): await p.click('#tgFeet button[aria-label="Feet 1 board left"]')
-    await p.click('#tgEyes button[aria-label="Eyes 1 board left"]'); await p.wait_for_timeout(200)
+    for _ in range(12): await p.click('#tgEyes button[aria-label="Eyes 0.5 board left"]')
+    await p.wait_for_timeout(200)
     coach = (await p.text_content('#tgCoach')).strip()
-    check(await p.text_content('#tgFeetVal') == '23' and coach.startswith('High by') and 'Move feet' in coach, f'[target] missed high, move in coach voice [{coach}]')
-    sg = await p.text_content('#tgSug'); check(any(r in sg for r in ['2-and-1', '3-and-1', '4-and-2', 'parallel']) and 'Model after the move: pocket' in sg, f'[target] cited move, engine-verified to pocket [{sg[:140]}]')
-    check('move toward the miss' in sg, '[target] disclosure when the model disagrees with the house-shot rule')
+    check(await p.text_content('#tgFeetVal') == '23' and coach.startswith('High by') and 'Move feet 2 left, eyes 1 left' in coach, f'[target] missed high: cited move toward the miss in coach voice [{coach}]')
+    sg = await p.text_content('#tgSug'); check('2-and-1' in sg and 'Model after the move:' in sg and 'bowl.com' in sg, f'[target] cited 2-and-1 + the model\'s own read after it [{sg[:160]}]')
+    check('House-shot rule: move toward the miss' in sg, f'[target] direction = cited rule (model read shown, disagreement disclosed when it worsens) [{sg[:120]}]')
     await shot(p, 'phone-target-high-move')
     await p.click('#tgApply'); await p.wait_for_timeout(250)
-    check((await p.text_content('#tgCall')).startswith('Pocket'), '[target] one tap applies the move and re-runs: pocket')
+    check(await p.text_content('#tgFeetVal') == '25' and await p.text_content('#tgEyesVal') == '17.7', '[target] one tap applies the move (feet 25, eyes 17.7) and re-runs')
     await p.click('#tgBack'); await p.wait_for_timeout(250)
-    check(await p.text_content('#tgFeetVal') == '17' and await p.text_content('#tgEyesVal') == '17', '[target] back to saved line restores feet/eyes')
+    check(await p.text_content('#tgFeetVal') == '17' and await p.text_content('#tgEyesVal') == '10.7', '[target] back to saved line restores feet/eyes')
     # dots mode keeps the same line
     await p.click('.tg-mode [data-v=dots]'); await p.wait_for_timeout(200)
-    check(await p.text_content('#tgEyesVal') == '13.5' and (await p.text_content('#tgCall')).startswith('Pocket'), f'[target] dots (7.5 ft) aim converts on the same straight line [{await p.text_content("#tgEyesVal")}]')
+    check(await p.text_content('#tgEyesVal') == '10.4' and (await p.text_content('#tgCall')).startswith('Pocket'), f'[target] dots (7.5 ft) aim converts on the same straight line [{await p.text_content("#tgEyesVal")}]')
     await p.click('.tg-mode [data-v=arrows]')
     # Find my strike line from Tonight: stand / aim / Pocket % with basis, apply -> lane + box; phone-speed budget
     cdp = None
@@ -465,9 +470,10 @@ async def targeting_cycle(b):
     await p.click('#tgFeet button[aria-label="Feet 1 board right"]'); await p.wait_for_timeout(100)
     check(await p.text_content('#tgFeetVal') == '18', '[target] lefty: screen-right = higher board (own numbering)')
     for _ in range(5): await p.click('#tgFeet button[aria-label="Feet 1 board right"]')
-    await p.click('#tgEyes button[aria-label="Eyes 1 board right"]'); await p.wait_for_timeout(200)
+    for _ in range(12): await p.click('#tgEyes button[aria-label="Eyes 0.5 board right"]')
+    await p.wait_for_timeout(200)
     coach = (await p.text_content('#tgCoach')).strip()
-    check(coach.startswith('High by') and 'feet 4 left' in coach, f'[target] lefty: same shot, mirrored move words [{coach}]')
+    check(coach.startswith('High by') and 'feet 2 right, eyes 1 right' in coach, f'[target] lefty: same shot, mirrored move words [{coach}]')
     await p.click('#tgFind'); await p.wait_for_selector('#tgFindLine'); await p.click('#tgFindApply'); await p.wait_for_timeout(250)
     check((await p.text_content('#tgCall')).startswith('Pocket') and (await p.text_content('#tgBox')) == 'In the box', '[find] lefty: found line applies, pocket in the box (own board numbering)')
     check(not errs, f'[target] no page errors {errs[:2]}')

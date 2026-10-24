@@ -68,3 +68,15 @@ Short ADR-style notes. Each: decision · why · consequence.
       - **No strike % is shown**: the only published carry figure (85% at 17.5) is not a curve.
       - Lines with more miss room win ties (within 3 points).
       - It runs synchronously (70 ms at 4× throttle), so no worker is needed.
+
+26. **Arrows geometry fixed; engine launch-angle and oil limits labelled, not hidden (TG-fix, 2026-10-24).** The v1 label `target = release − aim` (one board per aim unit) was about 10× too large. The engine's own path crosses the arrows (15 ft) at `release − 6.25·sin(aim°)` boards, so the full aim range of ±8 reaches only ±0.80 board. `js/cc/geom.js` derives that from the engine constants, and every layer (Lane drag and steppers, Targeting, Find, pickers, Sessions, the Tonight model line) now uses it. `simulatePath` is unchanged: equivalence is 7 500/0, and a unit test checks `arrowsBoard` against the engine path to within 0.05 board. Effect on Find (Big Bite, 15 mph/220 rpm, house, 38 ft): "Stand 18, aim 18, 60%" became "Stand 17, aim 11 at the arrows, 27%". The old Monte Carlo had shrunk a ±1.5-board miss at the arrows to 0.15 board.
+    **Engine limitation (not fixable without changing `simulatePath`):**
+    - The model's line is nearly straight to the breakpoint (at most 0.8 board off the laydown at the arrows). Real tweener lines swing 3–5 boards, e.g. 14–15 → 10 (bowlingball.com BowlVersity, search excerpt).
+    - At 4 speed/rev profiles, no model line crosses 17–18 at 4–6° from a breakpoint on 8–10 near 39–41 ft, which is the NBA house shot (search excerpt).
+    - The 3 flat oil zones mean a feet move slides the whole line, so the model can disagree with "move toward the miss".
+    **Decision:**
+    - Advice direction follows the cited rule (bowl.com/USBC; NBA: high → 2 left / 1 left; light → parallel 2 right).
+    - The engine result is shown alongside as a model check (`modelAgrees`), and a disclosure is shown when the model says it would get worse.
+    - Lane's coach sentence goes through `houseRule()` in the screen layer, because `coachLine` in engine.js is frozen. Lane's Left/Right miss buttons stay 2-and-1 toward the miss, now on the correct geometry (often clamped at the model's reach).
+    - Targeting shows a "Model limit" panel with the cited book lines.
+    - Recommended next step, needing owner approval: engine v2 with a real launch angle and an oil gradient.

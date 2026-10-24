@@ -4,6 +4,7 @@ import { S, RANGES, FINISHES, PATTERNS, readInfo, readMedian } from '../engine.j
 import { app, linesForBall, applyLine, profile, esc } from '../store.js';
 import { h, icon, sheet, segmented, stepper } from '../ui.js';
 import { adjust, setBall, target } from '../ctl.js';
+import { arrowsBoard } from '../cc/geom.js';
 import { PATTERN_LABEL, PATTERN_HINT, FINISH_LABEL, fmtBoard } from '../labels.js';
 import { go } from '../router.js';
 let med = null;
@@ -56,7 +57,7 @@ export function tunePanel() {
     stepper({ id:'speed', label:'Speed', unit:'mph', min:12, max:22, step:.5, value:S.speed, onChange:v => adjust({ speed:v }) }),
     stepper({ id:'rev', label:'Rev rate', unit:'rpm', min:100, max:500, step:10, value:S.rev, onChange:v => adjust({ rev:v }) }),
     stepper({ id:'release', label:'Feet (board at release)', min:5, max:30, step:1, value:S.release, onChange:v => adjust({ release:v, keepTarget:true }), hint:'Moving feet keeps your target.' }),
-    stepper({ id:'target', label:'Target at arrows', min:1, max:39, step:.5, value:target(), fmt:fmtBoard, onChange:v => adjust({ target:v }), hint:'Board you aim over at 15 ft.' }),
+    stepper({ id:'target', label:'Target at arrows', min:1, max:39, step:.5, value:target(), fmt:fmtBoard, onChange:v => adjust({ target:v }), hint:'Board you aim over at 15 ft. The model reaches only about 0.8 board either side of your feet board here.' }),
   ];
   const wrap = h('div', { class:'tune stack' }, ...rows);
   wrap.sync = () => { rows[0].setValue(S.speed); rows[1].setValue(S.rev); rows[2].setValue(S.release); rows[3].setValue(target()); };
@@ -68,7 +69,7 @@ export function openLines() {
   const body = h('div', { class:'stack' });
   if (!ls.length) body.append(h('p', { class:'muted', text:`No saved lines for ${app.ball.name} yet. Tap the bookmark on the lane to save the line you're throwing.` }));
   ls.forEach(l => body.append(h('button', { class:'line-row', onclick:() => { applyLine(l); s.close(); } },
-    h('span', { class:'line-name', text:l.name }), h('span', { class:'line-meta', text:`Feet ${l.release} · Target ${fmtBoard(l.release - l.aim)} · ${l.speed} mph · ${PATTERN_LABEL[l.pattern] || l.pattern}${l.synced ? '' : ' · on this device'}` }))));
+    h('span', { class:'line-name', text:l.name }), h('span', { class:'line-meta', text:`Feet ${l.release} · Target ${fmtBoard(+arrowsBoard(+l.release, +l.aim).toFixed(1))} · ${l.speed} mph · ${PATTERN_LABEL[l.pattern] || l.pattern}${l.synced ? '' : ' · on this device'}` }))));
   body.append(h('button', { class:'btn ghost', onclick:() => { s.close(); go('#/sessions'); } }, 'All lines and sessions'));
   const s = sheet({ title:`Lines · ${app.ball.name}`, body, id:'linesSheet' });
 }

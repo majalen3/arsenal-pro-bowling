@@ -5,6 +5,7 @@
 import { S, analyze } from '../engine.js';
 import { specOK } from '../data.js';
 import { presetFor } from './model.js';
+import { arrowsBoard, aimFor, AIM_MAX } from './geom.js';
 export const WINDOW = [17, 18], ANGLE_WIN = [4, 6];   // angle: the engine's strike rule (USBC: more entry angle carries better)
 export const SRC = {
   window: { label: 'USBC "I Left What Where?" via National Bowling Academy', url: 'https://www.nationalbowlingacademy.com/post/aiming-for-the-pocket-why-didnt-i-strike' },
@@ -27,16 +28,22 @@ const gauss = r => { let u = 0, v = 0; while (u === 0) u = r(); v = r(); return 
 let ANG = true;   // false = board-only window (USBC: board decides, regardless of angle) when no line reaches 4–6°
 const inWin = a => !!a && a.entryBoard >= WINDOW[0] && a.entryBoard <= WINDOW[1] && (!ANG || (a.angle >= ANGLE_WIN[0] && a.angle <= ANGLE_WIN[1]));
 const r1 = v => Math.round(v * 10) / 10;
-// one shot: laydown lay, arrows target arr (engine aim = lay − arr, the app's v1 rule)
-function shot(cat, lay, arr, sp, rv) { const a = analyze(cat, { speed: sp, rev: rv, release: lay, aim: lay - arr }); return a.gutter ? null : a; }
+// one shot that crosses the arrows at board arr from laydown lay, through the engine's own geometry (geom.js). The model can launch
+// only ±REACH (~0.8) board off the laydown; past that the rest of the arrows miss is applied as a parallel laydown shift so the
+// ball still crosses the arrows exactly at arr (app estimate, DECISIONS #26). Replaces the v1 "aim = lay − arr" (1 board per unit).
+function shot(cat, lay, arr, sp, rv) {
+  const f = aimFor(lay, arr), rel = f.clamped ? lay + (arr - f.got) : lay;
+  const a = analyze(cat, { speed: sp, rev: rv, release: rel, aim: f.aim }); return a.gutter ? null : a;
+}
+const AIMS = []; for (let x = -AIM_MAX; x <= AIM_MAX; x += 0.5) AIMS.push(x);
 export function find(cat, { speed = 15, rev = 220, ft = 38, spread, n = 200, seed = 31, top = 10 } = {}) {
   if (!cat || !specOK(cat)) return { none: true, reason: 'spec TBD: no model line' };
   const sd = spread || spreadFrom(null), keep = { pattern: S.pattern, finish: S.finish, oil: S.oil }, preset = presetFor(ft), t0 = Date.now();
   try {
     S.pattern = preset; S.finish = 'factory'; S.oil = 1;
     const grid = [];
-    for (let lay = 5; lay <= 30; lay++) for (let arr = Math.max(1, lay - 8); arr <= Math.min(39, lay + 8); arr += 0.25) {
-      const a = shot(cat, lay, arr, speed, rev); if (a) grid.push({ lay, arr, entry: a.entryBoard, angle: a.angle, bp: a.bpBoard, bpFt: a.bpFeet, a });
+    for (let lay = 5; lay <= 30; lay++) for (const aim of AIMS) {   // the engine's whole launch range; arrows = its measured crossing
+      const a = analyze(cat, { speed, rev, release: lay, aim }); if (!a.gutter) grid.push({ lay, arr: r1(arrowsBoard(lay, aim)), entry: a.entryBoard, angle: a.angle, bp: a.bpBoard, bpFt: a.bpFeet, a });
     }
     ANG = true; let cands = grid.filter(c => inWin(c.a));
     if (!cands.length) { ANG = false; cands = grid.filter(c => inWin(c.a)); }

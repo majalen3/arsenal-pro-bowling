@@ -14,6 +14,7 @@ import { balls } from '../data.js';
 import { openBallSheet, openConditions, openTune, openLines, tunePanel } from './pickers.js';
 import { PATTERN_LABEL, FINISH_LABEL, CALL_LABEL, CALL_TONE, f1, fmtBoard } from '../labels.js';
 import { profile } from '../store.js';
+import { houseRule } from '../cc/target.js';
 export function render() {
   const ballBtn = h('button', { class:'ball-btn', id:'ballBtn', 'aria-haspopup':'dialog', onclick:openBallSheet });
   const saveBtn = h('button', { class:'icon-btn', id:'saveBtn', 'aria-label':'Save this line', onclick:quickSave });
@@ -67,7 +68,8 @@ export function render() {
     oilChip.innerHTML = `<span class="chip-k">Oil</span> ×${(+S.oil).toFixed(1)}`; oilChip.setAttribute('aria-label', `Oil ×${(+S.oil).toFixed(1)}. Change oil volume`);
     tuneChip.innerHTML = `${icon('tune')} ${S.speed} mph · ${S.rev} rpm`; tuneChip.setAttribute('aria-label', `${S.speed} mph · ${S.rev} rpm. Tune shot`);
     const tone = CALL_TONE[a.call]; callBadge.textContent = CALL_LABEL[a.call]; 
-    coach.textContent = isLefty() ? mirrorWords(coachLine(a)) : coachLine(a);
+    const cl = houseRule(coachLine(a));
+    coach.textContent = isLefty() ? mirrorWords(cl) : cl;
     setTile(tEntry, f1(a.entryBoard), 'pocket 17.5', a.entryBoard != null && Math.abs(a.entryBoard - 17.5) <= 0.7 ? 'good' : 'warn');
     setTile(tAngle, a.angle == null ? '\u2014' : f1(a.angle) + '\u00b0', 'need 4\u20136\u00b0', a.angle != null && a.angle >= 4 && a.angle <= 6 ? 'good' : 'warn');
     const r31 = a.bpBoard == null ? null : ruleOf31(S.pattern, a.bpBoard);
@@ -123,3 +125,4 @@ export function render() {
   const offs = [on('state', queue), on('lines', () => update()), on('prefs', () => { qKey = ''; queue(); }), on('status', drawSync)];
   return { el, title:'Lane', mounted() { update({ animate:true }); drawSync(); }, destroy() { cancelAnimationFrame(rq); offs.forEach(f => f()); lane.destroy(); deck.destroy(); } };
 }
+
