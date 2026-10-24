@@ -29,7 +29,7 @@ export function seedEvents({ deviceId = null, now = Date.now(), importId = SEED_
   const o = (extra) => Object.assign({ deviceId, ts: now, prov: UR, importId }, extra);
   const out = [mkEvent('import.created', importId, { kind: 'seed', label: 'Your reported arsenal (Oct 23, 2026)', fileName: null, counts: { balls: OWNER_BALLS.length, bags: 2 } }, o())];
   const bf = {
-    hand: 'right', style: 'tweener',
+    style: 'tweener',   // no hand: the bowler tells us (owner 2026-10-24: no auto-detected handedness)
     speed: { v: 15, unit: 'mph', at: 'unknown', approx: true, prov: UR },
     rev: { v: 220, unit: 'rpm', approx: true, prov: UR },
     pap: { v: '5 1/8', unit: 'in', note: 'horizontal; vertical unknown', prov: UR },

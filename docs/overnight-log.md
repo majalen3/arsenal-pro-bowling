@@ -279,3 +279,24 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 ## Aim follow-up: half boards everywhere the bowler reads an aim (2026-10-24)
 - Tonight (stand line, now-line, advisor "Start with"), Targeting (Eyes stepper, Find line, "Use stand" button, canvas label) and the strike-line text now show whole or half boards ("10½"), the same as Lane. The model values underneath keep tenths. The Targeting Eyes stepper snaps to halves.
 - e2e: assertions compare half boards via `hb()`. The data step's IndexedDB wait is now 30 s; it timed out at 10 s only under the full-suite load and passed alone. Full e2e: 541 passed, 0 failed. Unit tests 230/0. sw v42.
+
+## A + B + C: Help bubbles on every screen, Bowling Guide, explicit handedness (2026-10-24)
+- **Live root cause (A).** At 360 px on live, Help was off by default and the only toggle sat below the fold on More. Only Lane and Targeting had dots, and they were grey. The service worker was not the cause.
+- **A, Help bubbles.**
+  - Added a "?" toggle in the top bar of every screen (`#helpToggle`, aria-pressed, via the router decorate hook) and kept the More setting in sync.
+  - The "?" is now gold: a 22 px circle inside a 44×44 tap area.
+  - The ball page has 17 dots: RG, Differential, Core, Cover, Factory finish, Reads, the "On House, your line" read (hit board, entry, model, breakpoint), How it rolls, Use when / Leave in the bag, Recommendation, Saved lines, Surface log and Compare.
+  - Dots are also on Tonight (outside the pad), Lane, Targeting, Patterns / Pattern, Sessions / Session, Bowler Card, Insights, Arsenal and Compare.
+  - Each bubble is 1–2 sentences with "Learn more in the Bowling Guide ›".
+- **Glossary.** Added 6 sourced, neutral terms (eq-core, tg-hit, ap-model, ap-use-when, ap-compare, ap-status), for 112 in total.
+- **B / P1.7, Bowling Guide.** `#/guide` is searchable and browsable by the 7 trees (chips), deep-linked from every bubble (`?t=`). More's first card is "Learn": Bowling Guide · Glossary · Help bubbles Off/On.
+- **C, explicit handedness.**
+  - `js/cc/hand.js` is the single source. It holds only what the bowler told us (handSource 'user-reported').
+  - Removed `hand:'right'` from the starter-arsenal seed, the welcome default and the profile-editor default. Restore no longer fills in right.
+  - Lane, Targeting, Tonight, Compare and the miss controls read only cc/hand.js. An untouched welcome default counts as unset.
+  - While unset, boards are read right-handed and Tonight says so: "Hand not set (reading boards right-handed) · set". The app asks once, inline (Right / Left / Not now), on the first hand-dependent screen and never during an open game. Otherwise Tonight shows "Right-handed · change".
+- **Tests.**
+  - New: unit `hand.test.mjs` (4); e2e `help` (≥1 visible "?" per screen with Help on, 0 with it off; ball ≥12), `guide` (learnfirst: Glossary in the first viewport) and `hand`.
+  - Updated: help.test (112 terms); night.test (the seed sets no hand).
+- **Commit.** A, B and C went into one commit because the C edits share render hunks with the A dots in tonight, target, lane, more and compare.
+- **Also fixed.** A segmented control with nothing selected is now reachable by Tab, and the ball-page Compare button no longer overflows at 360.

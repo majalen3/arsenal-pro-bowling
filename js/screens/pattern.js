@@ -5,6 +5,7 @@ import { adjust } from '../ctl.js';
 import { go } from '../router.js';
 import { backBar } from './ball.js';
 import { PATTERN_LABEL } from '../labels.js';
+import { helpDot, withHelp } from './help.js';
 export const nearestPreset = ft => Object.entries(OIL_LEN).sort((a, b) => Math.abs(a[1] - ft) - Math.abs(b[1] - ft) || (a[0] === 'house' ? -1 : 1))[0][0];
 export function grid(steps, ft) {
   // units per board (1..39) per foot (0..ft), forward + reverse, loads x mics (mics unknown => 1 unit per load)
@@ -49,9 +50,9 @@ export function render({ params }) {
       body.append(
         h('div', { class:'muted small', text:p.series || '\u00a0' }),
         h('div', { class:'spec-grid four' }, stat('Length', ft + ' ft'), stat('Ratio', p.ratio ? p.ratio + ':1' : '\u2014'), stat('Volume', p.ml ? p.ml + ' ml' : '\u2014'), stat('Rule of 31', ft ? `board ${Math.max(1, Math.round(ft - 31))}` : '\u2014')),
-        h('div', { class:'card' }, h('h2', { class:'card-title', text:'Oil graph' }), h('div', { class:'heat-wrap' }, hm), h('p', { class:'muted small', text:'Bowler\u2019s view: foul line at the bottom, board 1 on the right. Brighter = more oil loads applied. Zero-load (buff) sections still get oil carried by the machine’s brush, so the oil runs out to the dashed pattern-end line.' })),
-        h('div', { class:'card' }, h('h2', { class:'card-title', text:'Crossboard' }), h('div', { class:'cross-wrap' }, cb)),
-        h('div', { class:'card' }, h('h2', { class:'card-title', text:'Bowl it' }),
+        h('div', { class:'card' }, withHelp(h('h2', { class:'card-title', text:'Oil graph' }), 'ln-graph', 'Oil graph'), h('div', { class:'heat-wrap' }, hm), h('p', { class:'muted small', text:'Bowler\u2019s view: foul line at the bottom, board 1 on the right. Brighter = more oil loads applied. Zero-load (buff) sections still get oil carried by the machine’s brush, so the oil runs out to the dashed pattern-end line.' })),
+        h('div', { class:'card' }, withHelp(h('h2', { class:'card-title', text:'Crossboard' }), 'ln-ratio', 'Crossboard'), h('div', { class:'cross-wrap' }, cb)),
+        h('div', { class:'card' }, withHelp(h('h2', { class:'card-title', text:'Bowl it' }), 'ln-length', 'Bowl it'),
           h('p', { text:`The lane model has six presets. Closest by length: ${PATTERN_LABEL[pre]} (${OIL_LEN[pre]} ft). This is an approximation, not this exact pattern.` }),
           h('button', { class:'btn primary', id:'useOnLane', onclick:() => { adjust({ pattern:pre }, { animate:true }); go('#/lane'); toast(`Lane set to ${PATTERN_LABEL[pre]} (nearest to ${p.name})`); } }, `Use ${PATTERN_LABEL[pre]} on lane`)),
         h('details', { class:'card' }, h('summary', { text:`Steps (${steps.length})` }), h('div', { class:'table-wrap' }, h('table', { class:'steps' }, h('thead', {}, h('tr', {}, ...['Dir', 'Boards', 'Loads', 'Feet', 'Mics'].map(t => h('th', { scope:'col', text:t })))),

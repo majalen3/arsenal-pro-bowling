@@ -156,3 +156,9 @@ Short ADR-style notes. Each: decision · why · consequence.
 
 ## Aim: feet and target are independent board values (2026-10-24)
 The owner's target is a board (1–39, halves allowed), not an engine angle. We store it as `app.eyes`. The engine still takes (release, aim); if the target is past the ±8 aim clamp, the laydown fed to the model is shifted (strikeline.js rule `rel = lay + (arr − got)`) and labelled as a model limit. We don't change simulatePath. Eyes are local-only, so the API stays backward compatible.
+
+## Handedness is explicit only (owner 2026-10-24)
+- No auto-detection: imports, the starter seed, welcome defaults and engine guesses never set a hand.
+- `js/cc/hand.js` is the only reader. It treats a hand as set only when it is left/right and the welcome field was touched.
+- Unset reads boards right-handed (USBC convention; boards are read as RH) and says so, then asks once. "Not now" is final (prefs.handAsked); the bowler can change it any time from Tonight or the Bowler profile.
+- Help dots get a top-bar "?" toggle on every screen. Help stays **off by default**: changing the default is P2 and waits for the owner.

@@ -5,11 +5,13 @@ import * as PR from '../cc/protect.js';
 import * as WK from '../cc/wake.js';
 import { h, icon, toast, segmented, sheet } from '../ui.js';
 import { adjust } from '../ctl.js';
+import { go } from '../router.js';
+import * as HAND from '../cc/hand.js';
 import { profileForm, ownedPicker } from './welcome.js';
 import { applyTheme } from '../main.js';
 export const VERSION = '2.0.0';
 export function render() {
-  const p = Object.assign({ hand:'right', style:'tweener', speed:15, rev:220, pap:'', tilt:'', owned:[] }, profile() || {});
+  const p = Object.assign({ hand:null, style:'tweener', speed:15, rev:220, pap:'', tilt:'', owned:[] }, profile() || {});
   const editProfile = () => {
     const q = { ...p }, f = profileForm(q);
     const s = sheet({ title:'Your profile', id:'profSheet', body:h('div', { class:'stack' }, f.hand, f.style, f.speed, f.rev, f.pap, f.tilt,
@@ -59,17 +61,18 @@ export function render() {
     const pr = profile();
     body.innerHTML = '';
     body.append(
+      // IA_PLAN P1.7: until P2 moves Learn to its own tab, More opens with it (owner: "I thought we had a bowler's education").
+      h('div', { class:'card', id:'helpCard' }, h('h2', { class:'card-title', id:'learnTitle', text:'Learn' }),
+        h('div', { class:'btn-grid' }, h('a', { class:'btn primary', id:'goGuide', href:'#/guide' }, 'Bowling Guide'), h('a', { class:'btn ghost', id:'goGlossary', href:'#/glossary' }, 'Glossary')),
+        h('div', { class:'fld', id:'helpFld' }, h('span', { text:'Help bubbles \u201c?\u201d' }), segmented('Help bubbles', [['off', 'Off'], ['on', 'On']], prefs().help === true ? 'on' : 'off', v => { setPrefs({ help: v === 'on' }); go(location.hash, { replace:true }); }, 'wide'),
+          h('p', { class:'small muted', text:'Puts a \u201c?\u201d next to bowling words on every screen; tap it for a plain answer. Same switch as the \u201c?\u201d at the top. Never on the scoring pad.' }))),
       h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Bowler profile' }), h('button', { class:'btn sm ghost', id:'editProfile', onclick:editProfile }, h('span', { html:icon('edit') }), 'Edit')),
-        pr ? h('p', { text:`${pr.hand === 'left' ? 'Left' : 'Right'}-handed ${pr.style === 'two' ? 'two-hander' : pr.style}, ${(+pr.speed).toFixed(1)} mph, ${pr.rev} rpm${pr.pap ? ', PAP ' + pr.pap : ''}${pr.tilt ? ', tilt ' + pr.tilt : ''}.` }) : h('p', { class:'muted', text:'Not set. The lane uses its defaults (15 mph, 220 rpm).' }),
+        pr ? h('p', { text:`${HAND.handOfProfile(pr) ? HAND.HAND_LABEL[HAND.handOfProfile(pr)] : 'Hand not set'}, ${pr.style === 'two' ? 'two-hander' : pr.style}, ${(+pr.speed).toFixed(1)} mph, ${pr.rev} rpm${pr.pap ? ', PAP ' + pr.pap : ''}${pr.tilt ? ', tilt ' + pr.tilt : ''}.` }) : h('p', { class:'muted', text:'Not set. The lane uses its defaults (15 mph, 220 rpm).' }),
         h('div', { class:'row between' }, h('span', { text:`My bag: ${pr && pr.owned && pr.owned.length ? pr.owned.length + ' balls' : 'all 22'}` }), h('button', { class:'btn sm ghost', id:'editBag', onclick:editBag }, 'Choose'))),
       h('div', { class:'card', id:'dataCard' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Your data' }), protChip), dataInfo, lastBk,
         h('details', { class:'tn-more', id:'protMore' }, h('summary', { text:'Keep it safe' }), protBody),
         h('details', { class:'tn-more', id:'dataMore' }, h('summary', { text:'What\u2019s saved' }), dataCounts),
         h('div', { class:'btn-grid' }, h('a', { class:'btn ghost', href:'#/import', id:'goImport' }, 'Import a file'), h('a', { class:'btn ghost', href:'#/import?kind=lanetrax', id:'goLaneTrax' }, 'LaneTrax report'), h('a', { class:'btn ghost', href:'#/card', id:'goCardMore' }, 'My Bowler Card'), h('a', { class:'btn ghost', href:'#/sessions', id:'goNights' }, 'Past sessions'))),
-      h('div', { class:'card', id:'helpCard' }, h('h2', { class:'card-title', text:'Help' }),
-        h('div', { class:'fld', id:'helpFld' }, h('span', { text:'Help bubbles (?)' }), segmented('Help bubbles', [['off', 'Off'], ['on', 'On']], prefs().help === true ? 'on' : 'off', v => setPrefs({ help: v === 'on' }), 'wide'),
-          h('p', { class:'small muted', text:'Adds one \u201c?\u201d per card on Lane, Targeting, Bag and Add ball. Never on the scoring pad.' })),
-        h('a', { class:'btn ghost', id:'goGlossary', href:'#/glossary' }, 'Glossary')),
       h('div', { class:'card' }, h('h2', { class:'card-title', text:'Appearance' }), segmented('Theme', [['dark', 'Alley dark'], ['light', 'Light'], ['system', 'System']], prefs().theme || 'dark', v => { setPrefs({ theme:v }); applyTheme(v); }, 'wide'),
         h('div', { class:'fld', id:'textSizeFld' }, h('span', { text:'Text size' }), segmented('Text size', [['normal', 'Normal'], ['large', 'Large'], ['xl', 'Extra large']], prefs().textSize || 'normal', v => { setPrefs({ textSize:v }); WK.applyTextSize(v); }, 'wide')),
         h('div', { class:'fld', id:'wakeFld' }, h('span', { text:'Keep the screen on during a game' }), segmented('Keep the screen on during a game', [['on', 'On'], ['off', 'Off']], prefs().wakeLock === false ? 'off' : 'on', v => setPrefs({ wakeLock: v === 'on' }), 'wide'),

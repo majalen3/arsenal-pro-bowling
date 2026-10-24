@@ -39,5 +39,5 @@ test('spare hints: lefty and the real strike stand move the numbers (sim bug 1)'
 test('seed: the starter arsenal keeps bowler fields the user already set (sim bug 1 root cause)', () => {
   const P = project([mkEvent('bowler.edited', 'me', { fields: { hand: 'left' } }, { ts: 5 })].concat(seedEvents({ now: 10, keep: ['hand'] })));
   assert.equal(P.bowler.hand, 'left');
-  const P2 = project(seedEvents({ now: 10 })); assert.equal(P2.bowler.hand, 'right');
+  const P2 = project(seedEvents({ now: 10 })); assert.equal(P2.bowler.hand ?? null, null, 'owner 2026-10-24: the starter arsenal never sets a hand');
 });

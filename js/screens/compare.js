@@ -12,6 +12,8 @@ import { go } from '../router.js';
 import { backBar } from './ball.js';
 import { readMed, ballRow } from './pickers.js';
 import { PATTERN_LABEL, FINISH_LABEL, CALL_LABEL, CALL_TONE, f1 } from '../labels.js';
+import { helpDot, withHelp } from './help.js';
+import * as HAND from '../cc/hand.js';
 // sim2 #2: the Aim Box uses tonight's picked length when this preset is tonight's (same as Lane and Targeting)
 const patNow = () => { const P = proj(), sess = P ? ((P.sessions || {})[openNight(P) || ''] || {}) : {}, ft = sess.ft != null ? +sess.ft : null;
   return { preset: S.pattern, ft: ft != null && presetFor(ft) === S.pattern ? ft : null }; };
@@ -45,8 +47,8 @@ export function render({ query }) {
     h('tbody', {}, ...rows.map(([k, fn, score]) => { const vals = ps.map((b, i) => fn(b, i)); const sc = score ? ps.map((b, i) => score(b, i)) : null; const min = sc ? Math.min(...sc) : null; const diff = new Set(vals).size > 1;
       return h('tr', { class:diff ? 'differs' : 'same' }, h('th', { scope:'row', text:k }), ...vals.map((v, i) => h('td', { class:sc && sc[i] === min && diff ? 'best' : '' , text:v }))); })));
   const el = h('section', { class:'screen compare' }, backBar('Compare', '#/arsenal'),
-    h('p', { class:'muted small pad-x', text:`Same line for both: feet ${S.release}, ${S.speed} mph, ${S.rev} rpm on ${PATTERN_LABEL[S.pattern]}, ${FINISH_LABEL[S.finish]}. Highlighted rows differ; gold = closer to a strike.` }),
+    h('p', { class:'muted small pad-x' }, helpDot('ap-compare', 'Compare'), ` Same line for both: feet ${S.release}, ${S.speed} mph, ${S.rev} rpm on ${PATTERN_LABEL[S.pattern]}, ${FINISH_LABEL[S.finish]}. Highlighted rows differ; gold = closer to a strike.`),
     h('div', { class:'cmp-body n' + ps.length }, h('div', { class:'cmp-cols n' + ps.length }, ...cols), h('div', { class:'table-wrap' }, table)));
   let ls = [];
-  return { el, title:'Compare', mounted() { ls = lanes.map(([cv, b, r]) => { const l = createLane(cv, { lefty:() => !!(profile() && profile().hand === 'left'), aimBox:aimLayer(patNow) }); l.draw({ ball:b, result:r }, { animate:true }); return l; }); }, destroy() { ls.forEach(l => l.destroy()); } };
+  return { el, title:'Compare', mounted() { ls = lanes.map(([cv, b, r]) => { const l = createLane(cv, { lefty:HAND.isLefty, aimBox:aimLayer(patNow) }); l.draw({ ball:b, result:r }, { animate:true }); return l; }); }, destroy() { ls.forEach(l => l.destroy()); } };
 }

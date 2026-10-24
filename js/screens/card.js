@@ -8,6 +8,8 @@ import { mkEvent } from '../data/events.js';
 import { adjust } from '../ctl.js';
 import * as C from '../cc/card.js';
 import { backBar } from './session.js';
+import { helpDot, withHelp } from './help.js';
+const FIGHELP = { avg: 'sc-average', single: 'sc-spare', spare: 'sc-spare', carry: 'sc-pocket', strike: 'sc-strike', release: 'bm-revs' };
 const STYLE = { stroker: 'Stroker', tweener: 'Tweener', cranker: 'Cranker' };
 const MATCH = { matched: 'speed and revs matched', 'speed-dominant': 'speed-dominant (more speed than revs)', 'rev-dominant': 'rev-dominant (more revs than speed)' };
 const nd = x => [x.nLabel || (x.n != null ? `n=${x.n}` : null), x.dates].filter(Boolean).join(' \u00b7 ');
@@ -60,10 +62,10 @@ export async function render() {
   function draw() {
     const P = proj(), c = C.bowlerCard(P, { profile: profile() || {} }), head = C.headline(c), figs = C.figures(c);
     body.innerHTML = '';
-    body.append(h('div', { class: 'card bc-head', id: 'bcHead' }, h('p', { class: 'bc-headline', id: 'bcHeadline', text: head.text }),
+    body.append(h('div', { class: 'card bc-head', id: 'bcHead' }, h('p', { class: 'bc-headline', id: 'bcHeadline' }, head.text, figs.length ? null : helpDot('sc-average', 'Average')),
       c.takeaways && c.takeaways.leak ? null : c.takeaways ? h('p', { class: 'bc-focus', text: c.takeaways.drill.text }) : null));
     if (figs.length) body.append(h('dl', { class: 'bc-figs bc-grid', id: 'bcFigs' }, ...figs.map(f => h('div', { class: 'bc-fig', 'data-k': f.k },
-      h('dt', { text: f.label }), h('dd', {}, h('span', { class: 'bc-v', text: String(f.v) }), f.unit ? h('span', { class: 'bc-u', text: f.unit === '%' ? '%' : ' ' + f.unit }) : null),
+      h('dt', {}, f.label, FIGHELP[f.k] ? helpDot(FIGHELP[f.k], f.label) : null), h('dd', {}, h('span', { class: 'bc-v', text: String(f.v) }), f.unit ? h('span', { class: 'bc-u', text: f.unit === '%' ? '%' : ' ' + f.unit }) : null),
       h('dd', { class: 'bc-n', text: [f.src, f.n ? `${f.n} ${f.nUnit || ''}`.trim() : null].filter(Boolean).join(' \u00b7 ') })))));
     const sp = spark(c.avgTrend.length >= 2 ? c.avgTrend : c.trend, c.avgTrend.length >= 2 ? 'Average by session' : 'Strike % by session');
     if (sp) body.append(h('div', { class: 'card bc-trend', id: 'bcTrend' }, h('p', { class: 'small muted', text: c.avgTrend.length >= 2 ? `Average by session, last ${c.avgTrend.length}` : `Strike % by session, last ${c.trend.length}` }), sp));

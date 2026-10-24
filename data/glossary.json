@@ -2,7 +2,7 @@
  "_meta": {
   "version": 1,
   "generated": "2026-10-24",
-  "status": "content only — not wired into the app",
+  "status": "wired into the app: Help bubbles + Bowling Guide (#/guide)",
   "doc": "docs/EDUCATION_RESEARCH.md",
   "labels": {
    "F": "fetched and read this pass",
@@ -21,13 +21,14 @@
   ],
   "counts": {
    "Scoring & League Basics": 13,
-   "Equipment — Balls": 21,
+   "Equipment — Balls": 25,
    "Equipment — Shoes, Approach & Accessories": 19,
    "Styles & Approaches": 15,
    "Lane & Oil": 12,
-   "Ball Motion": 16,
-   "Targeting & Spares": 10
-  }
+   "Ball Motion": 17,
+   "Targeting & Spares": 11
+  },
+  "added_2026_10_24": "Terms added in the help-bubbles pass (owner approved adding sourced, neutral terms): eq-core, tg-hit, ap-model, ap-use-when, ap-compare, ap-status"
  },
  "terms": [
   {
@@ -3267,6 +3268,174 @@
    "evidence": "Repo targeting doc: Breakdown Bowling (laydown = feet − offset + drift) and Human Kinetics (Rule of 31).",
    "weak_evidence": false,
    "v1_rank": null
+  },
+  {
+   "id": "eq-core",
+   "tree": "Equipment — Balls",
+   "term": "Core (weight block)",
+   "level": "Beginner",
+   "bubble": "The core is the weight block inside the ball. Its shape sets the RG and differential, so it decides how early and how much the ball can turn.",
+   "glossary": "The core (weight block) sits under the cover. Symmetric cores look the same on two axes and tend to roll smoothly; asymmetric cores add a preferred spin axis and tend to look sharper. The cover and surface usually change the reaction more than the core does.",
+   "placement": "Bubble (Ball page › Core) + Guide",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_core",
+     "url": "https://images.bowl.com/bowl/media/legacy/internap/bowl/equipandspecs/pdfs/CoreProperties042207.pdf",
+     "label": "S",
+     "title": "USBC, Core properties (RG, differential)"
+    },
+    {
+     "key": "storm_anatomy",
+     "url": "https://www.stormbowling.com/ball-anatomy-guide",
+     "label": "S",
+     "title": "Storm, Ball anatomy guide"
+    }
+   ],
+   "level_why": "Spec sheets list the core first; new bowlers ask what it does.",
+   "evidence": "Core terms agree across the USBC core-properties sheet and Storm's anatomy guide (S).",
+   "weak_evidence": false,
+   "v1_rank": null,
+   "added": "2026-10-24 (help bubbles pass; owner: '?' on the ball page)"
+  },
+  {
+   "id": "tg-hit",
+   "tree": "Targeting & Spares",
+   "term": "High, light and solid hits",
+   "level": "Beginner",
+   "bubble": "High = too much headpin; it often leaves the 4, 4-7 or 4-9. Light = the side of the headpin; it often leaves the 10, 2 or 2-8.",
+   "glossary": "Where the ball meets the 1-3 pocket (1-2 for left-handers). A solid hit carries best. On a high hit the ball tends to leave the deck behind the 8 pin; on a light hit it leaves behind the 9 pin. USBC's advice: high means help the ball go further down the lane; light means help it read the lane sooner.",
+   "placement": "Bubble (Ball page › your line; Lane read) + Guide",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "usbc_perfect_strike",
+     "url": "https://bowl.com/looking-for-the-perfect-strike",
+     "label": "S",
+     "title": "USBC (bowl.com), Looking for the perfect strike"
+    },
+    {
+     "key": "bv_hits",
+     "url": "https://www.bowlingball.com/BowlVersity/light-solid-and-high-bowling-pocket-strikes",
+     "label": "S",
+     "title": "BowlVersity, Light, solid and high pocket strikes"
+    },
+    {
+     "key": "pba_lingo",
+     "url": "https://www.pba.com/about/bowling-lingo",
+     "label": "S",
+     "title": "PBA, Bowling Lingo (high hit, light hit)"
+    }
+   ],
+   "level_why": "The app labels every modelled shot High/Light/Pocket.",
+   "evidence": "USBC and BowlVersity describe the same leaves for high and light hits (S); PBA lingo defines the words (S).",
+   "weak_evidence": false,
+   "v1_rank": null,
+   "added": "2026-10-24 (help bubbles pass; owner: '?' on the ball page)"
+  },
+  {
+   "id": "ap-model",
+   "tree": "Ball Motion",
+   "term": "Model estimate (this app)",
+   "level": "Beginner",
+   "bubble": "Numbers marked “model” come from this app's lane simulation, not a measurement. Use them to compare balls and lines, not as exact values.",
+   "glossary": "The lane model simulates skid, hook and roll from the ball's specs, your speed and revs, and a pattern. It was checked against itself (engine equivalence) and against published rules of thumb. Its angles are in the model's drawn units, about 1° real, so they are labelled “model”. Real ball tracking (for example a LaneTrax report) beats the model when you have it.",
+   "placement": "Bubble (Ball page › model; Lane; Targeting) + Guide",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "repo",
+     "url": "docs/ENGINE_VERIFICATION_REPORT.md",
+     "label": "repo",
+     "title": "Engine verification report (this app)"
+    },
+    {
+     "key": "repo",
+     "url": "docs/DECISIONS.md",
+     "label": "repo",
+     "title": "Decisions log: model labels (this app)"
+    }
+   ],
+   "level_why": "The owner asked that model numbers are labelled, never presented as real.",
+   "evidence": "Repo docs (repo).",
+   "weak_evidence": false,
+   "v1_rank": null,
+   "added": "2026-10-24 (help bubbles pass; owner: '?' on the ball page)"
+  },
+  {
+   "id": "ap-use-when",
+   "tree": "Equipment — Balls",
+   "term": "Use when / Leave in the bag",
+   "level": "Beginner",
+   "bubble": "Use when = the lane conditions this ball's cover and core usually fit. Leave in the bag = conditions where another ball usually fits better. It is general ball guidance, not your scores.",
+   "glossary": "Each ball page says when the ball tends to fit (for example dry or broken-down lanes for a polished pearl) and when it usually doesn't. The text follows the cover family (solid, pearl, hybrid) and the core. It isn't a rating; your own logged games on Insights show how you actually score with it.",
+   "placement": "Bubble (Ball page › Use when / Leave in the bag) + Guide",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "bv_cover",
+     "url": "https://www.bowlingball.com/BowlVersity/simple-differences-between-solid-pearl-and-hybrid-bowling-balls",
+     "label": "S",
+     "title": "BowlVersity, Solid vs pearl vs hybrid"
+    },
+    {
+     "key": "repo",
+     "url": "js/data.js",
+     "label": "repo",
+     "title": "Ball notes in this app's catalog"
+    }
+   ],
+   "level_why": "Owner: the ball page words need explaining.",
+   "evidence": "Cover-family guidance from BowlVersity (S).",
+   "weak_evidence": false,
+   "v1_rank": null,
+   "added": "2026-10-24 (help bubbles pass; owner: '?' on the ball page)"
+  },
+  {
+   "id": "ap-compare",
+   "tree": "Equipment — Balls",
+   "term": "Compare two balls",
+   "level": "Beginner",
+   "bubble": "Puts two balls on the same line and pattern in the lane model, so you can see which reads the lane earlier and which enters the pocket stronger.",
+   "glossary": "Compare runs the lane model for each ball with the same speed, revs, stand and aim. Differences come from the specs (RG, differential, cover, surface). They are model estimates; your logged games are the real test.",
+   "placement": "Bubble (Ball page › Compare) + Guide",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "repo",
+     "url": "docs/ENGINE_VERIFICATION_REPORT.md",
+     "label": "repo",
+     "title": "Engine verification report (this app)"
+    }
+   ],
+   "level_why": "Owner: the ball page buttons need explaining.",
+   "evidence": "Repo docs (repo).",
+   "weak_evidence": false,
+   "v1_rank": null,
+   "added": "2026-10-24 (help bubbles pass; owner: '?' on the ball page)"
+  },
+  {
+   "id": "ap-status",
+   "tree": "Equipment — Balls",
+   "term": "Ball status",
+   "level": "Beginner",
+   "bubble": "Where a ball is: In my bag (tonight's suggestion can pick it), At home, At the pro shop, or Retired (Hall of Fame). Its history is always kept.",
+   "glossary": "Status is one setting per ball. In my bag: the bag builder can pick it. At home: you own it, but the builder won't pick it tonight. At the pro shop: never picked; a return reminder shows only if you set one. Retired: moves to the Hall of Fame; never picked. Changing status never deletes games or lines.",
+   "placement": "Bubble (Ball page › Status; Bag builder) + Guide",
+   "priority": "High",
+   "sources": [
+    {
+     "key": "repo",
+     "url": "docs/IA_PLAN.md",
+     "label": "repo",
+     "title": "IA plan §3: one Status per ball (this app)"
+    }
+   ],
+   "level_why": "Owner: 'Bench, pro shop, all those features don't make sense.'",
+   "evidence": "Repo docs (repo).",
+   "weak_evidence": false,
+   "v1_rank": null,
+   "added": "2026-10-24 (help bubbles pass; owner: '?' on the ball page)"
   }
  ]
 }

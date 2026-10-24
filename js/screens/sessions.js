@@ -9,6 +9,7 @@ import { ready, proj } from '../hub.js';
 import * as C from '../cc/card.js';
 import { toCSV } from '../data/csv.js';
 import { ballName } from './session.js';
+import { helpDot, withHelp } from './help.js';
 const st = { tab:null, q:'' };   // first open: Nights if any session exists, else Lines if you saved one
 const MISS_LABEL = { left:'Left', right:'Right', high:'High', light:'Light' };
 const ago = t => { const s = (Date.now() - t) / 1000; return s < 60 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : new Date(t).toLocaleDateString(); };
@@ -52,10 +53,10 @@ export async function render() {
     const finSel = h('select', { id:'surfFin', 'aria-label':'Surface' }, ...FINISHES.map(f => h('option', { value:f, text:FINISH_LABEL[f] })));
     const lane = h('input', { id:'nLane', placeholder:'Center / lanes', 'aria-label':'Center or lanes', autocomplete:'off' }), oil = h('input', { id:'nOil', placeholder:'Oil, e.g. fresh house', 'aria-label':'Oil', autocomplete:'off' }), adj = h('input', { id:'nAdj', placeholder:'What worked', 'aria-label':'Adjustment', autocomplete:'off' });
     return [
-      h('div', { class:'card' }, h('h2', { class:'card-title', text:'Surface log' }),
+      h('div', { class:'card' }, withHelp(h('h2', { class:'card-title', text:'Surface log' }), 'eq-surface', 'Surface log'),
         h('form', { class:'inline-form', onsubmit:e => { e.preventDefault(); logFinish(ballSel.value, finSel.value); toast('Surface logged'); draw(); } }, h('label', { class:'fld' }, h('span', { text:'Ball' }), ballSel), h('label', { class:'fld' }, h('span', { text:'Surface' }), finSel), h('button', { class:'btn primary', type:'submit' }, 'Log today')),
         surf.length ? h('ul', { class:'plain' }, ...surf.slice(0, 20).map(x => { const b = balls.find(y => y.id === x.ballId); return h('li', { text:`${x.date} \u2014 ${b ? b.name : x.ballId}: ${FINISH_LABEL[x.finish] || x.finish}` }); })) : h('p', { class:'muted', text:'Nothing logged yet.' })),
-      h('div', { class:'card' }, h('h2', { class:'card-title', text:'Pattern notes' }),
+      h('div', { class:'card' }, withHelp(h('h2', { class:'card-title', text:'Pattern notes' }), 'ln-oil', 'Pattern notes'),
         h('form', { class:'stack', onsubmit:e => { e.preventDefault(); if (saveNote(lane.value, oil.value, adj.value)) { toast('Note saved'); draw(); } else toast('Fill in all three fields', { kind:'bad' }); } },
           h('label', { class:'fld' }, h('span', { text:'Center / lanes' }), lane), h('label', { class:'fld' }, h('span', { text:'Oil' }), oil), h('label', { class:'fld' }, h('span', { text:'What worked' }), adj), h('button', { class:'btn primary', type:'submit' }, 'Save note')),
         ns.length ? h('ul', { class:'plain' }, ...ns.slice(0, 30).map(x => h('li', {}, h('b', { text:x.lane }), ` \u00b7 ${x.oil}: ${x.adjustment}`))) : h('p', { class:'muted', text:'No notes yet.' }))];
@@ -80,6 +81,6 @@ export async function render() {
   function draw() { body.innerHTML = ''; body.append(...(st.tab === 'nights' ? nights() : st.tab === 'lines' ? lines() : st.tab === 'shots' ? shots() : notes())); }
   draw();
   const offs = [on('data', () => st.tab === 'nights' && draw()), on('lines', () => st.tab === 'lines' && draw()), on('alley', () => st.tab === 'notes' && !body.contains(document.activeElement) && draw())];
-  const el = h('section', { class:'screen list-screen' }, h('header', { class:'appbar' }, h('h1', { class:'title', text:'Sessions' })), h('div', { class:'list-tools' }, seg), body);
+  const el = h('section', { class:'screen list-screen' }, h('header', { class:'appbar' }, h('h1', { class:'title' }, 'Sessions', helpDot('sc-average', 'Average'))), h('div', { class:'list-tools' }, seg), body);
   return { el, title:'Sessions', destroy() { offs.forEach(f => f()); } };
 }

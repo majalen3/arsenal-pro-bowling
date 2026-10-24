@@ -3,6 +3,7 @@ import { S, RANGES } from './engine.js';
 import { app, saveState, emit, logShot, scheduleSync, prefs, setPrefs, profile } from './store.js';
 import { balls } from './data.js';
 import { arrowsBoard, aimFor, modelOf, clampBoard, half } from './cc/geom.js';
+import * as HAND from './cc/hand.js';
 const clamp = (k, v) => { const [lo, hi, st] = RANGES[k]; return +Math.max(lo, Math.min(hi, Math.round(v / st) * st)).toFixed(2); };
 // Board the model's ball crosses at the arrows (15 ft), from the engine's own geometry (cc/geom.js, DECISIONS #26).
 // Was release − aim ("1 board per aim unit", v1), ~10× too large. The model can reach only ±0.8 board off the laydown.
@@ -38,7 +39,7 @@ export const MISSES = {
 };
 export function miss(kind) {
   // buttons are screen directions; on a lefty's mirrored lane a left miss is the model's right miss
-  const lefty = !!(profile() && profile().hand === 'left'), mk = lefty && (kind === 'left' || kind === 'right') ? (kind === 'left' ? 'right' : 'left') : kind;
+  const lefty = HAND.isLefty(), mk = lefty && (kind === 'left' || kind === 'right') ? (kind === 'left' ? 'right' : 'left') : kind;
   const before = snapshot(), e0 = app.eyes, m = MISSES[kind]; const ch = MISSES[mk].apply();
   adjust(ch, { animate:true });
   const after = snapshot(); logShot(kind, before, after);

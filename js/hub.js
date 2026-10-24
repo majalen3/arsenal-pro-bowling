@@ -51,7 +51,8 @@ export function hydrateMirror() {
   if (!lsGet(LS.shots).length && legacyShots.length) { lsSet(LS.shots, legacyShots.map(x => ({ t: x.ts, ballId: x.ballId, pattern: x.pattern, miss: x.miss, before: x.before, after: x.after }))); n++; }
   if (!objGet(LS.profile) && (Object.keys(P.bowler).length || Object.keys(P.owned).length)) {
     const b = P.bowler, v = f => (f && typeof f === 'object' && 'v' in f) ? f.v : f;
-    const pr = { hand: b.hand || 'right', style: b.style || null, speed: v(b.speed) ?? '', rev: v(b.rev) ?? '', pap: v(b.pap) ?? '', tilt: v(b.tilt) ?? '', owned: vals(P.owned).map(o => o.catalogId).filter(Boolean) };
+    const pr = { hand: b.hand === 'left' || b.hand === 'right' ? b.hand : null,   // explicit hand only; never guessed
+                 style: b.style || null, speed: v(b.speed) ?? '', rev: v(b.rev) ?? '', pap: v(b.pap) ?? '', tilt: v(b.tilt) ?? '', owned: vals(P.owned).map(o => o.catalogId).filter(Boolean) };
     lsSet(LS.profile, pr); n++; emit('profile');
   }
   if (n) emit('alley');

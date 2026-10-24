@@ -21,4 +21,6 @@ export function byTree(list, trees = []) {
   for (const t of list) { if (!g.has(t.tree)) g.set(t.tree, []); g.get(t.tree).push(t); }
   return [...g].filter(([, xs]) => xs.length).map(([tree, xs]) => [tree, xs.slice().sort((a, b) => a.term.localeCompare(b.term))]);
 }
+// Bubble = 1-2 plain sentences: the term's bubble text, else the first two sentences of its glossary text.
+export function bubbleText(t) { if (t.bubble) return t.bubble; const ss = String(t.glossary || '').match(/[^.!?]+[.!?]+(\s|$)/g) || [t.glossary || '']; return ss.slice(0, 2).join('').trim(); }
 export const find = (terms, id) => terms.find(t => t.id === id) || null;

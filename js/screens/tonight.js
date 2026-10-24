@@ -26,6 +26,9 @@ import * as CM from '../cc/center.js';
 import * as OP from '../cc/ownpat.js';
 import * as DR from '../cc/drill.js';
 import * as hub from '../hub.js';
+import { helpDot, withHelp } from './help.js';
+import * as HAND from '../cc/hand.js';
+import { handAsk, handLine } from './hand.js';
 export { standOf };
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
 const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
@@ -33,8 +36,8 @@ const provChip = (prov, label) => h('span', { class: 'prov', 'data-prov': prov |
 const SRC_PROV = { [R.SRC.assumed]: 'assumed', [R.SRC.model]: 'model', [R.SRC.spec]: 'manufacturer', [R.SRC.usbc]: 'usbc', [R.SRC.bowl]: 'usbc', [R.SRC.tag]: 'catalog' };
 export const TAP_GUARD_MS = 400;   // sim bug 2: a second tap on a log button within this window is ignored
 let IDX = null, TERT = null;
-// The bowler's hand: the profile choice (welcome / More) first, then the event-log bowler (sim bug 1).
-export const handOf = P => ((profile() || {}).hand || (P.bowler || {}).hand) === 'left' ? 'left' : 'right';
+// The bowler's hand: only what they told us (cc/hand.js; owner 2026-10-24: no auto-detection). Unset reads boards right-handed.
+export const handOf = () => HAND.handOr();
 export async function render() {
   const t0 = performance.now();
   await ready();
@@ -116,7 +119,7 @@ export async function render() {
     // M1: optional lane pair (kept on the night; shown next time at this center).
     const lpIn = h('input', { id: 'tnLanes', autocomplete: 'off', placeholder: 'e.g. 15-16', 'aria-label': 'Lane pair (optional)', value: s.lanePair || '' });
     lpIn.onchange = async () => { const v = lpIn.value.trim(), c = CM.cleanPair(v); if (v && !c) return toast('Lane pair like 15-16', { kind: 'bad' }); await save({ lanePair: c }); };
-    const setup = h('div', { class: 'card', id: 'tnSetup' }, h('h2', { class: 'card-title', text: 'Lanes tonight' }),
+    const setup = h('div', { class: 'card', id: 'tnSetup' }, withHelp(h('h2', { class: 'card-title', text: 'Lanes tonight' }), 'ln-house', 'Lanes tonight'),
         h('label', { class: 'fld' }, h('span', {}, 'Pattern ', s.patternOwn ? provChip(s.ft != null ? 'user' : 'assumed', OP.ownLabel(s)) : pat ? provChip('usbc', 'Kegel library') : provChip('assumed', 'assumed house 38 ft')), patIn, dl),
         ownDet,
         h('label', { class: 'fld' }, h('span', { text: 'Center' }), cIn, cList),
@@ -153,7 +156,7 @@ export async function render() {
           lineBox,
           stand ? h('p', { class: 'muted small', text: `Model runs on the nearest preset (${ml.preset}, ${ml.presetLen} ft) with your ${num(b.speed) || 15} mph and ${num(b.rev) || 220} rpm. An estimate, not a promise.` }) : null));
     }
-    const reads = cur ? h('div', { class: 'card', id: 'tnReads' }, h('h2', { class: 'card-title', text: 'How did it read?' }),
+    const reads = cur ? h('div', { class: 'card', id: 'tnReads' }, withHelp(h('h2', { class: 'card-title', text: 'How did it read?' }), 'tg-hit', 'How did it read'),
       h('div', { class: 'btn-grid' }, ...Object.entries(R.READS).map(([k, l]) => h('button', { class: 'btn', 'data-read': k, onclick: async () => {
         const nx = R.readMove(r, cur.id, k), rd = (s.reads || []).concat([{ read: k, ballId: cur.id, ts: Date.now() }]).slice(-6);
         await save({ pickId: nx ? nx.id : cur.id, throwId: null, reads: rd });
@@ -178,6 +181,7 @@ export async function render() {
     if (fc && fc.text && fc.from !== curSid()) body.append(h('div', { class: 'row between tn-focus', id: 'tnFocus' }, h('p', { class: 'small', text: fc.text.replace(/^Next focus: /, 'Your focus: ') }),
       h('button', { class: 'icon-btn', 'aria-label': 'Clear focus', html: icon('close'), onclick: () => { setPrefs({ focus: null }); draw(); } })));
     body.append(h('p', { class: 'coach', id: 'tnCoach', role: 'status', text: coach }));
+    body.append(handAsk() || handLine());   // P1.6: "Right-handed \u00b7 change"; asks once while unset (never during a game)
     if (thenLine) body.append(thenLine);
     if (pick) body.append(pick);
     if (s.event === 'practice') body.append(drillCard(P, s));
@@ -452,7 +456,7 @@ export async function render() {
   // ---- Bag Advisor (TEAM_PROMPT_BAG_ADVISOR.md): event \u2192 packed bag with roles, evidence and a start line.
   function advisorCard(P, s, b) {
     const ap = prefs().advisor || {}, ev = s.event || ap.last || null;
-    const card = h('div', { class: 'card adv', id: 'tnAdvisor' }, h('h2', { class: 'card-title', id: 'advTitle', text: 'Where are you bowling?' }));
+    const card = h('div', { class: 'card adv', id: 'tnAdvisor' }, withHelp(h('h2', { class: 'card-title', id: 'advTitle', text: 'Where are you bowling?' }), 'bm-matchup', 'Ball choice'));
     const pick = h('div', { class: 'seg wrap', role: 'radiogroup', 'aria-labelledby': 'advTitle', id: 'advEvent' }, ...Object.entries(A.EVENTS).map(([k, e]) =>
       h('button', { class: 'seg-opt', role: 'radio', 'aria-checked': String(k === ev), 'data-event': k, onclick: () => { setPrefs({ advisor: Object.assign({}, prefs().advisor, { last: k }) }); save({ event: k, pickId: null }); } }, e.short)));
     card.append(pick);

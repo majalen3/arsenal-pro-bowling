@@ -6,6 +6,7 @@ import { backBar } from './ball.js';
 import { proj } from '../hub.js';
 import { profile } from '../store.js';
 import { bowlerCard, headline, lastGames } from '../cc/card.js';
+import { helpDot, withHelp } from './help.js';
 // v1 text, kept verbatim
 function gapsText() {
   const oils = ['heavy', 'medium', 'light'];
@@ -24,17 +25,17 @@ export function render() {
   const el = h('section', { class:'screen detail' }, backBar('Arsenal insights', '#/arsenal'),
     (() => { const P = proj(), L = P ? lastGames(P, 10) : null;
       // Sim bug 7: lead with the last 10 games (practice left out); arsenal charts sit behind one tap.
-      return h('div', { class:'card', id:'insLast' }, h('h2', { class:'card-title', text:L ? `Last ${L.n} ${L.n === 1 ? 'game' : 'games'}` : 'Last 10 games' }),
+      return h('div', { class:'card', id:'insLast' }, withHelp(h('h2', { class:'card-title', text:L ? `Last ${L.n} ${L.n === 1 ? 'game' : 'games'}` : 'Last 10 games' }), 'sc-average', 'Average'),
         h('p', { class:'bc-headline', id:'insLastHead', text:L ? `${L.avg} average, high ${L.high}, low ${L.low}.` : (P && P.sessions && Object.values(P.sessions).some(x => x.event === 'practice') ? 'Only practice so far. Practice stays out of your average; league or open games show here.' : 'Score a game on Tonight or import scores to see your last 10 games here.') }),
         L && L.scored ? h('dl', { class:'bc-figs' }, h('div', { class:'bc-fig' }, h('dt', { text:'First-ball strikes' }), h('dd', { text:`${L.scored.strikes} of ${L.scored.first}` })),
           h('div', { class:'bc-fig' }, h('dt', { text:'Spares made' }), h('dd', { text:`${L.scored.spareMade} of ${L.scored.spare}` }))) : null,
         L ? h('p', { class:'muted small', id:'insLastN', text:`${L.n} ${L.n === 1 ? 'game' : 'games'}${L.scored ? `, ${L.scoredGames} scored ball by ball` : ''}; practice nights left out.` }) : null); })(),
     (() => { const P = proj(), hd = P ? headline(bowlerCard(P, { profile:profile() || {} })) : { text:'Score a game on Tonight to see your numbers here.' };
-      return h('div', { class:'card', id:'insGame' }, h('h2', { class:'card-title', text:'Your game' }), h('p', { id:'insHead', text:hd.text }), h('a', { class:'btn ghost', href:'#/card' }, 'My Bowler Card')); })(),
+      return h('div', { class:'card', id:'insGame' }, withHelp(h('h2', { class:'card-title', text:'Your game' }), 'bm-revs', 'Your game'), h('p', { id:'insHead', text:hd.text }), h('a', { class:'btn ghost', href:'#/card' }, 'My Bowler Card')); })(),
     h('details', { class:'card tn-more', id:'insArsenal' }, h('summary', { text:'Arsenal charts: oil coverage, core map, bag builder' }),
-    h('div', { class:'card' }, h('h2', { class:'card-title', text:'Coverage by oil' }), bars, h('p', { class:'muted small', text:`Thinnest is ${g.thin}. ${g.tbd ? g.tbd + ' ball' + (g.tbd === 1 ? '' : 's') + ' still spec TBD.' : 'All 22 balls have specs.'}` })),
-    h('div', { class:'card' }, h('h2', { class:'card-title', text:'Core map: RG vs differential' }), h('div', { class:'chart-wrap' }, cv), h('p', { class:'muted small', text:'Low RG = revs up earlier. High differential = more flare / hook potential.' })),
-    h('div', { class:'card' }, h('h2', { class:'card-title', text:'Bag builder' }), ...BAGS.map(([t, l]) => h('div', { class:'bagset' }, h('h3', { text:t }), h('div', { class:'bag-row' }, ...l.map(([id, r]) => { const b = balls.find(x => x.id === id); return h('button', { class:'sugg-ball', 'data-ball':id, onclick:() => { setBall(b); go('#/lane'); } }, h('span', { class:'swatch', style:{ background:b.color } }), h('span', {}, b.name, h('small', { text:r }))); })))))));
+    h('div', { class:'card' }, withHelp(h('h2', { class:'card-title', text:'Coverage by oil' }), 'ln-oil', 'Coverage by oil'), bars, h('p', { class:'muted small', text:`Thinnest is ${g.thin}. ${g.tbd ? g.tbd + ' ball' + (g.tbd === 1 ? '' : 's') + ' still spec TBD.' : 'All 22 balls have specs.'}` })),
+    h('div', { class:'card' }, withHelp(h('h2', { class:'card-title', text:'Core map: RG vs differential' }), 'eq-rg', 'Core map'), h('div', { class:'chart-wrap' }, cv), h('p', { class:'muted small', text:'Low RG = revs up earlier. High differential = more flare / hook potential.' })),
+    h('div', { class:'card' }, withHelp(h('h2', { class:'card-title', text:'Bag builder' }), 'bm-matchup', 'Bag builder'), ...BAGS.map(([t, l]) => h('div', { class:'bagset' }, h('h3', { text:t }), h('div', { class:'bag-row' }, ...l.map(([id, r]) => { const b = balls.find(x => x.id === id); return h('button', { class:'sugg-ball', 'data-ball':id, onclick:() => { setBall(b); go('#/lane'); } }, h('span', { class:'swatch', style:{ background:b.color } }), h('span', {}, b.name, h('small', { text:r }))); })))))));
   let pts = [];
   function draw() {
     const r = cv.getBoundingClientRect(); if (!r.width) return; const dpr = Math.min(3, devicePixelRatio || 1);

@@ -1,5 +1,6 @@
 import { h, icon, skeleton, emptyState } from '../ui.js';
 import { loadIndex, SOURCE } from '../patdata.js';
+import { helpDot, withHelp } from './help.js';
 const st = { q:'', f:'all', n:60 };
 export function render() {
   const search = h('input', { type:'search', class:'search', id:'patSearch', placeholder:'Search 700+ patterns, e.g. Shark, Kegel, USBC', 'aria-label':'Search patterns', value:st.q, autocomplete:'off' });
@@ -24,7 +25,7 @@ export function render() {
   let t; search.oninput = () => { clearTimeout(t); t = setTimeout(() => { st.q = search.value; st.n = 60; draw(); }, 120); };
   drawChips();
   const el = h('section', { class:'screen list-screen' },
-    h('header', { class:'appbar' }, h('h1', { class:'title', text:'Patterns' })),
+    h('header', { class:'appbar' }, h('h1', { class:'title' }, 'Patterns', helpDot('ln-oil', 'Lane oil'))),
     h('div', { class:'list-tools' }, search, chips, count), list,
     h('p', { class:'muted small source', text:`Data source: ${SOURCE}. Patterns are for reference; the lane model uses the nearest preset.` }));
   return { el, title:'Patterns', mounted() { loadIndex().then(x => { all = x; draw(); }).catch(() => { list.innerHTML = ''; list.append(emptyState('Pattern library unavailable', 'Could not load patterns. Check your connection and try again.', { label:'Retry', run:() => location.reload() })); }); } };

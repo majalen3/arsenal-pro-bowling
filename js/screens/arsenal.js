@@ -9,6 +9,7 @@ import { PATTERN_LABEL } from '../labels.js';
 import { ready, proj } from '../hub.js';
 import { catOf } from '../cc/cats.js';
 import * as A from '../cc/armory.js';
+import { helpDot, withHelp } from './help.js';
 const st = { q:'', f:'all', picked:[] };
 const PAT_OIL = { house:'medium', cheetah:'medium', sport:'heavy', scorpion:'heavy', shark:'heavy', dry:'light' };
 const short = c => c.split(' / ')[0].replace('Strong ', 'Str. ').replace('Medium ', 'Med. ').replace('Asymmetrical', 'Asym').replace('Symmetrical', 'Sym');
@@ -42,7 +43,7 @@ function armory(P) {
   const empty = h('div', { role:'listitem' }, h('a', { class:'ped ped-empty', id:'armEmpty', href:'#/add-ball' }, h('span', { class:'ped-lit', 'aria-hidden':'true' }, h('span', { class:'ped-slot' })), h('span', { class:'plate' }, h('span', { class:'plate-name', text:'Add ball' }), h('span', { class:'plate-role', text:'Empty pedestal' }))));
   const fold = (id, label, n, body) => h('details', { class:'card arm-fold', id }, h('summary', {}, h('span', { text:label }), h('span', { class:'pill', text:String(n) })), body);
   return h('section', { class:'armory', id:'armory', 'aria-labelledby':'armBagH' },
-    h('h2', { class:'group-h', id:'armBagH', text:`In the bag \u00b7 ${sh.bag.length}` }),
+    withHelp(h('h2', { class:'group-h', id:'armBagH', text:`In the bag \u00b7 ${sh.bag.length}` }), 'ap-status', 'Ball status'),
     shelf(sh.bag, 'armBag', 'In the bag', empty),
     sh.bench.length ? fold('armBench', 'Bench and pro shop', sh.bench.length, shelf(sh.bench, 'armBenchShelf', 'Bench and pro shop')) : null,
     fold('armHall', 'Hall of Fame', sh.hall.length, sh.hall.length ? shelf(sh.hall, 'armHallShelf', 'Hall of Fame')
@@ -85,7 +86,7 @@ export async function render() {
   drawChips(); draw();
   const el = h('section', { class:'screen list-screen' },
     h('header', { class:'appbar arm-head' }, h('div', { class:'arm-titles' }, h('span', { class:'arm-team', text:T.team }), h('h1', { class:'title', text:T.title })), h('div', { class:'appbar-actions' }, h('a', { class:'btn primary sm', id:'arsAdd', href:'#/add-ball' }, 'Add ball'), h('a', { class:'btn ghost sm', href:'#/arsenal/insights' }, 'Insights'))),
-    P ? armory(P) : null, h('h2', { class:'group-h arm-cat', text:'Catalog' }),
+    P ? armory(P) : null, withHelp(h('h2', { class:'group-h arm-cat', text:'Catalog' }), 'eq-cover-types', 'Ball types'),
     h('div', { class:'list-tools' }, search, chips, count), sugg, grid, tray);
   return { el, title:T.title };
 }

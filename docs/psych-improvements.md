@@ -188,3 +188,15 @@
   - **Usability:** one collapsed card, with each leave as a row of 2 buttons (44 px). The goal is one segmented control plus one select inside Lanes tonight, which is already behind a tap while a game is open. The result is one line on the recap, and drill tries are listed in session Details. 360 px with no overflow, axe 0.
   - **Applicability:** the drill shows only when the night is set to Practice and no game is open, so nothing is added to the scoring pad. Drill tries never become a game, a score or an average.
 - **3-second beginner check:** "these are the spares I miss; I tap Made or Missed."
+
+## Help bubbles everywhere + Bowling Guide + explicit handedness (2026-10-24)
+- **SDT:**
+  - **Competence:** each "?" explains exactly the number beside it in 1–2 plain sentences, and the Guide is one tap further. Learning happens where the question comes up.
+  - **Autonomy:** Help stays off by default. A top-bar "?" turns it on and off on any screen. The hand is the bowler's answer, never a guess, and "Not now" is respected.
+  - **Relatedness:** the bubbles use league words (house shot, breakpoint, spare system) with sources, and rank no one.
+- **U/A:**
+  - **Usability:** the gold "?" has a 44 px tap area, opens a bottom sheet and does no navigation until "Learn more". The hand question is inline, never a modal, and never shown during an open game.
+  - **Applicability:** for right-handers nothing changes except one quiet "Right-handed · change" line. Left-handers no longer depend on a hidden default.
+- **3-second beginner check:**
+  - "Tap ? to see what this number means."
+  - "Tonight says Right-handed; I can change it."

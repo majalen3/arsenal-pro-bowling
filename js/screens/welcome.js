@@ -25,7 +25,7 @@ export function ownedPicker(p) {
   return h('div', { class:'stack' }, h('div', { class:'row between' }, h('span', { class:'muted small', text:'Tap to toggle. \u201cMy bag\u201d filters use this.' }), all), list);
 }
 export function render() {
-  const p = Object.assign({ hand:'right', style:'tweener', speed:+S.speed, rev:+S.rev, pap:'', tilt:'', owned:[] }, profile() || { entered:{} });
+  const p = Object.assign({ hand:null, style:'tweener', speed:+S.speed, rev:+S.rev, pap:'', tilt:'', owned:[] }, profile() || { entered:{} });
   let step = 0;
   const finish = (skip) => { if (!skip) { setProfile(p); adjust({ speed:p.speed, rev:p.rev }); } setPrefs({ onboarded:true }); go('#/tonight', { replace:true }); toast(skip ? 'You can set your profile any time in More.' : 'Profile saved. Tonight is ready.'); };
   const f = profileForm(p);

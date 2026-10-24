@@ -1053,37 +1053,108 @@ async def armory_cycle(b):
     check(True, '[armory] pedestal opens the ball page')
     check(not errs, f'[armory] no page errors {errs[:3]}'); await c.close()
 
+HELP_SCREENS = [('tonight', '#/tonight', '#tnSetup'), ('lane', '#/lane', '.lane-tools'), ('target', '#/target', '#tgCall'), ('arsenal', '#/arsenal', '#armBagH'),
+    ('ball', '#/ball/hy-road', '#ballRead'), ('compare', '#/compare?ids=hy-road,rattler', '.cmp-body'), ('insights', '#/arsenal/insights', '#insGame'),
+    ('patterns', '#/patterns', '.list-screen'), ('pattern', '#/pattern/2024-pba-shark', '.heat-wrap'), ('sessions', '#/sessions', '.list-screen'),
+    ('card', '#/card', '#bcHead'), ('bag', '#/bag', '#bagCare')]
+VISIBLE_DOTS = "() => [...document.querySelectorAll('.help-dot')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && !e.closest('details:not([open]) > :not(summary)'); }).length"
+
+async def help_counts(p, tag):
+    out = {}
+    for name, route, sel in HELP_SCREENS:
+        await p.goto(BASE + f'?{tag}{name}' + route); await p.wait_for_selector(sel); await p.wait_for_timeout(150)
+        out[name] = await p.evaluate(VISIBLE_DOTS)
+    return out
+
 async def help_cycle(b):
-    # Help bubbles (off by default, one "?" per card, never on the scoring pad) + Glossary from More (no new tab, no AI chat).
-    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
-    await seed(p); await p.goto(BASE + '?hp#/lane'); await p.wait_for_selector('.lane-tools')
-    check(await p.query_selector('.help-dot') is None, '[help] off by default: no "?" on Lane')
-    await p.goto(BASE + '?hp#/more'); await p.wait_for_selector('#helpFld'); await p.click('#helpFld [data-v="on"]')
-    check(await p.evaluate("() => JSON.parse(localStorage.getItem('ap_prefs') || '{}').help === true"), '[help] More toggle turns it on (saved)')
-    await p.goto(BASE + '?hp2#/lane'); await p.wait_for_selector('.help-dot[data-help="bm-shr"]')
+    # Owner bug 2026-10-24 ("the help feature does nothing"): a gold "?" next to bowling words on every main screen (never on the
+    # scoring pad), a "?" switch in every top bar + More › Learn, each bubble 1-2 sentences + "Learn more" to the Bowling Guide.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 740})
+    await seed(p); await p.goto(BASE + '?hp#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnSetup')
+    off = await help_counts(p, 'hoff'); check(not any(off.values()), f'[help] off by default: 0 "?" on every screen {off}')
+    await p.goto(BASE + '?hp#/lane'); await p.wait_for_selector('#helpToggle[aria-pressed="false"]')
+    box = await p.evaluate("() => { const r = document.querySelector('#helpToggle').getBoundingClientRect(); return [r.width, r.height, r.top]; }")
+    check(box[0] >= 44 and box[1] >= 44 and box[2] < 80, f'[help] "?" switch in the top bar, 44 px {box}')
+    await p.click('#helpToggle'); await p.wait_for_selector('#helpToggle[aria-pressed="true"]')
+    check(await p.evaluate("() => JSON.parse(localStorage.getItem('ap_prefs') || '{}').help === true"), '[help] top-bar switch turns Help on (saved)')
+    on = await help_counts(p, 'hon'); zero = [k for k, v in on.items() if v < 1]
+    check(not zero, f'[help] Help on: at least one "?" on every screen {on}')
+    check(on['ball'] >= 12, f'[help] ball page: "?" on RG, differential, core, cover, finish, reads, the line, cards, compare ({on["ball"]})')
+    await p.goto(BASE + '?hb#/ball/hy-road'); await p.wait_for_selector('#ballRead')
+    for hid in ['eq-rg', 'eq-diff', 'eq-core', 'eq-cover-types', 'eq-surface', 'bm-shr', 'tg-hit', 'bm-entry-angle', 'ap-model', 'bm-breakpoint', 'ap-use-when', 'ap-compare']:
+        check(await p.query_selector(f'.help-dot[data-help="{hid}"]') is not None, f'[help] ball page has "?" for {hid}')
+    await shot(p, 'phone-ball-help'); await axe_ok(p, '[help] ball page with Help on')
+    small = await p.evaluate(SMALL); check(not small, f'[help] ball page targets >= 44px {small[:6]}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[help] ball page: no horizontal overflow at 360 {w}')
+    gold = await p.evaluate("() => { const i = document.querySelector('.help-dot .help-i'), cs = getComputedStyle(i); return [cs.borderTopColor, cs.width]; }")
+    check(gold[1] == '22px' and gold[0] not in ('rgba(0, 0, 0, 0)',), f'[help] dot is a small gold "?" {gold}')
+    await p.click('.help-dot[data-help="eq-rg"]'); await p.wait_for_selector('#helpSheet #helpText')
+    txt = await p.text_content('#helpText'); sents = len([x for x in re.split(r'(?<=[.!?])\s+', txt.strip()) if x])
+    check(1 <= sents <= 2, f'[help] bubble is 1-2 sentences ({sents}: {txt[:60]})')
+    await axe_ok(p, '[help] bubble'); await p.click('#helpMore'); await p.wait_for_selector('#gl-eq-rg[open]')
+    check('Bowling Guide' in (await p.text_content('.appbar .title')), '[help] "Learn more" opens the Bowling Guide at the term')
+    check(await p.query_selector('#tabs a[href="#/more"][aria-current=page]') is not None, '[help] Guide lives under More (no new tab)')
+    await p.goto(BASE + '?hp3#/tonight'); await p.wait_for_selector('#tnLog')
+    check(await p.query_selector('#tnLog .help-dot') is None, '[help] never inside the scoring pad')
+    await p.goto(BASE + '?hp4#/lane'); await p.wait_for_selector('.help-dot[data-help="bm-shr"]')
     await p.click('.help-dot[data-help="bm-shr"]'); await p.wait_for_selector('#helpSheet #helpText')
     txt = await p.text_content('#helpText'); check(txt.startswith('Every ball skids'), f'[help] Lane bubble shows the v1 text ({txt[:40]})')
-    await axe_ok(p, '[help] bubble'); await p.click('#helpMore'); await p.wait_for_selector('#gl-bm-shr[open]')
-    check(await p.query_selector('#tabs a[href="#/more"][aria-current=page]') is not None, '[help] Glossary lives under More (no new tab)')
-    await p.fill('#glSearch', 'handicap'); await p.wait_for_selector('#gl-sc-handicap')
-    cnt = await p.text_content('#glCount'); check('of 106 terms' in cnt, f'[help] glossary search ({cnt})')
-    await p.click('#gl-sc-handicap summary'); n = await p.evaluate("() => document.querySelectorAll('#gl-sc-handicap .gl-src li').length"); check(n >= 1, f'[help] entry lists its sources ({n})')
-    await axe_ok(p, '[help] glossary'); small = await p.evaluate(SMALL); check(not small, f'[help] targets >= 44px {small[:6]}')
-    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[help] no horizontal overflow at 360 {w}')
-    await shot(p, 'phone-glossary')
-    await p.goto(BASE + '?hp3#/target'); await p.wait_for_selector('#tgCall')
-    check(await p.query_selector('.help-dot[data-help="tg-arrows"]') is not None, '[help] Targeting has its "?"')
-    await p.goto(BASE + '?hp4#/tonight'); await p.wait_for_timeout(600)
-    check(await p.query_selector('.help-dot') is None, '[help] nothing on Tonight (scoring)')
-    await p.wait_for_selector('#loadStarter'); await p.click('#loadStarter'); await p.wait_for_selector('#tnBagLink')
-    check(await p.query_selector('.help-dot') is None, '[help] still nothing on Tonight with a bag loaded')
-    await p.goto(BASE + '?hp4b#/bag'); await p.wait_for_selector('#bagCare .help-dot[data-help="eq-cleaning"]')
-    many = await p.evaluate("() => [...document.querySelectorAll('.card')].filter(c => c.querySelectorAll('.help-dot').length > 1).length")
-    nd = await p.evaluate("() => document.querySelectorAll('.help-dot').length"); check(many == 0 and nd == 2, f'[help] Bag: 2 "?" (care, pack), at most one per card ({nd})')
-    await axe_ok(p, '[help] bag'); await shot(p, 'phone-bag-help')
+    await p.keyboard.press('Escape'); await p.wait_for_timeout(300)
     await p.goto(BASE + '?hp5#/more'); await p.wait_for_selector('#helpFld'); await p.click('#helpFld [data-v="off"]')
-    await p.goto(BASE + '?hp6#/lane'); await p.wait_for_selector('.lane-tools'); check(await p.query_selector('.help-dot') is None, '[help] off again: gone')
+    await p.wait_for_selector('#helpToggle[aria-pressed="false"]'); check(True, '[help] More switch and top-bar switch stay in step')
+    off2 = await help_counts(p, 'hoff2'); check(not any(off2.values()), f'[help] off again: 0 "?" everywhere {off2}')
     check(not errs, f'[help] no page errors {errs[:3]}'); await c.close()
+
+async def guide_cycle(b):
+    # P1.7 Bowling Guide: one tap from More (first card, Glossary in the first viewport = learnfirst), searchable, 7 topic chips.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 740})
+    await seed(p); await p.goto(BASE + '?lf#/more'); await p.wait_for_selector('#helpCard')
+    first = await p.evaluate("() => document.querySelector('#view .card').id"); check(first == 'helpCard', f'[learnfirst] More opens with Learn ({first})')
+    vis = await p.evaluate("() => ['#goGuide', '#goGlossary', '#helpFld'].map(s => { const r = document.querySelector(s).getBoundingClientRect(); return r.bottom <= innerHeight - 64 && r.top >= 0; })")
+    check(all(vis), f'[learnfirst] Bowling Guide, Glossary and the Help switch are in the first viewport {vis}')
+    await p.click('#goGuide'); await p.wait_for_selector('#glTrees')
+    title = await p.text_content('.appbar .title'); check(title.strip() == 'Bowling Guide', f'[guide] title ({title})')
+    chips = await p.evaluate("() => document.querySelectorAll('#glTrees [data-tree]').length"); check(chips == 8, f'[guide] All + 7 topic chips ({chips})')
+    tot = await p.text_content('#glCount'); n = int(re.search(r'of (\d+) terms', tot).group(1)); check(n >= 112, f'[guide] all terms ({tot})')
+    await p.click('#glTrees [data-tree="Lane & Oil"]'); cnt = await p.text_content('#glCount')
+    trees = await p.evaluate("() => [...new Set([...document.querySelectorAll('#glList .group-h')].map(e => e.textContent))]"); check(trees == ['Lane & Oil'], f'[guide] browse by topic {trees} ({cnt})')
+    await p.click('#glTrees [data-tree=""]'); await p.fill('#glSearch', 'handicap'); await p.wait_for_selector('#gl-sc-handicap')
+    await p.click('#gl-sc-handicap summary'); k = await p.evaluate("() => document.querySelectorAll('#gl-sc-handicap .gl-src li').length"); check(k >= 1, f'[guide] search + sources ({k})')
+    await axe_ok(p, '[guide]'); small = await p.evaluate(SMALL); check(not small, f'[guide] targets >= 44px {small[:6]}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[guide] no horizontal overflow at 360 {w}')
+    await shot(p, 'phone-guide')
+    await p.goto(BASE + '?lf2#/glossary?t=tg-hit'); await p.wait_for_selector('#gl-tg-hit[open]'); check(True, '[guide] old #/glossary links still open a term')
+    check(not errs, f'[guide] no page errors {errs[:3]}'); await c.close()
+
+async def hand_cycle(b):
+    # Explicit handedness (owner 2026-10-24, IA_PLAN P1.6): nothing preselected on welcome, starter data never sets it,
+    # asked once (inline, not during a game), "Right-handed · change" on Tonight, and every hand-dependent view follows it.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 740})
+    await p.goto(BASE); await p.evaluate(WIPE); await p.goto(BASE + '?hw'); await p.wait_for_selector('#welNext')
+    pre = await p.evaluate("() => [...document.querySelectorAll('[aria-label=\"Bowling hand\"] [aria-checked=true]')].length")
+    check(pre == 0, f'[hand] welcome: no hand preselected ({pre})')
+    await p.click('#welSkip'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#handAsk')
+    pr = await p.evaluate("() => JSON.parse(localStorage.getItem('ap_profile') || 'null')")
+    check(not pr or pr.get('hand') in (None, ''), f'[hand] starter arsenal does not set a hand ({pr and pr.get("hand")})')
+    await axe_ok(p, '[hand] ask'); small = await p.evaluate(SMALL); check(not small, f'[hand] targets >= 44px {small[:6]}')
+    await shot(p, 'phone-hand-ask')
+    await p.click('#handL'); await p.wait_for_selector('#tnHand')
+    t = await p.text_content('#tnHand'); check(t.startswith('Left-handed') and 'change' in t, f'[hand] Tonight: "Left-handed · change" ({t})')
+    pr = await p.evaluate("() => JSON.parse(localStorage.getItem('ap_profile'))"); check(pr['hand'] == 'left' and pr['handSource'] == 'user-reported', f'[hand] stored as user-reported {pr.get("hand")}/{pr.get("handSource")}')
+    await p.goto(BASE + '?hl#/lane'); await p.wait_for_selector('#deck')
+    check(await p.query_selector('#handAsk') is None, '[hand] asked only once')
+    lbl = await p.get_attribute('#deck', 'aria-label'); check('1-2 pocket' in lbl, f'[hand] Lane pin deck follows the hand (1-2 pocket for a lefty)')
+    await p.goto(BASE + '?hm#/more'); await p.wait_for_selector('#editProfile')
+    check('Left-handed' in await p.text_content('#view'), '[hand] Bowler profile shows Left-handed')
+    await p.goto(BASE + '?ht#/tonight'); await p.wait_for_selector('#tnHandChange'); await p.click('#tnHandChange'); await p.wait_for_selector('#handSheetR')
+    await p.click('#handSheetR'); await p.wait_for_function("() => (document.querySelector('#tnHand') || {}).textContent?.startsWith('Right-handed')")
+    await p.goto(BASE + '?hr#/lane'); await p.wait_for_selector('#deck'); lbl = await p.get_attribute('#deck', 'aria-label'); check('1-3 pocket' in lbl, '[hand] change to Right: Lane follows (1-3 pocket)')
+    # "Not now": never asked again; boards read right-handed and the line says so.
+    await seed(p); await p.goto(BASE + '?hn#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#handLater')
+    await p.click('#handLater'); await p.wait_for_selector('#tnHand'); t = await p.text_content('#tnHand')
+    check('Hand not set' in t, f'[hand] "Not now": quiet line, boards read right-handed ({t})')
+    await p.goto(BASE + '?hn2#/target'); await p.wait_for_selector('#tgCall'); check(await p.query_selector('#handAsk') is None, '[hand] "Not now" is final (Targeting)')
+    check(not errs, f'[hand] no page errors {errs[:3]}'); await c.close()
 
 async def center_cycle(b):
     # M1 center memory: "Last time at <center>" before the first ball only (never while scoring), one line + your note,
@@ -1292,7 +1363,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

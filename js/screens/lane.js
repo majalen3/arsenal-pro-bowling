@@ -6,7 +6,7 @@ import { createLane } from '../lane.js';
 import { go } from '../router.js';
 import { createDeck, describe } from '../deck.js';
 // left-handers see a mirrored lane, so the engine's right-hander directions are swapped for display
-const isLefty = () => !!(profile() && profile().hand === 'left');
+const isLefty = HAND.isLefty;   // explicit hand only (cc/hand.js)
 const mirrorWords = t => t.replace(/\b(left|right|Left|Right)\b/g, w => ({ left:'right', right:'left', Left:'Right', Right:'Left' })[w]);
 const DEFL_DOC = 'https://github.com/majalen3/arsenal-pro-bowling/blob/main/docs/DEFLECTION.md';
 import { adjust, miss, restore, target, modelIn, MISSES, setBall, quickBalls } from '../ctl.js';
@@ -22,6 +22,8 @@ import { openNight } from '../cc/night.js';
 import { presetFor } from '../cc/model.js';
 import { aimLayer, paintPill, overlaysBtn } from './overlays.js';
 import { helpDot } from './help.js';
+import * as HAND from '../cc/hand.js';
+import { handAsk } from './hand.js';
 export function render() {
   const ballBtn = h('button', { class:'ball-btn', id:'ballBtn', 'aria-haspopup':'dialog', onclick:openBallSheet });
   const saveBtn = h('button', { class:'icon-btn', id:'saveBtn', 'aria-label':'Save this line', onclick:quickSave });
@@ -65,7 +67,7 @@ export function render() {
       h('section', { class:'deck-card', id:'deckCard', 'aria-labelledby':'deckH' }, h('figure', { class:'deck-fig' }, deckCv), h('div', { class:'deck-side' }, h('h2', { class:'deck-h', id:'deckH', text:'Pin deck' }), callBadge, coach, deckRead, h('p', { class:'deck-cap', id:'deckCap' }))),
       h('div', { class:'read-col' },
         h('div', { class:'tiles' }, tEntry, tAngle, tBp),
-        lineSum, modelNote, hold, missRow, more, inlineTune)));
+        handAsk(), lineSum, modelNote, hold, missRow, more, inlineTune)));
   let tune = null;
   const lane = createLane(canvas, { onAdjust:ch => adjust(ch), lefty:isLefty, aimBox:aimLayer(patNow), eyes:target });
   const half2 = v => Math.round(v * 2) / 2;
@@ -110,7 +112,7 @@ export function render() {
     inlineTune.sync(); tune && tune.p && document.contains(tune.p) && tune.p.sync();
     const key = b.id + S.pattern + S.finish;
     lane.draw({ ball:b, result:a }, { animate:animate && key !== lastKey ? true : animate });
-    const lefty = !!(profile() && profile().hand === 'left'), d = describe(a, lefty);
+    const lefty = isLefty(), d = describe(a, lefty);
     deck.draw({ res:a, lefty, tone, color:b.color }, { animate });
     deckCv.setAttribute('aria-label', `Pin deck close-up, ${d.pocket} pocket. ${CALL_LABEL[a.call]}. ${d.text}`);
     deckRead.innerHTML = a.entryBoard == null || !d.side ? `<p>${d.text}</p>` : `<p class="deck-side-call">${d.side[0].toUpperCase() + d.side.slice(1)}, ${d.ang}.</p><p class="deck-contact">${d.contact}</p><p class="deck-five">${d.five}</p>`;

@@ -18,6 +18,8 @@ import * as T from '../cc/target.js';
 import * as F from '../cc/strikeline.js';
 import { aimLayer as aimL, paintPill, overlaysBtn } from './overlays.js';
 import { helpDot } from './help.js';
+import * as HAND from '../cc/hand.js';
+import { handAsk } from './hand.js';
 import { fmtHalf } from '../labels.js';
 const num = f => f == null ? null : typeof f === 'object' ? (Number.isFinite(+f.v) ? +f.v : null) : (Number.isFinite(+f) ? +f : null);
 const prov = (p, label) => h('span', { class: 'prov', 'data-prov': p || null, text: label });
@@ -29,7 +31,7 @@ const TOUR = [
 ];
 export async function render({ query } = {}) {
   await ready();
-  const P = proj(), b = P.bowler || {}, lefty = () => (profile() && profile().hand === 'left') || b.hand === 'left';
+  const P = proj(), b = P.bowler || {}, lefty = HAND.isLefty;   // explicit hand only (cc/hand.js)
   const sess = (P.sessions || {})[openNight(P) || ''] || {};   // the open night (sim bug 3), not the calendar day
   const ft = sess.ft != null ? +sess.ft : HOUSE_ASSUMED.ft;
   const speed = num(b.speed) || 15, rev = num(b.rev) || 220;   // sim2 #1: the same release as Tonight's line (js/cc/line.js defaults)
@@ -150,7 +152,7 @@ export async function render({ query } = {}) {
     driftRow, offRow, bpbRow, bpfRow, resetBox, h('div', { class: 'muted small', id: 'tgAssume' }));
   const saveBtn = h('button', { class: 'btn primary', id: 'tgSave', onclick: saveMine }, 'Save as my line');
   const backBtn = h('button', { class: 'btn', id: 'tgBack', onclick: backToSaved }, 'Back to saved line');
-  const helpBtn = h('button', { class: 'icon-btn', id: 'tgHelp', 'aria-label': 'How targeting works', text: '?', onclick: () => tour(0) });
+  const helpBtn = h('button', { class: 'icon-btn', id: 'tgHelp', 'aria-label': 'How targeting works', html: icon('info'), onclick: () => tour(0) });
   const dock = h('div', { class: 'tg-dock', id: 'tgDock' }, modeSeg, feetRow, eyesRow);
 
   const aimPill = h('span', { class: 'pill', id: 'tgAimPill', hidden: true }), aimWhy = h('p', { class: 'muted small', id: 'tgAimWhy', hidden: true });
@@ -158,7 +160,7 @@ export async function render({ query } = {}) {
     h('header', { class: 'appbar' }, h('button', { class: 'icon-btn', 'aria-label': 'Back to Lane', html: icon('back'), onclick: () => go('#/lane') }), h('h1', { class: 'title', text: 'Targeting' }), helpBtn),
     tourBox,
     h('div', { class: 'tg-top' }, ballSel, h('span', { class: 'muted small', id: 'tgCond' })),
-    coach, limits, findBtn, findOut,
+    coach, handAsk(), limits, findBtn, findOut,
     h('div', { class: 'tg-grid' },
       h('div', { class: 'tg-lane-col' }, canvas),
       h('div', { class: 'tg-side' }, h('div', { class: 'row', role: 'group', 'aria-label': 'Result' }, callPill, boxPill, aimPill, helpDot('tg-arrows', 'Aim at the arrows')), overlaysBtn(() => ({ preset: r ? r.preset : 'house', ft: sess.ft != null ? +sess.ft : null }), 'tgOvBtn'), deckCv, h('p', { class: 'small', id: 'tgDeckRead' }))),

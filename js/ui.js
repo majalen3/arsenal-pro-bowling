@@ -99,7 +99,7 @@ export function confirmSheet({ title, text, confirm='Delete', danger=true }) {
 // ---- segmented control (radio group semantics)
 export function segmented(label, opts, value, onPick, cls='') {
   const g = h('div', { class:'seg ' + cls, role:'radiogroup', 'aria-label':label });
-  const draw = v => $$('button', g).forEach(b => { const on = b.dataset.v === String(v); b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; });
+  const draw = v => { const bs = $$('button', g); bs.forEach(b => { const on = b.dataset.v === String(v); b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; }); if (bs.length && !bs.some(b => b.tabIndex === 0)) bs[0].tabIndex = 0; };   // nothing preselected: still reachable by Tab
   opts.forEach(([v, l]) => g.append(h('button', { role:'radio', 'data-v':String(v), class:'seg-opt', onclick:() => { draw(v); onPick(v); } }, l)));
   g.addEventListener('keydown', e => { const bs = $$('button', g), i = bs.indexOf(document.activeElement); if (i < 0) return; const d = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0; if (!d) return; e.preventDefault(); const n = bs[(i + d + bs.length) % bs.length]; n.focus(); n.click(); });
   draw(value); return g;

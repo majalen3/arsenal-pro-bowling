@@ -2,7 +2,9 @@
 // Browser/Android back works through history; sheets push a history entry so back closes them first.
 import { nav, topSheet, closeAllSheets, $ } from './ui.js';
 const routes = [];
-let cur = null, latest = null, first = true, mountEl = null, onTab = null;
+let cur = null, latest = null, first = true, mountEl = null, onTab = null, decorate = null;
+// Called after every screen mounts (main.js adds the top-bar Help "?" switch).
+export function setDecorate(fn) { decorate = fn; }
 export function route(re, tab, load) { routes.push({ re, tab, load }); }
 export function go(hash, { replace = false } = {}) {
   if (nav.pending) { nav.queued = { hash, replace }; return; }
@@ -34,6 +36,7 @@ async function render() {
   if (prev && prev.scr && prev.scr.destroy) prev.scr.destroy();
   cur.scr = scr;
   mountEl.replaceChildren(scr.el);
+  if (decorate) { try { decorate(scr.el, path); } catch (e) { console.error(e); } }
   document.title = scr.title ? `${scr.title} · Arsenal Pro` : 'Arsenal Pro';
   onTab && onTab(r.tab);
   if (!first) { window.scrollTo(0, 0); const hd = scr.el.querySelector('h1'); if (hd) { hd.tabIndex = -1; hd.focus({ preventScroll:true }); } }

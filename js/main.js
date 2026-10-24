@@ -1,5 +1,6 @@
 import { restoreState, startSync, deviceId, prefs, profile, rawGet } from './store.js';
-import { route, start, go } from './router.js';
+import { route, start, go, setDecorate } from './router.js';
+import { helpToggle } from './screens/help.js';
 import { $, $$, toast, icon } from './ui.js';
 import { listenInstall, isStandalone, askPersist } from './cc/protect.js';
 import { applyTextSize } from './cc/wake.js';
@@ -31,6 +32,7 @@ route(/^\/import$/, 'more', () => import('./screens/import.js'));
 route(/^\/tonight$/, 'tonight', () => import('./screens/tonight.js'));
 route(/^\/bag$/, 'tonight', () => import('./screens/bag.js'));
 route(/^\/glossary$/, 'more', () => import('./screens/help.js'));
+route(/^\/guide$/, 'more', () => import('./screens/help.js'));
 // tab bar / rail
 const TABS = [['tonight', 'Tonight'], ['lane', 'Lane'], ['arsenal', 'Arsenal'], ['patterns', 'Patterns'], ['sessions', 'Sessions'], ['more', 'More']];
 const nav = $('#tabs');
@@ -38,6 +40,13 @@ nav.innerHTML = TABS.map(([k, l]) => `<a class="tab" href="#/${k}" data-tab="${k
 function setTab(t) { $$('.tab', nav).forEach(a => { if (a.dataset.tab === t) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }); document.body.dataset.tab = t || 'none'; }
 // first run: skippable onboarding (existing v1 users with saved state skip it automatically)
 if (!profile() && !prefs().onboarded && !rawGet('ap_state') && !location.hash) history.replaceState(null, '', '#/welcome');
+// Owner bug 2026-10-24 ("the help feature does nothing, I can't find any '?'"): a "?" switch in every app bar (not Welcome).
+setDecorate((el, path) => {
+  if (path === '/welcome') return;
+  const bar = el.querySelector('.appbar'); if (!bar || bar.querySelector('#helpToggle')) return;
+  const t = helpToggle(() => go(location.hash || '#/tonight', { replace:true })), acts = bar.querySelector('.appbar-actions');
+  if (acts) acts.prepend(t); else bar.append(t);
+});
 start($('#view'), setTab);
 startSync();
 // v1 event log opens after first paint (IndexedDB; never blocks the lane)
