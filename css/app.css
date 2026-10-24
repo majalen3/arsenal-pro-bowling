@@ -655,3 +655,7 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .ladder{display:grid;gap:4px;padding-left:var(--s4)}
 .swap-cand{display:grid;justify-items:start;text-align:left;gap:2px;height:auto;min-height:44px;padding-top:6px;padding-bottom:6px}
 .bag-dock{position:sticky;bottom:calc(var(--tab-h) + 4px);z-index:5;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-lg);padding:var(--s2);box-shadow:var(--shadow-2)}
+/* Item 2: Add a game total sheet */
+.gt-row { gap: 12px; flex-wrap: nowrap; }
+.gt-row > .fld { flex: 1 1 0; min-width: 0; }
+.gt-row input { width: 100%; }

@@ -8,6 +8,7 @@ import { adjust } from '../ctl.js';
 import { go } from '../router.js';
 import * as HAND from '../cc/hand.js';
 import { profileForm, ownedPicker } from './welcome.js';
+import { gameTotalButton } from './gametotal.js';
 import { applyTheme } from '../main.js';
 export const VERSION = '2.0.0';
 export function render() {
@@ -72,7 +73,8 @@ export function render() {
       h('div', { class:'card', id:'dataCard' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Your data' }), protChip), dataInfo, lastBk,
         h('details', { class:'tn-more', id:'protMore' }, h('summary', { text:'Keep it safe' }), protBody),
         h('details', { class:'tn-more', id:'dataMore' }, h('summary', { text:'What\u2019s saved' }), dataCounts),
-        h('div', { class:'btn-grid' }, h('a', { class:'btn ghost', href:'#/import', id:'goImport' }, 'Import a file'), h('a', { class:'btn ghost', href:'#/import?kind=lanetrax', id:'goLaneTrax' }, 'LaneTrax report'), h('a', { class:'btn ghost', href:'#/card', id:'goCardMore' }, 'My Bowler Card'), h('a', { class:'btn ghost', href:'#/sessions', id:'goNights' }, 'Past sessions'))),
+        h('div', { class:'btn-grid' }, h('a', { class:'btn ghost', href:'#/import', id:'goImport' }, 'Import a file'), h('a', { class:'btn ghost', href:'#/import?kind=lanetrax', id:'goLaneTrax' }, 'LaneTrax report'), h('a', { class:'btn ghost', href:'#/card', id:'goCardMore' }, 'My Bowler Card'), h('a', { class:'btn ghost', href:'#/sessions', id:'goNights' }, 'Past sessions')),
+        gameTotalButton('moreAddTotal', { onDone: sid => go('#/session/' + encodeURIComponent(sid)) })),
       h('div', { class:'card' }, h('h2', { class:'card-title', text:'Appearance' }), segmented('Theme', [['dark', 'Alley dark'], ['light', 'Light'], ['system', 'System']], prefs().theme || 'dark', v => { setPrefs({ theme:v }); applyTheme(v); }, 'wide'),
         h('div', { class:'fld', id:'textSizeFld' }, h('span', { text:'Text size' }), segmented('Text size', [['normal', 'Normal'], ['large', 'Large'], ['xl', 'Extra large']], prefs().textSize || 'normal', v => { setPrefs({ textSize:v }); WK.applyTextSize(v); }, 'wide')),
         h('div', { class:'fld', id:'wakeFld' }, h('span', { text:'Keep the screen on during a game' }), segmented('Keep the screen on during a game', [['on', 'On'], ['off', 'Off']], prefs().wakeLock === false ? 'off' : 'on', v => setPrefs({ wakeLock: v === 'on' }), 'wide'),

@@ -477,6 +477,39 @@ async def whynot_cycle(b):
     check(True, '[whynot] Pack these N -> Tonight shows the packed bag (Guru in)')
     check(not errs, f'[whynot] no page errors {errs[:3]}'); await c.close()
 
+async def gametotal_cycle(b):
+    # Item 2: "Add a game total" (score only) lives on the night (Session) view, in More and in team setup; not on Tonight.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 740})
+    await seed(p); await p.goto(BASE + '?gt#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnAdvisor')
+    check('Quick-log a game' not in await p.text_content('#tonightBody') and await p.query_selector('#tonightBody #moreAddTotal, #tonightBody #sessAddTotal') is None, '[gametotal] no quick game log on the Tonight front page')
+    await p.evaluate("location.hash = '#/more'"); await p.wait_for_selector('#moreAddTotal')
+    await p.click('#moreAddTotal'); await p.wait_for_selector('#gameTotal #gtScore')
+    check(await p.input_value('#gtGame') == '1', '[gametotal] first total of a new night defaults to game 1')
+    await axe_ok(p, '[gametotal] sheet'); small = await p.evaluate(SMALL); check(not small, f'[gametotal] sheet targets >= 44px {small[:6]}')
+    n0 = await p.evaluate("async () => (await import('./js/hub.js')).proj().scores.length")
+    await p.fill('#gtScore', '301'); await p.click('#gtSave'); await p.wait_for_timeout(150)
+    n1 = await p.evaluate("async () => (await import('./js/hub.js')).proj().scores.length")
+    check(n1 == n0 and await p.query_selector('#gameTotal') is not None and '0 to 300' in await p.text_content('#toast'), '[gametotal] 301 rejected, nothing saved')
+    await p.fill('#gtScore', '187'); await p.select_option('#gtBall', 'own-rattler-big-bite'); await p.click('#gtSave')
+    await p.wait_for_function("() => location.hash.startsWith('#/session/night-')"); await p.wait_for_selector('#sessGames')
+    check('187' in await p.text_content('#sessGames'), '[gametotal] More -> total saved on tonight\'s night and shown on its Session view')
+    ev = await p.evaluate("async () => { const h = await import('./js/hub.js'); const x = h.proj().scores.at(-1); return [x.score, x.game, x.ballId, x.sessionId]; }")
+    check(ev[0] == 187 and ev[1] == 1 and ev[2] == 'own-rattler-big-bite' and ev[3].startswith('night-'), f'[gametotal] one game.logged event, the bowler\'s own number {ev}')
+    bb = await p.evaluate("() => { const r = document.querySelector('#sessAddTotal').getBoundingClientRect(); return [r.top, r.bottom]; }")
+    check(bb[1] <= 740, f'[gametotal] "Add a game total" one tap from the night view, in the first viewport {bb}')
+    await p.click('#sessAddTotal'); await p.wait_for_selector('#gameTotal #gtScore')
+    check(await p.input_value('#gtGame') == '2', '[gametotal] next total defaults to game 2')
+    await p.fill('#gtGame', '1'); await p.fill('#gtScore', '200'); await p.click('#gtSave'); await p.wait_for_timeout(150)
+    check(await p.query_selector('#gameTotal') is not None and 'already has a score' in await p.text_content('#toast'), '[gametotal] game 1 already scored -> blocked, no duplicate')
+    await p.fill('#gtGame', '2'); await p.fill('#gtScore', '201'); await p.click('#gtSave'); await p.wait_for_function("() => document.querySelector('#sessGames') && document.querySelector('#sessGames').textContent.includes('201')")
+    check('388' in await p.text_content('#sessGames'), '[gametotal] series 388 from the two totals')
+    await axe_ok(p, '[gametotal] session'); w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[gametotal] no horizontal overflow {w}')
+    await p.evaluate("location.hash = '#/tonight'"); await p.wait_for_selector('#tnSetup')
+    await p.click('#tnSetup [aria-label="Scoring"] [data-v="league"]'); await p.wait_for_selector('#tnTeam')
+    await p.evaluate("() => { document.querySelector('#tnTeam').open = true; }")
+    check(await p.is_visible('#lgAddTotal') and 'final score' in await p.text_content('#lgTotalWhy'), '[gametotal] offered in team setup')
+    check(not errs, f'[gametotal] no page errors {errs[:3]}'); await c.close()
+
 FX = os.path.join(os.path.dirname(__file__), 'data', 'fixtures')
 def fx(n): return open(os.path.join(FX, n)).read()
 async def targeting_cycle(b):
@@ -1498,7 +1531,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

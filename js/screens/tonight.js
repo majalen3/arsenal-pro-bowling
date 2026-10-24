@@ -29,6 +29,7 @@ import * as hub from '../hub.js';
 import * as ST from '../cc/status.js';
 import * as BE from '../cc/bagedit.js';
 import { helpDot, withHelp } from './help.js';
+import { gameTotalButton } from './gametotal.js';
 import * as HAND from '../cc/hand.js';
 import { handAsk, handLine } from './hand.js';
 export { standOf };
@@ -259,6 +260,8 @@ export async function render() {
           h('button', { class: 'icon-btn', 'aria-label': `Remove bowler ${i + 2}`, html: icon('close'), onclick: () => setLg({ team: tm.filter((_, j) => j !== i) }) })),
         segmented(`Bowler ${i + 2} status`, [['in', 'Bowling'], ['absent', 'Absent'], ['vacancy', 'Vacancy']], t.status || 'in', v => setTm(i, { status: v }), 'wide'))),
       tm.length < 3 ? h('button', { class: 'btn ghost block', id: 'lgAdd', onclick: () => setLg({ team: tm.concat([{ who: 'tm-' + Date.now().toString(36), name: '', avg: null, status: 'in' }]) }) }, 'Add a bowler') : null,
+      h('p', { class: 'muted small', id: 'lgTotalWhy', text: 'Short on time? Skip the frames: add just your final score for a game.' }),
+      gameTotalButton('lgAddTotal', { sessionId: curSid(), onDone: () => draw() }),
       h('p', { class: 'muted small', text: `Only your own frames count in your stats.${(s.mode || 'solo') === 'baker' ? ' Baker games are not in averages (USBC Rule 3a).' : ''}` }));
   }
   // Team board (behind one tap): scratch, handicap and total per spot, absentee / vacancy per USBC Rule 112.
@@ -502,7 +505,7 @@ export async function render() {
     if (a.plan.length) card.append(h('p', { class: 'small', id: 'advPlan' }, h('b', { text: 'Then: ' }), a.plan.map(x => `${x.k} ${x.name} (${x.when})`).join(' \u2192 ')));
     card.append(h('p', { class: 'small', id: 'advWhy' }, h('b', { text: 'Why this bag: ' }), a.why),
       h('p', { class: 'small muted', id: 'advChange' }, h('b', { text: 'What would change it: ' }), a.change, ' ', h('a', { class: 'srclink', href: A.MIN_SRC.url, target: '_blank', rel: 'noopener', text: A.MIN_SRC.label })));
-    if (a.noData) card.append(h('div', { class: 'row', id: 'advNoData' }, h('button', { class: 'btn sm', onclick: () => document.getElementById('tnLog') && document.getElementById('tnLog').scrollIntoView() }, 'Quick-log a game'), h('button', { class: 'btn sm', onclick: () => go('#/import') }, 'Import results')));
+    if (a.noData) card.append(h('div', { class: 'row', id: 'advNoData' }, h('button', { class: 'btn sm', onclick: () => go('#/import') }, 'Import results')));
     if (packed) { const pl = packList(a.slots.map(o => ({ ownedId: o, catalogId: P.owned[o] && P.owned[o].catalogId, name: short(P.owned[o] && (P.owned[o].name || (catOf(P.owned[o].catalogId) || {}).name)), benchmark: o === a.A.ownedId, status: P.owned[o] && P.owned[o].status })),
         a.spare ? { ownedId: a.spare, name: short(P.owned[a.spare].name) } : null, { health: P.health });
       card.append(h('details', { class: 'adv-pack', id: 'advPackList', open: true }, h('summary', { text: `Pack list \u00b7 ${pl.rows.length} balls` }),

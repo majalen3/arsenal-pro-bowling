@@ -220,3 +220,14 @@
   - **Usability:** one size control instead of three, one sticky "Pack these N" button always inside 360×740, Swap in 2 taps, 44 px targets, no horizontal scroll, axe 0.
   - **Applicability:** applies to anyone with 2+ balls; a one-ball bowler sees one row and "Bring more from Left out". Nothing changes during scoring.
 - **3-second beginner check:** "Bring 3: start with Big Bite, Hy-Road if it hooks early, Ice Storm for spares. Pack."
+
+## Quick game log off Tonight: "Add a game total" (item 2, 2026-10-24)
+- **Why move it:** Tonight answers one question ("what do I throw first?"). A score-entry button there competes with that answer and invites logging during prep, when the bowler has nothing to log yet (owner: the quick game log is not for the front page). Totals are entered after a game, so they belong where games already live: the night (Session) view, one tap away, and More › Your data for a night not opened on Tonight. Team setup offers it because a league night is where frame-by-frame entry for everyone costs the most time (user-simulations-2 #6: 7.0 s per teammate frame).
+- **SDT:**
+  - **Competence:** the sheet says what a total gives (games, series, average) and what it does not (strikes and spares need frames), so the bowler knows what the number will feed.
+  - **Autonomy:** frames stay optional; the bowler chooses totals or frames per game. The ball is optional and never guessed.
+  - **Relatedness:** "game total" and "series" are the words on a league sheet; nothing is ranked or praised.
+- **U/A:**
+  - **Usability:** 2 fields + 1 button in a sheet (44 px targets, axe 0, no overflow at 360). The game number is pre-filled with the next free game, and a game that already has a score is blocked, so no duplicates.
+  - **Applicability:** anyone who bowled without scoring frames (house sheet, phone died, team night). Nothing is added during active scoring.
+- **3-second beginner check:** "I bowled 187; I tap Add a game total and type 187."

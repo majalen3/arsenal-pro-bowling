@@ -10,6 +10,7 @@ import { fixState, fixPanel } from './fixgame.js';
 import * as CM from '../cc/center.js';
 import * as DR from '../cc/drill.js';
 import { helpDot, withHelp } from './help.js';
+import { gameTotalButton } from './gametotal.js';
 export const ballName = (P, id) => { const o = id && P.owned && P.owned[id]; return o ? (o.name || (catOf(o.catalogId) || {}).name || 'Ball') : id ? ((catOf(id) || {}).name || id) : null; };
 const fmtDate = d => { if (!d) return 'Undated'; const t = new Date(d + 'T12:00:00'); return isNaN(t) ? d : t.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }); };
 export const backBar = (title, fallback) => h('header', { class: 'appbar' }, h('button', { class: 'icon-btn', 'aria-label': 'Back', html: icon('back'), onclick: () => back(fallback) }), h('h1', { class: 'title', text: title }));
@@ -36,6 +37,8 @@ export async function render({ params }) {
     if (s.games.length || s.scores.length) body.append(h('div', { class: 'card', id: 'sessGames' }, withHelp(h('h2', { class: 'card-title', text: s.games.length + s.scores.length === 1 ? 'Game' : `Games \u00b7 ${st.series != null ? st.series + ' series' : ''}` }), 'sc-average', 'Series and average'),
       ...s.games.map(g => h('div', { class: 'bc-game' }, h('div', { class: 'row between' }, h('b', { text: `Game ${g.game}` }), h('span', { class: 'bc-score', text: g.score != null ? String(g.score) + (g.complete ? '' : ' (in progress)') : '\u2014' })), marksRow(g), fixPanel(id, g, fx, draw))),
       ...s.scores.map(x => h('div', { class: 'row between bc-game' }, h('b', { text: `Game ${x.game || ''}` }), h('span', { class: 'bc-score', text: String(x.score) })))));
+    // Item 2: a game total (score only) is one tap from the night view.
+    body.append(gameTotalButton('sessAddTotal', { sessionId: id, onDone: () => draw() }));
     // Details: everything that passes usability but only sometimes changes a decision.
     const det = h('details', { class: 'card bc-more', id: 'sessDetails' }, h('summary', { text: 'Details' }));
     const T = st.throws;

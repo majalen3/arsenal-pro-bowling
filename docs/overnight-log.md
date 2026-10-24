@@ -316,3 +316,8 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - **Fix found on the way:** advisor rows took `home` from the rank output (no status field), so an At home ball brought in lost its "grab from home" tag; now read from the pool.
 - **Tests:** unit `bagedit.test.mjs` (8: Bring defaults/bringOf, sizing, role words, fixed, formatOfBring, swap, bringIn incl. blocked, fromAnswer keeps pins). e2e: `bag` rewritten for the builder; new `onebag` (League → Pack → #/bag same 3 names, "3 packed", chip source the same), `bagsize` (1 size control across Tonight + Bag; Other 7 persists), `whynot` (bag + left out == every owned ball once, each with a reason; no Bring for pro shop/retired; Pack inside 360×740 before and after scrolling; Bring swaps in, "grab from home"). `status`, `addball`, `tonight` updated for the one bag.
 - **Screenshots:** before `/workspace/shots/before-P1-{bag,tonight}.png`; after `/workspace/shots/after-P1-bag.png`, `/workspace/shots/after-P1-bag-fold.png`.
+
+## 2026-10-24 · Item 2: quick game log off Tonight → "Add a game total" (sw v46)
+- New `js/cc/gametotal.js` (pure: parseTotal 0–300 whole numbers, gamesOn / nextGame / taken, targetNight) and `js/screens/gametotal.js` (sheet #gameTotal: #gtScore, #gtGame, #gtBall optional, #gtSave). Entry points: #sessAddTotal (Session view, first viewport), #moreAddTotal (More › Your data → opens that night), #lgAddTotal (team setup). Tonight's "Quick-log a game" button removed.
+- Tests: unit `gametotal.test.mjs` (3); e2e `gametotal` (not on Tonight; 301 rejected; 187 saved as one game.logged with the chosen ball; next game defaults to 2; duplicate game blocked; series 388; team setup offer; axe, 44 px, 360).
+- Rationale: docs/psych-improvements.md.
