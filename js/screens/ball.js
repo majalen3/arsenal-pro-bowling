@@ -2,7 +2,8 @@ import { balls, rgTxt, diffTxt, coverKind } from '../data.js';
 import { readInfo, analyze, S } from '../engine.js';
 import { app, linesForBall, lsGet, LS, applyLine, logFinish, esc } from '../store.js';
 import { h, icon, toast, emptyState } from '../ui.js';
-import { setBall } from '../ctl.js';
+import { setBall, modelIn } from '../ctl.js';
+import { seedLine } from '../laneseed.js';
 import { go, back } from '../router.js';
 import { readMed } from './pickers.js';
 import { PATTERN_LABEL, FINISH_LABEL, CALL_LABEL, CALL_TONE, f1, fmtBoard } from '../labels.js';
@@ -17,7 +18,8 @@ export function backBar(title, fallback) {
 export async function render({ params }) {
   const b = balls.find(x => x.id === params[0]);
   if (!b) return { el:h('section', { class:'screen' }, backBar('Ball', '#/bag?view=all'), emptyState('Ball not found', 'That ball is not in this arsenal.', { label:'Back to Bag', run:() => go('#/bag?view=all') })), title:'Ball' };
-  const r = readInfo(b, readMed()), a = analyze(b), onLane = b.id === app.ball.id;
+  await ready(); seedLine();   // clutter audit #4: the Lane line for this ball before Lane is opened
+  const r = readInfo(b, readMed()), mi = modelIn(), a = analyze(b, { release: mi.release, aim: mi.aim }), onLane = b.id === app.ball.id;
   const spec = (k, v, hid) => h('div', { class:'spec' }, h('div', { class:'spec-k' }, k, hid ? helpDot(hid, k) : null), h('div', { class:'spec-v', html:v }));
   await ready();
   // P1.3: an owned ball shows where it is (one Status) and, when it isn't in tonight's bag, the shared "why not".
@@ -32,7 +34,7 @@ export async function render({ params }) {
           onLane ? h('span', { class:'pill gold', text:'On lane' }) : h('button', { class:'btn primary', id:'putOnLane', onclick:() => { setBall(b); go('#/lane'); } }, 'Put on lane'),
           onLane ? null : h('a', { class:'btn ghost', id:'cmpOnLane', href:`#/compare?ids=${app.ball.id},${b.id}` }, h('span', { html:icon('compare') }), `Compare with ${app.ball.name}`), onLane ? null : helpDot('ap-compare', 'Compare')))),
     ownCard,
-    h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { text:`On ${PATTERN_LABEL[S.pattern]}, your line` })),
+    h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { text:`On ${PATTERN_LABEL[S.pattern]}, your line` }), h('span', { class:'muted small', id:'ballLineFrom', text:' (the stand and aim on Lane)' })),
       h('div', { class:'mini-read', id:'ballRead', 'data-tone':CALL_TONE[a.call] }, h('b', { text:CALL_LABEL[a.call] }), helpDot('tg-hit', 'High, light and solid hits'),
         h('span', { class:'num', text:` entry ${f1(a.entryBoard)}` }), helpDot('bm-entry-angle', 'Entry'), h('span', { class:'num', text:` · ${f1(a.angle)}° model` }), helpDot('ap-model', 'Model estimate'),
         h('span', { class:'num', text:` · breakpoint ${f1(a.bpBoard)}${a.bpFeet != null ? ' @ ' + Math.round(a.bpFeet) + ' ft' : ''}` }), helpDot('bm-breakpoint', 'Breakpoint'))),
