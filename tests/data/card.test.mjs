@@ -60,6 +60,8 @@ test('compare: vs previous session and vs mean (test data)', () => {
   const list = C.sessionsOf(P); assert.equal(list[0].id, 'test-sess-2');
   const cmp = C.compare(list, 'test-sess-2'), st = cmp.find(x => x.k === 'strikePct');
   assert.equal(st.v, 54.5); assert.equal(st.prev, 18.2); assert.equal(st.dPrev, 36.3);   // 10th-frame fill ball is a rack: 11 first balls
+  assert.deepEqual(st.count, { made: 6, n: 11, what: 'first balls' }); assert.equal(st.small, true);   // C2: 11 < MIN_SHOTS -> counts, no delta
+  const r = C.recapOf(list, 'test-sess-2'); if (r && r.head) assert.doesNotMatch(r.head, /points from last session/);
   const all = list.filter(x => x.stats.strikePct != null); assert.equal(st.mean, Math.round(all.reduce((s, x) => s + x.stats.strikePct, 0) / all.length * 10) / 10);
 });
 test('tagging a LaneTrax session to a ball feeds the advisor (aggregate gets ballId)', () => {

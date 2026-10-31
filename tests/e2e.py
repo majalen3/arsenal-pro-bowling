@@ -628,6 +628,9 @@ async def corner_cycle(b):
     hrefs = await p.eval_on_selector_all('#sessCornerMore a', 'e => e.map(a => a.href)')
     check('https://bowl.com/adjusting-entry-angle' in hrefs, f'[corner] sources linked {hrefs}')
     await axe_ok(p, '[corner] recap'); small = await p.evaluate(SMALL); check(not small, f'[corner] targets >= 44px {small[:6]}')
+    # C2 (clutter audit): 12 first balls is a small sample -> counts, no %-point change in the recap or the Compared table
+    rc = await p.text_content('#sessRecap'); cmp = await p.evaluate("() => { const r = document.querySelector('#sessCmp tr[data-k=strikePct]'); return r ? [...r.cells].map(c => c.textContent) : null; }")
+    check('points from last session' not in rc and cmp is not None and cmp[1] == '8 of 12' and cmp[2] == '\u2014' and await p.query_selector('#sessCmpNote') is not None, f'[corner] C2 small sample: counts, no deltas {cmp}')
     w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[corner] no horizontal overflow {w}')
     await p.evaluate("() => { const t = document.querySelector('#toast'); if (t) t.style.visibility = 'hidden'; document.querySelector('#sessRecap').scrollIntoView({ block: 'start' }); }")
     await p.screenshot(path=ART + '/item3-recap-flat10.png'); await shot(p, 'phone-corner-recap')

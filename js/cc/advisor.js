@@ -56,15 +56,17 @@ export function evidenceOf(P, ownedId, catalogId) {
   const topLeave = Object.entries(leaves).sort((a, b) => b[1] - a[1])[0] || null;
   const nGames = games.size + scores.length;
   const avg = scores.length ? Math.round(scores.reduce((s, x) => s + (+x.score || 0), 0) / scores.length) : null;
-  return { n: firsts.length, strikes, strikePct: pct(strikes, firsts.length), pocketN: tagged.length, pocketPct: pct(pocket, tagged.length),
+  return { n: firsts.length, strikes, strikePct: pct(strikes, firsts.length), pocket, pocketN: tagged.length, pocketPct: pct(pocket, tagged.length),
     carryPct: pocket ? pct(strikes, strikes + pocketNonStrike) : null, games: nGames, sessions: sessions.size, avg, topLeave: topLeave ? { leave: topLeave[0], n: topLeave[1] } : null,
     aggs: aggs.length, enough: nGames >= MIN_GAMES, none: !firsts.length && !scores.length && !aggs.length };
 }
 export function evidenceText(name, ev) {
   if (ev.none) return null;
   const parts = [];
-  if (ev.pocketN) parts.push(`${ev.pocketPct}% pocket`);
-  if (ev.n) parts.push(`${ev.strikePct}% strikes`);
+  // Clutter audit C2: under 30 chances (the card's MIN_SHOTS rule) a count, not a rate; whole percents otherwise.
+  const rate = (pc, n, made, what) => n >= 30 ? `${Math.round(pc)}% ${what}` : `${made} of ${n} ${what}`;
+  if (ev.pocketN) parts.push(rate(ev.pocketPct, ev.pocketN, ev.pocket != null ? ev.pocket : Math.round(ev.pocketPct * ev.pocketN / 100), 'pocket'));
+  if (ev.n) parts.push(rate(ev.strikePct, ev.n, ev.strikes != null ? ev.strikes : Math.round(ev.strikePct * ev.n / 100), 'strikes'));
   if (ev.avg != null) parts.push(`${ev.avg} avg`);
   const base = `${name}: ${parts.join(', ') || 'results logged'} over ${ev.sessions} session${ev.sessions === 1 ? '' : 's'} (n=${ev.n || ev.games}${ev.n ? ' first balls' : ' games'})`;
   return base + (ev.topLeave ? `; most left: ${ev.topLeave.leave} (${ev.topLeave.n}×)` : '');

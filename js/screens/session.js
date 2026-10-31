@@ -17,7 +17,7 @@ import { hand } from '../cc/hand.js';
 export const ballName = (P, id) => { const o = id && P.owned && P.owned[id]; return o ? (o.name || (catOf(o.catalogId) || {}).name || 'Ball') : id ? ((catOf(id) || {}).name || id) : null; };
 const fmtDate = d => { if (!d) return 'Undated'; const t = new Date(d + 'T12:00:00'); return isNaN(t) ? d : t.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }); };
 export const backBar = (title, fallback) => h('header', { class: 'appbar' }, h('button', { class: 'icon-btn', 'aria-label': 'Back', html: icon('back'), onclick: () => back(fallback) }), h('h1', { class: 'title', text: title }));
-const sign = (d, u) => (d > 0 ? '+' : d < 0 ? '\u2212' : '\u00b1') + Math.abs(d) + (u === '%' ? ' pts' : '');
+const sign = (d, u) => { const r = Math.round(d); return (r > 0 ? '+' : r < 0 ? '\u2212' : '\u00b1') + Math.abs(r) + (u === '%' ? ' pts' : ''); };   // C2: whole numbers
 export function marksRow(g) {
   return h('ol', { class: 'bc-frames', 'aria-label': `Game ${g.game} frames` }, ...g.frames.map(f => h('li', {}, h('span', { class: 'bc-m', text: f.marks.join(' ') || '\u00a0' }), h('span', { class: 'bc-c', text: f.cum != null ? String(f.cum) : '' }))));
 }
@@ -56,7 +56,10 @@ export async function render({ params, query }) {
       ...r.perGame.map(x => h('li', { text: `Game ${x.game}: ${x.score != null ? x.score : 'not finished'} \u00b7 ${x.balls.map(b => ballName(P, b)).join(', ') || 'ball not set'} \u00b7 ${x.moves} ${x.moves === 1 ? 'move' : 'moves'} \u00b7 ${x.throws} balls thrown` }))));
     if (r.cmp.length) det.append(h('h3', { class: 'section-title', text: 'Compared with' }), h('table', { class: 'bc-tbl', id: 'sessCmp' },
       h('thead', {}, h('tr', {}, h('th', { text: '' }), h('th', { text: 'Tonight' }), h('th', { text: 'Last' }), h('th', { text: 'Your avg' }))),
-      h('tbody', {}, ...r.cmp.map(x => h('tr', {}, h('th', { text: x.label }), h('td', { text: x.v + (x.unit || '') }), h('td', { text: x.dPrev != null ? sign(x.dPrev, x.unit) : '\u2014' }), h('td', { text: x.dMean != null ? sign(x.dMean, x.unit) : '\u2014' }))))));
+      h('tbody', {}, ...r.cmp.map(x => h('tr', { 'data-k': x.k, 'data-small': x.small ? '' : null }, h('th', { text: x.label }),
+        // C2: on a small sample the row shows the count ("2 of 2") and no change; rates and changes show from C.MIN_SHOTS chances.
+        h('td', { text: x.small && x.count ? `${x.count.made} of ${x.count.n}` : (x.unit === '%' ? Math.round(x.v) : x.v) + (x.unit || '') }), h('td', { text: !x.small && x.dPrev != null ? sign(x.dPrev, x.unit) : '\u2014' }), h('td', { text: !x.small && x.dMean != null ? sign(x.dMean, x.unit) : '\u2014' }))))),
+      r.cmp.some(x => x.small) ? h('p', { class: 'muted small', id: 'sessCmpNote', text: `Counts until there are ${C.MIN_SHOTS} chances; then rates and changes.` }) : '');
     if (T) det.append(h('h3', { class: 'section-title', text: 'Strikes, spares, opens' }), h('dl', { class: 'kv', id: 'sessSSO' },
       h('dt', { text: 'Strikes' }), h('dd', { text: `${T.strikes} of ${T.first} first balls` }),
       h('dt', { text: 'Single-pin spares' }), h('dd', { text: T.single ? `${T.singleMade} of ${T.single}` : '\u2014' }),

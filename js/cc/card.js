@@ -96,6 +96,14 @@ export function statsOf(x) {
 }
 // Comparison: this session vs the previous session that has the metric, and vs the mean of all sessions with it.
 export const METRICS = [['avg', 'Average', ''], ['strikePct', 'Strikes', '%'], ['sparePct', 'Spares made', '%'], ['openPct', 'Open frames', '%']];
+// The count behind a session rate (strikes of first balls, spares made of chances, opens of frames).
+export function countOf(st, k) {
+  const t = st.throws, l = st.ltx;
+  if (k === 'strikePct') return t && t.first ? { made: t.strikes, n: t.first, what: 'first balls' } : l && l.first ? { made: l.strikes, n: l.first, what: 'first balls' } : null;
+  if (k === 'sparePct') return t && t.spare ? { made: t.spareMade, n: t.spare, what: 'chances' } : l && l.spare ? { made: l.spareMade, n: l.spare, what: 'chances' } : null;
+  if (k === 'openPct') return t && t.frames ? { made: t.opens, n: t.frames, what: 'frames' } : null;
+  return null;
+}
 export function compare(list, id) {
   const i = list.findIndex(x => x.id === id); if (i < 0) return [];
   const me = list[i], older = list.slice(i + 1);
@@ -103,7 +111,9 @@ export function compare(list, id) {
     const v = me.stats[k]; if (v == null) return null;
     const prev = older.find(x => x.stats[k] != null), all = list.filter(x => x.stats[k] != null);
     const mean = all.length > 1 ? r1(all.reduce((s, x) => s + x.stats[k], 0) / all.length) : null;
-    return { k, label, unit, v, prev: prev ? prev.stats[k] : null, prevDate: prev ? prev.date : null, dPrev: prev ? r1(v - prev.stats[k]) : null, mean, dMean: mean != null ? r1(v - mean) : null, nSessions: all.length };
+    // Clutter audit C2: each rate carries its count; `small` = fewer than MIN_SHOTS chances tonight or last time (show counts, no deltas).
+    const c = countOf(me.stats, k), pc = prev ? countOf(prev.stats, k) : null, small = unit === '%' && (!c || c.n < MIN_SHOTS || (pc && pc.n < MIN_SHOTS));
+    return { k, label, unit, v, prev: prev ? prev.stats[k] : null, prevDate: prev ? prev.date : null, dPrev: prev ? r1(v - prev.stats[k]) : null, mean, dMean: mean != null ? r1(v - mean) : null, nSessions: all.length, count: c, small };
   }).filter(Boolean);
 }
 // ---- style / match (cited rules only)
@@ -250,7 +260,7 @@ export function recapOf(list, id, { myAvg = null } = {}) {
     head = done.length === 1 ? `${ser} game: ${vs} your ${typed} league average (typed in Team setup).`
       : `${ser} series over ${done.length} games: ${vs} your ${typed} league average (${typed * done.length}, typed in Team setup).`; }
   if (!head && a && a.dPrev != null && Math.abs(a.dPrev) >= 5) head = `${a.v} average, ${Math.abs(Math.round(a.dPrev))} pins ${a.dPrev > 0 ? 'over' : 'under'} last session (${a.prev}).`;
-  if (!head) for (const k of ['sparePct', 'strikePct', 'openPct']) { const x = by(k); if (x && x.dPrev != null && Math.abs(x.dPrev) >= 5) { head = `${word[k]}: ${x.v}%, ${x.dPrev > 0 ? 'up' : 'down'} ${Math.abs(x.dPrev)} points from last session.`; break; } }
+  if (!head) for (const k of ['sparePct', 'strikePct', 'openPct']) { const x = by(k); if (x && !x.small && x.dPrev != null && Math.abs(x.dPrev) >= 5) { head = `${word[k]}: ${Math.round(x.v)}%, ${x.dPrev > 0 ? 'up' : 'down'} ${Math.abs(Math.round(x.dPrev))} points from last session.`; break; } }   // C2: only on enough chances
   if (!head && a && a.dPrev != null) head = `${a.v} average, about the same as last session (${a.prev}).`;
   if (!head) head = s.avg != null ? `${s.avg} average over ${PLURAL(s.games, 'game')}${s.high != null && s.games > 1 ? `, high ${s.high}` : ''}.`
     : s.ltx ? `${s.ltx.strikes} strikes on ${s.ltx.first} first balls; ${s.ltx.spareMade} of ${s.ltx.spare} spares made.` : t ? `${t.strikes} strikes on ${t.first} first balls.` : 'Session saved.';
