@@ -55,7 +55,10 @@ export async function render({ query }) {
     const hits = HP.search(G.terms, search.value).filter(t => !tree || t.tree === tree); list.innerHTML = '';
     count.textContent = `${hits.length} of ${G.terms.length} terms`;
     if (!hits.length) list.append(h('p', { class: 'muted', text: 'No term matches. Try a shorter word or All topics.' }));
-    for (const [tr, xs] of HP.byTree(hits, G.trees)) list.append(h('h2', { class: 'group-h', text: tr }), ...xs.map(entry));
+    // Clutter audit C10: browsing shows topics collapsed (search first); a search, a topic chip or a linked term opens them.
+    const openAll = !!(search.value.trim() || tree);
+    for (const [tr, xs] of HP.byTree(hits, G.trees)) list.append(h('details', { class: 'gl-tree', 'data-tree': tr, open: openAll || xs.some(t => t.id === want) ? '' : null },
+      h('summary', {}, h('h2', { class: 'group-h', text: tr }), h('span', { class: 'pill', text: String(xs.length) })), ...xs.map(entry)));
   }
   if (want && G) { const t = HP.find(G.terms, want); if (t && tree && t.tree !== tree) tree = ''; }
   search.oninput = draw; paintTrees(); draw();
