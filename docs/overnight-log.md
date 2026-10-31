@@ -363,3 +363,13 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
   - The tonight visual baselines were updated.
   - Unit tests 258/0, engine 7500/0.
 - Screenshot: `/workspace/shots/item2-P15-tonight-360.png`.
+
+## 2026-10-31 · Item 3: Add ball offline says so, and lets you type the specs (sw v50)
+- Offline (`navigator.onLine` false), the search shows "Can't reach the maker list offline. Type the name and specs." (#abOffline, IA_PLAN §6 midnight/offline). The maker button becomes "Add "NAME" and type the specs", any brand is accepted, and no lookup request is sent. A failed lookup (a network error rather than a timeout) shows the same line, with Retry.
+- New "Type the specs" card (#abType). It appears only on a miss or skip, and only for the four fields the 2-D engine needs that nothing is on file for: RG, Differential, Cover type and Core.
+  - Typed values carry the "you" chip and never override a catalogue or maker value.
+  - RG and differential outside the USBC limits (2.430–2.890 and ≤0.060) are refused with a toast.
+  - Left blank, a field reads spec TBD, as before. Once all four are typed, the engine card runs.
+  - Saving queues offline like any event.
+- Tests: e2e `addball` has 12 new checks (the line on the search, no request, starts at spec TBD, out-of-range refused, the "you" chip, the engine runs, axe, 44 px, saved while offline). The old offline check now asserts the new line. addball+offline 40/0, J02/J11 17/0, unit tests 258/0.
+- Screenshot: `/workspace/shots/item3-addball-offline.png`.

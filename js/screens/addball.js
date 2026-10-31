@@ -20,6 +20,10 @@ const LABEL = { rg: 'RG', diff: 'Differential', intDiff: 'Int. diff / mass bias'
   core: 'Core', symmetry: 'Core symmetry', releaseDate: 'Release date', year: 'Year', usbc: 'USBC approval', condition: 'Condition' };
 const ORDER = ['rg', 'diff', 'intDiff', 'coverstock', 'coverType', 'finish', 'core', 'symmetry', 'releaseDate', 'usbc', 'condition'];
 const LEVEL_OIL = { 5: ['heavy'], 4: ['heavy', 'medium'], 3: ['medium'], 2: ['medium', 'light'], 1: ['light'] };
+const OFFLINE_MSG = 'Can\u2019t reach the maker list offline. Type the name and specs.';
+const offline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
+// Typed specs (offline or no maker page). USBC limits: RG 2.430-2.890, differential up to 0.060; outside them it is a typo.
+const TYPE = { rg: { lab: 'RG', min: 2.43, max: 2.89, ph: 'e.g. 2.50' }, diff: { lab: 'Differential', min: 0, max: 0.06, ph: 'e.g. 0.045' } };
 const fmt = (k, v) => (typeof v === 'number' ? (k === 'rg' ? v.toFixed(3) : v.toFixed(3).replace(/^0/, '')) : String(v));
 async function lookup(qs, signal) {
   const r = await fetch(API_BASE + '/api/spec-lookup?' + new URLSearchParams(qs), { cache: 'no-store', signal });
@@ -32,7 +36,7 @@ export async function render() {
   const body = h('div', { class: 'stack', id: 'abBody' });
   const el = h('section', { class: 'screen list-screen', id: 'addBall' },
     h('header', { class: 'appbar' }, h('button', { class: 'btn ghost', id: 'abBack', 'aria-label': 'Back to Arsenal', onclick: () => go('#/arsenal') }, '\u2039 Arsenal'), h('h1', { class: 'title', text: 'Add a ball' })), body);
-  const st = { q: '', brand: '', pick: null, look: null, lookState: 'idle', lookMsg: '', weight: 15, weightSet: false, level: null, ctl: null, makerCands: null, saving: false };
+  const st = { q: '', brand: '', pick: null, look: null, lookState: 'idle', lookMsg: '', weight: 15, weightSet: false, level: null, ctl: null, makerCands: null, saving: false, manual: {} };
   const q = h('input', { type: 'search', class: 'search', id: 'abQ', placeholder: 'e.g. Storm Phaze II', 'aria-label': 'Ball brand and model', autocomplete: 'off', enterkeyhint: 'search' });
   const brandSel = h('select', { id: 'abBrand', 'aria-label': 'Brand for the maker lookup' }, h('option', { value: '', text: 'Brand: detect from name' }),
     ...A.LOOKUP_BRANDS.concat(Object.keys(A.UNSUPPORTED)).map(b => h('option', { value: b, text: b })));
@@ -54,22 +58,28 @@ export async function render() {
     r.candidates.forEach(c => list.append(h('div', { class: 'brow' }, row(c.entry, c.score))));
     if (!r.exact && !r.candidates.length) results.append(h('p', { class: 'small', id: 'abNoMatch', text: 'Not in the catalogue.' }));
     results.append(list);
+    if (offline()) {   // IA_PLAN §6 midnight/offline: the catalogue still works; the maker lookup needs the network
+      results.append(h('p', { class: 'small', id: 'abOffline', role: 'status', text: OFFLINE_MSG }),
+        h('button', { class: 'btn ghost block', id: 'abMaker', onclick: makerOnly }, `Add \u201c${st.q.trim()}\u201d and type the specs`));
+      return;
+    }
     const can = brand && A.LOOKUP_BRANDS.includes(brand);
     results.append(h('button', { class: 'btn ghost block', id: 'abMaker', disabled: can ? null : true, onclick: makerOnly },
       can ? `Look up \u201c${st.q.trim()}\u201d on the ${brand} site` : brand && A.UNSUPPORTED[brand] ? A.UNSUPPORTED[brand] : 'Pick a brand to look it up on the maker site'));
   }
   function makerOnly() {
-    const r = A.search(st.q), brand = brandOf(r); if (!brand || !A.LOOKUP_BRANDS.includes(brand)) return;
+    const r = A.search(st.q), brand = brandOf(r) || ''; if (!offline() && (!brand || !A.LOOKUP_BRANDS.includes(brand))) return;
     // Keep what the user typed (minus the brand words); title-case only an all-lowercase entry; roman numerals upper.
-    const raw = st.q.trim().replace(/\s+/g, ' '), bw = A.detectBrand(raw).brand ? raw.split(' ').slice(norm(A.detectBrand(raw).brand === brand ? brand : A.detectBrand(raw).brand).split(' ').length).join(' ') : raw;
+    const raw = st.q.trim().replace(/\s+/g, ' '), bw = brand && A.detectBrand(raw).brand ? raw.split(' ').slice(norm(A.detectBrand(raw).brand === brand ? brand : A.detectBrand(raw).brand).split(' ').length).join(' ') : raw;
     let name = bw || raw; if (name === name.toLowerCase()) name = name.replace(/\b\w/g, c => c.toUpperCase());
     name = name.replace(/\b(i{2,3}|iv|vi{0,3})\b/gi, m => m.toUpperCase());
     pick({ id: null, brand, name, src: 'maker', fields: {} });
   }
-  function pick(e) { st.pick = e; st.look = null; st.makerCands = null; st.level = null; runLookup({ brand: e.brand, name: e.name }); }
+  function pick(e) { st.pick = e; st.look = null; st.makerCands = null; st.level = null; st.manual = {}; runLookup({ brand: e.brand, name: e.name }); }
   async function runLookup(qs) {
     if (st.ctl) st.ctl.abort();
     const e = st.pick, supported = A.LOOKUP_BRANDS.includes(e.brand);
+    if (offline()) { st.ctl = null; st.lookState = 'miss'; st.lookMsg = OFFLINE_MSG; draw(); return; }
     if (!supported) { st.lookState = 'skip'; st.lookMsg = A.UNSUPPORTED[e.brand] || `No maker lookup for ${e.brand} yet; showing catalogue values.`; draw(); return; }
     const ctl = st.ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 25000), t0 = performance.now();
     st.lookState = 'busy'; st.lookMsg = `Looking up ${e.brand} ${e.name} on the maker site\u2026`; draw();
@@ -80,12 +90,13 @@ export async function render() {
       else if (res.status === 'candidates') { st.makerCands = res.candidates || []; st.lookState = 'cands'; st.lookMsg = `${st.makerCands.length} pages on the ${e.brand} site could be this ball. Pick one.`; }
       else { st.lookState = 'miss'; st.lookMsg = (res.why || 'No maker page found.') + (e.src === 'maker' ? '' : ' Showing catalogue values.'); }
     } catch (err) {
-      if (ctl !== st.ctl) return; st.lookState = 'miss'; st.lookMsg = err && err.name === 'AbortError' ? 'The lookup server is waking up or offline. Try again in a minute.' : 'Offline: showing catalogue values only.';
+      if (ctl !== st.ctl) return; st.lookState = 'miss'; st.lookMsg = err && err.name === 'AbortError' ? 'The lookup server is waking up or offline. Try again in a minute.' : OFFLINE_MSG;
     } finally { clearTimeout(timer); if (ctl === st.ctl) { st.ctl = null; draw(); } }
   }
   function current() {
     const e = st.pick, made = st.look ? A.fromLookup(st.look, st.weight) : null, base = e.fields || {};
     const { fields, conflicts } = made ? A.merge(base, made.fields) : { fields: Object.assign({}, base), conflicts: [] };
+    for (const [k, v] of Object.entries(st.manual)) if (!fields[k]) fields[k] = { v, prov: { kind: 'user' } };   // typed: never over a catalogue or maker value
     if (st.level && !(fields.oil && fields.oil.v && fields.oil.v.length)) fields.oil = { v: LEVEL_OIL[st.level], prov: { kind: 'user' } };
     const id = e.src === 'app' ? e.id : 'add-' + slug(e.brand + ' ' + e.name);
     const cat = A.toCat(fields, { id, brand: e.brand, name: e.name });
@@ -100,6 +111,7 @@ export async function render() {
       h('div', { class: 'blist' }, ...st.makerCands.map(c => h('div', { class: 'brow' }, h('button', { class: 'brow-main', 'data-url': c.url, onclick: () => runLookup({ url: c.url }) },
         h('span', { class: 'brow-text' }, h('span', { class: 'brow-name', text: c.label }), h('span', { class: 'brow-meta', text: new URL(c.url).host }))))))));
     if (st.lookState === 'busy') return;
+    if (st.lookState === 'miss' || st.lookState === 'skip') detail.append(typeCard());
     // ---- 2. confirm
     const wts = [...new Set([...WEIGHTS, ...(made ? made.weights : [])])].sort((a, b) => a - b); // always offer 12-16; printed weights add to it
     const dl = h('dl', { class: 'kv', id: 'abFields' });
@@ -175,6 +187,25 @@ export async function render() {
     detail.append(h('div', { class: 'card', id: 'abSaveCard' },
       h('button', { class: 'btn primary block', id: 'abSave', disabled: st.saving ? true : null, onclick: () => save(fields, conflicts, cat, made) }, dup ? `Add another ${e.name}` : `Add ${e.name} to my arsenal`),
       h('p', { class: 'muted small', text: 'Saved as At home with the values above and their sources. Change its Status on its page or in Bag.' })));
+  }
+  function typeCard() {
+    // Only the four the 2-D engine needs, and only where nothing is on file. Values come from the ball's box or the maker's card.
+    const base = current().fields, need = k => !base[k] || st.manual[k] != null, card = h('div', { class: 'card ab-type', id: 'abType' },
+      h('h2', { class: 'card-title', text: 'Type the specs' }), h('p', { class: 'muted small', text: 'From the box, the hang tag or the maker\u2019s spec card. Leave any you don\u2019t have: they read spec TBD.' }));
+    for (const k of ['rg', 'diff']) if (need(k)) {
+      const t = TYPE[k], inp = h('input', { type: 'text', inputmode: 'decimal', id: 'abType-' + k, 'aria-label': t.lab, placeholder: t.ph, autocomplete: 'off', value: st.manual[k] != null ? String(st.manual[k]) : '' });
+      inp.addEventListener('change', () => {
+        const raw = inp.value.trim().replace(',', '.'), v = raw === '' ? null : +raw;
+        if (v != null && (isNaN(v) || v < t.min || v > t.max)) { toast(`${t.lab} is between ${t.min.toFixed(3)} and ${t.max.toFixed(3)} (USBC). Check the box.`); inp.value = ''; delete st.manual[k]; draw(); return; }
+        if (v == null) delete st.manual[k]; else st.manual[k] = v; draw();
+      });
+      card.append(h('label', { class: 'fld' }, h('span', { text: t.lab }), inp));
+    }
+    if (need('coverType')) card.append(h('div', { class: 'fld' }, h('span', { text: 'Cover type' }),
+      segmented('Cover type', ['Solid', 'Pearl', 'Hybrid', 'Urethane', 'Plastic'].map(x => [x, x]), st.manual.coverType || null, v => { st.manual.coverType = v; draw(); }, 'wide wrap')));
+    if (need('symmetry')) card.append(h('div', { class: 'fld' }, h('span', { text: 'Core' }),
+      segmented('Core symmetry', [['Symmetric', 'Symmetric'], ['Asymmetric', 'Asymmetric']], st.manual.symmetry || null, v => { st.manual.symmetry = v; draw(); }, 'wide')));
+    return card.children.length > 2 ? card : '';
   }
   async function save(fields, conflicts, cat, made) {
     st.saving = true;
