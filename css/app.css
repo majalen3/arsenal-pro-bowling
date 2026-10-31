@@ -408,6 +408,8 @@ noscript p{padding:24px}
 .deck-side .coach{margin:0;font-size:var(--fs-sm);color:var(--text)}
 .deck-contact{color:var(--text)}
 .deck-five{font-size:var(--fs-xs);color:var(--text-3)}
+.deck-how>summary{min-height:var(--tap);display:flex;align-items:center;cursor:pointer;font-size:var(--fs-xs);font-weight:700;color:var(--gold)}
+.deck-how p{margin:0 0 6px;font-size:var(--fs-xs);color:var(--text-2)}
 .deck-cap{margin:0;font-size:var(--fs-xs);color:var(--text-3)}
 @media (min-width:900px){
   .lane-grid{grid-template-areas:"lane deck" "lane read";grid-template-rows:auto 1fr}

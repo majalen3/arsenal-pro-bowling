@@ -164,7 +164,7 @@ async def deck_cases(b):
     # cycle 6: full lane mirror for left-handers
     body = await p.inner_text('#view')
     check('draws a right-hander' not in body, '[lefty] old "read board numbers mirrored" note is gone')
-    check('Mirrored for left hand' in (await p.get_attribute('#lane', 'aria-label')) and 'Mirrored for left hand' in await p.inner_text('#deckCap'), '[lefty] lane and caption say the view is mirrored')
+    check('Mirrored for left hand' in (await p.get_attribute('#lane', 'aria-label')) and 'Mirrored for left hand' in await p.inner_text('#deckMirror'), '[lefty] lane and caption say the view is mirrored')
     rel = "async()=>(await import('./js/engine.js')).S.release"
     r0 = await p.evaluate(rel); await p.focus('#lane'); await p.keyboard.press('ArrowLeft'); r1 = await p.evaluate(rel)
     check(r1 == r0 - 1, f'[lefty] ArrowLeft moves feet toward board 1 (screen left) {r0}->{r1}')

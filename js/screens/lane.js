@@ -65,7 +65,10 @@ export function render() {
       h('div', { class:'lane-col' }, canvas,
         h('div', { class:'legend', 'aria-hidden':'true' }, h('span', { html:`<i style="background:${C_SKID}"></i>Skid` }), h('span', { html:`<i style="background:${C_HOOK}"></i>Hook` }), h('span', { html:`<i style="background:${C_ROLL}"></i>Roll` }), h('span', { html:'<i class="bp"></i>Breakpoint' })),
         h('div', { class:'row lane-tools' }, overlaysBtn(patNow), aimPill, helpDot('bm-shr', 'Skid, hook, roll')), aimWhy),
-      h('section', { class:'deck-card', id:'deckCard', 'aria-labelledby':'deckH' }, h('figure', { class:'deck-fig' }, deckCv), h('div', { class:'deck-side' }, h('h2', { class:'deck-h', id:'deckH', text:'Pin deck' }), callBadge, coach, deckRead, h('p', { class:'deck-cap', id:'deckCap' }))),
+      h('section', { class:'deck-card', id:'deckCard', 'aria-labelledby':'deckH' }, h('figure', { class:'deck-fig' }, deckCv), h('div', { class:'deck-side' }, h('h2', { class:'deck-h', id:'deckH', text:'Pin deck' }), callBadge, coach, deckRead,
+        // Clutter audit C1: the contact and "Model: …" sentences and the pin-action caveat sit behind How it works (progressive disclosure).
+        h('details', { class:'deck-how', id:'deckHow' }, h('summary', { text:'How it works' }), h('div', { id:'deckHowBody' }), h('p', { class:'deck-cap', id:'deckCap' })),
+        h('p', { class:'deck-cap', id:'deckMirror', hidden:true, text:'Mirrored for left hand.' }))),
       h('div', { class:'read-col' },
         h('div', { class:'tiles' }, tEntry, tAngle, tBp),
         handAsk(), lineSum, modelNote, hold, missRow, more, inlineTune)));
@@ -116,9 +119,12 @@ export function render() {
     const lefty = isLefty(), d = describe(a, lefty);
     deck.draw({ res:a, lefty, tone, color:b.color }, { animate });
     deckCv.setAttribute('aria-label', `Pin deck close-up, ${d.pocket} pocket. ${CALL_LABEL[a.call]}. ${d.text}`);
-    deckRead.innerHTML = a.entryBoard == null || !d.side ? `<p>${d.text}</p>` : `<p class="deck-side-call">${d.side[0].toUpperCase() + d.side.slice(1)}, ${d.ang}.</p><p class="deck-contact">${d.contact}</p><p class="deck-five">${d.five}</p>`;
+    const how = a.entryBoard != null && d.side;
+    deckRead.innerHTML = how ? `<p class="deck-side-call">${d.side[0].toUpperCase() + d.side.slice(1)}.</p>` : `<p>${d.text}</p>`;
+    el.querySelector('#deckHowBody').innerHTML = how ? `<p class="deck-contact">Angle ${d.ang}. ${d.contact}</p><p class="deck-five">${d.five}</p>` : '';
+    el.querySelector('#deckMirror').hidden = !lefty;
     el.querySelector('#deckCard').dataset.tone = tone;
-    el.querySelector('#deckCap').innerHTML = `Pin action: approximate 2-D model, assumed 15 lb ball, no spin. <a href="${DEFL_DOC}" target="_blank" rel="noopener">How it works</a>${lefty ? ' · Mirrored for left hand.' : ''}`;
+    el.querySelector('#deckCap').innerHTML = `Pin action: approximate 2-D model, assumed 15 lb ball, no spin. <a href="${DEFL_DOC}" target="_blank" rel="noopener">Full write-up</a>`;
     lastKey = key;
   }
   let qKey = '';
