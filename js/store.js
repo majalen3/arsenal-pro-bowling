@@ -33,7 +33,11 @@ let stateT = null;
 export function saveState() { clearTimeout(stateT); stateT = setTimeout(() => { rawSet('ap_state', JSON.stringify({ ball:app.ball.id, speed:String(S.speed), rev:String(S.rev), release:String(S.release), aim:String(S.aim), eyes:app.eyes == null ? '' : String(app.eyes), oil:String(S.oil), finish:S.finish, pattern:S.pattern })); }, 300); }
 export function restoreState() {
   let st = null; try { st = JSON.parse(rawGet('ap_state')); } catch(e) {}
-  if (!st || typeof st !== 'object') return false;
+  if (!st || typeof st !== 'object') {   // clutter audit #4: no saved lane tune yet, so start from the bowler's own profile (one source)
+    const pr = objGet(LS.profile) || {};
+    ['speed','rev'].forEach(id => { const v = +pr[id], [lo, hi] = RANGES[id]; if (pr[id] !== '' && pr[id] != null && Number.isFinite(v) && v >= lo && v <= hi) S[id] = v; });
+    return false;
+  }
   const b = balls.find(x => x.id === st.ball); if (b) app.ball = b;
   ['speed','rev','release','aim','oil'].forEach(id => { const v = +st[id], [lo, hi] = id === 'release' ? BOARDS : RANGES[id]; if (Number.isFinite(v) && v >= lo && v <= hi) S[id] = v; });
   app.eyes = eyesOf(st.eyes);

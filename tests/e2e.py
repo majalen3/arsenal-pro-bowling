@@ -176,7 +176,7 @@ async def deck_cases(b):
     check(rl < 15 < rr, f'[lefty] press near the foul line: screen left = low boards, screen right = high boards {rl} {rr}')
     await p.evaluate("localStorage.clear();localStorage.setItem('ap_prefs','{\"onboarded\":true}');localStorage.setItem('ap_profile','{\"hand\":\"left\"}')")
     await p.reload(); await p.wait_for_selector('#deck'); await p.wait_for_timeout(300)
-    await p.evaluate("localStorage.setItem('ap_profile','{\"hand\":\"right\",\"speed\":15,\"rev\":220}')"); await p.reload(); await p.wait_for_selector('#deck')
+    await p.evaluate("localStorage.removeItem('ap_state');localStorage.setItem('ap_profile','{\"hand\":\"right\",\"speed\":15,\"rev\":220}')"); await p.reload(); await p.wait_for_selector('#deck')
     await p.click('[data-miss=right]'); await p.click('[data-miss=right]'); await p.wait_for_timeout(500)
     check(await p.get_attribute('#deckCard', 'data-tone') == 'info' and 'Light' in await p.get_attribute('#deck', 'aria-label'), '[deck] light hit coloured as light')
     if SHOTS: await (await p.query_selector('#deckCard')).screenshot(path=os.path.join(SHOTS, 'phone-deck-light.png'))
