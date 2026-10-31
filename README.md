@@ -1,34 +1,58 @@
-# Urbanek Honey Badgers — Arsenal Pro
+# Arsenal Pro · Urbanek Honey Badgers
 
 **Fearless. Relentless. Always Hunting Strikes.**
 
-<div align="center">
+**[Open the app →](https://majalen3.github.io/arsenal-pro-bowling/)** (works on any phone; add it to your home screen and it runs offline)
 
-## 🎳 Launch the App
+Arsenal Pro is a free bowling companion for league and practice nights. It picks the ball for tonight from your own bag, gives you a place to stand and aim, scores your games one-handed, and turns what you log into a plain recap of the night.
 
-[![Launch Arsenal Pro](https://img.shields.io/badge/Launch%20App-Live%20Demo-DAAF37?style=for-the-badge&logo=github&logoColor=black)](https://majalen3.github.io/arsenal-pro-bowling/)
+## What it does
 
-**[Open Live App →](https://majalen3.github.io/arsenal-pro-bowling/)**
+| Tab | Use it for |
+|---|---|
+| **Tonight** | Say where you are bowling (league, tournament, practice, the center, the pattern). It shows the ball to start with from your bag, where to stand and aim, and the ball to switch to next. |
+| **Bowl** | Scoring with one thumb: strike in 1 tap, spare in 2. Leaves, splits, 10th frame, fouls, fix any frame, league and team scoring with USBC handicap. |
+| **Results** | The latest night first, then every night, your lines, lane notes and the Bowler Card (average, strikes, single-pin spares, the leave to work on). |
+| **Bag** | Tonight's bag and all your balls: status (in my bag, at home, at the pro shop, retired), the 3-step bag builder, compare, add a ball from a 145-row spec catalogue or by typing the specs. |
+| **Learn** | 709 oil patterns (Kegel library), the bowling guide and a 114-term glossary. Help bubbles are off until you turn them on. |
+| **Me** (top right) | Bowler profile (hand, speed, revs), backup code, backup file, imports (CSV, LaneTrax session report PDF, read on the phone), text size, About. |
 
-</div>
+Lane and Targeting open from the "Stand · Aim" chip. They show a labelled 2-D model of the ball path; it is a model, not a measurement.
 
----
+## Your data and privacy
 
-**Status:** Final polish complete  
-**Target:** 15 lb bowler, ~15 mph, ~220 RPM, house + tournament  
-**Primary Benchmark:** Radical Rattler Big Bite  
-**Transition Ball:** Radical Deadly Rattler
+- Everything is saved on your phone first (IndexedDB) and the app works with no signal.
+- A copy syncs to the Arsenal Pro server under your **backup code**, so you can restore on a new phone (Me › Restore from another device). There is no account, no ads and no tracking.
+- Me › Download backup saves a file you keep. Results › Export games (CSV) gives you your scores.
+- LaneTrax PDFs are read on the phone; the file itself is never uploaded.
 
-## Features
-- Honey Badgers branding (forest green #0F4D34, gold #DAAF37, black)
-- Lane simulator: pins top, board 1 right, ball hooks left to the 17.5 pocket; markers at real distances (dots 7.5 ft, arrows 15 ft, range 37 ft, Baker boards 5-8 at 42-46 ft)
-- Coach-voice call under the lane (strike = entry board 16.8-18.2 and 4-6 degree entry); Rule of 31; sensitivity line
-- Drag the lane (release near the foul line, aim farther up), arrow keys on the lane, or sliders
-- Save Line / load in one tap, surface log, pattern notes; localStorage first, synced to the Render API (per-device code, backup/restore)
-- Arsenal view: 22 balls in 11 classes, filters, sort, compare (max 3), RG-vs-diff chart, bag builder, gaps
-- Installable PWA (manifest + service worker); works offline
+## For developers
 
-## Repo map
-- `index.html` single-file app; `sw.js`, `manifest.webmanifest`, `icon.svg`
-- `docs/TEAM_PROMPT.md` team prompt; `tests/` Playwright suites (`review.py`, `test_ui.py`, `test_arsenal.py`), `sim.py` (scripted-user simulation), `run_all.sh`, `run_sim.sh`, `lighthouse.sh`
-- Backend: https://github.com/majalen3/arsenal-pro-api (Render free tier: first call after idle can take ~30 s; free Postgres expires ~30 days after creation)
+No build step: plain ES modules, served as static files (GitHub Pages). The Content-Security-Policy allows scripts from the app's own origin only.
+
+```
+index.html, css/app.css, js/        app (hash router, lazy screens, IndexedDB event log)
+sw.js                                offline cache: network first, cache name arsenal-pro-vNN (bump it on every release)
+data/                                pattern library and glossary
+docs/DECISIONS.md                    why things are the way they are
+docs/RELEASE_v1.0.md                 the v1.0 go / no-go record
+```
+
+Run locally: `python3 -m http.server 8300`, then open http://localhost:8300/.
+
+Tests (none of them call the production API):
+
+| Suite | Command |
+|---|---|
+| Unit | `node --test tests/data/*.test.mjs` |
+| Engine equivalence | `node tests/engine_equivalence.mjs` |
+| UI end-to-end | `python tests/e2e.py http://localhost:8300/` |
+| Whole-night journeys + visual | `python tests/journeys/run.py --base http://localhost:8300/` |
+| Release audit (copy, errors, axe, bytes) | `python tests/journeys/release_audit.py --base http://localhost:8300/` |
+| Lighthouse | `tests/lighthouse.sh http://localhost:8300/#/tonight` |
+
+The Python suites use Playwright (`pip install playwright && python -m playwright install chromium`). CI runs the UI and journey suites on every push.
+
+Backend: [arsenal-pro-api](https://github.com/majalen3/arsenal-pro-api) on Render's free tier (the first call after a quiet spell can take about 30 s; the app keeps working meanwhile).
+
+See [CHANGELOG.md](CHANGELOG.md) for what changed.

@@ -1,7 +1,7 @@
 {
   "name": "Urbanek Honey Badgers Arsenal Pro",
   "short_name": "Arsenal Pro",
-  "description": "See how every ball in your arsenal reads the lane, get your next move, and save lines.",
+  "description": "Pick tonight's ball from your bag, get a place to stand and aim, score one-handed, and see your night. Free, works offline.",
   "id": "./",
   "start_url": "./#/lane",
   "scope": "./",
