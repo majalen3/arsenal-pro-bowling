@@ -404,3 +404,13 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - `b42b9de` ui-tests CI installs Roboto, as journeys.yml already does. The remaining DejaVu-only fails (tonightfold 1152 px, whynot Pack position, aimbox/help click timeouts) are height and position budgets measured in a wider font. Recorded as an open risk in FINDINGS_2 (F15).
 - `0c34216` The Armory title is no longer cut to "Arm…" (the header actions wrap to a second row). The Guide title fits. Card-fold summaries are 44 px (F11 root cause: `details.card summary` was 28 px). sw v53. Local runs: e2e 738/0, journeys 99/0/9 with 0 unknown probe failures, unit tests 258 pass / 1 skipped, engine 7500/0.
 - `91b4cc2` docs/qa-reports/FINDINGS_2.md.
+
+## 03:30 EDT, sw v54: FINDINGS_2 F01 F02 F03 F08 F11 F12 F13 F14
+- `50ea98e` F01: the line you move on Lane or Targeting is kept per ball (`prefs().myLines`, js/cc/line.js `keptLine/keepLine`) and every screen reads it through `lineFor`; Find still searches from the model line and says so when you have kept your own. `fe99f4d` labels the start line on Tonight "your line" instead of "2-D model".
+- `b5a1de3` F02: Bowl's top line follows the ball in hand after a mid-game change. F03: Lane opens with Tonight's ball.
+- `209a036` F08: Card shows "Leave to work on: the 10 pin, 4 of 6 made." (counts only, no judgement).
+- `1ee36be` F11: Target "Model limit" fold and reset are 44 px. F12: on Lane the ball name gets its own row and the tools wrap underneath, so it is never clipped.
+- `82a019f` F13: "?" on Me. F14: search example is a catalogue ball.
+- `48b78d2` journey assertions; `5ea6629`/`7059ed0` visual baselines (Lane, Targeting, Card). `87b64c3` sw v54.
+- Tests: unit 259/0, engine 7500/0 mismatches, e2e 738/0, journeys 108/0/2 known (F06, J13 pending), CI ui-tests + journeys green on 7059ed0, live sw v54.
+- Still open for the owner: F06, F16, baby splits.
