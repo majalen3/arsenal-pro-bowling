@@ -301,7 +301,10 @@ async def j04_solo_game(j):
             if not same_ball(t.split('\n')[0], cur): tgt = opts.nth(i); break
         if tgt:
             await tgt.click(); s.taps += 1
-        if await j.visible('#qlBallDone'): await j.tap('#qlBallDone')
+        await j.settle(200)   # the picker auto-returns after a pick; Done may vanish between the check and the tap (live/CI flake)
+        if await j.visible('#qlBallDone'):
+            try: await j.tap('#qlBallDone', timeout=1500)
+            except Exception: pass
         now = await j.text('#qlBall'); j.state['ball1'] = now
         s.check(now and now != cur, f'chip changed: {cur[:30]} -> {now[:30]}')
     async with j.step('The "now" line follows the ball change', carry='ball in hand') as s:
