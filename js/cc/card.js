@@ -145,7 +145,8 @@ export function bowlerCard(P, opts = {}) {
   const lvl = k => { const x = lastAgg && (lastAgg.kpis || []).find(z => z.key === k); return x ? { level: x.level, v: x.value, unit: x.unit, metric: x.metric || x.label, date: lastAgg.date, n: lastAgg.totalShots } : null; };
   const consistency = lastAgg ? { speed: lvl('impactSpeed'), rpm: lvl('revRate'), arrows: lvl('arrowsDifference'), conversion: lvl('conversionRate'), src: SRC.levels } : null;
   // results from scored games (all sessions) and LaneTrax outcomes
-  const allGames = list.flatMap(x => x.games), T = allGames.length ? throwStats(allGames) : null;
+  // Clutter audit #4: finished games only (a game in progress joins when it ends), the same games Insights counts.
+  const allGames = list.flatMap(x => x.games).filter(g => g.complete), T = allGames.length ? throwStats(allGames) : null;
   const gDates = span(list.filter(x => x.games.length).map(x => x.date));
   const gSessions = list.filter(x => x.games.length).length;
   const ltxOut = aggs.reduce((s, a) => { const o = a.outcomes || {}; if (o.strikes && o.leaves) { s.first += o.strikes.n + o.leaves.n; s.strikes += o.strikes.n; } if (o.madeSpares && o.missedSpares) { s.spare += o.madeSpares.n + o.missedSpares.n; s.made += o.madeSpares.n; } return s; }, { first: 0, strikes: 0, spare: 0, made: 0 });
