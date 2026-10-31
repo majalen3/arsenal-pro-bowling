@@ -3,6 +3,9 @@
 // (the projection is field-level last-writer-wins, so order of arrival does not matter).
 // Backoff 15 s / 45 s / 120 s / 300 s, honouring Retry-After. A quota 429 (no Retry-After) stops pushing;
 // everything stays on the phone. The v1 endpoints (/api/lines etc.) keep being written by store.js (dual-write).
+// Accounts (2026-10-31): when auth() returns a session, the same log syncs to /api/account/events with the bearer token
+// instead of the backup code. Switching between the two is a code change ('acct:<user id>'), so the cursor restarts and
+// this phone's events are pushed to the new stream (the migration). A 401 calls onAuthLost and falls back to the code.
 export const BATCH_BYTES = 15000, BACKOFF = [15000, 45000, 120000, 300000];
 const wire = e => { const o = {}; for (const k of ['id', 'seq', 'ts', 'deviceId', 'schemaV', 'type', 'entity', 'entityId', 'data', 'prov', 'importId']) if (e[k] !== undefined) o[k] = e[k]; return o; };
 const enc = s => (typeof TextEncoder !== 'undefined' ? new TextEncoder().encode(s).length : s.length);
@@ -19,14 +22,16 @@ export function packBatches(events, maxBytes = BATCH_BYTES, maxCount = 500) {
   return { batches: out, tooBig };
 }
 const order = (a, b) => (a.ts - b.ts) || ((a.seq || 0) - (b.seq || 0)) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
-export function createSync({ db, base, deviceId, fetchFn = (...a) => fetch(...a), timer = { set: (f, ms) => setTimeout(f, ms), clear: id => clearTimeout(id) }, now = () => Date.now(), onState = () => {}, timeoutMs = 25000 } = {}) {
+export function createSync({ db, base, deviceId, fetchFn = (...a) => fetch(...a), timer = { set: (f, ms) => setTimeout(f, ms), clear: id => clearTimeout(id) }, now = () => Date.now(), onState = () => {}, timeoutMs = 25000, auth = () => null, onAuthLost = () => {} } = {}) {
   let busy = null, retryN = 0, retryT = null, stopped = false;
   const state = () => Object.assign({ lastPushAt: null, lastPullAt: null, cursor: '0', quota: null, rejected: [], lastError: null }, db.meta.sync || {});
   const save = async patch => { const s = Object.assign(state(), patch); await db.setMeta('sync', s); onState(s); return s; };
   async function req(path, opts = {}) {
     const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null; const t = ctl ? setTimeout(() => ctl.abort(), timeoutMs) : null;
     try {
-      const r = await fetchFn(base + path, Object.assign({}, opts, { signal: ctl && ctl.signal, headers: Object.assign({ 'X-Device-Id': typeof deviceId === 'function' ? deviceId() : deviceId }, opts.body ? { 'Content-Type': 'application/json' } : {}) }));
+      const a = auth(), id = a ? { Authorization: 'Bearer ' + a.token } : { 'X-Device-Id': typeof deviceId === 'function' ? deviceId() : deviceId };
+      const r = await fetchFn(base + (a ? path.replace(/^\/api\/events/, '/api/account/events') : path), Object.assign({}, opts, { signal: ctl && ctl.signal, headers: Object.assign(id, opts.body ? { 'Content-Type': 'application/json' } : {}) }));
+      if (a && r.status === 401) onAuthLost();
       let j = null; try { j = await r.json(); } catch (e) {}
       return { status: r.status, retryAfter: +(r.headers && r.headers.get && r.headers.get('Retry-After')) || 0, json: j };
     } finally { if (t) clearTimeout(t); }
@@ -73,7 +78,7 @@ export function createSync({ db, base, deviceId, fetchFn = (...a) => fetch(...a)
     busy = (async () => {
       try {
         // A different backup code means a different server log: start its cursor at 0 and push this phone's events there too.
-        const code = typeof deviceId === 'function' ? deviceId() : deviceId, st = state();
+        const au = auth(), code = au ? 'acct:' + au.user.id : (typeof deviceId === 'function' ? deviceId() : deviceId), st = state();
         if (st.code !== code) { if (st.code) await db.markUnsynced(); await save({ code, cursor: '0', quota: null, rejected: [] }); } const a = await push(); const b = await pull(); retryN = 0; const s = await save({ lastPushAt: now(), lastPullAt: now(), lastError: null }); return Object.assign({ ok: true, state: s }, a, b); }
       catch (e) { await save({ lastError: e.status ? 'HTTP ' + e.status : (e.name === 'AbortError' ? 'timeout' : 'offline') }); schedule(e.retryAfter); return { ok: false, error: e }; }
       finally { busy = null; }
