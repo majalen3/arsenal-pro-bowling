@@ -15,6 +15,8 @@ jobs:
       - name: Data layer (events, migration, backup, import parsers, scoring, Command Center)
         run: node --test tests/data/
       - run: pip install playwright && playwright install --with-deps chromium
+      - name: Phone fonts (Roboto, as on Android; height budgets are measured in the phone's font)
+        run: sudo apt-get install -y -q fonts-roboto && fc-match Roboto
       - run: python -m http.server 8099 &
       - name: End-to-end (phone + desktop, axe, offline, migration, pin deck)
         run: sleep 2 && python tests/e2e.py http://localhost:8099/ --shots e2e-shots
