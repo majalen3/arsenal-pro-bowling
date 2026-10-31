@@ -520,7 +520,7 @@ export async function render(o = {}) {
     if (!S || !S.name) return '';
     const ml = S.ml, st = ml && !ml.none ? standOf(ml.feet) : null;
     return h('p', { class: 'coach', id: 'advStart', role: 'status', text: st ? `Start with: ${S.name}, from feet ${st.feet}, aim ${fmtHalf(ml.target)} at the arrows.` : `Start with: ${S.name}. ${(ml && ml.reason) || 'spec TBD: no model line'}, so set feet and eyes on Targeting.` },
-      st ? (ml && ml.kept ? provChip('user', 'your line (set on Lane or Targeting)') : provChip('model', st.assumed ? '2-D model \u00b7 offset 7 assumed' : '2-D model')) : null, ' ', aimChip(st, ml));
+      st ? (ml && ml.kept ? provChip('user', 'your line (set on Lane or Targeting)') : provChip(st.assumed ? 'assumed' : 'model', '2-D model')) : null, ' ', aimChip(st, ml));
   }
   // IA P2: the Stand \u00b7 Aim chip opens the Lane (Lane/Target have no tab of their own). Without a model line it still opens the Lane to set them.
   function aimChip(st, ml) {
@@ -542,11 +542,9 @@ export async function render(o = {}) {
     // P1.5: the bag itself is its own card under Start bowling (the lanes-first answer stays on top).
     const bagCard = h('div', { class: 'card adv', id: 'tnBag' }, h('h2', { class: 'card-title', id: 'advBagT', text: `Your bag \u00b7 Bring ${bring}` }));
     const list = h('ul', { class: 'adv-list', id: 'advList' }, ...a.rows.map(r => {
-      const conf = provChip(r.confidence.key === 'measured' ? 'device' : r.confidence.key === 'spec' ? 'catalog' : 'assumed', r.confidence.label);
       const li = h('li', { class: 'adv-row', 'data-owned': r.ownedId, 'data-role': r.role },
-        h('div', { class: 'adv-head' }, h('b', { text: r.name }), h('span', { class: 'pill' + (r.role === 'benchmark' ? ' gold' : ''), text: r.label || r.role }), conf),
+        h('div', { class: 'adv-head' }, h('b', { text: r.name }), h('span', { class: 'pill' + (r.role === 'benchmark' ? ' gold' : ''), text: r.label || r.role })),
         h('p', { class: 'small muted', text: r.reason }),
-        r.evidence ? h('p', { class: 'small', 'data-evidence': '' }, r.evidence) : null,
         r.warning ? h('p', { class: 'small adv-warn', 'data-warn': '' }, '\u26a0 ' + r.warning) : null);
       if (r.role !== 'spare') li.append(h('button', { class: 'btn sm ghost', 'data-swap': r.ownedId, 'aria-expanded': String(swapOpen === r.ownedId), 'aria-label': `Swap ${r.name}`, onclick: () => {
         if (!a.bench.length) { toast('No other ball in your bag or at home. Change a ball\u2019s Status on its page.'); return; } swapOpen = swapOpen === r.ownedId ? null : r.ownedId; draw(); } }, 'Swap'));
@@ -556,6 +554,12 @@ export async function render(o = {}) {
         e2.swaps[r.ownedId] = x.ownedId; m[ev] = e2; swapOpen = null; setPrefs({ advisor: m }); draw(); toast(`${x.name} in for ${r.name}.`); } }, x.home ? `${x.name} \u00b7 ${ST.HOME_TAG}` : x.name))));
       return li; }));
     bagCard.append(list);
+    // Clutter audit C7: each row is name + role + one reason; results, confidence and the model's assumptions sit behind one tap.
+    const sl = start && start.name ? start.ml : a.line, assumed = sl && !sl.none && standOf(sl.feet).assumed;
+    bagCard.append(h('details', { class: 'tn-more', id: 'advDetails' }, h('summary', { text: 'More details' }),
+      h('ul', { class: 'plain' }, ...a.rows.map(r => h('li', { class: 'small', 'data-ev-of': r.ownedId }, h('b', { text: r.name + ' ' }),
+        provChip(r.confidence.key === 'measured' ? 'device' : r.confidence.key === 'spec' ? 'catalog' : 'assumed', r.confidence.label), r.evidence ? h('span', { 'data-evidence': '' }, ' ', r.evidence) : null))),
+      assumed ? h('p', { class: 'small muted', id: 'advOffset' }, 'Stand = laydown + 7 boards (offset 7 assumed). Set your own on Targeting.') : null));
     const n = a.rows.length;
     bagCard.append(h('div', { class: 'btn-grid' }, h('button', { class: 'btn primary', id: 'advPack', onclick: async () => {
       const ids = a.slots.concat(a.spare ? [a.spare] : []), slots = ids.map(o => Object.assign({ owned: o, locked: !!(mine && (mine.slots.find(x => x.owned === o) || {}).locked) }, a.fromHome.includes(o) ? { fromHome: true } : {}));

@@ -984,7 +984,7 @@ async def advisor_cycle(b):
     labels = await p.eval_on_selector_all('#advEvent [data-event]', 'e=>e.map(x=>x.textContent)'); check(labels == ['League', 'Tournament', 'Practice', 'New center', 'Sport'], f'[advisor] 5 events {labels}')
     await p.click('[data-event=league]'); await p.wait_for_selector('.adv-row')
     st = await p.text_content('#advStart'); check(st.startswith('Start with: Rattler Big Bite, from feet 17, aim 10\u00bd'), f'[advisor] 1 tap -> start line with stand feet (laydown 10 + offset 7), not the laydown: {st!r}')
-    rows = await p.eval_on_selector_all('.adv-row', 'e=>e.map(x=>[x.dataset.owned, x.dataset.role, !!x.querySelector(".prov"), x.querySelector("p").textContent.length>5])')
+    rows = await p.eval_on_selector_all('.adv-row', 'e=>e.map(x=>[x.dataset.owned, x.dataset.role, !!document.querySelector(`#advDetails [data-ev-of="${x.dataset.owned}"] .prov`), x.querySelector("p").textContent.length>5])')
     check(len(rows) == 3 and rows[-1][1] == 'spare' and all(r[2] and r[3] for r in rows), f'[advisor] league = 2 + spare, each with role, reason, confidence {rows}')
     check(all(r[0] not in ('own-guru-supreme', 'own-raw-hammer', 'own-green-scout', 'own-rack-attack') for r in rows), '[advisor] benched balls never packed')
     check('no results logged yet' in await p.text_content('#advWhy') and await p.query_selector('#advNoData') is not None, '[advisor] no data -> "based on specs + your release, no results logged yet" + quick-log / import offered')
