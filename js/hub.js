@@ -1,10 +1,10 @@
 // Glue between the UI (store.js) and the v1 event log (js/data/). Opens IndexedDB after first paint, migrates v0 once,
-// seeds the owner-reported arsenal once, and emits 'data' on every change.
+// offers (never auto-loads) the Example arsenal, and emits 'data' on every change.
 import { setSink, rawGet, deviceId, emit, on, profile, lsGet, lsSet, objGet, LS } from './store.js';
 import { createDB } from './data/db.js';
 import { bestBackend, memoryBackend } from './data/idb.js';
 import { mkEvent, voidImport } from './data/events.js';
-import { seedEvents, SEED_ID } from './data/seed.js';
+import { seedEvents, SEED_ID, LEGACY_SEED_ID } from './data/seed.js';
 import { LEGACY_KEYS } from './data/migrate.js';
 import { registerOwned } from './cc/cats.js';
 export let db = null;
@@ -19,9 +19,9 @@ async function init() {
   const r = await db.migrate(legacy);
   // Writes made before the log opened are already inside the migrated ap_* snapshot, so drop them when migration ran.
   setSink((type, id, data) => { db.append([mkEvent(type, id, data, { deviceId: deviceId(), prov: { kind: 'user' } })]); }, { dropPending: r.ran });
-  // The reported arsenal auto-loads once only on a phone that already has history (the owner's); fresh phones get a
-  // one-tap "Load starter arsenal" offer instead, so a stranger never inherits someone else's bag (DECISIONS 2026-10-23).
-  if (!db.meta.seeded) { if (r.ran && r.added > 0 && !Object.keys(db.projection().owned).length) await db.append(seedEvents({ deviceId: deviceId() }), { silent: true }); await db.setMeta('seeded', Date.now()); }
+  // Nothing is auto-loaded (de-brand 2026-10-31): a fresh phone starts empty and Tonight offers the clearly labelled
+  // Example arsenal on one tap. `seeded` is still stamped so older code paths keep their meaning.
+  if (!db.meta.seeded) await db.setMeta('seeded', Date.now());
   await migrateStatus();
   on('profile', syncOwnedFromProfile);
   db.on(() => { emit('data'); setTimeout(migrateStatus, 0); });   // a restored or synced old backup can bring `excluded` back
@@ -68,4 +68,10 @@ export function hydrateMirror() {
   if (n) emit('alley');
   return n;
 }
-export async function loadStarter() { await ready(); const P = db.projection(); if (Object.values(P.owned).some(o => o.importId && o.importId.startsWith(SEED_ID))) return []; const n = Object.keys(P.imports).filter(k => k.startsWith(SEED_ID)).length; const keep = Object.keys(P.bowler || {}).filter(k => P.bowler[k] != null && P.bowler[k] !== ''); return db.append(seedEvents({ deviceId: deviceId(), importId: n ? SEED_ID + '-' + (n + 1) : SEED_ID, keep })); }
+// gen/base: the app loads the Example arsenal; tests pass their own fixture (tests/data/fixtures/sample_arsenal.mjs).
+export async function loadStarter(gen = seedEvents, base = SEED_ID) {
+  await ready(); const P = db.projection(), mine = k => k && (k.startsWith(base) || k.startsWith(LEGACY_SEED_ID));
+  if (Object.values(P.owned).some(o => mine(o.importId))) return [];
+  const n = Object.keys(P.imports).filter(k => k.startsWith(base)).length, keep = Object.keys(P.bowler || {}).filter(k => P.bowler[k] != null && P.bowler[k] !== '');
+  return db.append(gen({ deviceId: deviceId(), importId: n ? base + '-' + (n + 1) : base, keep }));
+}

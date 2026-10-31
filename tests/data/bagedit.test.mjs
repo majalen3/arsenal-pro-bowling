@@ -1,7 +1,7 @@
 // P1.1 / P1.2 / P1.4: one saved bag, "Bring: N", role words, swap / bring-in / pin. Seed (starter arsenal) only.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { seedEvents } from '../../js/data/seed.js';
+import { seedEvents } from './fixtures/sample_arsenal.mjs';
 import { project } from '../../js/data/project.js';
 import * as A from '../../js/cc/advisor.js';
 import * as BE from '../../js/cc/bagedit.js';

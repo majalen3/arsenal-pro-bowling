@@ -12,7 +12,7 @@ export function profileForm(p, onChange) {
     style: h('div', { class:'fld' }, h('span', { class:'label', text:'Style' }), segmented('Style', STYLES, p.style, v => set('style', v), 'wide')),
     speed: stepper({ id:'pSpeed', label:'Ball speed', unit:'mph', min:RANGES.speed[0], max:RANGES.speed[1], step:RANGES.speed[2], value:p.speed, fmt:v => (+v).toFixed(1), onChange:v => set('speed', v), hint:'Typical league bowler: 15\u201317 mph' }),
     rev: stepper({ id:'pRev', label:'Rev rate', unit:'rpm', min:RANGES.rev[0], max:RANGES.rev[1], step:RANGES.rev[2], value:p.rev, onChange:v => set('rev', v), hint:'Not sure? 200\u2013300 is common' }),
-    pap: h('label', { class:'fld' }, h('span', { class:'label', text:'PAP (optional)' }), h('input', { id:'pPap', value:p.pap || '', placeholder:'e.g. 5 1/8 \u00d7 1/2 up', autocomplete:'off', oninput:e => set('pap', e.target.value.slice(0, 40)) })),
+    pap: h('label', { class:'fld' }, h('span', { class:'label', text:'PAP (optional)' }), h('input', { id:'pPap', value:p.pap || '', placeholder:'e.g. 4 3/4 \u00d7 1/2 up', autocomplete:'off', oninput:e => set('pap', e.target.value.slice(0, 40)) })),
     tilt: h('label', { class:'fld' }, h('span', { class:'label', text:'Axis tilt (optional)' }), h('input', { id:'pTilt', value:p.tilt || '', placeholder:'e.g. 15\u00b0', autocomplete:'off', oninput:e => set('tilt', e.target.value.slice(0, 20)) })),
   };
 }
@@ -25,9 +25,9 @@ export function ownedPicker(p) {
   return h('div', { class:'stack' }, h('div', { class:'row between' }, h('span', { class:'muted small', text:'Tap to toggle. \u201cMy bag\u201d filters use this.' }), all), list);
 }
 export function render() {
-  const p = Object.assign({ hand:null, style:'tweener', speed:+S.speed, rev:+S.rev, pap:'', tilt:'', owned:[] }, profile() || { entered:{} });
+  const p = Object.assign({ hand:null, style:null, speed:+S.speed, rev:+S.rev, pap:'', tilt:'', owned:[] }, profile() || { entered:{} });
   let step = 0;
-  const finish = (skip) => { if (!skip) { setProfile(p); adjust({ speed:p.speed, rev:p.rev }); } setPrefs({ onboarded:true }); go('#/tonight', { replace:true }); toast(skip ? 'You can set your profile any time in More.' : 'Profile saved. Tonight is ready.'); };
+  const finish = (skip) => { if (!skip) { setProfile(p); adjust({ speed:p.speed, rev:p.rev }); } setPrefs({ onboarded:true }); go('#/tonight', { replace:true }); toast(skip ? 'You can set your profile any time on Me.' : 'Profile saved. Tonight is ready.'); };
   const f = profileForm(p);
   const steps = [
     ['How do you bowl?', 'Two quick questions. Skip any time.', [f.hand, f.style]],

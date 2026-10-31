@@ -11,10 +11,11 @@ import { profileForm, ownedPicker } from './welcome.js';
 import { gameTotalButton } from './gametotal.js';
 import { applyTheme } from '../main.js';
 import { helpDot } from './help.js';
+import { S } from '../engine.js';
 export const VERSION = '1.0.0';   // release version (CHANGELOG.md); the offline build id comes from the service worker cache name
 // IA P2: the Me screen (header button on every tab): profile, data, appearance, sync, about. Learn and the Help switch moved to the Learn tab.
 export function render() {
-  const p = Object.assign({ hand:null, style:'tweener', speed:15, rev:220, pap:'', tilt:'', owned:[] }, profile() || {});
+  const p = Object.assign({ hand:null, style:null, speed:+S.speed, rev:+S.rev, pap:'', tilt:'', owned:[] }, profile() || {});
   const editProfile = () => {
     const q = { ...p }, f = profileForm(q);
     const s = sheet({ title:'Your profile', id:'profSheet', body:h('div', { class:'stack' }, f.hand, f.style, f.speed, f.rev, f.pap, f.tilt,
@@ -66,7 +67,7 @@ export function render() {
     const build = h('p', { class:'small muted', id:'aboutVersion', text:`Version ${VERSION}` });
     body.append(
       h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Bowler profile' }), h('button', { class:'btn sm ghost', id:'editProfile', onclick:editProfile }, h('span', { html:icon('edit') }), 'Edit')),
-        pr ? h('p', { text:`${HAND.handOfProfile(pr) ? HAND.HAND_LABEL[HAND.handOfProfile(pr)] : 'Hand not set'}, ${pr.style === 'two' ? 'two-hander' : pr.style}, ${(+pr.speed).toFixed(1)} mph, ${pr.rev} rpm${pr.pap ? ', PAP ' + pr.pap : ''}${pr.tilt ? ', tilt ' + pr.tilt : ''}.` }) : h('p', { class:'muted', text:'Not set. The lane uses its defaults (15 mph, 220 rpm).' }),
+        pr ? h('p', { text:`${HAND.handOfProfile(pr) ? HAND.HAND_LABEL[HAND.handOfProfile(pr)] : 'Hand not set'}, ${pr.style === 'two' ? 'two-hander' : (pr.style || 'style not set')}, ${(+pr.speed).toFixed(1)} mph, ${pr.rev} rpm${pr.pap ? ', PAP ' + pr.pap : ''}${pr.tilt ? ', tilt ' + pr.tilt : ''}.` }) : h('p', { class:'muted', text:`Not set. The lane uses mid-range starting values (${S.speed} mph, ${S.rev} rpm) until you enter yours.` }),
         h('div', { class:'row between' }, h('span', { text:`My bag: ${pr && pr.owned && pr.owned.length ? pr.owned.length + ' balls' : 'all 22'}` }), h('button', { class:'btn sm ghost', id:'editBag', onclick:editBag }, 'Choose'))),
       h('div', { class:'card', id:'dataCard' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Your data' }), protChip), dataInfo, lastBk,
         h('details', { class:'tn-more', id:'protMore' }, h('summary', { text:'Keep it safe' }), protBody),

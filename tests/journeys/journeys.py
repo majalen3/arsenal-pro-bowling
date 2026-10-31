@@ -537,7 +537,7 @@ HELP_SCREENS = ['/tonight', '/lane', '/target', '/bag?view=all', '/ball/rattler-
 
 async def j09_learning(j):
     await boot(j, 'beginner')
-    await j.ev("async () => { const m = await import('./js/hub.js'); await m.ready(); if (!Object.keys(m.proj().owned || {}).length) await m.loadStarter(); }")
+    await j.ev("async () => { const [m, f] = await Promise.all([import('./js/hub.js'), import('./tests/data/fixtures/sample_arsenal.mjs')]); await m.ready(); if (!Object.keys(m.proj().owned || {}).length) await m.loadStarter(f.sampleEvents, f.SAMPLE_ID); }")
     async with j.step('Turn Help on in Learn', task='help', target_taps=2, critical=True) as s:
         await j.nav('/learn'); await j.wait('#helpFld'); await j.tap('#helpFld [data-v="on"]')
         s.check(await j.page.get_attribute('#helpFld [data-v="on"]', 'aria-checked') == 'true', 'Help on')

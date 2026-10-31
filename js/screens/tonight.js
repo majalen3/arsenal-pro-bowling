@@ -95,9 +95,9 @@ export async function render(o = {}) {
     body.innerHTML = '';
     if (!Object.keys(P.owned).length) {
       body.append(h('div', { class: 'card', id: 'noBag' }, h('h2', { class: 'card-title', text: 'No balls in your bag yet' }),
-        h('p', { class: 'muted', text: 'Tonight ranks only balls you own. Load your reported arsenal (10 balls, 2 bags, all marked user-reported) or pick balls on Me.' }),
-        h('button', { class: 'btn primary block', id: 'loadStarter', onclick: async () => { await loadStarter(); toast('Arsenal loaded. Not yours? Undo it on Me \u2192 Imports.'); } }, 'Load starter arsenal'),
-        h('button', { class: 'btn block', onclick: () => go('#/me') }, 'Choose balls on Me')));
+        h('p', { class: 'muted', text: 'Tonight ranks only balls you own. Add yours on Arsenal or Me, or look around first with an example arsenal (10 catalog balls, 2 bags, marked \u201cexample\u201d, not a real bowler\u2019s).' }),
+        h('button', { class: 'btn primary block', id: 'loadStarter', onclick: async () => { await loadStarter(); toast('Example arsenal loaded. Remove it any time on Me \u2192 Imports.'); } }, 'Load example arsenal'),
+        h('button', { class: 'btn block', id: 'addOwnBall', onclick: () => go('#/add-ball') }, 'Add my own ball'), h('button', { class: 'btn block', onclick: () => go('#/me') }, 'Choose balls on Me')));
       return;
     }
     const pat = s.ft != null ? { slug: s.patternSlug, name: s.patternName || s.patternSlug, ft: s.ft, ml: s.ml, ratio: s.ratio } : null;

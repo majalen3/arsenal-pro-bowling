@@ -3,7 +3,7 @@ import test from 'node:test'; import assert from 'node:assert/strict';
 import * as G from '../../js/cc/bag.js';
 import { project } from '../../js/data/project.js';
 import { mkEvent } from '../../js/data/events.js';
-import { seedEvents } from '../../js/data/seed.js';
+import { seedEvents } from './fixtures/sample_arsenal.mjs';
 const O = (o, c, x = {}) => Object.assign({ ownedId: 'own-' + o, catalogId: c, name: o, status: 'inBag' }, x);
 const BB = O('bb', 'rattler-big-bite', { benchmark: true }), SN = O('sn', 'super-nova'), C4 = O('c4', 'ordnance-c4'), HRP = O('hrp', 'hy-road-pearl'),
   DR = O('dr', 'deadly-rattler'), ICE = O('ice', 'ice-storm', { note: 'Spare' }), GURU = O('guru', 'guru-supreme', { status: 'benched' }),

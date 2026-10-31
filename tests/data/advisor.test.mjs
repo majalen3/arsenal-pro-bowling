@@ -1,7 +1,7 @@
 // Bag Advisor (TEAM_PROMPT_BAG_ADVISOR.md). Synthetic sessions below are TEST DATA (ids 'test-*'), never real results.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { seedEvents } from '../../js/data/seed.js';
+import { seedEvents } from './fixtures/sample_arsenal.mjs';
 import { project } from '../../js/data/project.js';
 import { mkEvent } from '../../js/data/events.js';
 import * as A from '../../js/cc/advisor.js';

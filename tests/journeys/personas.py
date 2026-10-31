@@ -4,7 +4,7 @@ import datetime
 
 # Profiles. 'hand' is always set explicitly (owner, 2026-10-24: hand is chosen, never guessed).
 PERSONAS = {
-    'righty':   dict(label='Righty league bowler (the owner)', hand='right', style='tweener', speed=15.0, rev=300, pap='5 1/8 x 1/2 up', starter=True, avg=180),
+    'righty':   dict(label='Righty league bowler', hand='right', style='tweener', speed=15.0, rev=300, pap='4 3/4 x 1/2 up', starter=True, avg=180),
     'lefty':    dict(label='Lefty stroker', hand='left', style='stroker', speed=14.5, rev=250, pap='', starter=True, avg=170),
     'beginner': dict(label='Beginner, two balls, help on', hand='right', style='stroker', speed=13.5, rev=200, pap='', starter=False, avg=120, help=True),
     'league4':  dict(label='League team of 4 (captain scores for the team)', hand='right', style='tweener', speed=15.5, rev=320, pap='', starter=True, avg=180,
@@ -28,7 +28,7 @@ async def boot(j, persona, onboarded=True, clock=None):
     await p.goto(j.run.base + '?qa=' + persona + '#/tonight'); await j.settle(400)
     await p.wait_for_function("() => window.__apData", timeout=15000)
     if onboarded and P['starter']:
-        await p.evaluate("async () => { const m = await import('./js/hub.js'); await m.ready(); if (!Object.keys(m.proj().owned || {}).length) await m.loadStarter(); }")
+        await p.evaluate("async () => { const [m, f] = await Promise.all([import('./js/hub.js'), import('./tests/data/fixtures/sample_arsenal.mjs')]); await m.ready(); if (!Object.keys(m.proj().owned || {}).length) await m.loadStarter(f.sampleEvents, f.SAMPLE_ID); }")
         await p.reload(); await j.settle(400)
 
 

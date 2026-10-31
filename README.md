@@ -1,6 +1,6 @@
-# Arsenal Pro · Urbanek Honey Badgers
+# Arsenal Pro
 
-**Fearless. Relentless. Always Hunting Strikes.**
+**A free bowling arsenal, lane and scoring app for any bowler.**
 
 **[Open the app →](https://majalen3.github.io/arsenal-pro-bowling/)** (works on any phone; add it to your home screen and it runs offline)
 

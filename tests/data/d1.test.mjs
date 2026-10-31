@@ -7,7 +7,7 @@ import { createDB } from '../../js/data/db.js';
 import { memoryBackend } from '../../js/data/idb.js';
 import { voidImport } from '../../js/data/events.js';
 import { projectionHash } from '../../js/data/project.js';
-import { seedEvents } from '../../js/data/seed.js';
+import { seedEvents } from './fixtures/sample_arsenal.mjs';
 const NOW = Date.parse('2026-10-23T12:00:00Z');
 const memStore = () => { let v = {}; return { get: () => v, set: x => { v = JSON.parse(JSON.stringify(x)); } }; };
 

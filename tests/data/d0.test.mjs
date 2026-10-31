@@ -6,7 +6,7 @@ import { mkEvent, voidEvent, voidImport } from '../../js/data/events.js';
 import { project } from '../../js/data/project.js';
 import { check, checkDate, toMph, toFt } from '../../js/data/validate.js';
 import { buildBackup, readBackup, restoreBackup } from '../../js/data/backup.js';
-import { seedEvents, SEED_ID } from '../../js/data/seed.js';
+import { seedEvents, SEED_ID } from './fixtures/sample_arsenal.mjs';
 import { chip } from '../../js/data/schema.js';
 const v0 = JSON.parse(fs.readFileSync(new URL('./fixtures/v0-sample.json', import.meta.url)));
 delete v0._note;
@@ -81,7 +81,7 @@ test('localStorage backend persists across reopen', async () => {
   const db = await createDB(localStorageBackend(ls), { deviceId: 'd-x' }).open(); await db.append(seedEvents({ now: NOW }));
   const db2 = await createDB(localStorageBackend(ls)).open(); assert.equal(db2.events().length, db.events().length); assert.equal(db2.hash(), db.hash());
 });
-test('seed: owner arsenal is user-reported and undoable as one import', () => {
+test('sample fixture: arsenal is user-reported and undoable as one import', () => {
   const ev = seedEvents({ now: NOW }); const P = project(ev);
   assert.equal(Object.keys(P.owned).length, 10);
   assert.ok(ev.every(e => e.prov.ref === 'user-reported' && e.importId === SEED_ID));

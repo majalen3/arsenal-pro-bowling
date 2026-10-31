@@ -74,7 +74,7 @@ export async function render() {
   function draw() {
     const P = proj(), bag = ST.currentBag(P);
     body.innerHTML = '';
-    if (!bag) { body.append(h('div', { class: 'card', id: 'bagNone' }, h('h2', { class: 'card-title', text: 'No bag yet' }), h('p', { class: 'muted', text: 'Load your reported arsenal on Tonight first.' }), h('button', { class: 'btn primary block', onclick: () => go('#/tonight') }, 'Go to Tonight'))); return; }
+    if (!bag) { body.append(h('div', { class: 'card', id: 'bagNone' }, h('h2', { class: 'card-title', text: 'No bag yet' }), h('p', { class: 'muted', text: 'Add your balls, or load the example arsenal on Tonight, first.' }), h('button', { class: 'btn primary block', onclick: () => go('#/tonight') }, 'Go to Tonight'))); return; }
     const ev = evOf(bag), E = A.EVENTS[ev], bring = bringOfBag(P, bag, ev), n0 = night(P);
     const all = ownedItems(P), packed = ST.packedIds(P, bag), locked = bag.slots.filter(s => s.locked).map(s => s.owned);
     const a = A.advise(P, Object.assign(opts(P, ev, bring), { fixed: { slots: packed, spare: bag.spare } }));

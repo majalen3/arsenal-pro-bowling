@@ -13,7 +13,7 @@ test('header shows only the facts the bowler entered', () => {
   const P = project([own('o1', 'rattler', 'inBag', 'Radical Rattler')]);
   let m = X.sheetModel(P, { hand: 'right', speed: 16, rev: 300, entered: { hand: true, speed: false, rev: true } }, { catOf, now: 1761800000000 });
   assert.deepEqual(m.facts.map(f => f[0]), ['Hand', 'Rev rate']);
-  m = X.sheetModel(P, {}, { catOf }); assert.deepEqual(m.facts, []); assert.equal(m.name, null); assert.equal(m.team, 'Urbanek Honey Badgers');
+  m = X.sheetModel(P, {}, { catOf }); assert.deepEqual(m.facts, []); assert.equal(m.name, null); assert.equal(m.team, 'Arsenal Pro');
 });
 test('balls are grouped by Status; games and average only where logged, with n', () => {
   const P = project([own('o1', 'rattler', 'inBag', 'Radical Rattler'), own('o2', 'nova', 'retired', 'Storm Super Nova'), ...strikeGame('S1', 'o1', 100)]);

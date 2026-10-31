@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import { seedEvents } from '../../js/data/seed.js';
+import { seedEvents } from './fixtures/sample_arsenal.mjs';
 import { project } from '../../js/data/project.js';
 import { mkEvent } from '../../js/data/events.js';
 import * as ST from '../../js/cc/status.js';

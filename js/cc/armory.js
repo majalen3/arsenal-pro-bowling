@@ -2,9 +2,9 @@
 // Shelves come from the owned balls (status is the user's own: inBag / benched / proShop / retired). Milestones come only
 // from games the bowler logged with frames (P.games / P.shots). Nothing is shown until it is earned, and nothing is invented.
 import { playOrder } from '../data/scoring.js';
-export const TEAM = 'Urbanek Honey Badgers';
+export const TEAM = 'Arsenal Pro';   // app name line (de-branded 2026-10-31: the app is for any bowler, no team name)
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv|Brunswick|DV8|Ebonite|Track)\s+/, '');
-// Header line: "Urbanek Honey Badgers · Sam's Armory". No name on file means plain "Armory" (we never make one up).
+// Header line: "Arsenal Pro · Sam's Armory". No name on file means plain "Armory" (we never make one up).
 export function title(P) { const b = (P && P.bowler) || {}, n = b.name && typeof b.name === 'object' ? b.name.v : b.name;
   return { team: TEAM, title: n && String(n).trim() ? `${String(n).trim()}\u2019s Armory` : 'Armory' }; }
 // Per owned ball: games it threw the most first balls in (its "games"), best complete game among those.

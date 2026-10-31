@@ -8,7 +8,7 @@ const strikeGame = (sid, ball, ts) => { const out = []; for (let f = 1; f <= 9; 
 const own = (id, cat, status, name) => mkEvent('ownedBall.created', id, { catalogId: cat, name, status }, { ts: 1 });
 const cat = id => ({ rattler: { id: 'rattler', name: 'Rattler', role: 'Smooth control solid', color: '#86efac', rg: 2.48, diff: 0.035 } })[id] || null;
 test('title never invents a name', () => {
-  assert.deepEqual(title({ bowler: {} }), { team: 'Urbanek Honey Badgers', title: 'Armory' });
+  assert.deepEqual(title({ bowler: {} }), { team: 'Arsenal Pro', title: 'Armory' });
   assert.equal(title({ bowler: { name: { v: 'Sam' } } }).title, 'Sam\u2019s Armory');
 });
 test('no logged games, no marks', () => {

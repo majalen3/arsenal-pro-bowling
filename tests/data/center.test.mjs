@@ -1,7 +1,7 @@
 // M1 center / lane-pair memory (js/cc/center.js). Sessions here are TEST DATA (ids 'test-*').
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { seedEvents } from '../../js/data/seed.js';
+import { seedEvents } from './fixtures/sample_arsenal.mjs';
 import { project } from '../../js/data/project.js';
 import { mkEvent } from '../../js/data/events.js';
 import * as M from '../../js/cc/center.js';

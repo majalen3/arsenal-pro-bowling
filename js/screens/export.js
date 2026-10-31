@@ -19,7 +19,7 @@ export function saveCsv(m = model()) {
   const rows = X.arsenalRows(m); save(new Blob(['\ufeff' + toCSV(rows)], { type: 'text/csv' }), X.fileStem(m, 'list') + '.csv');
   toast(`Saved ${rows.length - 1} ball${rows.length === 2 ? '' : 's'} as CSV`);
 }
-// ---- share card: the current bag on a 1080 x 1350 canvas in Honey Badgers colours.
+// ---- share card: the current bag on a 1080 x 1350 canvas in the Arsenal Pro green and gold.
 const FONT = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif';
 function fit(ctx, t, w) { t = String(t || ''); if (ctx.measureText(t).width <= w) return t; while (t.length > 1 && ctx.measureText(t + '\u2026').width > w) t = t.slice(0, -1); return t + '\u2026'; }
 export function drawCard(m, canvas = document.createElement('canvas')) {
@@ -102,7 +102,7 @@ export async function render() {
     h('footer', { class: 'ps-foot', id: 'psFoot' },
       h('p', { text: 'Specs: manufacturer data in the Arsenal Pro catalogue' + (m.sources.you ? '; \u2020 specs entered by the bowler from the box or the maker page' : '') + '. TBD = not published or not entered.' }),
       h('p', { text: 'Games and averages: only games logged with frames in Arsenal Pro, credited to the ball that threw the most first balls; n = complete games. Surface: the bowler\u2019s own finish, else the box finish. Status and bag: as set by the bowler.' }),
-      h('p', { text: `Arsenal Pro ${m.version} \u00b7 ${m.team}` })));
+      h('p', { text: m.team && m.team !== 'Arsenal Pro' ? `Arsenal Pro ${m.version} \u00b7 ${m.team}` : `Arsenal Pro ${m.version}` })));
   const el = h('section', { class: 'screen list-screen ps-screen' },
     h('header', { class: 'appbar no-print' }, h('a', { class: 'btn ghost sm', href: '#/bag?view=all', id: 'psBack' }, 'Back'), h('h1', { class: 'title', text: 'Sheet' }),
       h('div', { class: 'appbar-actions' }, h('button', { class: 'btn primary sm', id: 'psPrint', onclick: () => window.print() }, 'Print or PDF'))),

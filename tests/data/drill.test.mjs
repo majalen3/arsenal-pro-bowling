@@ -1,7 +1,7 @@
 // M3 spare drill + process goal (js/cc/drill.js). Sessions are TEST DATA (ids 'test-*').
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { seedEvents } from '../../js/data/seed.js';
+import { seedEvents } from './fixtures/sample_arsenal.mjs';
 import { project } from '../../js/data/project.js';
 import { mkEvent } from '../../js/data/events.js';
 import * as D from '../../js/cc/drill.js';
