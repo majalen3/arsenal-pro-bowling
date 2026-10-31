@@ -27,6 +27,7 @@ let TERT = null;
 // IA P2: the Bag tab has two views: tonight's bag (this builder) and All my balls (the Armory and catalog, #/bag?view=all).
 export const bagView = v => h('div', { class: 'list-tools', id: 'bagView' }, segmented('Bag view', [['pack', 'Tonight\u2019s bag'], ['all', 'All my balls']], v, k => go(k === 'all' ? '#/bag?view=all' : '#/bag'), 'wide'));
 export async function render() {
+  OPEN.care = false; OPEN.left = false;
   await ready();
   const body = h('div', { class: 'stack', id: 'bagBody' });
   const el = h('section', { class: 'screen list-screen', id: 'bag' },
@@ -137,7 +138,9 @@ export async function render() {
         await saveBag(b2, r.data, ev, bring); toast(r.out ? `${w.x.name} in, ${itemOf(P2, r.out).name} out.` : `${w.x.name} in.`); } }, 'Bring') : null,
         statusButton(P, w.x.ownedId, { onDone: draw, text: w.canBring ? null : 'Change where it is \u203a' })));
     const shown = left.slice(0, LEFT_SHOWN), rest = left.slice(LEFT_SHOWN);
-    body.append(h('div', { class: 'card', id: 'bagLeft' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: `3 \u00b7 Left out (why not) \u00b7 ${left.length}` }), helpDot('ap-why-not', 'Why not this ball?')),
+    // Clutter audit C9: Left out collapses to one row, as on Tonight; it stays open across redraws once opened.
+    body.append(h('details', { class: 'card tn-more', id: 'bagLeft', open: OPEN.left ? '' : null, ontoggle: e => { OPEN.left = e.target.open; } },
+      h('summary', {}, h('span', { class: 'card-title', text: `3 \u00b7 Why not the others? (${left.length})` })), h('div', { class: 'row' }, h('span', { class: 'muted small', text: 'Why not this ball?' }), helpDot('ap-why-not', 'Why not this ball?')),
       left.length ? h('ul', { class: 'plain stack', id: 'bagBalls' }, ...shown.map(leftRow)) : h('p', { class: 'muted', id: 'bagBalls', text: 'Every ball you own is in the bag.' }),
       rest.length ? h('details', { class: 'tn-more', id: 'bagLeftAll' }, h('summary', { text: `Show all (${left.length})` }), h('ul', { class: 'plain stack' }, ...rest.map(leftRow))) : null));
     // ---- sticky Pack these N (saves THE bag Tonight shows)
@@ -159,7 +162,10 @@ export async function render() {
     if (!careId) return;
     const cx = itemOf(P, careId), hl = P.health[careId] || (cx.catalogId && P.health[cx.catalogId]) || null, care = G.careOf(catOf(cx.catalogId));
     const sel = h('select', { id: 'bagCareBall', 'aria-label': 'Ball', onchange: e => { careId = e.target.value; draw(); } }, ...all.map(x => h('option', { value: x.ownedId, selected: x.ownedId === careId ? '' : null, text: x.name })));
-    body.append(h('div', { class: 'card', id: 'bagCare' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: 'Ball status and care' }), helpDot('ap-status', 'Ball status'), helpDot('eq-cleaning', 'Cleaning')),
+    // Clutter audit C9: status and care (brand targets, USBC Rule 18) collapsed by default; one warning line when service is due.
+    if (pack.service.length) body.append(h('p', { class: 'small warn-line', id: 'bagCareDue', text: `Service due: ${pack.service.map(x => `${x.name} (${x.type})`).join(', ')}. Open Ball status and care.` }));
+    body.append(h('details', { class: 'card tn-more', id: 'bagCare', open: OPEN.care ? '' : null, ontoggle: e => { OPEN.care = e.target.open; } },
+      h('summary', {}, h('span', { class: 'card-title', text: 'Ball status and care' })), h('div', { class: 'row' }, helpDot('ap-status', 'Ball status'), helpDot('eq-cleaning', 'Cleaning')),
       h('label', { class: 'fld' }, h('span', { text: 'Ball' }), sel),
       h('p', { class: 'small', id: 'bagHealth' }, hl ? `${hl.games} games logged. Since refresh: ${hl.since.refresh ?? 'not logged'}; resurface: ${hl.since.resurface ?? 'not logged'}.` : 'No games logged with this ball yet.', prov(null, 'from your log')),
       h('p', { class: 'muted small' }, `Targets (${care.family === 'none' ? 'no brand guidance' : care.family}): ${SVC.filter(([t]) => care[t]).map(([t, l]) => `${l.toLowerCase()} ${care[t]}`).join(', ')} games.`, prov(null, care.src)),
@@ -171,4 +177,5 @@ export async function render() {
   draw();
   return { el, title: 'Bag' };
 }
+const OPEN = { care: false, left: false };   // C9 disclosure state for this visit
 const BRING_VALUE = (n, other) => !other && A.BRING_OPTS.includes(n) ? String(n) : 'other';

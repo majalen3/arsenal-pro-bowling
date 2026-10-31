@@ -196,6 +196,7 @@ async def j02_home_prep(j):
         s.check(re.search(r'\b(tonight|pack|take|bring)\b', first, re.I), f'above the fold says what to pack tonight ("{first[:120]}")')
         n = len(re.findall(r'\d+', first)); s.check(n <= 12, f'<= 12 numbers above the fold ({n})')
     async with j.step('Send a ball to the Pro shop (Status)', task='status', target_taps=3) as s:
+        await j.tap('#bagCare > summary'); await j.settle(200)   # C9: status and care is one tap away
         await j.wait('#bagCareBall')
         opt = await j.page.eval_on_selector('#bagCareBall', 'e => [e.value, e.selectedOptions[0].textContent]')
         j.state['statusBall'] = opt
