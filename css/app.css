@@ -459,7 +459,8 @@ noscript p{padding:24px}
 .btn-grid .btn{min-height:var(--tap);border-radius:var(--r-md);padding:0 var(--s2);font-size:var(--fs-sm)}
 .pick{border:2px solid var(--accent);border-radius:var(--r-lg)}
 .pick .ball-name{font-size:var(--fs-xl);font-weight:800}
-.alts{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
+.alts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--s2)}
+.alt.btn{white-space:normal;flex-wrap:wrap;min-width:0;text-align:center;line-height:1.25;column-gap:4px;row-gap:0}
 .alt{background:var(--surface-2);border-radius:var(--r-md);padding:var(--s2) var(--s3);font-size:var(--fs-sm);min-height:var(--tap)}
 .why{font-size:var(--fs-sm);color:var(--text-2);padding-left:var(--s4)} .why li{list-style:disc}
 .pins{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;width:100%;max-width:248px;margin:0 auto}
@@ -712,4 +713,4 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
   .ps-group{break-before:auto}
 }
 /* Learn links wrap their note under the title on narrow or wide-font phones (no sideways scroll at 360). */
-.ln-link{white-space:normal;flex-wrap:wrap;text-align:center;line-height:1.3;padding-top:8px;padding-bottom:8px}
+.ln-link,#abMaker{white-space:normal;flex-wrap:wrap;text-align:center;line-height:1.3;padding-top:8px;padding-bottom:8px}
