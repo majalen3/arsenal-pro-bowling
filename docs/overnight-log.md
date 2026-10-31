@@ -373,3 +373,8 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
   - Saving queues offline like any event.
 - Tests: e2e `addball` has 12 new checks (the line on the search, no request, starts at spec TBD, out-of-range refused, the "you" chip, the engine runs, axe, 44 px, saved while offline). The old offline check now asserts the new line. addball+offline 40/0, J02/J11 17/0, unit tests 258/0.
 - Screenshot: `/workspace/shots/item3-addball-offline.png`.
+
+## 2026-10-31 · Item 4: 3-6-9 source comments corrected (comments only; sw stays v50)
+- `js/cc/rank.js`: the table is cited to the USBC "3-6-9 Spare Conversion System" PDF, which gives RH/LH columns worked from board 20. The app applies the move to your own strike board. "Same target" is cited to the USBC Bowling Academy video and the BPAA week-3 lesson. The comment notes that the USBC youth Phase 2 PDF also moves the target, which the app does not do.
+- `js/cc/quicklog.js`: the "key pin = closest to the bowler, in most cases" definition is cited to the USBC youth Phase 2 Lane Play PDF and BPAA, not the 3-6-9 PDF. Two front pins in one row is marked as an app rule. The comment also records the BPAA baby-split exception (2-7 / 3-10 are aimed at the missing pin), which the app does not handle yet. This is flagged for the owner.
+- No behaviour change. Unit tests 258/0, engine 7500/0, live `e2e --only drill` below.

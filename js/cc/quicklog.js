@@ -50,8 +50,11 @@ export function throwOf(kind, standing, { leave = [], foul = false } = {}) {
   const l = leave.filter(p => standing.includes(p)).sort((a, b) => a - b);
   return { down: standing.length - l.length, leave: l };
 }
-// 3-6-9 for a leave: the key pin is the one nearest the bowler (USBC 3-6-9 PDF). Two key pins in the same row (e.g. 7-10)
-// have no single move, so both are returned.
+// 3-6-9 for a leave. Key pin = the pin closest to the bowler "in most cases": that definition is in the USBC youth
+// "Phase 2 Lane Play" PDF (images.bowl.com/.../usa-bowling/board/Phase2_Lane_Play.pdf, F) and the BPAA "Bowling 2.0" week-3
+// lesson (bpaa.com, F); the USBC 3-6-9 PDF itself only gives the per-pin table (see rank.js). Not handled here: BPAA's
+// exception that a baby split (2-7, 3-10) is aimed at the missing pin; this returns the front pin. Two front pins in the
+// same row (e.g. 7-10) have no single move in any of these sources, so both are returned (app rule, not a source).
 export function leaveHint(leave, strike = 20, hand = 'right') {
   if (!leave || !leave.length) return null;
   const front = Math.min(...leave.map(p => ROW[p])), keys = leave.filter(p => ROW[p] === front);

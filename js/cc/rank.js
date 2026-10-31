@@ -111,9 +111,12 @@ export function plan(r, line) {
   const weaker = r.pick ? r.order.filter(x => x !== r.pick && x.level != null && r.pick.level != null && x.level < r.pick.level).sort((a, b) => b.level - a.level || r.order.indexOf(a) - r.order.indexOf(b)) : [];
   return { A: r.pick, line, B: weaker[0] || null, C: weaker[1] || null };
 }
-// ---- 3-6-9 (USBC PDF, F): same target, feet move N boards from your strike position. Boards are counted from your
-// own gutter (right for RH, left for LH), so the board numbers mirror while the physical move is the same: left-side
-// pins (2/8, 4, 7) move you right, right-side pins (3/9, 6, 10) move you left.
+// ---- 3-6-9. Table: USBC "3-6-9 Spare Conversion System" PDF (images.bowl.com/.../369 Spare Conversion System.pdf, F):
+// key pin -> move and new start board, RH and LH columns, worked from a board-20 strike start (the PDF's example; here the
+// move is applied to your own strike board). Same strike target: USBC Bowling Academy "Using the 3-6-9 Spare System"
+// video and the BPAA week-3 lesson (F). The USBC youth Phase 2 PDF also shifts the target per pin; not used here.
+// Boards are counted from your own gutter (right for RH, left for LH), so the numbers mirror while the physical move is the
+// same: left-side pins (2/8, 4, 7) move you right, right-side pins (3/9, 6, 10) move you left (both PDF columns agree).
 const D369 = [['1 or 5', 0], ['2 or 8', -3], ['4', -6], ['7', -9], ['3 or 9', 3], ['6', 6], ['10', 9]];
 export const KEY_OF = { 1: '1 or 5', 5: '1 or 5', 2: '2 or 8', 8: '2 or 8', 4: '4', 7: '7', 3: '3 or 9', 9: '3 or 9', 6: '6', 10: '10' };
 export function spares(strike = 20, hand = 'right') {
