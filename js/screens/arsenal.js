@@ -1,10 +1,10 @@
 import { balls, CLASSES, rgTxt, diffTxt, coverKind } from '../data.js';
-import { S, readInfo } from '../engine.js';
+import { S } from '../engine.js';
 import { app } from '../store.js';
 import { h, icon, toast } from '../ui.js';
 import { setBall } from '../ctl.js';
 import { go } from '../router.js';
-import { readMed, owned } from './pickers.js';
+import { owned } from './pickers.js';
 import { PATTERN_LABEL } from '../labels.js';
 import { ready, proj } from '../hub.js';
 import { catOf } from '../cc/cats.js';
@@ -16,12 +16,13 @@ const st = { q:'', f:'all', picked:[] };
 const PAT_OIL = { house:'medium', cheetah:'medium', sport:'heavy', scorpion:'heavy', shark:'heavy', dry:'light' };
 const short = c => c.split(' / ')[0].replace('Strong ', 'Str. ').replace('Medium ', 'Med. ').replace('Asymmetrical', 'Asym').replace('Symmetrical', 'Sym');
 export function tile(b, { onCompareToggle, picked }) {
-  const r = readInfo(b, readMed());
+  const oil = PAT_OIL[S.pattern], fits = b.oil && b.oil.includes(oil) ? PATTERN_LABEL[S.pattern] : null;   // from each ball's oil tags, as the Fits row
   const t = h('article', { class:'btile' + (b.id === app.ball.id ? ' current' : ''), 'data-ball':b.id },
     h('a', { class:'btile-link', href:`#/ball/${b.id}`, 'aria-describedby':null },
       h('span', { class:'ball-orb', style:{ '--c':b.color }, 'aria-hidden':'true' }),
       h('span', { class:'btile-text' }, h('span', { class:'btile-name', text:b.name }), h('span', { class:'btile-brand', text:`${b.brand}${b.year ? ' · ' + b.year : ''}` }), h('span', { class:'btile-role', text:b.role }))),
-    h('div', { class:'btile-specs num' }, h('span', {}, h('small', { text:'RG' }), String(rgTxt(b))), h('span', {}, h('small', { text:'Diff' }), String(diffTxt(b))), h('span', {}, h('small', { text:'Cover' }), coverKind(b)), r ? h('span', {}, h('small', { text:'Reads' }), r.tag) : null),
+    // Clutter audit C10: the row shows name + a "fits" chip; RG, Diff, cover and read are one tap away (ball page Specs, or Compare).
+    fits ? h('div', { class:'btile-fits' }, h('span', { class:'pill', 'data-fits':'', text:`Fits ${fits}` })) : null,
     h('div', { class:'btile-actions' },
       b.id === app.ball.id ? h('span', { class:'pill gold', text:'On lane' }) : h('button', { class:'btn sm primary', 'aria-label':`Put on lane: ${b.name}`, onclick:() => { setBall(b); go('#/lane'); } }, 'Put on lane'),
       h('button', { class:'btn sm ghost cmp-btn', 'aria-pressed':String(picked), 'aria-label':`${picked ? 'Picked' : 'Compare'} ${b.name}`, onclick:() => onCompareToggle(b) }, h('span', { html:icon(picked ? 'check' : 'compare') }), picked ? 'Picked' : 'Compare')));
@@ -36,7 +37,7 @@ function pedestal(it, why) {
     h('a', { class:'ped-link', href:inCatalog ? `#/ball/${c.id}` : '#/bag' },
       h('span', { class:'ped-lit', 'aria-hidden':'true' }, h('span', { class:'ball-orb', style:{ '--c':it.color || 'var(--text-3)' } })),
       h('span', { class:'plate' }, h('span', { class:'plate-name', text:(it.benchmark ? '\u2605 ' : '') + it.name }),
-        it.status !== 'inBag' ? h('span', { class:'plate-role', 'data-status':it.status, text:ST.LABEL[it.status] || it.status }) : it.role ? h('span', { class:'plate-role', text:it.role }) : null, h('span', { class:'plate-spec num', text:specs }), why && it.status !== 'retired' ? h('span', { class:'plate-why', 'data-why-not':it.id, 'data-why':why.key, text:'Why not: ' + why.text }) : null, onLane ? h('span', { class:'sr-only', text:'on lane' }) : null)),
+        it.status !== 'inBag' ? h('span', { class:'plate-role', 'data-status':it.status, text:ST.LABEL[it.status] || it.status }) : it.role ? h('span', { class:'plate-role', text:it.role }) : null, h('span', { class:'plate-spec num sr-only', text:specs }), why && it.status !== 'retired' ? h('span', { class:'plate-why', 'data-why-not':it.id, 'data-why':why.key, text:'Why not: ' + why.text }) : null, onLane ? h('span', { class:'sr-only', text:'on lane' }) : null)),
     it.earned.length || onLane ? h('div', { class:'ped-marks' }, onLane ? h('span', { class:'pill gold', text:'On lane' }) : null, ...it.earned.map(m => h('span', { class:'pill', 'data-m':m.id, text:m.text }))) : null);
 }
 function armory(P) {

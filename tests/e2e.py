@@ -1331,7 +1331,7 @@ async def armory_cycle(b):
     check(len(ids) == 6 and ids[0] == 'own-rattler-big-bite', f'[armory] bag shelf: 6 in-bag balls, benchmark first {ids}')
     check(await p.evaluate("() => document.querySelectorAll('#armBenchShelf .ped').length") == 4 and not await p.evaluate("() => document.querySelector('#armBench').open"), '[armory] bench (4) folded behind a tap')
     check(await p.evaluate("() => !document.querySelector('#armory [data-m]')"), '[armory] no marks without logged games')
-    spec = await p.text_content('#armBag [data-own="own-rattler-big-bite"] .plate-spec'); check('RG' in spec and 'Diff' in spec, f'[armory] nameplate shows catalog RG/Diff ({spec})')
+    spec = await p.text_content('#armBag [data-own="own-rattler-big-bite"] .plate-spec'); check('RG' in spec and 'Diff' in spec, f'[armory] nameplate keeps catalog RG/Diff for screen readers (C10: visible on the ball page) ({spec})')
     check(await p.query_selector('#tabs a[href="#/bag"][aria-current=page]') is not None and await p.query_selector('#tabs a[href*="armory"]') is None, '[armory] a view of the Bag tab, no tab of its own')
     await axe_ok(p, '[armory]'); small = await p.evaluate(SMALL); check(not small, f'[armory] targets >= 44px {small[:6]}')
     w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[armory] no horizontal overflow at 360 {w}')

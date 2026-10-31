@@ -280,6 +280,7 @@ body[data-tab=none] #toast{bottom:16px}
 .btile-specs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--surface-2);border-radius:var(--r-sm);padding:8px 10px;font-size:var(--fs-sm);font-weight:700}
 .btile-specs span{display:flex;flex-direction:column;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .btile-specs small{font-size:.625rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em}
+.btile-fits{display:flex;flex-wrap:wrap;gap:6px}
 .btile-actions{display:flex;align-items:center;justify-content:space-between;gap:var(--s2)}
 .cmp-btn[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
 .tray{position:fixed;left:var(--s4);right:var(--s4);bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + 10px);max-width:640px;margin:0 auto;z-index:15;display:flex;align-items:center;gap:var(--s2);padding:8px 8px 8px 14px;border-radius:var(--r-lg);background:var(--surface-3);border:1px solid var(--line-2);box-shadow:var(--shadow-2);animation:up var(--t-med) var(--ease)}
@@ -636,6 +637,7 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .plate{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;width:100%;padding:var(--s2);background:var(--surface-2);border:1px solid var(--line);border-top:2px solid var(--gold);border-radius:var(--r-sm)}
 .plate-name{font-weight:800;color:var(--accent-ink);font-size:var(--fs-sm)}
 .plate-role,.plate-spec,.plate-why{font-size:var(--fs-xs);color:var(--text-2)}
+.plate{position:relative}   /* C10: keeps the sr-only spec line inside its scrolling shelf */
 .plate-why{display:block;margin-top:2px;line-height:1.3}
 .why-not{margin:4px 0 0}
 .ball-row+.ball-row{border-top:1px solid var(--line);padding-top:8px}
