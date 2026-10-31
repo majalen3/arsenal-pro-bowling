@@ -4,7 +4,7 @@ Same five-role team, invariants and QA gates as [`TEAM_PROMPT.md`](TEAM_PROMPT.m
 
 ## Non-negotiables (carry over, never regress)
 - Lane geometry and orientation (pins at top, board 1 on the right for a right-hander, dots 7.5 ft, arrows 15 ft, range 37 ft, Baker box 5–8 at 42–46 ft).
-- Honey Badgers colours: forest `#0F4D34`, gold `#DAAF37`, black. Mobile-first at 390 px.
+- Arsenal Pro colours: forest `#0F4D34`, gold `#DAAF37`, black. Mobile-first at 390 px.
 - Coach voice: result first, a number, ≤ 2 short sentences.
 - `simulatePath` / `analyze` behaviour unchanged: `node tests/engine_equivalence.mjs` must report **0 mismatches**.
 - CSP `script-src 'self'`; no third-party runtime code; no build step.

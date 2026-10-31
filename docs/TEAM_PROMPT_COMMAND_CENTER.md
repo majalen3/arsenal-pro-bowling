@@ -1,6 +1,6 @@
 # Arsenal Pro: Team Prompt, Command Center (Decision Tool + Bag Builder)
 
-You are a seven-person software team working on **Urbanek Honey Badgers Arsenal Pro**:
+You are a seven-person software team working on **Arsenal Pro**:
 - Tech Lead
 - Frontend
 - Backend
@@ -99,7 +99,7 @@ Another agent may be editing UI files: `git add` only your paths, and rebase bef
 7. **Sensor data defaults to practice** and carries the USBC note. Tournament mode hides sensor-based suggestions.
 8. **Warnings, never blocks**, in the bag builder (except proShop/retired leaving the pack list, with a reason).
 9. **No monetization, ads, affiliate or purchase links.**
-10. Coach copy: ≤ 2 sentences, starting with a number or the ball/pin name. Honey Badgers tokens only. 44 px targets.
+10. Coach copy: ≤ 2 sentences, starting with a number or the ball/pin name. Arsenal Pro tokens only. 44 px targets.
 
 ## 5. Roles and deliverables
 - **Tech Lead:**

@@ -27,7 +27,7 @@ Written 2026-10-23. Evidence: `FEATURE_DEMAND_RESEARCH.md` (demand), `IMPORTS_RE
 | **Sim calibration from measured release data** | 4 | 5 | 3 | 4 | **Next** | Unique to us. Risk: shows our model's error in public. Must be honest (show predicted vs measured, never hide). |
 | **Practice sessions and drills (out of average) + adjustment notes** | 4 | 5 | 2 | 1 | **Next** | Pains #6 and #9. The shots log (Left/Right/High/Light) already exists. |
 | **Tournament prep: pattern + bag + maintenance due** | 3 | 5 | 2 | 1 | **Next** | Joins AM bags, patterns and reminders. |
-| **League / team (Honey Badgers): roster, Baker, recap** | 3 | 3 | 4 | 4 | **Later** | Demand is real (F, S) but needs identity. "No auth for core data" means team features use share files/codes, not accounts. |
+| **League / team: roster, Baker, recap** | 3 | 3 | 4 | 4 | **Later** | Demand is real (F, S) but needs identity. "No auth for core data" means team features use share files/codes, not accounts. |
 | **Video replay** | 4 | 2 | 5 | 4 | **Later / partner** | LaneTrax owns this space (F). Storage and CSP make it costly. Defer. |
 | **Center live-scoring integration** | 4 | 3 | 5 | 5 | **Not planned** | Center-side only; partner contracts (IMPORTS §2). |
 | **Social feed / leaderboards** | 2 | 2 | 3 | 4 | **Not planned** | Little demand found; privacy risk without accounts. |
@@ -101,7 +101,7 @@ See `COMMAND_CENTER_PLAN.md` §5. Each CC phase ships with its N phase and passe
 
 ### N4. Tournament prep, team-lite, AM P4
 - **Tournament prep card:** pattern (from `patdata.js`) + chosen bag (AM P3) + maintenance due before the event date + spare plan.
-- **Honey Badgers team-lite:** roster and Baker scoring entry on one device; share the team night as an export file or a short code through the existing API. No accounts. Device-scoped; the owner can delete.
+- **Team-lite:** roster and Baker scoring entry on one device; share the team night as an export file or a short code through the existing API. No accounts. Device-scoped; the owner can delete.
 - AM P4 (drilling and PAP history).
 - **Targets:**
   - Baker game scoring tests;
@@ -130,4 +130,4 @@ See `COMMAND_CENTER_PLAN.md` §5. Each CC phase ships with its N phase and passe
 2. What is your center's scoring system (Brunswick Sync / Qubica Conqueror or BES X / Steltronic)? Does the league post to LeagueSecretary or LeaguePals?
 3. Do you pay for LaneTalk Pro? Would you file a GDPR export request so we can see the format? (The owner uses LaneTalk.)
 4. ~~Monetization~~ **Answered:** free for now, no monetization.
-5. Should Honey Badgers team features use share codes (no accounts), or is it time for accounts?
+5. Should team features use share codes (no accounts), or is it time for accounts?

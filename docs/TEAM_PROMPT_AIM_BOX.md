@@ -7,7 +7,7 @@
   - Upgrade the Targeting break box into a toggleable **Aim Box** overlay, **default OFF**, with zero render cost when off.
   - Put the toggle in a lane-view **overlays menu** (add one if needed), next to entry angle, oil pattern and feet.
   - Show it on all lane views, and register it to the lane in any video overlay if one exists.
-- **Style:** semi-transparent amber/gold with a dashed outline that doesn't hide the path. Use Honey Badgers tokens, no new hex.
+- **Style:** semi-transparent amber/gold with a dashed outline that doesn't hide the path. Use Arsenal Pro tokens, no new hex.
 - **Baseline (supplied, to verify):** boards 4.5–9.5 (RH, mirrored for LH) at 42–46 ft, for a ~6° entry with 4–6° optimal.
   - **Verify** it against Mark Baker's own description and the USBC entry-angle research, citing fetched vs excerpt.
   - If they disagree, use the cited values and note it in DECISIONS.

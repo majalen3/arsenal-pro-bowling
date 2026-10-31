@@ -124,7 +124,7 @@ Short ADR-style notes. Each: decision · why · consequence.
 
 ## 31. Armory = the Arsenal tab, restyled (2026-10-24)
 - There is no Armory spec doc. The brief (owner, relayed) asks for a trophy room: lit shelves, gold nameplates with role and stats, the current bag highlighted, retired balls in a Hall of Fame, and milestones only when earned from logged games. With the "no new top-level tabs" rule, it lives at the top of the existing Arsenal screen, and the catalog stays below it unchanged (search, filters and compare keep working).
-- The bowler has no name field, so the header reads "Urbanek Honey Badgers · Armory". If a name is ever on file it becomes "<name>'s Armory".
+- The bowler has no name field, so the header reads "Arsenal Pro · Armory". If a name is ever on file it becomes "<name>'s Armory".
 - A game counts toward a ball's marks when that ball threw most of the first balls in the game. Spare-ball throws don't credit the spare ball with the game.
 
 ## 32. Help bubbles + Glossary wired from data/glossary.json (2026-10-24, docs/HELP_BUBBLES_V1.md)
@@ -195,3 +195,24 @@ The owner's target is a board (1–39, halves allowed), not an engine angle. We 
 - **Lane/Target** open from the "Stand F · Aim T ›" chip on Tonight's start line and Bowl's now-line. No tab is current there, and the tab bar stays.
 - **Results** opens on "Latest night": the same recap headline as the night view, "Full recap ›" and "Fix a frame". The fix link (`#/session/ID?fix=1`) opens straight on the frame picker of that night's last scored game.
 - No data, schema or engine change. `simulatePath` is untouched and the 3-D flag stays off.
+
+## De-brand: a general app for any bowler (owner 2026-10-31)
+- **Decision:** the app is "Arsenal Pro" with no team, league, teammate or owner data in the product. The old team name is gone from the title, manifest, icons (now "AP"), Armory header, Export sheet, README and docs. Docs keep their history but not the real names.
+- **First run is neutral.** No arsenal loads on its own; the profile starts empty (style not set); speed and rev fall back to `START` in `js/engine.js` (16 mph, 250 rpm, mid-range of the app's own hints) until the bowler enters theirs. Before, the fallback was the owner's own 15 mph / 220 rpm.
+- **Example arsenal, not a person.** Tonight offers "Load example arsenal": 10 catalog balls and 2 bags named "Example …", chip "example (not yours)", one import that Me → Imports can undo. Tests use `tests/data/fixtures/sample_arsenal.mjs` so baselines stay fixed.
+- **Colours kept.** The forest green `#0F4D34` and gold `#DAAF37` came from the original team; they are now simply the Arsenal Pro palette. Swapping them is a token change in `css/app.css` `:root` (owner's call).
+- **History is not rewritten.** Older commits and the v1.0.0 tag still contain the old name and the owner's profile numbers. Options (owner's call): leave it, make the repo private, or rewrite history with a force-push (breaks clones, tags and Pages history; needs explicit OK).
+- `tests/legacy/` was removed except `app.v1.js`, which the engine-equivalence test reads; its sample profile line was blanked.
+
+## Optional accounts (owner 2026-10-31)
+- **Decision:** email + password accounts on the existing free Render API and Postgres. No new service, no cost. Offline-first stays: the app works fully signed out, sign-in lives only on Me, and scoring never asks.
+- **How:** passwords are hashed with scrypt (N=16384, r=8, p=1, per-user salt). A session is an opaque random 32-byte token; the server stores only HMAC-SHA256(token, `SESSION_PEPPER`), so a database leak can't be replayed. The pepper is a Render env var (generated), never in the repo. Sessions last 30 days.
+- **Why a bearer header, not cookies:** the app (github.io) and API (onrender.com) are different sites, so cookies would be third-party (blocked by Safari) and would need CSRF defences. A header token is neither. The token sits in `localStorage` `ap_account`; CSP `script-src 'self'` is unchanged and keeps third-party script out.
+- **Isolation:** account events are stored under `u:<user id>`. `:` is not allowed in backup codes, so the device routes can never read or write an account stream. Every account route checks the token first.
+- **CORS:** `/api/auth/*` and `/api/account*` answer only the GitHub Pages origin (`CORS_ORIGINS`).
+- **Rate limits:** signup 5/hour per IP; login 20 per 15 min per IP and 8 per 15 min per email; per account 120 requests/min, 40 writes/min.
+- **Moving this phone's data in:** after sign-in, if the phone has balls or games, the session is held as `pending` and nothing is sent until the bowler picks "Add this phone's data to my account" or "Not now" (signs out again). Sync then switches its code to `acct:<id>`, which restarts the cursor and pushes the whole log to the account.
+- **Password reset:** there is no email sender, so signup shows a one-time recovery key (hashed on the server) that can set a new password. Email reset needs an email provider key (owner's call). Passkeys are a later option.
+- **Export and delete:** Me → Account → Export my data (JSON of the account stream); Delete account needs the password and removes the user, sessions and account events. Data on the phone stays until the bowler clears it.
+- **Sign out:** keeps the phone's data, or "Sign out and clear this phone" when every change has reached the account. After sign-out the phone backs up under its backup code again, as before.
+- The v1 endpoints (`/api/lines` …) are still written with the backup code; they hold only the line/note mirror.

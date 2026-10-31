@@ -8,7 +8,7 @@
 - `simulatePath` and `analyze` are unchanged; `tests/engine_equivalence.mjs` must report 0 mismatches.
 - `js/lane.js` changes are renderer-only (state getter, overlay hook, optional Baker box).
 - Never invent specs, stats or thresholds. A value without a source is labelled **assumed** or **model estimate**.
-- Use Honey Badgers tokens only (no new hex values). Layout is 360 px first with 44 px targets. CSP `script-src 'self'`: no build step, inline scripts or eval.
+- Use Arsenal Pro tokens only (no new hex values). Layout is 360 px first with 44 px targets. CSP `script-src 'self'`: no build step, inline scripts or eval.
 - Coach voice: ≤2 sentences, numbers first ("Through the box…", "High by…").
 
 ## 1. What the screen does

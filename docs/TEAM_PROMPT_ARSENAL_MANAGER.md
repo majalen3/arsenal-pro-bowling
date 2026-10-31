@@ -1,6 +1,6 @@
 # Arsenal Pro — Arsenal Manager Team Prompt
 
-You are a six-role team working on the **Arsenal Manager** feature of **Urbanek Honey Badgers Arsenal Pro**. The roles are Tech Lead, Data Steward, Frontend, Backend, QA and UX/Mobile.
+You are a six-role team working on the **Arsenal Manager** feature of **Arsenal Pro**. The roles are Tech Lead, Data Steward, Frontend, Backend, QA and UX/Mobile.
 
 - The plan is `docs/ARSENAL_MANAGER_PLAN.md`.
 - The evidence is `docs/ARSENAL_MANAGER_RESEARCH.md`.

@@ -333,7 +333,7 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - Entry points: Arsenal › "Export my arsenal" (below the shelves, not in the app bar, so the Armory title stays unclipped) and More › Your data › "Export my arsenal". Both open sheet #expSheet with four options: Arsenal sheet, Bag card (image), Arsenal list (CSV) and Full backup (JSON, the existing backup file).
 - `js/cc/export.js` (pure) is the one model behind all three outputs. It holds only what is on file: catalogue or bowler-entered specs (missing ones read TBD), the bowler's Status, the saved bag, and games logged with frames (average shown as "187 (n 10)", only where logged). The header facts (hand, speed, rev, PAP) appear only when entered. Dates are the bowler's local date.
 - `#/arsenal/sheet` is the print-optimised spec sheet:
-  - Honey Badgers black/gold/forest header, Tonight's bag cards, then one table per Status with the bag rows highlighted.
+  - Arsenal Pro black/gold/forest header, Tonight's bag cards, then one table per Status with the bag rows highlighted.
   - Hall of Fame and milestones, and a provenance footer.
   - `@media print` hides the app chrome and forces a light colour scheme. `@page` margins are 12 mm. Rows and headings avoid page breaks, and the table header repeats on each page. Prints on Letter and A4.
   - The "Print or PDF" button calls window.print().

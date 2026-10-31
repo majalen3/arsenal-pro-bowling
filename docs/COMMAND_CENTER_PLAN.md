@@ -234,7 +234,7 @@ This is Motiv's benchmark logic (F), shown as 4 large buttons.
 ## 4. Screen design
 
 Mobile-first at 360 px:
-- Honey Badgers tokens (`--forest #0F4D34`, `--gold #DAAF37`, `--black`; dark surfaces);
+- Arsenal Pro tokens (`--forest #0F4D34`, `--gold #DAAF37`, `--black`; dark surfaces);
 - 44 px tap targets;
 - tabular numerals (`.num`);
 - coach voice: ≤ 2 sentences, number or ball first;

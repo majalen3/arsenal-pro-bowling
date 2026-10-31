@@ -6,7 +6,7 @@
 **Mode:** autonomous. The CEO (this worker) writes the mandate, runs it, fixes everything in scope, and ships or holds. Commit small, push each fix, and report once at the end. Nothing is sent or posted on the owner's behalf; the GitHub tag and release are the owner's ask in this prompt.
 
 ## Mission
-Ship **Arsenal Pro v1.0**: the Honey Badgers' bowling night on one phone. Pick the bag, find where to stand, score the night, see what changed and learn the words, all offline, free and in plain bowler language. v1.0 is **what already works, cleaned and proven**. It adds no new features.
+Ship **Arsenal Pro v1.0**: a bowler's league night on one phone. Pick the bag, find where to stand, score the night, see what changed and learn the words, all offline, free and in plain bowler language. v1.0 is **what already works, cleaned and proven**. It adds no new features.
 
 ## Release definition of done
 v1.0 is done when every line below is true **on the live site** (https://majalen3.github.io/arsenal-pro-bowling/):
@@ -53,7 +53,7 @@ v1.0 is done when every line below is true **on the live site** (https://majalen
 
 ## Roles (one worker wears every hat, in this order)
 - **Product:** the scope is frozen to what works. Every element passes the usability and applicability test. Owner-pending decisions stay as they are and are listed.
-- **Design:** spacing, the type scale, and the empty, loading, error and offline states. Dark-mode contrast meets WCAG AA. Focus order and screen-reader labels are right. The Honey Badgers colours are kept.
+- **Design:** spacing, the type scale, and the empty, loading, error and offline states. Dark-mode contrast meets WCAG AA. Focus order and screen-reader labels are right. The green and gold colours are kept.
 - **Engineering:**
   - performance budget and SW cache list;
   - CSP/headers;
@@ -84,7 +84,7 @@ v1.0 is done when every line below is true **on the live site** (https://majalen
 - **Offline-first** and **free**. **No auth for core data**: the backup code is optional.
 - **CSP `script-src 'self'`**, no inline script, no eval, **no build step**.
 - **44 px touch targets**, one-handed, thumb zone. **Nothing extra during active scoring.**
-- **Colours:** Honey Badgers #0F4D34, #DAAF37 and black.
+- **Colours:** Arsenal Pro #0F4D34, #DAAF37 and black.
 - **The raw LaneTrax PDF stays out of the repo.** **No LaneTalk API.** No scraping of third-party apps.
 - **Never force-push.** Commit only your own paths.
 - **Live DB deletes need the user's explicit OK.** Tests never write to the production API.

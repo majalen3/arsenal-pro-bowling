@@ -1,6 +1,6 @@
 # Feature Demand Research — what bowlers want next
 
-Compiled 2026-10-23 for Arsenal Pro (Urbanek Honey Badgers). Docs only; no app code changed.
+Compiled 2026-10-23 for Arsenal Pro. Docs only; no app code changed.
 
 **Source labels**
 - **F** = page fetched and read in full.

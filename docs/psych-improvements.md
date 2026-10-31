@@ -141,7 +141,7 @@
 
 ## Armory (2026-10-24)
 - **SDT:**
-  - **Relatedness:** the team line "Urbanek Honey Badgers" sits on top, and the screen reads as the bowler's own armory, not a store shelf. No name is shown unless one is on file; none is made up.
+  - **Relatedness:** the app name line sits on top, and the screen reads as the bowler's own armory, not a store shelf. No name is shown unless one is on file; none is made up.
   - **Competence:** marks ("First game logged", "10+ games", "212 best", "300 game") appear only after games logged frame by frame with that ball. They are facts from the bowler's own log, never praise or ratings, and never compared with anyone else.
   - **Autonomy:** the bowler sets the shelves (In bag / Benched / Pro shop / Retired in Bag). Retiring a ball moves it to the Hall of Fame with its record intact, so letting go of a ball isn't a loss.
 - **U/A:**

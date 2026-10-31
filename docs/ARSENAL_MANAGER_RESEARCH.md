@@ -1,6 +1,6 @@
 # Arsenal Manager — Research Notes
 
-Research for the Arsenal Manager in Arsenal Pro (Urbanek Honey Badgers). Compiled 2026-10-23. This file is docs only. No app code was changed.
+Research for the Arsenal Manager in Arsenal Pro. Compiled 2026-10-23. This file is docs only. No app code was changed.
 
 **Source labels.**
 - **F**: we fetched the page or PDF and read it directly.

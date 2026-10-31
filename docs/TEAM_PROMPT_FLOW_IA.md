@@ -33,7 +33,7 @@ Re-organise Arsenal Pro around **the bowler's moment**, so every screen answers 
   - **Nothing extra during active scoring.**
 - Offline-first and free.
 - No invented data. Neutral on bowling styles.
-- Colours: Honey Badgers #0F4D34, #DAAF37 and black.
+- Colours: Arsenal Pro #0F4D34, #DAAF37 and black.
 - CSP `script-src 'self'`, no build step.
 
 ## Steps (run in order; each produces a file)

@@ -1,6 +1,6 @@
 # Arsenal Pro 2.0 — Design system
 
-Source of truth: `css/app.css` (`:root` tokens). Brand: Honey Badgers forest/gold/black. Dark is default; light theme via `[data-theme=light]` (More → Appearance, or system).
+Source of truth: `css/app.css` (`:root` tokens). Brand: Arsenal Pro forest/gold/black. Dark is default; light theme via `[data-theme=light]` (More → Appearance, or system).
 All text/surface pairs below meet WCAG AA (4.5:1 body, 3:1 large/UI) — verified by axe in `tests/e2e.py` on every route.
 
 ## Tokens

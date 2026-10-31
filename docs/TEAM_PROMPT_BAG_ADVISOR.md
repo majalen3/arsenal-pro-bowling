@@ -9,7 +9,7 @@
 - Never invent results or thresholds. Evidence is computed from the user's own `shot.logged` / `game.logged` events. When there is none, the card says **"based on specs + your release, no results logged yet"** and offers Quick-log / Import.
 - Results may re-order the spec ranking only when both balls have **≥21 games**. The minimum is borrowed from USBC Rule 319a (21 games for a certified average; bowl.com, search excerpt) and shown as a source link. Below that the confidence chip reads **"app estimate (N of 21 games)"**.
 - At most **one warning per ball** (service due first, then overlap).
-- `simulatePath` is unchanged. Honey Badgers tokens only. 360 px, 44 px targets. CSP `script-src 'self'`.
+- `simulatePath` is unchanged. Arsenal Pro tokens only. 360 px, 44 px targets. CSP `script-src 'self'`.
 - Coach voice: ≤2 sentences, ball name or number first.
 
 ## Events → bag size

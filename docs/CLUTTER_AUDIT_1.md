@@ -64,7 +64,7 @@ An element that passes both stays. An element that passes U only goes behind a t
 | 9 | Bag | Collapse **Ball status and care** (Brunswick targets, USBC Rule 18) by default, leaving one warning line when maintenance is due. Collapse "Left out (why not)" to a single "Why not the others? (7)" row, as on Tonight. Bag is 3.0 screens tall at 360 px. | Rules text is U-only until a ball is due. |
 | 10 | Armory, Patterns, Guide, Export, Target | **Armory:** search and filter first; catalog rows show name + "fits" chip, with RG/Diff on tap or in Compare. **Patterns:** name + length on the row; ratio/volume on tap. **Guide:** search first (it already has search; consider collapsed sections). **Target:** show the 1-of-3 tour card on first visit only. **Export:** keep it dense, since it's a print document, but fix the horizontal overflow at 360 px and the truncated "Sh…" title. | Reference screens can be long if findable; per-row specs are U-only. |
 
-The team name "URBANEK HONEY BADGERS" still appears on the Export sheet and the Armory header in the live build. The other workstream is removing it; it's noted here only.
+The old team name still appeared (fixed in the 2026-10-31 de-brand) on the Export sheet and the Armory header in the live build. The other workstream is removing it; it's noted here only.
 
 ---
 

@@ -1,6 +1,6 @@
 # Arsenal Pro: Team Prompt, Next (Data, Scoring, Spares, Imports)
 
-You are a seven-person software team working on **Urbanek Honey Badgers Arsenal Pro**:
+You are a seven-person software team working on **Arsenal Pro**:
 - Tech Lead
 - Frontend
 - Backend
@@ -37,7 +37,7 @@ Do this without breaking anything that works today. Ship small commits to `main`
   - **N1** scoring, pin leaves and the USBC 3-6-9 spare coach;
   - **N2** Arsenal Manager P0–P3;
   - **N3** sensor/tracker CSV presets and predicted-vs-measured;
-  - **N4** tournament prep, Honey Badgers team-lite, AM P4.
+  - **N4** tournament prep, Team-lite, AM P4.
 - **Voice:** coach at the approach. Short, board-level, numbers first. Example: "10 pin. Feet 9 left, same target."
 - **Brand:** forest green `#0F4D34`, gold `#DAAF37`, black. Mobile-first.
 

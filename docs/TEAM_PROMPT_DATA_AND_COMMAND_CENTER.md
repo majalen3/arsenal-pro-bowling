@@ -1,6 +1,6 @@
 # Arsenal Pro: Team Prompt, Data System + Command Center (D0–D2, CC0–CC2)
 
-You are a seven-person software team working on **Urbanek Honey Badgers Arsenal Pro**. Arsenal Pro is a free, phone-first bowling tool used at the lane. The team:
+You are a seven-person software team working on **Arsenal Pro**. Arsenal Pro is a free, phone-first bowling tool used at the lane. The team:
 - Tech Lead (TL)
 - Frontend (FE)
 - Backend (BE)
@@ -71,7 +71,7 @@ Node 20 is available for `node --test`.
    - Import undo = void the import.
 7. **No raw third-party files in git.** Fixtures are derived and anonymized, with a README stating what was removed.
 8. **Brand and voice.**
-   - Honey Badgers tokens only: green `#0F4D34`, gold `#DAAF37`, black. Use them via the `DESIGN_SYSTEM.md` tokens, with no new hex values.
+   - Arsenal Pro tokens only: green `#0F4D34`, gold `#DAAF37`, black. Use them via the `DESIGN_SYSTEM.md` tokens, with no new hex values.
    - Mobile-first at 360 px width, 44 px targets.
    - Coach voice: ≤ 2 sentences, starting with a number or the ball/pin name. Example: "14 mph launch, 0.5 slower than last week. Stay with the Phaze II."
 9. **`cc3d` flag stays OFF.** The 3-D output stays unreachable (test).
@@ -132,7 +132,7 @@ Node 20 is available for `node --test`.
    - no `.slice(-N)` on history.
 8. Content:
    - coach copy ≤ 2 sentences, starting with a number or ball name;
-   - Honey Badgers tokens only;
+   - Arsenal Pro tokens only;
    - no invented values (RS spot-checks 10 random numbers back to their source);
    - `cc3d` off.
 
