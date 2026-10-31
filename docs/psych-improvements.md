@@ -231,3 +231,24 @@
   - **Usability:** 2 fields + 1 button in a sheet (44 px targets, axe 0, no overflow at 360). The game number is pre-filled with the next free game, and a game that already has a score is blocked, so no duplicates.
   - **Applicability:** anyone who bowled without scoring frames (house sheet, phone died, team night). Nothing is added during active scoring.
 - **3-second beginner check:** "I bowled 187; I tap Add a game total and type 187."
+
+## Corner pin left alone: flat 10 / ring 10 (flat 7 for left-handers) (item 3, 2026-10-24)
+- **What shows:** one line in the Session recap and on Insights, e.g. "From your frames: 10 pin alone on 4 of 12 first balls (this night)." Why, options and sources sit behind "Why, and what to try". Nothing on the scoring pad.
+- **Sample rule:** a night needs 3 corner leaves on at least 10 first balls; Insights (all scored games) needs 5 on at least 30. Below that nothing shows. Always "n of N", never a percentage.
+- **Real vs model:** the count is labelled "From your frames". The explanation and options are labelled "Coaching options (USBC), not a measurement". No engine output or entry angle is shown.
+- **Neutral:** the app cannot tell a flat 10 from a ringing 10 (it only sees which pins stood), so the text names both and says so. Bowling This Month notes that a flat 10 can come from two different hits that need different fixes, so the text says "try one change at a time".
+- **Options (1–3), all from BOWL.com "Adjusting Entry Angle" (https://bowl.com/adjusting-entry-angle):**
+  1. The ball is still skidding at the pins: match speed and revs with tempo or hand position so the ball is in its roll phase.
+  2. More entry angle: play the ball farther right and add revs, or move feet and eyes right and play more direct through the front (mirrored for left-handers).
+  3. A ball with a stronger back end.
+- **Second source:** Bowling This Month, Tyrel Rose, "Kicking Out the Corners, Part 2" (https://www.bowlingthismonth.com/bowling-tips/kicking-out-the-corners-part-2/). This is a subscriber article; the public excerpt splits flat 10s into flat and weak hits and says the 7 pin is the mirror for left-handers.
+- **Counted:** fresh-rack first balls with no foul that left only the same-side corner pin, tagged pocket or untagged. High- or light-tagged ones are left out, because a light-hit 10 is a different miss. The hand comes from the Bowler profile; when it is unset, the text reads right-handed and says so.
+- **SDT:**
+  - **Competence:** a concrete count from the bowler's own frames, plus what it usually means.
+  - **Autonomy:** options, not orders. The bowler picks one or none.
+  - **Relatedness:** the bowling words a coach or teammate would use, with no praise and no ranking.
+- **U/A:**
+  - **Usability:** one line plus one tap; 44 px summary and links; axe 0; no overflow at 360.
+  - **Applicability:** only bowlers who score frames and leave the corner repeatedly ever see it.
+- **3-second beginner check:** "I left the 10 four times tonight; there are three things I could try."
+- **Glossary:** new sourced term `bm-flat10` (Ball Motion).

@@ -321,3 +321,10 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - New `js/cc/gametotal.js` (pure: parseTotal 0–300 whole numbers, gamesOn / nextGame / taken, targetNight) and `js/screens/gametotal.js` (sheet #gameTotal: #gtScore, #gtGame, #gtBall optional, #gtSave). Entry points: #sessAddTotal (Session view, first viewport), #moreAddTotal (More › Your data → opens that night), #lgAddTotal (team setup). Tonight's "Quick-log a game" button removed.
 - Tests: unit `gametotal.test.mjs` (3); e2e `gametotal` (not on Tonight; 301 rejected; 187 saved as one game.logged with the chosen ball; next game defaults to 2; duplicate game blocked; series 388; team setup offer; axe, 44 px, 360).
 - Rationale: docs/psych-improvements.md.
+
+## 2026-10-24 · Item 3: flat 10 / flat 7 corner-pin insight (sw v47)
+- `js/cc/corner.js` (cornerLeaves / enough / cornerInsight) and `js/screens/corner.js`. Wired into the Session recap and Insights; glossary `bm-flat10`.
+- Tests:
+  - Unit `corner.test.mjs` (3).
+  - e2e `corner`: below the minimum nothing shows; "4 of 12" appears in the recap with labels, 1–3 options, sources and no %; Insights shows "14 of 48"; nothing on Tonight; axe, 44 px, 360.
+- Recap screenshot: `/workspace/shots/item3-recap-flat10.png`.

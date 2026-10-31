@@ -5,7 +5,10 @@ import { go } from '../router.js';
 import { backBar } from './ball.js';
 import { proj } from '../hub.js';
 import { profile } from '../store.js';
-import { bowlerCard, headline, lastGames } from '../cc/card.js';
+import { bowlerCard, headline, lastGames, sessionsOf } from '../cc/card.js';
+import * as CO from '../cc/corner.js';
+import { cornerBlock } from './corner.js';
+import { hand } from '../cc/hand.js';
 import { helpDot, withHelp } from './help.js';
 // v1 text, kept verbatim
 function gapsText() {
@@ -29,7 +32,9 @@ export function render() {
         h('p', { class:'bc-headline', id:'insLastHead', text:L ? `${L.avg} average, high ${L.high}, low ${L.low}.` : (P && P.sessions && Object.values(P.sessions).some(x => x.event === 'practice') ? 'Only practice so far. Practice stays out of your average; league or open games show here.' : 'Score a game on Tonight or import scores to see your last 10 games here.') }),
         L && L.scored ? h('dl', { class:'bc-figs' }, h('div', { class:'bc-fig' }, h('dt', { text:'First-ball strikes' }), h('dd', { text:`${L.scored.strikes} of ${L.scored.first}` })),
           h('div', { class:'bc-fig' }, h('dt', { text:'Spares made' }), h('dd', { text:`${L.scored.spareMade} of ${L.scored.spare}` }))) : null,
-        L ? h('p', { class:'muted small', id:'insLastN', text:`${L.n} ${L.n === 1 ? 'game' : 'games'}${L.scored ? `, ${L.scoredGames} scored ball by ball` : ''}; practice nights left out.` }) : null); })(),
+        L ? h('p', { class:'muted small', id:'insLastN', text:`${L.n} ${L.n === 1 ? 'game' : 'games'}${L.scored ? `, ${L.scoredGames} scored ball by ball` : ''}; practice nights left out.` }) : null,
+        // Item 3: corner pin left alone across all scored games (enough samples only; counts from frames).
+        P ? cornerBlock('insCorner', CO.cornerInsight(CO.cornerLeaves(sessionsOf(P).flatMap(x => x.games), hand()), { scope:'all', hand: hand() })) : null); })(),
     (() => { const P = proj(), hd = P ? headline(bowlerCard(P, { profile:profile() || {} })) : { text:'Score a game on Tonight to see your numbers here.' };
       return h('div', { class:'card', id:'insGame' }, withHelp(h('h2', { class:'card-title', text:'Your game' }), 'bm-revs', 'Your game'), h('p', { id:'insHead', text:hd.text }), h('a', { class:'btn ghost', href:'#/card' }, 'My Bowler Card')); })(),
     h('details', { class:'card tn-more', id:'insArsenal' }, h('summary', { text:'Arsenal charts: oil coverage, core map, bag builder' }),

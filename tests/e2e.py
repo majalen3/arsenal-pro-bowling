@@ -510,6 +510,40 @@ async def gametotal_cycle(b):
     check(await p.is_visible('#lgAddTotal') and 'final score' in await p.text_content('#lgTotalWhy'), '[gametotal] offered in team setup')
     check(not errs, f'[gametotal] no page errors {errs[:3]}'); await c.close()
 
+async def corner_cycle(b):
+    # Item 3: corner pin left alone (flat/ring 10; 7 for LH). Only with enough first balls, always n of N, counts labelled
+    # "from your frames", coaching options labelled and sourced, nothing on the scoring pad.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 740})
+    await seed(p); await p.goto(BASE + '?co#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnAdvisor')
+    await p.evaluate("""async () => { const m = await import('./js/hub.js'); let n = 0;
+      const night = async (id, d, tens) => { await m.add('session.created', id, { kind: 'tonight', date: d, ended: true });
+        for (let f = 1; f <= 10; f++) { const ten = f <= tens;
+          if (ten) { await m.add('shot.logged', 'test-co-' + n++, { sessionId: id, game: 1, frame: f, roll: 1, down: 9, leave: [10], miss: f <= 2 ? 'pocket' : null }); await m.add('shot.logged', 'test-co-' + n++, { sessionId: id, game: 1, frame: f, roll: 2, down: 1, leave: [] }); }
+          else await m.add('shot.logged', 'test-co-' + n++, { sessionId: id, game: 1, frame: f, roll: 1, down: 10, leave: [] }); }
+        for (const r of [2, 3]) await m.add('shot.logged', 'test-co-' + n++, { sessionId: id, game: 1, frame: 10, roll: r, down: 10, leave: [] }); };
+      await night('test-co-1', '2026-10-03', 2); await night('test-co-2', '2026-10-10', 4); await night('test-co-3', '2026-10-17', 4); await night('test-co-4', '2026-10-21', 4); }""")
+    await p.evaluate("location.hash = '#/session/test-co-1'"); await p.wait_for_selector('#sessRecap')
+    check(await p.query_selector('#sessCorner') is None, '[corner] 2 corner leaves on 12 first balls: not enough, nothing shown')
+    await p.evaluate("location.hash = '#/session/test-co-4'"); await p.wait_for_selector('#sessCorner')
+    lead = await p.text_content('#sessCornerLead')
+    check('10 pin alone on 4 of 12 first balls' in lead and 'From your frames' in lead, f'[corner] recap names the leave with n of N, labelled real {lead!r}')
+    await p.click('#sessCornerMore summary'); await p.wait_for_timeout(100)
+    more = await p.text_content('#sessCornerMore'); opts = await p.eval_on_selector_all('#sessCornerOpts li', 'e => e.length')
+    check(1 <= opts <= 3 and 'not a measurement' in more and "can't see which" in more and '%' not in more, f'[corner] 1-3 labelled options, flat vs ring not claimed, no percentages ({opts})')
+    hrefs = await p.eval_on_selector_all('#sessCornerMore a', 'e => e.map(a => a.href)')
+    check('https://bowl.com/adjusting-entry-angle' in hrefs, f'[corner] sources linked {hrefs}')
+    await axe_ok(p, '[corner] recap'); small = await p.evaluate(SMALL); check(not small, f'[corner] targets >= 44px {small[:6]}')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[corner] no horizontal overflow {w}')
+    await p.evaluate("() => { const t = document.querySelector('#toast'); if (t) t.style.visibility = 'hidden'; document.querySelector('#sessRecap').scrollIntoView({ block: 'start' }); }")
+    os.makedirs('/workspace/shots', exist_ok=True); await p.screenshot(path='/workspace/shots/item3-recap-flat10.png'); await shot(p, 'phone-corner-recap')
+    await p.evaluate("location.hash = '#/arsenal/insights'"); await p.wait_for_selector('#insCorner')
+    ins = await p.text_content('#insCornerLead')
+    check('10 pin alone on 14 of 48 first balls' in ins, f'[corner] Insights: all scored games, n of N {ins!r}')
+    await axe_ok(p, '[corner] insights')
+    await p.evaluate("location.hash = '#/tonight'"); await p.wait_for_selector('#tnAdvisor')
+    check(await p.query_selector('#tonightBody .corner-ins') is None, '[corner] nothing on the scoring screen')
+    check(not errs, f'[corner] no page errors {errs[:3]}'); await c.close()
+
 FX = os.path.join(os.path.dirname(__file__), 'data', 'fixtures')
 def fx(n): return open(os.path.join(FX, n)).read()
 async def targeting_cycle(b):
@@ -1531,7 +1565,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

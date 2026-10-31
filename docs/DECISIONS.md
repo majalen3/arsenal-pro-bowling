@@ -178,3 +178,11 @@ The owner's target is a board (1–39, halves allowed), not an engine angle. We 
 ## Quick game log off Tonight: "Add a game total" (item 2, 2026-10-24)
 - Tonight has no score-entry button (the "Quick-log a game" button in the no-results line is gone; the scoring pad itself moves in P1.5). "Add a game total" (score 0–300, game number, optional ball → one `game.logged`, prov user/game-total) is offered on the Session (night) view, in More › Your data (tonight's open night, else a new night today) and in Tonight's team setup.
 - No new event type or table, so /api/me export/delete and the API are unchanged. A game number already scored on that night is refused rather than overwritten.
+
+## Corner-pin insight (item 3, 2026-10-24)
+- New pure module `js/cc/corner.js`, plus `js/screens/corner.js` (the block). The recap (`#sessCorner`) and Insights (`#insCorner`) show it only above the sample minimum (night 3 of ≥10 first balls; all games 5 of ≥30), always as n of N with no percent.
+  - The count is labelled real ("From your frames"); the options are labelled coaching ("not a measurement").
+  - Sources: BOWL.com Adjusting Entry Angle (fetched) and Bowling This Month Part 2 (public excerpt).
+  - Nothing is shown on Tonight or the pad.
+- The hand comes from `cc/hand.js`: 7 pin for left-handers. When it is unset, the text reads RH and says so.
+- The engine is untouched. No new events or tables, so /api/me is unchanged. Glossary +1 term (`bm-flat10`), so the help unit test now expects 114.

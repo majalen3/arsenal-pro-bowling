@@ -659,3 +659,8 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .gt-row { gap: 12px; flex-wrap: nowrap; }
 .gt-row > .fld { flex: 1 1 0; min-width: 0; }
 .gt-row input { width: 100%; }
+/* Item 3: corner-pin insight (recap, Insights). Tap targets 44px. */
+.corner-ins { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 8px; }
+.corner-ins summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+.corner-ins ol { padding-left: 20px; margin: 4px 0; }
+.corner-src a { display: inline-flex; align-items: center; min-height: 44px; }

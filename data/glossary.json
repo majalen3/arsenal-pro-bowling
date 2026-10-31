@@ -25,10 +25,10 @@
    "Equipment — Shoes, Approach & Accessories": 19,
    "Styles & Approaches": 15,
    "Lane & Oil": 12,
-   "Ball Motion": 17,
+   "Ball Motion": 18,
    "Targeting & Spares": 11
   },
-  "added_2026_10_24": "Terms added in the help-bubbles pass (owner approved adding sourced, neutral terms): eq-core, tg-hit, ap-model, ap-use-when, ap-compare, ap-status, ap-why-not"
+  "added_2026_10_24": "Terms added in the help-bubbles pass (owner approved adding sourced, neutral terms): eq-core, tg-hit, ap-model, ap-use-when, ap-compare, ap-status, ap-why-not, bm-flat10"
  },
  "terms": [
   {
@@ -3361,6 +3361,35 @@
    "weak_evidence": false,
    "v1_rank": null,
    "added": "2026-10-24 (help bubbles pass; owner: '?' on the ball page)"
+  },
+  {
+   "id": "bm-flat10",
+   "tree": "Ball Motion",
+   "term": "Flat 10 and ring 10 (flat 7 / ring 7 for left-handers)",
+   "level": "Intermediate",
+   "bubble": "A 10 pin left alone after a pocket hit (7 for left-handers): the 6 pin slid in front of it (flat) or wrapped around it (ring). USBC's usual first moves are more entry angle or a ball still rolling, not skidding, at the pins.",
+   "glossary": "Both are same-side corner pins left on a hit in the pocket. On a flat 10 the ball usually reaches the pins too straight, so the 3 pin barely touches the 6 and the 6 slides in front of the 10; on a ring 10 the 6 is driven around the neck of the 10. USBC lists playing the ball farther right (right-handers), more revs, a ball with a stronger back end, or moving feet and eyes right and playing more direct as ways to add entry angle, and matching speed to revs so the ball is in its roll phase at impact. Bowling This Month notes a flat 10 can come from two different hits that need different adjustments. Left-handers mirror all of this with the 7 pin.",
+   "placement": "Bubble (Session recap and Insights: corner-pin insight) + Glossary",
+   "priority": "Medium",
+   "sources": [
+    {
+     "key": "usbc_entry",
+     "url": "https://bowl.com/adjusting-entry-angle",
+     "label": "F",
+     "title": "BOWL.com (USBC), Adjusting Entry Angle"
+    },
+    {
+     "key": "btm_corners2",
+     "url": "https://www.bowlingthismonth.com/bowling-tips/kicking-out-the-corners-part-2/",
+     "label": "S",
+     "title": "Bowling This Month (Tyrel Rose), Kicking Out the Corners, Part 2 (subscriber article; public excerpt)"
+    }
+   ],
+   "level_why": "Shown only after the bowler's own frames show the leave several times.",
+   "evidence": "USBC (fetched) describes flat vs ring 10 and the entry-angle moves; Bowling This Month (public excerpt) splits the flat 10 into two hit types.",
+   "weak_evidence": false,
+   "v1_rank": null,
+   "added": "2026-10-24 (item 3 corner-pin insight; owner approved sourced, neutral terms)"
   },
   {
    "id": "ap-use-when",
