@@ -65,17 +65,24 @@ export function gamesOf(shots) {
 // Ball health: games since last service of each type = fold(events). Never typed by the user.
 export function healthOf(P) {
   const out = {};
-  const used = {};   // ballId → [ts of each game]
-  for (const g of P.games) for (const b of g.balls) (used[b] = used[b] || []).push(g.ts);
-  for (const x of P.scores) if (x.ballId) (used[x.ballId] = used[x.ballId] || []).push(x.ts);
-  for (const x of P.gamesLogged) if (x.ballId) for (let i = 0; i < (x.games | 0); i++) (used[x.ballId] = used[x.ballId] || []).push(x.ts);
-  const ids = new Set([...Object.keys(used), ...P.service.map(s => s.ballId).filter(Boolean)]);
+  // Clutter audit #4: a game can name a ball by its owned id or its catalog id. Count both under one key (the owned
+  // ball), so Tonight and Bag read the same games; the record is also reachable by the catalog id.
+  const owned = P.owned || {}, byCat = {};
+  for (const [id, o] of Object.entries(owned)) if (o && o.catalogId && !(o.catalogId in byCat)) byCat[o.catalogId] = id;
+  const canon = b => (owned[b] ? b : byCat[b] || b);
+  const used = {};   // canonical ballId → [ts of each game]
+  const use = (b, ts) => { const k = canon(b); (used[k] = used[k] || []).push(ts); };
+  for (const g of P.games) for (const b of g.balls) use(b, g.ts);
+  for (const x of P.scores) if (x.ballId) use(x.ballId, x.ts);
+  for (const x of P.gamesLogged) if (x.ballId) for (let i = 0; i < (x.games | 0); i++) use(x.ballId, x.ts);
+  const ids = new Set([...Object.keys(used), ...P.service.map(s => s.ballId).filter(Boolean).map(canon)]);
   for (const b of ids) {
     const ts = used[b] || [], last = {};
-    for (const s of P.service) if (s.ballId === b) last[s.type] = Math.max(last[s.type] || 0, s.ts);
+    for (const s of P.service) if (s.ballId && canon(s.ballId) === b) last[s.type] = Math.max(last[s.type] || 0, s.ts);
     const since = {}; for (const t of ['refresh', 'resurface', 'detox']) since[t] = last[t] ? ts.filter(x => x > last[t]).length : null;
     out[b] = { games: ts.length, since };
   }
+  for (const [cat, id] of Object.entries(byCat)) if (out[id] && !(cat in out)) out[cat] = out[id];
   return out;
 }
 export const projectionHash = P => fnv(stable(P));
