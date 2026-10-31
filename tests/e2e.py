@@ -1671,7 +1671,7 @@ async def oneline_cycle(b):
             await c.close()
 
 async def tonightfold_cycle(b):
-    # IA P1.5: Tonight is the plan (lanes first), Bowl is the pad. League: <= 1130 px tall (P2: +44 px Stand · Aim chip row, owner-required, was 1110) at 360 wide, Start bowling and
+    # IA P1.5: Tonight is the plan (lanes first), Bowl is the pad. League: <= 1110 px tall (P2: the Stand · Aim chip shares the hand row) at 360 wide, Start bowling and
     # Add a bowler inside the first 740 px, no first-ball card; Start bowling opens #/bowl; #/tonight with a game open lands on Bowl.
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
     await seed(p); await p.evaluate("localStorage.setItem('ap_profile', JSON.stringify({hand: 'right', handSource: 'user-reported', style: 'tweener', speed: 15, rev: 300}))")
@@ -1680,7 +1680,7 @@ async def tonightfold_cycle(b):
     await p.wait_for_selector('#tnStartBowl')
     await p.click('#advEvent [data-event="league"]'); await p.wait_for_selector('#tnWho'); await p.wait_for_timeout(300)
     m = await p.evaluate("() => ({ h: document.scrollingElement.scrollHeight, sb: document.querySelector('#tnStartBowl').getBoundingClientRect().bottom + scrollY, ab: document.querySelector('#tnAddBowler').getBoundingClientRect().bottom + scrollY, who: document.querySelector('#tnWho').getBoundingClientRect().top < document.querySelector('#tnStartBowl').getBoundingClientRect().top, pad: !!document.querySelector('#qlStrike'), pick: !!document.querySelector('#tnPick'), extra: !document.querySelector('#tnExtra').open })")
-    check(m['h'] <= 1130, f"[tonightfold] League Tonight <= 1130 px tall ({m['h']})")
+    check(m['h'] <= 1110, f"[tonightfold] League Tonight <= 1110 px tall ({m['h']})")
     check(m['sb'] <= 740 and m['ab'] <= 740, f"[tonightfold] Start bowling ({round(m['sb'])}) and Add a bowler ({round(m['ab'])}) in the first 740 px")
     check(m['who'] and not m['pad'] and not m['pick'] and m['extra'], f'[tonightfold] Who\'s bowling above Start bowling; no pad, no first-ball card; extras folded {m}')
     t = await p.text_content('#tnHand'); check(t.startswith('Right-handed') and 'change' in t, f'[tonightfold] P1.6 "Right-handed \u00b7 change" visible ({t})')

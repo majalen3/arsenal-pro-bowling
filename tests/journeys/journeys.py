@@ -846,7 +846,7 @@ async def j15_front(j):
         await j.nav('/tonight'); await j.settle(300)
         if await j.page.locator('#advEvent [data-event="league"]').count(): await j.page.click('#advEvent [data-event="league"]'); await j.settle(400)
         h = await j.ev("() => document.scrollingElement.scrollHeight")
-        s.check(h <= 1130, f'scrollHeight {h} <= 1130')   # P2: +Stand · Aim chip row (owner-required); still < 1.5 screens (1170)
+        s.check(h <= 1110, f'scrollHeight {h} <= 1110')
         sb = await first_viewport(j, r'Start bowling'); s.check(sb is not None and sb <= 740, f'Start bowling bottom {sb} px')
         ab = await first_viewport(j, r'Add a bowler'); s.check(ab is not None and ab <= 740, f'Add a bowler bottom {ab} px')
     async with j.step('Learn tab: search first; Glossary in <= 2 taps with no scroll', task='learn', target_taps=2) as s:

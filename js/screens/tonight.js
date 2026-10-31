@@ -193,7 +193,10 @@ export async function render(o = {}) {
     const fc = prefs().focus;
     if (fc && fc.text && fc.from !== curSid()) body.append(h('div', { class: 'row between tn-focus', id: 'tnFocus' }, h('p', { class: 'small', text: fc.text.replace(/^Next focus: /, 'Your focus: ') }),
       h('button', { class: 'icon-btn', 'aria-label': 'Clear focus', html: icon('close'), onclick: () => { setPrefs({ focus: null }); draw(); } })));
-    body.append(handAsk() || handLine());   // P1.6: "Right-handed \u00b7 change"; asks once while unset (never during a game)
+    // P1.6: "Right-handed \u00b7 change"; asks once while unset (never during a game). IA P2: the Stand \u00b7 Aim chip shares the hand row
+    // (both are "your line"; the Lane mirrors by hand), so the 44 px chip doesn't add a row and League Tonight stays <= 1110 px.
+    const ask = handAsk(), chip = ask ? null : advCard.querySelector('#tnAimChip');
+    body.append(ask || (chip ? h('div', { class: 'row between wrap tn-hand-row' }, handLine(), chip) : handLine()));
     if (whoHere) body.append(whoCard(s));
     if (s.event === 'practice') body.append(drillCard(P, s));
     const night = g0(P) && !s.ended;

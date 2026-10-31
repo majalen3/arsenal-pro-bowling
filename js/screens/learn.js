@@ -6,7 +6,7 @@ import { go } from '../router.js';
 export function render() {
   const search = h('input', { type: 'search', class: 'search', id: 'lnSearch', placeholder: 'Search bowling words', 'aria-label': 'Search the Bowling Guide and Glossary', autocomplete: 'off', enterkeyhint: 'search' });
   const form = h('form', { class: 'list-tools', id: 'lnForm', role: 'search', onsubmit: e => { e.preventDefault(); const q = search.value.trim(); go('#/glossary' + (q ? '?q=' + encodeURIComponent(q) : '')); } }, search);
-  const link = (id, href, title, note) => h('a', { class: 'btn ghost block', id, href }, title, note ? h('small', { class: 'muted', text: ' \u00b7 ' + note }) : null);
+  const link = (id, href, title, note) => h('a', { class: 'btn ghost block ln-link', id, href }, title, note ? h('small', { class: 'muted', text: ' \u00b7 ' + note }) : null);
   const body = h('div', { class: 'stack' },
     h('div', { class: 'card', id: 'helpCard' }, h('h2', { class: 'card-title', id: 'learnTitle', text: 'Learn' }),
       h('div', { class: 'btn-grid' }, h('a', { class: 'btn primary', id: 'goGuide', href: '#/guide' }, 'Bowling Guide'), h('a', { class: 'btn ghost', id: 'goGlossary', href: '#/glossary' }, 'Glossary')),
