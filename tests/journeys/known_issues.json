@@ -1,15 +1,6 @@
 {
  "_note": "Steps and probes that fail because of an open, reported app bug. Key = \"<journey>/<step name>\" or \"probe/<screen>/<kind>\"; value = finding id in docs/qa-reports/FINDINGS_1.md / FINDINGS_2.md. A listed step that fails is \"known\" (does not fail CI); a listed step that passes is reported as fixed so it can be removed. Anything not listed fails CI.",
- "J06/Targeting shows the dragged line": "F01",
- "J06/Back on Tonight the line is the one I set": "F01",
- "J04/The \"now\" line follows the ball change": "F02",
- "J06/Lane opens with the new ball": "F03",
  "J05/Mark Cal total-only (types a game total)": "F06",
- "J08/Card names the 10-pin leave as the thing to work on": "F08",
- "probe/target/targets": "F11",
- "probe/lane/truncation": "F12",
- "J09/Every screen has a \"?\" when Help is on": "F13",
- "J01/The search box example is a ball the catalogue knows": "F14",
  "J13/Status uses the four bowler words everywhere (no Exclude / Benched / Lock)": "PENDING P1.3 (ball Status)",
  "_note_pending": "Entries starting PENDING are IA_PLAN.md §7 P1 acceptance criteria written before the build ships (J13-J15). They are expected to fail; when one passes the run lists it under 'Known issues now passing': delete the entry so the step becomes a guard."
 }

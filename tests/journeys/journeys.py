@@ -312,7 +312,8 @@ async def j04_solo_game(j):
     async with j.step('The "now" line follows the ball change', carry='ball in hand') as s:
         await j.settle(300)
         line = (await j.text('#tnNowLine')) if await j.visible('#tnNowLine') else ''
-        s.check(not line or same_ball(re.split(r'\s+Stand\b|·', line)[0].strip(), j.state['ball1']), f'top line "{line[:60]}" names the ball in hand "{j.state["ball1"][:30]}"')
+        s.check(bool(line) and same_ball(re.split(r'\s+Stand\b|·', line)[0].strip(), j.state['ball1']), f'top line "{line[:60]}" names the ball in hand "{j.state["ball1"][:30]}"')
+        s.check(bool(line) and not same_ball(re.split(r'\s+Stand\b|·', line)[0].strip(), j.state['ball0']), f'top line no longer names the first ball "{j.state["ball0"][:30]}"')
     async with j.step('Frames 3-5 with the new ball', task='frame') as s:
         await open_frame(j, [7]); await strike(j); await spare(j, [2, 4])
         shots = await j.data("() => window.__apData.projection().shots.slice(-4).map(x => x.ballId)")
@@ -424,6 +425,12 @@ async def j06_between_games(j):
     async with j.step('Targeting shows the dragged line', carry='feet=25, eyes=15') as s:
         await j.goto('/target'); await j.wait('#tgFeetVal'); g = await target_line(j)
         s.check(same_line(g, {'feet': 25, 'eyes': 15}), f'Targeting {g}')
+    async with j.step('F11/F12: Targeting "Model limit" fold is 44 px; Lane ball names are not clipped') as s:
+        hgt = await j.data("() => { const e = document.querySelector('#tgLimits summary'); return e ? Math.round(e.getBoundingClientRect().height) : 0; }")
+        s.check(hgt >= 44, f'Model limit summary {hgt} px')
+        await j.goto('/lane'); await j.wait('#lane'); await j.settle(400)
+        clip = await j.data("() => [...document.querySelectorAll('.ball-btn-name, .ball-btn-sub, .qball-name')].filter(e => e.offsetParent && e.scrollWidth > e.clientWidth + 1).map(e => e.textContent)")
+        s.check(not clip, f'clipped ball names: {clip}')
     async with j.step('Aim Box on: same box on Lane and Targeting', task='aimbox', target_taps=3) as s:
         await j.goto('/lane'); await j.wait('#lane')
         if await j.visible('#ovBtn'):
@@ -438,6 +445,15 @@ async def j06_between_games(j):
     async with j.step('Back on Tonight the line is the one I set') as s:
         await j.nav('/tonight'); await j.settle(400); t = await tonight_line(j)
         s.check(same_line(t, {'feet': 25, 'eyes': 15}), f'Tonight {t} after dragging 25/15 on the lane')
+    async with j.step('F01: 25/15 is the one line on Tonight, Bowl and the pick card', carry='feet=25, eyes=15') as s:
+        adv = await j.text('#advStart') if await j.visible('#advStart') else ''
+        s.check('feet 25' in adv and 'aim 15 ' in adv, f'Start line says feet 25, aim 15 ("{adv[:80]}")')
+        chip = await j.text('#tnAimChip') if await j.visible('#tnAimChip') else ''
+        s.check('Stand 25' in chip and 'Aim 15' in chip, f'aim chip "{chip}"')
+        await j.nav('/bowl'); await j.wait('#tnNowLine'); now = await j.text('#tnNowLine')
+        s.check('Stand 25' in now and 'Aim 15' in now, f'Bowl top line "{now[:60]}"')
+        prov = await j.data("() => { const d = document.querySelector('#tnModel [data-prov=\"user\"]'); return d ? d.textContent : ''; }")
+        s.check('your line' in (prov or ''), f'pick card (Bowl > line details) labels it as your line, not the model ("{prov}")')
 
 
 # ---------- J07 recap, focus, next session ----------
@@ -486,6 +502,8 @@ async def j08_insights(j):
     async with j.step('Card names the 10-pin leave as the thing to work on') as s:
         txt = await j.text('#bcBody') if await j.page.locator('#bcBody').count() else await j.text('.screen')
         s.check(re.search(r'10 pin|10-pin|flat 10|ten pin', txt, re.I), 'Card mentions the 10 pin')
+        lv = await j.text('#bcLeave') if await j.visible('#bcLeave') else ''
+        s.check(not lv or not re.search(r'\b(bad|poor|weak|terrible|great|good|awful)\b', lv, re.I), f'leave line is informational, not evaluative ("{lv}")')
     async with j.step('Insights agrees with the Card average', carry='average') as s:
         await j.goto('/arsenal/insights'); await j.wait('#insHead'); await j.audit('insights')
         t = await j.text('.screen'); a = nums(j.state.get('cardAvg', ''))
