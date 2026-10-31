@@ -11,7 +11,7 @@
 
 Visual: 0 over tolerance. e2e: 738/0. Unit tests: 258 pass, 1 skipped. Engine: 7500/0.
 **Since FINDINGS_1:**
-- F04, F05, F07, F09, F10 and F12-title are fixed.
+- F04, F05, F07, F09 and F10 are fixed: their steps pass and they are no longer in `known_issues.json`.
 - J14 and J15 (P1) now pass.
 - 12 core tasks went from about 38 taps + 8 scrolls to 30 taps + 0 scrolls.
 

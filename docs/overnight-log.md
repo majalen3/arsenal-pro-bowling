@@ -402,3 +402,5 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - `f03e5fb` J04 test: tap the picker's Done only if it is still there (auto-return race seen on live).
 - `a25d9ec` F15 wide fonts: Weaker/Stronger buttons (grid `minmax(0,1fr)`, wrapping) and the maker-lookup button wrap. With DejaVu, [tonight] went from 366 px to 360 px and [addball] from 364 px to 360 px.
 - `b42b9de` ui-tests CI installs Roboto, as journeys.yml already does. The remaining DejaVu-only fails (tonightfold 1152 px, whynot Pack position, aimbox/help click timeouts) are height and position budgets measured in a wider font. Recorded as an open risk in FINDINGS_2 (F15).
+- `0c34216` The Armory title is no longer cut to "Arm…" (the header actions wrap to a second row). The Guide title fits. Card-fold summaries are 44 px (F11 root cause: `details.card summary` was 28 px). sw v53. Local runs: e2e 738/0, journeys 99/0/9 with 0 unknown probe failures, unit tests 258 pass / 1 skipped, engine 7500/0.
+- `91b4cc2` docs/qa-reports/FINDINGS_2.md.
