@@ -175,9 +175,12 @@ async def deck_cases(b):
     await p.evaluate(tap, [.2]); rl = await p.evaluate(rel); await p.evaluate(tap, [.8]); rr = await p.evaluate(rel)
     check(rl < 15 < rr, f'[lefty] press near the foul line: screen left = low boards, screen right = high boards {rl} {rr}')
     await p.evaluate("localStorage.clear();localStorage.setItem('ap_prefs','{\"onboarded\":true}');localStorage.setItem('ap_profile','{\"hand\":\"left\"}')")
-    await p.reload(); await p.wait_for_selector('#deck'); await p.wait_for_timeout(300)
+    await p.reload(); await p.wait_for_selector('#deck'); await p.wait_for_timeout(800)   # let the 300 ms saveState debounce land first
     await p.evaluate("localStorage.removeItem('ap_state');localStorage.setItem('ap_profile','{\"hand\":\"right\",\"speed\":15,\"rev\":220}')"); await p.reload(); await p.wait_for_selector('#deck')
-    await p.click('[data-miss=right]'); await p.click('[data-miss=right]'); await p.wait_for_timeout(500)
+    # neutral start ball (de-brand): keep missing right until the model reads light (at most 4 moves)
+    for _ in range(4):
+        await p.click('[data-miss=right]'); await p.wait_for_timeout(400)
+        if 'Light' in (await p.get_attribute('#deck', 'aria-label') or ''): break
     check(await p.get_attribute('#deckCard', 'data-tone') == 'info' and 'Light' in await p.get_attribute('#deck', 'aria-label'), '[deck] light hit coloured as light')
     if SHOTS: await (await p.query_selector('#deckCard')).screenshot(path=os.path.join(SHOTS, 'phone-deck-light.png'))
     for _ in range(16):   # 2-and-1 moves (DECISIONS #26 geometry): keep moving left until the model reads high
