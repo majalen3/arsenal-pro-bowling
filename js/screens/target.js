@@ -11,7 +11,7 @@ import { catOf } from '../cc/cats.js';
 import { createLane } from '../lane.js';
 import { createDeck, describe } from '../deck.js';
 import { HOUSE_ASSUMED, rule31 } from '../cc/rank.js';
-import { lineFor } from '../cc/line.js';
+import { lineFor, keptLine, keepLine } from '../cc/line.js';
 import { openNight } from '../cc/night.js';
 import { arrowsBoard } from '../cc/geom.js';
 import * as T from '../cc/target.js';
@@ -50,7 +50,9 @@ export async function render({ query } = {}) {
     const off = +base.offset || T.DEFAULTS.offset, dr = +base.drift || 0, lay = ml.feet, arr = ml.target;
     return { feet: Math.round(lay + off - dr), eyes: base.mode === 'dots' ? Math.round((lay + (arr - lay) * T.DOTS_FT / T.ARROWS_FT) * 10) / 10 : arr, bpBoard: null, bpFt: null }; };
   const same = saved.t && saved.ball === cat.id && saved.ft === ft;
-  let t = Object.assign({}, T.DEFAULTS, saved.t || {}); if (!same) Object.assign(t, seed(t));
+  let t = Object.assign({}, T.DEFAULTS, saved.t || {}); if (!same || keptLine(cat.id)) Object.assign(t, seed(t));   // F01: a kept line wins
+  // F01: a feet/eyes move made here becomes the kept line for this ball (js/cc/line.js), so Lane and Tonight show it too.
+  const sigT = () => `${cat.id}|${t.feet}|${t.eyes}|${t.mode}`; let startSig = sigT();
   let box = null, r = null, sug = null;
 
   const canvas = h('canvas', { id: 'tgLane', class: 'lane-canvas tg-lane', tabindex: '0', role: 'img' });
@@ -71,7 +73,7 @@ export async function render({ query } = {}) {
   const warnBox = h('div', { class: 'muted small', id: 'tgWarn' });
   const tourBox = h('div', { id: 'tgTourHost' });
   const ballSel = h('select', { id: 'tgBall', 'aria-label': 'Ball', class: 'tg-ball' }, ...list.map(c => h('option', { value: c.id, text: c.name + (specOK(c) ? '' : ' (spec TBD)') })));
-  ballSel.value = cat.id; ballSel.onchange = () => { cat = catOf(ballSel.value) || cat; t = Object.assign({}, t, seed(t)); box = null; findOut.replaceChildren(); update(true); };
+  ballSel.value = cat.id; ballSel.onchange = () => { cat = catOf(ballSel.value) || cat; t = Object.assign({}, t, seed(t)); startSig = sigT(); box = null; findOut.replaceChildren(); update(true); };
   // ---- Find my strike line: grid + Monte Carlo on the unchanged engine (js/cc/strikeline.js)
   const findOut = h('div', { id: 'tgFindOut', 'aria-live': 'polite' });
   const findBtn = h('button', { class: 'btn primary block', id: 'tgFind', html: icon('target') + '<span>Find my strike line</span>', onclick: () => runFind() });
@@ -79,9 +81,9 @@ export async function render({ query } = {}) {
     if (!specOK(cat)) { findOut.replaceChildren(h('p', { class: 'coach', text: `${cat.name}: spec TBD, so no model line to search.` })); return; }
     findBtn.disabled = true; findBtn.lastChild.textContent = 'Searching\u2026';
     setTimeout(() => {
-      const t0 = performance.now(), sd = F.spreadFrom(P), st = startOf(), res = F.find(cat, { speed, rev, ft, spread: sd, start: st ? { lay: st.feet, arr: st.target } : null }), ms = Math.round(performance.now() - t0);
+      const t0 = performance.now(), sd = F.spreadFrom(P), st0 = startOf(), st = st0 && st0.kept ? st0.model : st0, res = F.find(cat, { speed, rev, ft, spread: sd, start: st ? { lay: st.feet, arr: st.target } : null }), ms = Math.round(performance.now() - t0);
       findBtn.disabled = false; findBtn.lastChild.textContent = 'Find my strike line';
-      const w = F.say(res, Object.assign({}, t, { ball: cat.name })); findOut.dataset.ms = ms;
+      const w = F.say(res, Object.assign({}, t, { ball: cat.name, kept: !!(st0 && st0.kept) }))   /* F01: Find searches from the model line, never from the bowler's kept one */; findOut.dataset.ms = ms;
       if (res.none) { findOut.replaceChildren(h('div', { class: 'card tg-find', id: 'tgFindCard' }, h('p', { class: 'coach', id: 'tgFindLine', text: `${w.line} Try another ball or move by hand below.` }))); return; }
       const use = (c, feet, eye, label) => () => { t = Object.assign({}, t, { feet, eyes: eye, bpBoard: c.bp != null ? Math.round(c.bp) : null, bpFt: c.bpFt }); box = null; update(true); toast(`${label}: feet ${feet}, ${t.mode} ${eye}.`); canvas.scrollIntoView({ block: 'start', behavior: 'smooth' }); };
       const sp = relSrc('speed'), rv = relSrc('rev'), S2 = res.spread;
@@ -208,6 +210,7 @@ export async function render({ query } = {}) {
     canvas.setAttribute('aria-label', `Lane: feet ${t.feet}, laydown ${r.lay}, eyes ${fmtHalf(t.eyes)} at the ${t.mode}. ${coach.textContent}`);
     deckCv.setAttribute('aria-label', d.text);
     setPrefs({ target: Object.assign({}, prefs().target, { t, ball: cat.id, ft, tv: 2 }) });
+    if (sigT() !== startSig && r.lay != null && r.arrows != null) { startSig = sigT(); keepLine(cat.id, { lay: r.lay, eyes: r.arrows }); }
   }
   async function saveMine() {
     if (!r) return;

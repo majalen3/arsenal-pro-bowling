@@ -17,7 +17,7 @@ import { profile } from '../store.js';
 import { houseRule } from '../cc/target.js';
 import { prefs, setPrefs } from '../store.js';
 import { ready, proj } from '../hub.js';
-import { lineFor, standOf } from '../cc/line.js';
+import { lineFor, standOf, keepLine } from '../cc/line.js';
 import { openNight } from '../cc/night.js';
 import { presetFor } from '../cc/model.js';
 import { aimLayer, paintPill, overlaysBtn } from './overlays.js';
@@ -143,21 +143,32 @@ export function render() {
   function doMiss(k) { const r = miss(k); toast(r.text, { action:{ label:'Undo', run:() => restore(r.before) } }); }
   let rq = 0, ranim = false;
   const queue = d => { ranim = ranim || !!(d && d.animate); if (rq) return; rq = requestAnimationFrame(() => { rq = 0; const a = ranim; ranim = false; update({ animate:a }); }); };
-  // Lane opens on the bowler's own starting line for this ball (the same js/cc/line.js line as Tonight), until they move it.
-  const lineSig = () => `${S.release}|${S.aim}`;
+  // Lane opens on this ball's line from js/cc/line.js (the same line as Tonight and Targeting): the line the bowler kept
+  // for this ball if any (F01), else the model start. Whatever the bowler moves here becomes the kept line for the ball.
+  const lineSig = () => `${app.ball.id}|${S.release}|${S.aim}|${half2(target())}`;   // eyes too: the aim can pass the model's launch clamp
+  const ctxLine = () => { const P = proj() || {}, b = P.bowler || {}, v = f => { const x = f && typeof f === 'object' ? f.v : f; return x == null || x === '' || isNaN(+x) ? null : +x; };
+    const sess = (P.sessions || {})[openNight(P) || ''] || {};
+    return lineFor(app.ball, { speed: v(b.speed), rev: v(b.rev), ft: sess.ft != null ? +sess.ft : null }); };
+  let seeded = false;
   function seedLine() {
     const P = proj(); if (!P || !Object.keys(P.owned || {}).length) return;
-    // Seed only an untouched line: first time only from the engine start (12 / -4), later only if still at our last seed.
-    // A restored v1 line or any line the bowler moved is left alone.
-    const ls = prefs().laneSeed; if (ls ? ls !== lineSig() : lineSig() !== '12|-4') return;
-    const b = P.bowler || {}, v = f => { const x = f && typeof f === 'object' ? f.v : f; return x == null || x === '' || isNaN(+x) ? null : +x; };
-    const sess = (P.sessions || {})[openNight(P) || ''] || {};
-    const L = lineFor(app.ball, { speed: v(b.speed), rev: v(b.rev), ft: sess.ft != null ? +sess.ft : null }); if (!L.stand) return;
-    if (S.release !== L.ml.feet || S.aim !== L.ml.aim) adjust({ release: L.ml.feet, aim: L.ml.aim });
+    const L = ctxLine(); seeded = true;
+    if (L.kept) { if (S.release !== L.ml.feet || half2(target()) !== L.ml.target) adjust({ release: L.ml.feet, target: L.ml.target }); }
+    else {
+      // No kept line: seed the model start only over an untouched line (first time from the engine start 12 / -4, later
+      // only if still at our last seed, or a different ball). A restored v1 line the bowler picked is left alone.
+      const ls = String(prefs().laneSeed || ''), parts = ls.split('|'), now2 = `${S.release}|${S.aim}`;
+      const untouched = !ls ? now2 === '12|-4' : parts.length < 4 ? ls === now2 : parts[0] !== app.ball.id || ls === lineSig();
+      if (!untouched || !L.stand) { setPrefs({ laneSeed: lineSig() }); return; }
+      if (S.release !== L.ml.feet || S.aim !== L.ml.aim) adjust({ release: L.ml.feet, aim: L.ml.aim });
+    }
     setPrefs({ laneSeed: lineSig() });
   }
+  // A move on Lane (drag, steppers, miss buttons, a saved line) is kept for this ball.
+  const keepMoved = () => { if (!seeded) return; const ls = prefs().laneSeed; if (ls === lineSig()) return;
+    keepLine(app.ball.id, { lay: S.release, eyes: half2(target()) }); setPrefs({ laneSeed: lineSig() }); };
   ready().then(seedLine).catch(() => {});
-  const offs = [on('ball', seedLine), on('state', queue), on('lines', () => update()), on('prefs', () => { qKey = ''; queue(); }), on('status', drawSync)];
+  const offs = [on('ball', seedLine), on('state', d => { keepMoved(); queue(d); }), on('lines', () => update()), on('prefs', () => { qKey = ''; queue(); }), on('status', drawSync)];
   return { el, title:'Lane', mounted() { update({ animate:true }); drawSync(); }, destroy() { cancelAnimationFrame(rq); offs.forEach(f => f()); lane.destroy(); deck.destroy(); } };
 }
 

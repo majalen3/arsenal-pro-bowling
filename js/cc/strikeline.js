@@ -104,13 +104,13 @@ function sensAt(cat, c, speed, rev, sd) {
 }
 const fmt = c => ({ kind: c.kind || 'best', lay: c.lay, arrows: c.arr, entry: r1(c.entry), angle: r1(c.angle), bp: c.bp == null ? null : r1(c.bp), bpFt: c.bpFt == null ? null : Math.round(c.bpFt), room: c.room, pocket: c.pocket, angleAvg: c.angleAvg });
 // coach voice, numbers first. feet = laydown + ball offset − drift (Breakdown Bowling); dots = straight line laydown → arrows.
-export function say(res, { offset = 7, drift = 0, mode = 'arrows', ball = '' } = {}) {
+export function say(res, { offset = 7, drift = 0, mode = 'arrows', ball = '', kept = false } = {}) {
   if (res.none) return { line: res.reason, alt: '', why: '' };
   const where = c => { const feet = Math.round(c.lay + offset - drift), eye = mode === 'dots' ? r1(c.lay + (c.arrows - c.lay) * 0.5) : c.arrows; return { feet, eye, txt: `Stand ${feet}, aim ${fmtHalf(eye)} at the ${mode}` }; };
   const b = where(res.best), a = res.alt && where(res.alt), sd = res.spread.arrows;
   const basis = sd.src === 'device' ? `your accuracy \u00b1${sd.mean} bds${sd.n ? `, n=${sd.n}` : ''}` : `assumed accuracy \u00b1${sd.v} bds, no LaneTrax import`;
   return {
-    line: `${res.best.kind === 'start' ? `Your starting line${ball ? ' with ' + ball : ''} (same as Tonight): ` + b.txt.charAt(0).toLowerCase() + b.txt.slice(1) : b.txt}. Pocket ${res.best.pocket}% (model estimate, ${basis}; ${res.n} simulated shots).`,
+    line: `${res.best.kind === 'start' ? (kept ? `Model starting line${ball ? ' with ' + ball : ''} (Tonight shows your own line): ` : `Your starting line${ball ? ' with ' + ball : ''} (same as Tonight): `) + b.txt.charAt(0).toLowerCase() + b.txt.slice(1) : b.txt}. Pocket ${res.best.pocket}% (model estimate, ${basis}; ${res.n} simulated shots).`,
     window: res.angleWin ? 'Pocket = entry board 17\u201318 at 4\u20136\u00b0 (model angle, drawn units).' : `Pocket = entry board 17\u201318 only: no line reaches 4\u20136\u00b0 with this ball here (best ${res.best.angle}\u00b0).`,
     alt: a && res.alt.kind === 'higher' ? `Higher model pocket %: ${a.txt.charAt(0).toLowerCase() + a.txt.slice(1)}, ${res.alt.pocket}% (the model\u2019s own search of ${res.tried} lines; breakpoint board ${res.alt.bp} vs ${res.best.bp} on your starting line, which aims at the Rule of 31 board).`
       : a ? `${res.alt.kind === 'room' ? 'More room' : 'Next best'}: ${a.txt.charAt(0).toLowerCase() + a.txt.slice(1)}, ${res.alt.pocket}% (${res.alt.room ? `still in the window for a ${res.alt.room}-board miss at the arrows${res.alt.kind === 'room' ? `, vs ${res.best.room}` : ''}` : 'less room for a miss'}).` : '',
