@@ -6,7 +6,8 @@ import { fmtHalf } from '../labels.js';
 import { h, icon, toast, segmented } from '../ui.js';
 import { go, retab } from '../router.js';
 import { ready, proj, add, addMany, loadStarter } from '../hub.js';
-import { on, today, deviceId, prefs, setPrefs, profile } from '../store.js';
+import { on, today, deviceId, prefs, setPrefs, profile, app, saveState } from '../store.js';
+import { balls, specOK } from '../data.js';
 import { mkEvent, voidEvent } from '../data/events.js';
 import { playOrder } from '../data/scoring.js';
 import * as Q from '../cc/quicklog.js';
@@ -34,6 +35,8 @@ import * as HAND from '../cc/hand.js';
 import { handAsk, handLine } from './hand.js';
 export { standOf };
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
+// F03: the Lane screen's ball follows Tonight's pick (or the ball in hand on Bowl). Quiet: no events, Lane reads app.ball on open.
+const laneBall = x => { const c = x && x.cat, e = c && (balls.find(y => y.id === c.id) || (specOK(c) ? c : null)); if (e && app.ball && app.ball.id !== e.id) { app.ball = e; saveState(); } };
 const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
 const provChip = (prov, label) => h('span', { class: 'prov', 'data-prov': prov || null, text: label });
 const SRC_PROV = { [R.SRC.assumed]: 'assumed', [R.SRC.model]: 'model', [R.SRC.spec]: 'manufacturer', [R.SRC.usbc]: 'usbc', [R.SRC.bowl]: 'usbc', [R.SRC.tag]: 'catalog' };
@@ -67,6 +70,13 @@ export async function render(o = {}) {
     await addMany([ev]); local = {}; draw();
   }
   const swapIn = (P, bag, from, to) => add('bag.saved', bag.id, BE.swap(P, bag, from, to));
+  // F02: the owned ball the throws are credited to (Throwing chip), else the pick.
+  function inHand(P, s, cur) {
+    if (!s.throwId || (cur && s.throwId === cur.id)) return cur;
+    const o = (P.owned || {})[s.throwId]; if (!o) return cur;
+    const x = bagOf(P, s).list.find(y => y.ownedId === s.throwId), cat = catOf(o.catalogId);
+    return { id: s.throwId, catalogId: o.catalogId || null, cat, name: x ? x.name : short(o.name || (cat || {}).name || 'Spare ball') };
+  }
   function bagOf(P, s) {
     // P1.1: ONE saved bag. Tonight, the builder and the ball chip all read the latest bag.saved (status.js currentBag).
     const bags = Object.values(P.bags), bag = ST.currentBag(P);
@@ -102,10 +112,13 @@ export async function render(o = {}) {
     const cur = r.order.find(x => x.id === s.pickId) || (advA && r.order.find(x => x.id === advA.ownedId)) || r.pick;
     const L = cur ? lineFor(cur.cat, { speed: num(b.speed), rev: num(b.rev), ft: pat ? pat.ft : null }) : null;
     const ml = L ? L.ml : null, stand = L ? L.stand : null;
+    // F02: the ball in hand (a mid-game change on the pad) drives the Bowl top line; the pick stays the advice.
+    const hb = inHand(P, s, cur), HL = hb === cur ? L : (hb ? lineFor(hb.cat, { speed: num(b.speed), rev: num(b.rev), ft: pat ? pat.ft : null }) : null);
     // Scoring fix 4: league team (frames in lineup order) or Baker (one team game). One pad; the pill says who is up.
     const team = teamOf(P, s), g = team ? team.g : gameOf(P, s);
     const gameOpen = (team ? team.started : g.mine.length > 0) && !g.st.done;
     if (!BOWL && !drawn && (gameOpen || (g0(P) && g.st.done && !s.ended))) { BOWL = true; history.replaceState(null, '', '#/bowl'); retab('bowl'); el.querySelector('#tnTitle').textContent = 'Bowl'; }
+    laneBall((gameOpen || BOWL) ? hb : cur);   // F03: Lane opens with the ball Tonight / Bowl names
     drawn = true;
     WK.keepAwake(WK.shouldHold(gameOpen, prefs().wakeLock));
     // ---- coach line (≤ 2 sentences, starts with a ball name)
@@ -153,10 +166,10 @@ export async function render(o = {}) {
     if (cur) {
       const lineBox = !ml || ml.none ? h('p', { class: 'muted small', id: 'tnModel', text: (ml && ml.reason) || 'spec TBD: no model line' })
         : h('dl', { class: 'kv', id: 'tnModel' }, h('dt', { text: 'Feet (stand)' }), h('dd', { id: 'tnFeet' }, String(stand.feet), provChip(stand.assumed ? 'assumed' : null, stand.assumed ? 'offset 7 assumed' : 'your offset')),
-          h('dt', { text: 'Laydown' }), h('dd', {}, String(ml.feet), provChip('model', '2-D model')),
+          h('dt', { text: 'Laydown' }), h('dd', {}, String(ml.feet), ml.kept ? provChip('user', 'your line (set on Lane or Targeting)') : provChip('model', '2-D model')),
           h('dt', { text: 'Eyes (arrows)' }), h('dd', { text: String(ml.target) }),
-          h('dt', { text: 'Breakpoint' }), h('dd', { text: `board ${ml.bp} at ${ml.bpFt} ft` }),
-          h('dt', { text: 'Holds' }), h('dd', { text: `${ml.holds} of ${ml.of} small misses (\u00b10.5 mph, \u00b120 rpm, \u00b11 board)` }));
+          ...(ml.kept ? [] : [h('dt', { text: 'Breakpoint' }), h('dd', { text: `board ${ml.bp} at ${ml.bpFt} ft` }),
+          h('dt', { text: 'Holds' }), h('dd', { text: `${ml.holds} of ${ml.of} small misses (\u00b10.5 mph, \u00b120 rpm, \u00b11 board)` })]));
       pick = h('div', { class: 'card pick', id: 'tnPick' },
         h('div', { class: 'row between' }, h('span', { class: 'ball-name', id: 'tnPickName', text: cur.name })),
         stand ? h('p', { class: 'tn-line', id: 'tnStand', text: `Feet ${stand.feet} \u00b7 eyes ${fmtHalf(ml.target)} at the arrows` }) : null,
@@ -179,7 +192,7 @@ export async function render(o = {}) {
     if (gameOpen || BOWL) {
       // ---- Bowl (#/bowl), and game open (sim bug 4): ball \u00b7 feet \u00b7 aim, the ball-change line, the scoring card, Weaker/Stronger. The rest behind one tap.
       body.append(h('div', { class: 'card tn-now', id: 'tnNow' },
-        h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: cur ? cur.name : 'No ball' }), ' ', aimChip(stand, ml)),
+        h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: hb ? hb.name : 'No ball' }), ' ', aimChip(HL && HL.stand, HL && HL.ml)),
         thenLine), quickLog(P, s, cur, b, hand, stand, g, team), alts || '', !gameOpen && reads ? reads : '',   // between games: the read and Weaker/Stronger in reach (J06)
         h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: 'Bag, lanes and line details' }),
           ...advisorCard(P, s, b, adv, cur && { name: cur.name, ml }), h('p', { class: 'coach', id: 'tnCoach', text: coach }), pick || '', gameOpen && reads ? reads : '', !gameOpen && s.event === 'practice' ? drillCard(P, s) : '', setup));
