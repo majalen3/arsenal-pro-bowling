@@ -60,7 +60,7 @@ export async function render(o = {}) {
   const setNet = () => { net.hidden = navigator.onLine; };
   window.addEventListener('online', setNet); window.addEventListener('offline', setNet);
   const ql = { leave: new Set(), foul: false, tag: null };   // quick-log taps not yet written
-  let drillOpen = false, swapOpen = null, lastTap = 0, busy = false, moreOpen = false, savedMsg = '', frameT0 = 0, edit = null, lastEdit = null, pickFix = false, ballOpen = false, teamOpen = null;
+  let drillOpen = false, swapOpen = null, lastTap = 0, busy = false, moreOpen = false, savedMsg = '', shownMsg = '', frameT0 = 0, edit = null, lastEdit = null, pickFix = false, ballOpen = false, teamOpen = null;
   let local = {};   // UI state not yet written (avoids re-render churn while typing)
   const sess = () => Object.assign({ kind: 'tonight', patternSlug: null, ft: null, ml: null, ratio: null, centerId: null, surface: 'unknown', stage: 'fresh', bagId: null, game: 1, pickId: null, reads: [] }, (proj().sessions || {})[curSid()], local);
   async function save(fields) {
@@ -194,9 +194,10 @@ export async function render(o = {}) {
       // ---- Bowl (#/bowl), and game open (sim bug 4): ball \u00b7 feet \u00b7 aim, the ball-change line, the scoring card, Weaker/Stronger. The rest behind one tap.
       body.append(h('div', { class: 'card tn-now', id: 'tnNow' },
         h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: hb ? hb.name : 'No ball' }), ' ', aimChip(HL && HL.stand, HL && HL.ml)),
-        thenLine), quickLog(P, s, cur, b, hand, stand, g, team), alts || '', !gameOpen && reads ? reads : '',   // between games: the read and Weaker/Stronger in reach (J06)
+        gameOpen ? null : thenLine),   // C3: during a game the ball-change plan sits under details
+        quickLog(P, s, cur, b, hand, stand, g, team), alts || '', !gameOpen && reads ? reads : '',   // between games: the read and Weaker/Stronger in reach (J06)
         h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: 'Bag, lanes and line details' }),
-          ...advisorCard(P, s, b, adv, cur && { name: cur.name, ml }), h('p', { class: 'coach', id: 'tnCoach', text: coach }), pick || '', gameOpen && reads ? reads : '', !gameOpen && s.event === 'practice' ? drillCard(P, s) : '', setup));
+          ...advisorCard(P, s, b, adv, cur && { name: cur.name, ml }), h('p', { class: 'coach', id: 'tnCoach', text: coach }), gameOpen && thenLine ? thenLine : '', pick || '', gameOpen && reads ? reads : '', !gameOpen && s.event === 'practice' ? drillCard(P, s) : '', setup));
       if (gameOpen) requestAnimationFrame(padToThumb);
       return;
     }
@@ -392,7 +393,9 @@ export async function render(o = {}) {
     }));
     const head = h('div', { class: 'row between' }, h('h2', { class: 'card-title', text: `Quick log \u00b7 game ${game}` }),
       h('span', { class: 'pill', id: 'qlWhere', text: edit ? `Fixing ${league ? (who === 'me' ? 'your ' : nameOf(who) + '\u2019s ') : ''}frame ${edit.f} \u00b7 ball ${st.roll}` : st.done ? `Final ${st.total}` : team && team.up ? `Up: ${team.up.name} \u00b7 frame ${st.frame}` : `Frame ${st.frame} \u00b7 ball ${st.roll}` }));
-    const saved = h('p', { class: 'ql-saved small', id: 'qlSaved', role: 'status', text: savedMsg });
+    // C3: "Saved ✓" flashes once per new write, then fades; the text stays for screen readers and the frame strip shows the result.
+    const fresh = savedMsg && savedMsg !== shownMsg; shownMsg = savedMsg;
+    const saved = h('p', { class: `ql-saved small ${fresh ? 'ql-flash' : 'ql-quiet'}`, id: 'qlSaved', role: 'status', text: savedMsg });
     const chip = credit && meUp && !(live.done && !edit) ? h('button', { class: 'chip ql-ball', id: 'qlBall', 'aria-expanded': String(ballOpen), 'aria-controls': 'qlBallPick', onclick: () => { ballOpen = !ballOpen; draw(); } },
       h('span', { class: 'chip-k', text: credit === spareBall && facingLeave ? 'Spare ball ' : 'Ball ' }), credit.name, h('span', { class: 'sr-only', text: ', change' })) : null;
     const pickBall = ballOpen && chip ? h('div', { class: 'ql-ballpick', id: 'qlBallPick', role: 'group', 'aria-label': 'Throwing this ball' },
@@ -431,7 +434,9 @@ export async function render(o = {}) {
       const hint = edit || !meUp ? null : Q.leaveHint(facingLeave ? st.standing : [...ql.leave], base, hand);
       const hintEl = hint ? h('p', { class: 'small ql-hint', id: 'qlHint' }, hint.split ? h('span', { class: 'pill', id: 'qlSplit', text: 'Split' }) : null, ' ',
         `${hint.leave.join('-')}: ` + hint.keys.map(k => `key pin ${k.key} \u2192 stand ${k.board}${k.move === 'none' ? '' : ' (move ' + k.move + ')'}`).join('; or ') + '. Same target.',
-        provChip(stand ? null : 'assumed', stand ? `${hand === 'left' ? 'lefty' : 'righty'} \u00b7 strike stand ${base}` : `${hand === 'left' ? 'lefty' : 'righty'} \u00b7 board 20 assumed`), provChip(null, '3-6-9 spare system')) : null;
+        // C3: provenance stays (screen readers, long-press title) but no chips on the pad during scoring.
+        h('span', { class: 'sr-only', text: ` From ${stand ? `${hand === 'left' ? 'lefty' : 'righty'} \u00b7 strike stand ${base}` : `${hand === 'left' ? 'lefty' : 'righty'} \u00b7 board 20 assumed`}, 3-6-9 spare system.` })) : null;
+      if (hintEl) hintEl.title = `${stand ? `Your strike stand ${base}` : 'Board 20 assumed (no strike stand yet)'}; 3-6-9 spare system`;
       // the ball picker (or the frame picker) takes the pad's place while open, so the sticky pad never covers it
       card.append(pickBall || (pickFix && tools.picker ? h('div', { class: 'ql-pad', id: 'qlPad' }, tools.picker)
         : h('div', { class: 'ql-pad', id: 'qlPad' }, hintEl, pins, btns)));
