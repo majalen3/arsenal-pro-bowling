@@ -1,6 +1,5 @@
 {
  "_note": "Steps and probes that fail because of an open, reported app bug. Key = \"<journey>/<step name>\" or \"probe/<screen>/<kind>\"; value = finding id in docs/qa-reports/FINDINGS_1.md / FINDINGS_2.md. A listed step that fails is \"known\" (does not fail CI); a listed step that passes is reported as fixed so it can be removed. Anything not listed fails CI.",
  "J05/Mark Cal total-only (types a game total)": "F06",
- "J13/Status uses the four bowler words everywhere (no Exclude / Benched / Lock)": "PENDING P1.3 (ball Status)",
  "_note_pending": "Entries starting PENDING are IA_PLAN.md §7 P1 acceptance criteria written before the build ships (J13-J15). They are expected to fail; when one passes the run lists it under 'Known issues now passing': delete the entry so the step becomes a guard."
 }

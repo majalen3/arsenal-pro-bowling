@@ -28,8 +28,8 @@ export function tile(b, { onCompareToggle, picked }) {
       h('button', { class:'btn sm ghost cmp-btn', 'aria-pressed':String(picked), 'aria-label':`${picked ? 'Picked' : 'Compare'} ${b.name}`, onclick:() => onCompareToggle(b) }, h('span', { html:icon(picked ? 'check' : 'compare') }), picked ? 'Picked' : 'Compare')));
   return t;
 }
-// Armory (owner brief 2026-10-24): owned balls on lit shelves with gold nameplates; retired balls in the Hall of Fame.
-// One takeaway: what is in your bag. At home / pro shop and Hall of Fame sit behind a tap; the full catalog stays below.
+// Armory (owner brief 2026-10-24): owned balls on lit shelves with gold nameplates; retired balls on the Old Friends shelf (owner, 2026-10-31).
+// One takeaway: what is in your bag. At home / pro shop and Old Friends sit behind a tap; the full catalog stays below.
 function pedestal(it, why) {
   const c = it.cat, inCatalog = c && balls.some(b => b.id === c.id), onLane = c && c.id === app.ball.id;
   const specs = c && c.rg != null ? `RG ${rgTxt(c)} \u00b7 Diff ${diffTxt(c)}` : 'Specs not entered';
@@ -51,7 +51,7 @@ function armory(P) {
     withHelp(h('h2', { class:'group-h', id:'armBagH', text:`In my bag \u00b7 ${sh.bag.length}` }), 'ap-status', 'Ball status'),
     shelf(sh.bag, 'armBag', 'In my bag', empty),
     sh.bench.length ? fold('armBench', 'At home and at the pro shop', sh.bench.length, shelf(sh.bench, 'armBenchShelf', 'At home and at the pro shop')) : null,
-    fold('armHall', 'Hall of Fame', sh.hall.length, sh.hall.length ? shelf(sh.hall, 'armHallShelf', 'Hall of Fame')
+    fold('armHall', 'Old Friends', sh.hall.length, sh.hall.length ? shelf(sh.hall, 'armHallShelf', 'Old Friends')
       : h('div', { class:'stack', id:'armHallNone' }, h('p', { class:'muted small', text:'Retired balls rest here with their record. Set a ball\u2019s Status to Retired on its page or in Bag.' }), h('a', { class:'btn ghost sm', href:'#/bag' }, 'Open Bag'))),
     h('p', { class:'muted small', id:'armNote', text:'Marks appear only from games you log with frames.' }));
 }

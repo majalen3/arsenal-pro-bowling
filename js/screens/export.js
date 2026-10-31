@@ -96,7 +96,7 @@ export async function render() {
         : h('p', { class: 'ps-muted', text: 'No bag saved yet. Build one on Bag.' })),
     ...(m.groups.length ? m.groups.map(g => h('section', { class: 'ps-group', 'data-group': g.key }, h('h2', { text: `${g.label} \u00b7 ${g.rows.length}` }), h('div', { class: 'ps-tscroll', tabindex: '0', role: 'region', 'aria-label': `${g.label} table` }, table(g))))
       : [h('p', { class: 'ps-muted', text: 'No balls on file yet.' })]),
-    h('section', { class: 'ps-hof', id: 'psHof' }, h('h2', { text: 'Hall of Fame and milestones' }),
+    h('section', { class: 'ps-hof', id: 'psHof' }, h('h2', { text: 'Old Friends and milestones' }),
       m.hall.length ? h('ul', {}, ...m.hall.map(r => h('li', {}, h('b', { text: r.name }), ` retired \u00b7 ${r.games ? r.games + ' games' : 'no games logged'}${r.best != null ? ' \u00b7 best ' + r.best : ''}`))) : h('p', { class: 'ps-muted', text: 'No retired balls.' }),
       m.earned.length ? h('ul', { class: 'ps-marks' }, ...m.earned.map(e => h('li', {}, h('b', { text: e.name }), ' ' + e.marks.join(' \u00b7 ')))) : h('p', { class: 'ps-muted', text: 'Milestones appear from games logged with frames.' })),
     h('footer', { class: 'ps-foot', id: 'psFoot' },

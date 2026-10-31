@@ -20,7 +20,7 @@ test('a 300 logged with the ball is earned and shown', () => {
   const r = records(P); assert.equal(r.o1.games, 1); assert.equal(r.o1.best, 300);
   assert.deepEqual(milestones(r.o1).map(m => m.text), ['300 game', 'First game logged']);
 });
-test('shelves: retired go to the Hall of Fame, benched to the bench', () => {
+test('shelves: retired go to Old Friends, benched to the bench', () => {
   const P = project([own('a', 'rattler', 'retired', 'Old'), own('b', null, 'benched', 'Rack Attack'), own('c', null, 'proShop', 'X')]);
   const s = shelves(P, cat); assert.equal(s.hall.length, 1); assert.equal(s.bench.length, 2); assert.equal(s.bag.length, 0);
   assert.equal(s.bench[0].role, null);   // no catalog link: no invented role

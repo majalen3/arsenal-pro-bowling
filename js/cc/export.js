@@ -23,7 +23,7 @@ export function ballRow(P, id, o, catOf, rec) {
     color: (c && c.color) || null, games: r ? r.games : 0, complete: r ? r.complete : 0, avg: r && r.complete ? Math.round(r.sum / r.complete) : null,
     best: r ? r.best : null, earned: milestones(r), added: day(o.createdTs), src: own ? 'you' : c ? 'maker' : 'none' };
 }
-// The sheet: header facts (only the ones entered), balls grouped by Status, tonight's bag, Hall of Fame, milestones.
+// The sheet: header facts (only the ones entered), balls grouped by Status, tonight's bag, Old Friends (retired), milestones.
 export function sheetModel(P, prof, { catOf, now = Date.now(), version = '' } = {}) {
   const p = prof || {}, ent = p.entered || null, has = k => !ent || ent[k];
   const b = (P && P.bowler) || {}, nm = b.name && typeof b.name === 'object' ? b.name.v : b.name;

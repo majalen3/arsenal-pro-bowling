@@ -216,3 +216,8 @@ The owner's target is a board (1–39, halves allowed), not an engine angle. We 
 - **Export and delete:** Me → Account → Export my data (JSON of the account stream); Delete account needs the password and removes the user, sessions and account events. Data on the phone stays until the bowler clears it.
 - **Sign out:** keeps the phone's data, or "Sign out and clear this phone" when every change has reached the account. After sign-out the phone backs up under its backup code again, as before.
 - The v1 endpoints (`/api/lines` …) are still written with the backup code; they hold only the line/note mirror.
+
+## Retired-ball shelf: "Old Friends" (owner 2026-10-31)
+- **Decision:** the shelf of retired balls is called **Old Friends** ("Old friends for retired friends"), replacing "Hall of Fame" everywhere: the Armory shelf heading, the Ball status Help bubble and Guide entry, the export sheet section ("Old Friends and milestones"), tests and current docs.
+- The Status word stays **Retired**; only the shelf heading is Old Friends. The four Status words are unchanged (In my bag / At home / At the pro shop / Retired).
+- Closes F16; the J13 known issue is removed, so "Hall of Fame" anywhere on Arsenal, Bag, Tonight or the ball page now fails CI. Historical logs and release notes keep the old name as written.

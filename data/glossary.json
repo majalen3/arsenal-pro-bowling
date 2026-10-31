@@ -3448,8 +3448,8 @@
    "tree": "Equipment — Balls",
    "term": "Ball status",
    "level": "Beginner",
-   "bubble": "Where a ball is: In my bag (tonight's bag can pick it), At home, At the pro shop, or Retired (Hall of Fame). Its history is always kept.",
-   "glossary": "Status is one setting per ball. In my bag: the bag builder can pick it. At home: you own it; the builder won't pick it on its own, but Swap offers it, tagged \"grab from home\". At the pro shop: never picked until you set it back. Retired: moves to the Hall of Fame; never picked. Changing status never deletes games or lines.",
+   "bubble": "Where a ball is: In my bag (tonight's bag can pick it), At home, At the pro shop, or Retired (on the Old Friends shelf). Its history is always kept.",
+   "glossary": "Status is one setting per ball. In my bag: the bag builder can pick it. At home: you own it; the builder won't pick it on its own, but Swap offers it, tagged \"grab from home\". At the pro shop: never picked until you set it back. Retired: moves to the Old Friends shelf; never picked. Changing status never deletes games or lines.",
    "placement": "Bubble (Ball page › Status; Bag builder) + Guide",
    "priority": "High",
    "sources": [

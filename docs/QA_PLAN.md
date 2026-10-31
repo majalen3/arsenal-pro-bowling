@@ -104,7 +104,7 @@ Score 3 frames, then go offline (c) → keep scoring → reload mid-game offline
 Import the bowler's backup (c) → Sessions → a night → Card in ≤ 3 taps → share the Bowler Card (1 tap).
 
 ### J13 Ball Status (`righty`, IA_PLAN §7 P1.3, PENDING)
-The four Status words (In my bag / At home / At the pro shop / Retired) are the only words on Arsenal, Bag, Tonight and the ball page. The old Exclude / Benched / Lock / Hall of Fame wording is gone. Set "At the pro shop" on the ball page in ≤ 2 taps. Without a reload, the builder's Why-not lists it as "pro shop", and Swap, Tonight and the score-pad ball chip never offer it. "At home" is still offered as "grab from home". Retired is never offered, but its page still opens. No confirm dialogs.
+The four Status words (In my bag / At home / At the pro shop / Retired) are the only words on Arsenal, Bag, Tonight and the ball page. The old Exclude / Benched / Lock / Hall of Fame wording is gone; the retired shelf is "Old Friends" (owner, 2026-10-31). Set "At the pro shop" on the ball page in ≤ 2 taps. Without a reload, the builder's Why-not lists it as "pro shop", and Swap, Tonight and the score-pad ball chip never offer it. "At home" is still offered as "grab from home". Retired is never offered, but its page still opens. No confirm dialogs.
 
 ### J14 One bag (`righty`, P1.1 / P1.2 / P1.4, PENDING)
 There is exactly one "Bring: N" control (the Tournament 6 / League 3 chips are gone), and "Other" takes 7. The builder has 3 step headings. Every pick has a role and a one-sentence why. Picks plus why-not cover every owned ball, each with a reason. "Pack these N" is in the first screen. Packing saves the one bag. After a reload, the Bag header ("N packed"), Tonight and the ball chip all show the same balls.

@@ -622,7 +622,7 @@ noscript p{padding:24px}
 html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .lane-tools{gap:var(--s2);align-items:center;margin-top:var(--s2)}
 #tgOvBtn{margin-top:var(--s2)}
-/* Armory (owner brief 2026-10-24): lit shelves, gold nameplates, Hall of Fame. Tokens only. */
+/* Armory (owner brief 2026-10-24): lit shelves, gold nameplates, Old Friends shelf. Tokens only. */
 .arm-titles{display:flex;flex-direction:column;flex:1 0 auto;min-width:0;max-width:100%}
 .arm-head{flex-wrap:wrap}
 .arm-team{font-size:var(--fs-xs);font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-ink)}

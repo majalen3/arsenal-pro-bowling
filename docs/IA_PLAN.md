@@ -48,7 +48,7 @@
 | Bag Lock / Exclude | **REPLACE** | 📌 **Always bring** (per outing). "Leave out" is replaced by Status, or by Swap for tonight only |
 | Bag Pack list | MERGE | Into the "Your bag for tonight" rows (one list, not two) |
 | Bag "Ball status and care" at the bottom | **MOVE** | Status goes on each ball row of the Bag tab (2 taps). Care goes on the ball page |
-| Arsenal Armory / Bench and pro shop / Hall of Fame | KEEP as views | Status filter chips: In my bag / At home / At the pro shop / Retired. Armory stays as a flavour view; Hall of Fame = Retired |
+| Arsenal Armory / Bench and pro shop / Hall of Fame | KEEP as views | Status filter chips: In my bag / At home / At the pro shop / Retired. Armory stays as a flavour view; Old Friends = Retired (was Hall of Fame; owner 2026-10-31) |
 | Arsenal 22-ball catalog wall | TAP | "Browse catalog" from + Add ball |
 | Sessions | RENAME → Results | The last night's recap card is first |
 | Export games (CSV) | KEEP + duplicate link | In Results and in Me › Your data (one feature, two entry points, the same function) |

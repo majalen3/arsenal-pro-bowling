@@ -584,7 +584,7 @@ async def export_cycle(b):
     check(avg is not None and f'{avg} (n 2)' in rowt, f'[export] games and average only where logged, with n ({rowt!r}, avg {avg})')
     blank = await p.evaluate(f"""() => [...document.querySelectorAll('#arsSheet tr[data-own]')].filter(r => r.dataset.own !== {_j.dumps(info['id'])}).every(r => !r.children[7].textContent && !r.children[8].textContent)""")
     check(blank, '[export] no games/average for balls without logged games')
-    hof = await p.text_content('#psHof'); check('retired' in hof and '300 game' in hof, f'[export] Hall of Fame and earned milestones {hof[:120]!r}')
+    hof = await p.text_content('#psHof'); check('retired' in hof and '300 game' in hof, f'[export] Old Friends and earned milestones {hof[:120]!r}')
     foot = await p.text_content('#psFoot'); check('manufacturer' in foot and 'logged with frames' in foot, '[export] provenance footer')
     ov = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(ov[1] <= ov[0], f'[export] sheet preview does not scroll the page sideways {ov}')
     await p.click('#psPrint'); check(await p.evaluate('window.__printed') == 1, '[export] Print or PDF calls window.print()')
@@ -1324,7 +1324,7 @@ async def alley_cycle(b):
     await c.close()
 
 async def armory_cycle(b):
-    # Armory: owned balls on lit shelves, gold nameplates, Hall of Fame behind a tap, marks only when earned. No new tab.
+    # Armory: owned balls on lit shelves, gold nameplates, Old Friends behind a tap, marks only when earned. No new tab.
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
     await seed(p); await p.goto(BASE + '?arm#/arsenal'); await p.wait_for_selector('#armory')
     check(await p.text_content('.arm-team') == 'Arsenal Pro' and await p.text_content('.appbar .title') == 'Armory', '[armory] header: team line + Armory (no invented name)')
@@ -1344,7 +1344,7 @@ async def armory_cycle(b):
     await p.wait_for_function("() => document.querySelector('#bagCare [data-v=\"retired\"]').getAttribute('aria-checked') === 'true' || document.querySelector('#bagCare [data-v=\"retired\"]').getAttribute('aria-pressed') === 'true'"); await p.wait_for_timeout(400)
     await p.goto(BASE + '?arm4#/arsenal'); await p.wait_for_selector('#armHall'); await p.click('#armHall summary')
     hall = await p.evaluate("() => [...document.querySelectorAll('#armHallShelf .ped')].map(x => x.dataset.own)")
-    check(hall == ['own-raw-hammer'], f'[armory] retired ball moves to the Hall of Fame {hall}')
+    check(hall == ['own-raw-hammer'], f'[armory] retired ball moves to Old Friends {hall}')
     await axe_ok(p, '[armory] hall open'); await shot(p, 'phone-armory-hall')
     await p.click('#armBag [data-own="own-rattler-big-bite"] .ped-link'); await p.wait_for_function("() => location.hash.startsWith('#/ball/')")
     check(True, '[armory] pedestal opens the ball page')
