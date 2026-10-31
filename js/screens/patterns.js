@@ -13,12 +13,13 @@ export function render() {
   const match = p => { const q = st.q.trim().toLowerCase();
     const f = st.f === 'all' || (st.f === 'pba' ? /pba/i.test(p.name + ' ' + p.series) : st.f === 'usbc' ? /usbc/i.test(p.name + ' ' + p.series) : p.len === st.f);
     return f && (!q || q.split(/\s+/).every(w => (p.name + ' ' + p.series + ' ' + (p.ft || '')).toLowerCase().includes(w))); };
+  // Clutter audit C10: rows show name + length (and series); ratio and volume are on the pattern page, one tap away.
   function draw() {
     const res = all.filter(match); list.innerHTML = '';
     count.textContent = `${res.length} pattern${res.length === 1 ? '' : 's'}`;
     if (!res.length) { list.append(emptyState('No patterns match', 'Try a shorter search, or clear the filter.', { label:'Clear', run:() => { st.q = ''; search.value = ''; st.f = 'all'; drawChips(); draw(); } })); return; }
     res.slice(0, st.n).forEach(p => list.append(h('a', { class:'prow', href:`#/pattern/${p.slug}` },
-      h('span', { class:'prow-main' }, h('span', { class:'prow-name', text:p.name }), h('span', { class:'prow-meta', text:[p.series, p.ratio ? p.ratio + ':1' : '', p.ml ? p.ml + ' ml' : ''].filter(Boolean).join(' \u00b7 ') })),
+      h('span', { class:'prow-main' }, h('span', { class:'prow-name', text:p.name }), h('span', { class:'prow-meta', text:p.series || '' })),
       h('span', { class:'prow-len', 'aria-label':`${p.ft} feet` }, h('span', { class:'lenbar' }, h('i', { style:{ width:Math.min(100, (p.ft || 0) / 52 * 100) + '%' } })), h('b', { class:'num', text:`${p.ft}\u2032` })))));
     if (res.length > st.n) list.append(h('button', { class:'btn ghost block', id:'patMore', onclick:() => { st.n += 120; draw(); } }, `Show more (${res.length - st.n} left)`));
   }
