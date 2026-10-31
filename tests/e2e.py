@@ -40,6 +40,16 @@ os.makedirs(ART, exist_ok=True)
 async def shot(p, name):
     if SHOTS: os.makedirs(SHOTS, exist_ok=True); await p.screenshot(path=os.path.join(SHOTS, name + '.png'))
 
+async def bowl_more(p):
+    # IA P1.5: the pad lives on #/bowl; the pick card, reads and setup sit behind its "Bag, lanes and line details" fold.
+    await p.wait_for_selector('#tnLog')
+    if await p.evaluate("() => { const d = document.querySelector('#tnMore'); if (d && !d.open) { d.open = true; return true; } return false; }"): await p.wait_for_timeout(150)
+
+async def open_folds(p):
+    # IA P1.5: Tonight keeps pattern / center / lanes behind "More details" (#tnExtra); Bowl keeps the pick card behind #tnMore.
+    await p.wait_for_selector('#tonightBody')
+    if await p.evaluate("() => { let n = 0; for (const d of document.querySelectorAll('#tnExtra, #tnMore')) if (!d.open) { d.open = true; n++; } return n; }"): await p.wait_for_timeout(150)
+
 async def seed(p, onboarded=True):
     await p.goto(BASE); await p.evaluate(WIPE)
     if onboarded: await p.evaluate("localStorage.setItem('ap_prefs', JSON.stringify({onboarded:true}))")
@@ -321,10 +331,12 @@ async def tonight_cycle(b):
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
     await seed(p); await p.goto(BASE + '?tn#/tonight'); await p.wait_for_selector('#noBag')
     check(await p.query_selector('#tabs a[href="#/tonight"][aria-current=page]') is not None, '[tonight] Tonight tab exists and is current')
-    await p.click('#loadStarter'); await p.wait_for_selector('#tnPick')
+    await p.click('#loadStarter'); await p.wait_for_selector('#tnStartBowl')
+    check(await p.query_selector('#tnPick') is None, '[tonight] P1.5: no first-ball card on Tonight (the start line says it once)')
+    await p.click('#tnStartBowl'); await p.wait_for_function("() => location.hash === '#/bowl'"); await bowl_more(p); await p.wait_for_selector('#tnPick')
     # P1.1: Tonight reads THE bag (latest bag.saved). Re-save the starter's 6-ball tournament bag so it is the current one.
     await p.evaluate("""async () => { const h = await import('./js/hub.js'); const b = Object.assign({}, h.proj().bags['bag-tournament']); delete b.id; delete b.ts; await h.add('bag.saved', 'bag-tournament', b); }""")
-    await p.evaluate("location.hash = '#/more'"); await p.wait_for_timeout(100); await p.evaluate("location.hash = '#/tonight'"); await p.wait_for_selector('#tnPick')
+    await p.evaluate("location.hash = '#/more'"); await p.wait_for_timeout(100); await p.evaluate("location.hash = '#/bowl'"); await bowl_more(p); await p.wait_for_selector('#tnPick')
     check('Big Bite' in await p.text_content('#tnPickName') and 'pattern unknown' in await p.text_content('#tnCoach'), '[tonight] unknown pattern -> benchmark (Big Bite) first, reason stated')
     coach = (await p.text_content('#tnCoach')).strip(); sent = [x for x in coach.replace('e.g.', '').split('. ') if x.strip()]
     check(len(sent) <= 2 and (coach[0].isdigit() or coach.startswith(('Rattler', 'Ordnance', 'Super', 'Hy-Road', 'Deadly', 'Ice'))), f'[tonight] coach voice: <=2 sentences, starts with a ball name: {coach!r}')
@@ -343,15 +355,15 @@ async def tonight_cycle(b):
     await p.fill('#tnPattern', '2026 PBA Badger'); await p.dispatch_event('#tnPattern', 'change'); await p.wait_for_function("() => document.querySelector('#tnLevel') && document.querySelector('#tnLevel').textContent.includes('demand 5')")
     await p.fill('#tnCenter', 'Test Lanes'); await p.dispatch_event('#tnCenter', 'change'); await p.wait_for_timeout(300)
     await p.click('#tnSetup [role=radio][data-v=synthetic]'); await p.wait_for_timeout(300)
-    t = await p.text_content('#tnPickName'); co = await p.text_content('#tnCoach'); st = await p.text_content('#tnPick [data-alt=Stronger]')
+    t = await p.text_content('#tnPickName'); co = await p.text_content('#tnCoach'); st = await p.text_content('#tonightBody [data-alt=Stronger]')
     check('Big Bite' in t and 'new center' in co and 'Super Nova' in st and 'demand 5' in await p.text_content('#tnPick'), f'[tonight] Badger 50 ft heavy -> demand 5; first visit to a center keeps benchmark first, Super Nova is the stronger move ({t.strip()})')
     # LaneTrax measurement -> accept on Tonight
     await p.goto(BASE + '?tn#/import?kind=lanetrax'); await p.wait_for_selector('#impPick'); await p.set_input_files('#impFile', synth)
     await p.wait_for_selector('#impPreview[data-kind=lanetrax]'); await p.click('#impCommit'); await p.wait_for_selector('#impDone')
     await p.goto(BASE + '?tn#/tonight'); await p.wait_for_selector('#tnMeasNudge')
     check('LaneTrax' in await p.text_content('#tnMeasNudge') and await p.get_attribute('#tnMeasNudge', 'href') == '#/card', '[tonight] pending LaneTrax numbers: one quiet link to the Bowler Card (accept lives there)')
-    pick0 = await p.text_content('#tnPickName')
-    await p.reload(); await p.wait_for_selector('#tnPick')
+    await p.goto(BASE + '?tn#/bowl'); await bowl_more(p); pick0 = await p.text_content('#tnPickName')
+    await p.reload(); await bowl_more(p); await p.wait_for_selector('#tnPick')
     check(await p.text_content('#tnPickName') == pick0, '[tonight] session survives reload')
     check(not errs, '[tonight] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
@@ -360,7 +372,7 @@ async def bag_cycle(b):
     # P1.4 3-step builder (wireframe 03): role words, Swap sheet (in my bag + at home, "what changes"), 📌 Always bring,
     # ladder + 10 checks behind a tap, suggest-again from owned only, pack list, care = fold(log).
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
-    await seed(p); await p.goto(BASE + '?bag#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnBagLink')
+    await seed(p); await p.goto(BASE + '?bag#/bowl'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await bowl_more(p); await p.wait_for_selector('#tnBagLink')
     await p.click('#tnBagLink'); await p.wait_for_selector('#bagRows')
     check(await p.query_selector('#tabs a[href="#/tonight"][aria-current=page]') is not None, '[bag] reached from Tonight; Tonight tab stays current')
     steps = await p.eval_on_selector_all('#bagBody .card-title', 'e => e.map(x => x.textContent)')
@@ -507,8 +519,8 @@ async def gametotal_cycle(b):
     await p.fill('#gtGame', '2'); await p.fill('#gtScore', '201'); await p.click('#gtSave'); await p.wait_for_function("() => document.querySelector('#sessGames') && document.querySelector('#sessGames').textContent.includes('201')")
     check('388' in await p.text_content('#sessGames'), '[gametotal] series 388 from the two totals')
     await axe_ok(p, '[gametotal] session'); w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[gametotal] no horizontal overflow {w}')
-    await p.evaluate("location.hash = '#/tonight'"); await p.wait_for_selector('#tnSetup')
-    await p.click('#tnSetup [aria-label="Scoring"] [data-v="league"]'); await p.wait_for_selector('#tnTeam')
+    await p.evaluate("location.hash = '#/tonight'"); await open_folds(p); await p.wait_for_selector('#tnSetup')
+    await p.click('#tnSetup [aria-label="Scoring"] [data-v="league"]'); await p.wait_for_selector('#tnTeam'); await p.evaluate("() => { document.querySelector('#tnTeam').open = true; }")
     await p.evaluate("() => { document.querySelector('#tnTeam').open = true; }")
     check(await p.is_visible('#lgAddTotal') and 'final score' in await p.text_content('#lgTotalWhy'), '[gametotal] offered in team setup')
     check(not errs, f'[gametotal] no page errors {errs[:3]}'); await c.close()
@@ -623,7 +635,7 @@ async def targeting_cycle(b):
     # Targeting: feet/eyes -> unchanged engine path -> break box + pocket call; missed high -> one cited move, engine-verified, 1 tap;
     # save as my line -> back to saved; walkthrough dismiss/replay; lefty mirror; axe, 44 px, 360 px.
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
-    await seed(p); await p.goto(BASE + '?tg#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnFind')
+    await seed(p); await p.goto(BASE + '?tg#/bowl'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await bowl_more(p); await p.wait_for_selector('#tnFind')
     await p.click('#tnFind'); await p.wait_for_selector('#tgFindCard')
     check('#/target' in p.url and 'Big Bite' in await p.eval_on_selector('#tgBall', 'e => e.selectedOptions[0].textContent'), '[target] Tonight "Find my strike line" opens Targeting with tonight\'s ball and runs Find')
     await p.goto(BASE + '?tg#/target'); await p.wait_for_selector('#tgTour')
@@ -673,7 +685,7 @@ async def targeting_cycle(b):
     cdp = None
     try: cdp = await c.new_cdp_session(p); await cdp.send('Emulation.setCPUThrottlingRate', {'rate': 4})
     except Exception: cdp = None
-    await p.goto(BASE + '?tg#/tonight'); await p.wait_for_selector('#tnFind'); await p.click('#tnFind'); await p.wait_for_selector('#tgFindLine', timeout=15000)
+    await p.goto(BASE + '?tg#/bowl'); await bowl_more(p); await p.wait_for_selector('#tnFind'); await p.click('#tnFind'); await p.wait_for_selector('#tgFindLine', timeout=15000)
     fl = (await p.text_content('#tgFindLine')).strip(); ms = int(await p.get_attribute('#tgFindOut', 'data-ms') or 99999)
     if cdp: await cdp.send('Emulation.setCPUThrottlingRate', {'rate': 1})
     check('find=1' in p.url and re.match(r'^Your starting line with [^(]+ \(same as Tonight\): stand \d+, aim [\d.\u00bd]+ at the arrows\. Pocket \d+% \(model estimate, assumed accuracy \u00b11\.5 bds, no LaneTrax import; 200 simulated shots\)\.$', fl) is not None, f'[find] Tonight -> stand, aim, Pocket % with basis + n [{fl}]')
@@ -721,7 +733,7 @@ async def addball_cycle(b):
         await route.fulfill(status=200, content_type='application/json', headers={'access-control-allow-origin': '*'}, body=fx(f))
     await c.route('**/arsenal-pro-api.onrender.com/api/spec-lookup**', look)
     p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
-    await seed(p); await p.goto(BASE + '?ab#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnBagLink')
+    await seed(p); await p.goto(BASE + '?ab#/bowl'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await bowl_more(p); await p.wait_for_selector('#tnBagLink')
     await p.goto(BASE + '?ab#/arsenal'); await p.click('#arsAdd'); await p.wait_for_selector('#abQ')
     check(await p.query_selector('#tabs a[href="#/arsenal"][aria-current=page]') is not None, '[addball] reached from Arsenal (Add ball)')
     taps = 0
@@ -774,7 +786,7 @@ async def quicklog_cycle(b):
     # CC1: strike = 1 tap, one-pin spare = 3 taps, splits flagged with 3-6-9 per leave, triggers, undo, 10th frame,
     # and 0 throws lost when the tab is killed right after the screen moves on (IndexedDB).
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
-    await seed(p); await p.goto(BASE + '?ql#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnLog')
+    await seed(p); await p.goto(BASE + '?ql#/bowl'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await bowl_more(p); await p.wait_for_selector('#tnLog')
     n0 = await p.evaluate("() => window.__apData.events()")
     where = lambda: p.text_content('#qlWhere')
     fr = lambda n: p.text_content(f'#qlFrames [data-f="{n}"] b')
@@ -917,7 +929,7 @@ async def advisor_cycle(b):
     await seed(p); await p.goto(BASE + '?adv#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnAdvisor')
     first = await p.evaluate("document.querySelector('#tonightBody').firstElementChild.id"); check(first == 'tnAdvisor', f'[advisor] event selector is the first thing on Tonight ({first})')
     labels = await p.eval_on_selector_all('#advEvent [data-event]', 'e=>e.map(x=>x.textContent)'); check(labels == ['League', 'Tournament', 'Practice', 'New center', 'Sport'], f'[advisor] 5 events {labels}')
-    await p.click('[data-event=league]'); await p.wait_for_selector('#advStart')
+    await p.click('[data-event=league]'); await p.wait_for_selector('.adv-row')
     st = await p.text_content('#advStart'); check(st.startswith('Start with: Rattler Big Bite, from feet 17, aim 10\u00bd'), f'[advisor] 1 tap -> start line with stand feet (laydown 10 + offset 7), not the laydown: {st!r}')
     rows = await p.eval_on_selector_all('.adv-row', 'e=>e.map(x=>[x.dataset.owned, x.dataset.role, !!x.querySelector(".prov"), x.querySelector("p").textContent.length>5])')
     check(len(rows) == 3 and rows[-1][1] == 'spare' and all(r[2] and r[3] for r in rows), f'[advisor] league = 2 + spare, each with role, reason, confidence {rows}')
@@ -925,9 +937,10 @@ async def advisor_cycle(b):
     check('no results logged yet' in await p.text_content('#advWhy') and await p.query_selector('#advNoData') is not None, '[advisor] no data -> "based on specs + your release, no results logged yet" + quick-log / import offered')
     check(await p.query_selector('#advPlan') is not None and 'A Rattler Big Bite' in await p.text_content('#advPlan'), '[advisor] A -> B -> C plan')
     check('21' in await p.text_content('#advChange'), '[advisor] "what would change it" cites the 21-game minimum')
-    pk = await p.evaluate("document.getElementById('advPack').getBoundingClientRect().bottom"); check(pk <= 740, f'[advisor] answer + Pack this fit one 360x740 screen (bottom {round(pk)})')
+    pk = await p.evaluate("[document.getElementById('advStart').getBoundingClientRect().bottom, document.getElementById('tnStartBowl').getBoundingClientRect().bottom, !!document.getElementById('advPack')]")
+    check(pk[0] <= 740 and pk[1] <= 740 and pk[2], f'[advisor] P1.5: start line + Start bowling inside one 360x740 screen, the bag and Pack below ({[round(x) for x in pk[:2]]})')
     w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360 and w[0] == 360, f'[advisor] no horizontal overflow at 360 {w}')
-    small = await p.evaluate(SMALL.replace("filter(e=>{", "filter(e=>{if(!e.closest('#tnAdvisor'))return false;")); check(not small, f'[advisor] targets >= 44px {small[:6]}')
+    small = await p.evaluate(SMALL.replace("filter(e=>{", "filter(e=>{if(!e.closest('#tnAdvisor, #tnBag'))return false;")); check(not small, f'[advisor] targets >= 44px {small[:6]}')
     await axe_ok(p, '[advisor]')
     await shot(p, 'phone-advisor')
     # swap in 2 taps
@@ -935,7 +948,7 @@ async def advisor_cycle(b):
     rows2 = await p.eval_on_selector_all('.adv-row', 'e=>e.map(x=>x.dataset.owned)'); check(rows2 != [r[0] for r in rows] and len(rows2) == 3, f'[advisor] swap in 2 taps {rows2}')
     await p.click('#advPack'); await p.wait_for_selector('#advPackList')
     pl = await p.text_content('#advPackList'); check('3 balls' in pl and 'Spare' in pl, f'[advisor] Pack this -> pack list shown {pl[:80]!r}')
-    check(await p.text_content('#tnPickName') == 'Rattler Big Bite', '[advisor] packed bag drives the Tonight pick')
+    check((await p.text_content('#advStart')).startswith('Start with: Rattler Big Bite,'), '[advisor] packed bag drives the Tonight pick')
     await p.reload(); await p.wait_for_selector('#advPackList')
     rows3 = await p.eval_on_selector_all('.adv-row', 'e=>e.map(x=>x.dataset.owned)'); check(rows3 == rows2 and 'Packed' in await p.text_content('#advPack'), '[advisor] answer remembered after reload')
     await p.click('[data-event=tournament]'); await p.wait_for_function("() => document.querySelectorAll('.adv-row').length === 6")
@@ -960,7 +973,7 @@ async def card_cycle(b):
     await p.goto(BASE + '?bc#/sessions'); await p.wait_for_selector('#sessBody')
     check('No sessions yet' in await p.text_content('#sessBody'), '[card] Nights empty state points to Tonight')
     # score one game on Tonight (test data): X, 9/ (10 pin) alternating, 10th X X X
-    await p.goto(BASE + '?bc#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnLog')
+    await p.goto(BASE + '?bc#/bowl'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await bowl_more(p); await p.wait_for_selector('#tnLog')
     async def nxt(sel):
         f0 = await p.text_content('#qlWhere'); await qtap(p, sel); await p.wait_for_function(f"() => !document.querySelector('#qlWhere') || document.querySelector('#qlWhere').textContent !== {json.dumps(f0)}")
     for f in range(1, 10):
@@ -1020,10 +1033,10 @@ async def sim_cycle(b):
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
     await seed(p); await p.evaluate("localStorage.setItem('ap_profile', JSON.stringify({hand:'left', style:'one', speed:15, rev:220}))")
     # a v1 ap_profile is migrated on first boot, and the migration may seed the starter bag itself (hub.js), so either state is fine
-    await p.goto(BASE + '?sim'); await p.wait_for_selector('#noBag, #tnStand')
+    await p.goto(BASE + '?sim'); await p.wait_for_selector('#noBag, #tnStartBowl')
     check(await p.query_selector('#tabs a[href="#/tonight"][aria-current=page]') is not None, '[sim] app opens on Tonight, not Lane')
     if await p.query_selector('#loadStarter'): await p.click('#loadStarter')
-    await p.wait_for_selector('#tnStand')
+    await p.click('#tnStartBowl'); await p.wait_for_selector('#qlStrike'); await p.wait_for_selector('#tnStand', state='attached')
     feet = int((await p.text_content('#tnStand')).split()[1])
     box = await p.query_selector('#qlStrike'); await box.scroll_into_view_if_needed(); await p.wait_for_timeout(300); bb = await box.bounding_box(); x, y = bb['x'] + bb['width'] / 2, bb['y'] + bb['height'] / 2
     await p.mouse.click(x, y); await p.wait_for_timeout(120); await p.mouse.click(x, y); await p.wait_for_timeout(600)
@@ -1049,7 +1062,7 @@ async def scoring_cycle(b):
     # Scoring fixes: (1) pad within thumb reach, two-tap spare, Saved line, frame time; (2) any-frame edit + undo in <= 4 taps;
     # (3) ball chip + spare-ball rule, Games by ball/leave, games CSV; (4) league/Baker + USBC handicap (only my frames feed stats).
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
-    await seed(p); await p.goto(BASE + '?sc#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnLog')
+    await seed(p); await p.goto(BASE + '?sc#/bowl'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await bowl_more(p); await p.wait_for_selector('#tnLog')
     where = lambda: p.text_content('#qlWhere'); fr = lambda n: p.text_content(f'#qlFrames [data-f="{n}"] b')
     await qtap(p, '#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 2')")
     check('Saved' in await p.text_content('#qlSaved') and 'frame 1' in await p.text_content('#qlSaved'), '[scoring] Saved line confirms the write')
@@ -1128,8 +1141,8 @@ async def scoring_cycle(b):
     check(lines[0].startswith('date,session,source,game,score') and len(lines) == 2 and ',yes,' in lines[1], f'[scoring] games CSV: header + 1 complete game ({lines[:2]})')
     check(not any(cell.startswith(('=', '+', '@')) for ln in lines for cell in ln.split(',')), '[scoring] games CSV has no formula cells')
     # (4) league team + USBC handicap: one pad, "Up: Name"; teammates' frames never feed my stats; Baker = team game
-    await p.goto(BASE + '?sc#/tonight'); await p.wait_for_selector('#qlNext'); await p.click('#qlNext'); await p.wait_for_selector('#tnSetup')
-    await p.click('#tnSetup [aria-label="Scoring"] [data-v="league"]'); await p.wait_for_selector('#tnTeam')
+    await p.goto(BASE + '?sc#/tonight'); await p.wait_for_selector('#qlNext'); check('#/bowl' in p.url, '[scoring] P1.5: #/tonight between games of an open night lands on Bowl'); await p.click('#qlNext'); await bowl_more(p); await p.wait_for_selector('#tnSetup')
+    await p.click('#tnSetup [aria-label="Scoring"] [data-v="league"]'); await p.wait_for_selector('#tnTeam'); await p.evaluate("() => { document.querySelector('#tnTeam').open = true; }")
     await p.fill('#lgMyAvg', '180'); await p.press('#lgMyAvg', 'Tab')
     await p.click('#lgAdd'); await p.wait_for_selector('#lgName0'); await p.fill('#lgName0', 'Ann'); await p.press('#lgName0', 'Tab')
     await p.fill('#lgAvg0', '150'); await p.press('#lgAvg0', 'Tab')
@@ -1164,7 +1177,7 @@ async def scoring_cycle(b):
     await qtap(p, '#qlUndoFix'); await wf('restored')
     ann = await p.evaluate("() => window.__apData.projection().teamShots.filter(x => x.who && x.who !== 'baker' && x.game === 2).map(x => x.down)")
     check(ann == [9, 1] and 'Ann' in await p.text_content('#qlSaved'), f'[scoring] sim2 #3: Undo restores Ann\'s frame ({ann})')
-    await p.click('#tnMore summary'); await p.click('#tnSetup [aria-label="Scoring"] [data-v="baker"]')
+    await open_folds(p); await p.click('#tnSetup [aria-label="Scoring"] [data-v="baker"]')
     await p.wait_for_function("() => document.querySelector('#qlWhere') && document.querySelector('#qlWhere').textContent.includes('Up: You')")
     await qtap(p, '#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Up: Ann')")
     check('frame 2' in await where(), f'[scoring] Baker: frame 2 goes to the next bowler ({await where()})')
@@ -1179,7 +1192,7 @@ async def scoring_cycle(b):
 async def protect_cycle(b):
     # GAP (a): install offer once after the first saved game (never mid-game), backup nudge (>3 games or file >14 days), More chip + last backup.
     errs = []; c = await ctx_for(b, 'phone', accept_downloads=True); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
-    await seed(p); await p.goto(BASE + '?pr#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnLog')
+    await seed(p); await p.goto(BASE + '?pr#/bowl'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await bowl_more(p); await p.wait_for_selector('#tnLog')
     await qtap(p, '#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 2')")
     check(not await p.query_selector('#tnProtect, #tnBackup'), '[protect] nothing new while a game is open')
     for _ in range(11): await qtap(p, '#qlStrike')
@@ -1218,7 +1231,7 @@ async def alley_cycle(b):
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
     await c.add_init_script("""window.__wl = {req: 0, rel: 0, held: 0}; Object.defineProperty(navigator, 'wakeLock', {configurable: true, value: {request: async () => { __wl.req++; __wl.held++;
       const l = new EventTarget(); l.release = async () => { if (l.done) return; l.done = 1; __wl.rel++; __wl.held--; l.dispatchEvent(new Event('release')); }; return l; }}});""")
-    await seed(p); await p.goto(BASE + '?al#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnLog')
+    await seed(p); await p.goto(BASE + '?al#/bowl'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await bowl_more(p); await p.wait_for_selector('#tnLog')
     wl = lambda: p.evaluate('window.__wl')
     check((await wl())['held'] == 0, '[alley] no wake lock before the game starts')
     await qtap(p, '#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 2')")
@@ -1254,7 +1267,7 @@ async def armory_cycle(b):
     await seed(p); await p.goto(BASE + '?arm#/arsenal'); await p.wait_for_selector('#armory')
     check(await p.text_content('.arm-team') == 'Urbanek Honey Badgers' and await p.text_content('.appbar .title') == 'Armory', '[armory] header: team line + Armory (no invented name)')
     n = await p.evaluate("() => document.querySelectorAll('#armBag .ped[data-own]').length"); check(n == 0 and await p.query_selector('#armEmpty[href=\"#/add-ball\"]') is not None, f'[armory] empty: only the Add ball pedestal ({n})')
-    await p.goto(BASE + '?arm#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnBagLink')
+    await p.goto(BASE + '?arm#/bowl'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await bowl_more(p); await p.wait_for_selector('#tnBagLink')
     await p.goto(BASE + '?arm2#/arsenal'); await p.wait_for_selector('#armBag .ped[data-own]')
     ids = await p.evaluate("() => [...document.querySelectorAll('#armBag .ped[data-own]')].map(x => x.dataset.own)")
     check(len(ids) == 6 and ids[0] == 'own-rattler-big-bite', f'[armory] bag shelf: 6 in-bag balls, benchmark first {ids}')
@@ -1275,7 +1288,7 @@ async def armory_cycle(b):
     check(True, '[armory] pedestal opens the ball page')
     check(not errs, f'[armory] no page errors {errs[:3]}'); await c.close()
 
-HELP_SCREENS = [('tonight', '#/tonight', '#tnSetup'), ('lane', '#/lane', '.lane-tools'), ('target', '#/target', '#tgCall'), ('arsenal', '#/arsenal', '#armBagH'),
+HELP_SCREENS = [('tonight', '#/tonight', '#tnAdvisor'), ('lane', '#/lane', '.lane-tools'), ('target', '#/target', '#tgCall'), ('arsenal', '#/arsenal', '#armBagH'),
     ('ball', '#/ball/hy-road', '#ballRead'), ('compare', '#/compare?ids=hy-road,rattler', '.cmp-body'), ('insights', '#/arsenal/insights', '#insGame'),
     ('patterns', '#/patterns', '.list-screen'), ('pattern', '#/pattern/2024-pba-shark', '.heat-wrap'), ('sessions', '#/sessions', '.list-screen'),
     ('card', '#/card', '#bcHead'), ('bag', '#/bag', '#bagCare')]
@@ -1292,7 +1305,7 @@ async def help_cycle(b):
     # Owner bug 2026-10-24 ("the help feature does nothing"): a gold "?" next to bowling words on every main screen (never on the
     # scoring pad), a "?" switch in every top bar + More › Learn, each bubble 1-2 sentences + "Learn more" to the Bowling Guide.
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 740})
-    await seed(p); await p.goto(BASE + '?hp#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnSetup')
+    await seed(p); await p.goto(BASE + '?hp#/bowl'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await bowl_more(p); await p.wait_for_selector('#tnSetup')
     off = await help_counts(p, 'hoff'); check(not any(off.values()), f'[help] off by default: 0 "?" on every screen {off}')
     await p.goto(BASE + '?hp#/lane'); await p.wait_for_selector('#helpToggle[aria-pressed="false"]')
     box = await p.evaluate("() => { const r = document.querySelector('#helpToggle').getBoundingClientRect(); return [r.width, r.height, r.top]; }")
@@ -1316,7 +1329,7 @@ async def help_cycle(b):
     await axe_ok(p, '[help] bubble'); await p.click('#helpMore'); await p.wait_for_selector('#gl-eq-rg[open]')
     check('Bowling Guide' in (await p.text_content('.appbar .title')), '[help] "Learn more" opens the Bowling Guide at the term')
     check(await p.query_selector('#tabs a[href="#/more"][aria-current=page]') is not None, '[help] Guide lives under More (no new tab)')
-    await p.goto(BASE + '?hp3#/tonight'); await p.wait_for_selector('#tnLog')
+    await p.goto(BASE + '?hp3#/bowl'); await p.wait_for_selector('#tnLog')
     check(await p.query_selector('#tnLog .help-dot') is None, '[help] never inside the scoring pad')
     await p.goto(BASE + '?hp4#/lane'); await p.wait_for_selector('.help-dot[data-help="bm-shr"]')
     await p.click('.help-dot[data-help="bm-shr"]'); await p.wait_for_selector('#helpSheet #helpText')
@@ -1435,11 +1448,11 @@ async def center_cycle(b):
     # M1 center memory: "Last time at <center>" before the first ball only (never while scoring), one line + your note,
     # "Use last setup" copies pattern / surface / lane pair, older visits behind a tap, note written from the session page.
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
-    await seed(p); await p.goto(BASE + '?cm#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnSetup')
+    await seed(p); await p.goto(BASE + '?cm#/bowl'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await bowl_more(p); await p.wait_for_selector('#tnSetup')
     await p.evaluate("""async () => { const m = await import('./js/hub.js'); await m.ready();
       await m.add('center.created', 'center-test-lanes', { fields: { name: 'Test Lanes', surface: 'synthetic' } });
       for (const [id, d] of [['test-cm-1', '2026-10-10'], ['test-cm-2', '2026-10-17']]) { await m.add('session.created', id, { kind: 'tonight', date: d, centerId: 'center-test-lanes', patternSlug: 'test', patternName: '2026 PBA Badger', ft: 52, ml: null, ratio: null, surface: 'synthetic', lanePair: '15-16', ended: true }); await m.add('shot.logged', id + '-s1', { sessionId: id, game: 1, frame: 1, roll: 1, down: 10, leave: [] }); } }""")
-    await p.goto(BASE + '?cm2#/tonight'); await p.wait_for_selector('#tnCenter')
+    await p.goto(BASE + '?cm2#/tonight'); await open_folds(p); await p.wait_for_selector('#tnCenter')
     check(await p.query_selector('#tnLast') is None, '[center] nothing until a center is chosen')
     check(await p.evaluate("() => [...document.querySelectorAll('#tnCenterList option')].some(o => o.value === 'Test Lanes')"), '[center] your centers are offered as you type')
     await p.fill('#tnCenter', 'Test Lanes'); await p.dispatch_event('#tnCenter', 'change'); await p.wait_for_selector('#tnLast')
@@ -1454,12 +1467,12 @@ async def center_cycle(b):
     await axe_ok(p, '[center] last time'); small = await p.evaluate(SMALL); check(not small, f'[center] targets >= 44px {small[:6]}')
     w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[center] no horizontal overflow at 360 {w}')
     await shot(p, 'phone-center-last')
-    await qtap(p, '#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 2')")
+    await p.click('#tnStartBowl'); await p.wait_for_selector('#qlStrike'); await qtap(p, '#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 2')")
     check(await p.query_selector('#tnLast') is None, '[center] gone once the night has a ball logged (nothing new during scoring)')
     await p.goto(BASE + '?cm3#/session/test-cm-2'); await p.wait_for_selector('#sessDetails'); await p.click('#sessDetails summary')
     await p.fill('#sessCenterNote', '  3rd arrow   hooked early  '); await p.dispatch_event('#sessCenterNote', 'change'); await p.wait_for_timeout(300)
     await p.evaluate("async () => { const m = await import('./js/hub.js'); const nw = await import('./js/cc/night.js'); await m.add('session.edited', nw.openNight(m.proj()), { fields: { ended: true } }); }")
-    await p.goto(BASE + '?cm4#/tonight'); await p.wait_for_selector('#tnCenter'); await p.fill('#tnCenter', 'Test Lanes'); await p.dispatch_event('#tnCenter', 'change'); await p.wait_for_selector('#tnLastNote')
+    await p.goto(BASE + '?cm4#/tonight'); await open_folds(p); await p.wait_for_selector('#tnCenter'); await p.fill('#tnCenter', 'Test Lanes'); await p.dispatch_event('#tnCenter', 'change'); await p.wait_for_selector('#tnLastNote')
     nt = await p.text_content('#tnLastNote'); check(nt == 'Your note: 3rd arrow hooked early', f'[center] note from the session page shows next time ({nt})')
     check(not errs, f'[center] no page errors {errs[:3]}'); await c.close()
 
@@ -1467,7 +1480,7 @@ async def ownpat_cycle(b):
     # M2 (Sim2 #9): a pattern not in the Kegel list is kept as your own (no "pick from the list" dead end); length, volume and
     # ratio are optional behind one tap; an unknown length says 38 ft is assumed; a known one drives the pick; the library still works.
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
-    await seed(p); await p.goto(BASE + '?op#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnSetup')
+    await seed(p); await p.goto(BASE + '?op#/bowl'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await bowl_more(p); await p.wait_for_selector('#tnSetup')
     await p.fill('#tnPattern', 'Fridays house'); await p.dispatch_event('#tnPattern', 'change'); await p.wait_for_selector('#tnOwnPat')
     chip = await p.text_content('#tnSetup .fld .prov'); check(await p.input_value('#tnPattern') == 'Fridays house' and 'length not entered, 38 ft assumed' in chip, f'[ownpat] any name kept; unknown length labelled ({chip})')
     check(await p.eval_on_selector('#tnOwnPat', 'e => !e.open'), '[ownpat] details behind one tap')
@@ -1514,7 +1527,7 @@ async def drill_cycle(b):
     # M3: spare drill on practice nights (most-missed leaves, Made/Missed, never in a score), one optional process goal read
     # on the recap with its n ("10 of 10 single-pin spares made (100%) · goal 7 of 10"), never a "good job".
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
-    await seed(p); await p.goto(BASE + '?dr#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnSetup')
+    await seed(p); await p.goto(BASE + '?dr#/bowl'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await bowl_more(p); await p.wait_for_selector('#tnSetup')
     check(await p.query_selector('#tnDrill') is None, '[drill] not shown unless the night is practice')
     await p.click('#advEvent [data-event=practice]'); await p.wait_for_selector('#tnDrill')
     check(await p.eval_on_selector('#tnDrill', 'e => !e.open') and 'corner pins' in await p.text_content('#tnDrillFrom'), '[drill] behind one tap; no misses yet -> corner pins, said so')
@@ -1580,7 +1593,7 @@ async def aimbox_cycle(b):
     # sim2 #2: on tonight's 2026 PBA Shark (48 ft) the Sport box is board 17 at 50-52 ft, not the 45 ft preset's board 14.
     await p.goto(BASE + '?ab2#/tonight'); await p.wait_for_timeout(500)
     if await p.query_selector('#loadStarter'): await p.click('#loadStarter')
-    await p.wait_for_selector('#tnPattern'); await p.fill('#tnPattern', '2026 PBA Shark'); await p.press('#tnPattern', 'Enter'); await p.wait_for_timeout(500)
+    await p.wait_for_selector('#tnStartBowl'); await open_folds(p); await p.wait_for_selector('#tnPattern'); await p.fill('#tnPattern', '2026 PBA Shark'); await p.press('#tnPattern', 'Enter'); await p.wait_for_timeout(500)
     await p.goto(BASE + '?ab3#/target'); await p.wait_for_selector('#tgOvBtn'); await p.click('#tgOvBtn'); await p.wait_for_selector('#ovSheet')
     await p.click('#ovSheet [aria-label="Aim Box preset"] [data-v="sport"]'); await p.wait_for_selector('#ovBoxTxt')
     txt = await p.text_content('#ovBoxTxt'); check('48 ft oil' in txt and 'board 17' in txt and '50\u201352 ft' in txt, f'[aimbox] Sport uses tonight\'s 48 ft length ({txt[:90]})')
@@ -1605,8 +1618,8 @@ async def oneline_cycle(b):
             await p.goto(BASE + '?ol#/tonight'); await p.wait_for_timeout(600)
             if await p.query_selector('#loadStarter'): await p.click('#loadStarter'); await p.wait_for_timeout(600)
             await p.click('[data-event=sport]'); await p.wait_for_timeout(400)
-            if patn: await p.wait_for_selector('#tnPattern'); await p.fill('#tnPattern', patn); await p.press('#tnPattern', 'Enter'); await p.wait_for_timeout(600)
-            await p.wait_for_selector('#tnStand')
+            if patn: await open_folds(p); await p.wait_for_selector('#tnPattern'); await p.fill('#tnPattern', patn); await p.press('#tnPattern', 'Enter'); await p.wait_for_timeout(600)
+            await p.click('#tnStartBowl'); await bowl_more(p); await p.wait_for_selector('#tnStand')
             m = re.search(r'Feet (\d+) \u00b7 eyes ([\d.\u00bd]+)', await p.text_content('#tnStand')); tn = (int(m[1]), hb(m[2]))
             pick = await p.text_content('#tnPickName'); ma = re.search(r'Start with: (.+?), from feet (\d+), aim ([\d.\u00bd]+)', await p.text_content('#advStart'))
             await p.click('#tnFind'); await p.wait_for_selector('#tgFindLine', timeout=20000)
@@ -1634,11 +1647,36 @@ async def oneline_cycle(b):
             check(not errs, f'{tag} no page errors ' + ' | '.join(errs[:2]))
             await c.close()
 
+async def tonightfold_cycle(b):
+    # IA P1.5: Tonight is the plan (lanes first), Bowl is the pad. League: <= 1110 px tall at 360 wide, Start bowling and
+    # Add a bowler inside the first 740 px, no first-ball card; Start bowling opens #/bowl; #/tonight with a game open lands on Bowl.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.evaluate("localStorage.setItem('ap_profile', JSON.stringify({hand: 'right', handSource: 'user-reported', style: 'tweener', speed: 15, rev: 300}))")
+    await p.goto(BASE + '?tf#/tonight'); await p.wait_for_selector('#noBag, #tnStartBowl')
+    if await p.query_selector('#loadStarter'): await p.click('#loadStarter')
+    await p.wait_for_selector('#tnStartBowl')
+    await p.click('#advEvent [data-event="league"]'); await p.wait_for_selector('#tnWho'); await p.wait_for_timeout(300)
+    m = await p.evaluate("() => ({ h: document.scrollingElement.scrollHeight, sb: document.querySelector('#tnStartBowl').getBoundingClientRect().bottom + scrollY, ab: document.querySelector('#tnAddBowler').getBoundingClientRect().bottom + scrollY, who: document.querySelector('#tnWho').getBoundingClientRect().top < document.querySelector('#tnStartBowl').getBoundingClientRect().top, pad: !!document.querySelector('#qlStrike'), pick: !!document.querySelector('#tnPick'), extra: !document.querySelector('#tnExtra').open })")
+    check(m['h'] <= 1110, f"[tonightfold] League Tonight <= 1110 px tall ({m['h']})")
+    check(m['sb'] <= 740 and m['ab'] <= 740, f"[tonightfold] Start bowling ({round(m['sb'])}) and Add a bowler ({round(m['ab'])}) in the first 740 px")
+    check(m['who'] and not m['pad'] and not m['pick'] and m['extra'], f'[tonightfold] Who\'s bowling above Start bowling; no pad, no first-ball card; extras folded {m}')
+    t = await p.text_content('#tnHand'); check(t.startswith('Right-handed') and 'change' in t, f'[tonightfold] P1.6 "Right-handed \u00b7 change" visible ({t})')
+    await p.click('#tnStartBowl'); await p.wait_for_selector('#qlStrike')
+    check(p.url.endswith('#/bowl') and 'Bowl' in await p.text_content('.appbar h1'), f'[tonightfold] Start bowling opens #/bowl ({p.url.split("#")[-1]})')
+    await qtap(p, '#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 2')")
+    await p.goto(BASE + '?tf2#/tonight'); await p.wait_for_selector('#qlStrike')
+    check('#/bowl' in p.url, f'[tonightfold] #/tonight with a game open lands on the pad ({p.url.split("#")[-1]})')
+    await p.evaluate("location.hash = '#/arsenal'"); await p.wait_for_timeout(300); await p.evaluate("location.hash = '#/tonight'"); await p.wait_for_selector('#qlStrike')
+    check('Frame 2' in await p.text_content('#qlWhere'), '[tonightfold] Tonight tab keeps the game going')
+    await axe_ok(p, '[tonightfold] bowl')
+    check(not errs, '[tonightfold] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
 async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('export', lambda: export_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('tonightfold', lambda: tonightfold_cycle(b)), ('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('export', lambda: export_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

@@ -344,3 +344,22 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
   - Journey J02 "Export the arsenal (file)" now passes in 2 taps, so F10 is closed.
 - e2e review artefacts now go to `$E2E_ART`, falling back to /workspace/shots and then $RUNNER_TEMP, because CI's corner step crashed on /workspace.
 - Screenshots: `/workspace/shots/itemE-arsenal-sheet-Letter-1.png`, `itemE-arsenal-sheet-A4-1.png`, `itemE-share-card.png`, `itemE-export-options.png`, `itemE-sheet-phone.png`.
+
+## 2026-10-31 · Item 2: IA P1.5/P1.6, the Tonight fold and Bowl (sw v49)
+- The score pad moves to `#/bowl`, which opens from "Start bowling". `#/tonight` goes to `#/bowl` (replaceState) while a game is open or between games of an unended night.
+- Tonight now holds, in this order:
+  - "Where are you bowling?" with one start line: "Start with: BALL, from feet F, aim T at the arrows." plus its source chip. It names the ball the pad will credit.
+  - The hand line, "Right-handed · change" (P1.6).
+  - Who's bowling and Add a bowler (league or team mode).
+  - Start bowling, then the bag.
+  - Everything else, behind a closed "More details": centre, pattern, lanes, scoring mode and drill.
+- The old first-ball pick card is off Tonight. Team setup now puts mates and Add a bowler first, with handicap behind its own fold.
+- Bowl shows the now-line, the pad, Weaker/Stronger, and between games only the "How did it read?" buttons, so a read plus an alt is 2 taps (J06). Everything else sits behind "Bag, lanes and line details". During a game nothing extra is shown.
+- P1.6 checked: Welcome has no preselected hand, the change takes ≤3 taps, and Lane mirrors at once (e2e `hand`, J15).
+- Acceptance measured at 360×780 in League with the starter bag (e2e `tonightfold`): page 1078 px tall (≤1110), Add a bowler bottom 491 px, Start bowling bottom 564 px (≤740).
+- Tests:
+  - e2e: full run 693/0. The new `tonightfold` has 9 checks, and 14 steps were moved to `#/bowl`.
+  - Journeys: 94 pass. The J15 PENDING entry was removed and the step is now a guard. J06 adjust takes 2 taps.
+  - The tonight visual baselines were updated.
+  - Unit tests 258/0, engine 7500/0.
+- Screenshot: `/workspace/shots/item2-P15-tonight-360.png`.

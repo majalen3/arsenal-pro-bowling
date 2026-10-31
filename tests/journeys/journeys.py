@@ -51,11 +51,21 @@ def same_line(a, b):
 
 async def tonight_line(j):
     """What Tonight tells the bowler: ball, feet, eyes."""
+    # IA P1.5: Tonight says it once ("Start with: BALL, from feet F, aim T at the arrows."); the pad repeats it on #tnNowLine.
     out = {}
-    if await j.visible('#tnPickName'): out['ball'] = (await j.text('#tnPickName')).strip()
-    if await j.visible('#tnStand'):
-        n = nums(await j.text('#tnStand'))
-        if len(n) >= 2: out['feet'], out['eyes'] = n[0], n[1]
+    if await j.visible('#tnPickName'):
+        out['ball'] = (await j.text('#tnPickName')).strip()
+        if await j.visible('#tnStand'):
+            n = nums((await j.text('#tnStand')).replace('\u00bd', '.5'))
+            if len(n) >= 2: out['feet'], out['eyes'] = n[0], n[1]
+        return out
+    sel = '#advStart' if await j.visible('#advStart') else '#tnNowLine' if await j.visible('#tnNowLine') else None
+    if not sel: return out
+    t = (await j.text(sel)).replace('\u00bd', '.5')
+    m = re.match(r'\s*(?:Start with:\s*)?(.+?)(?:,\s*from feet|\s*\u00b7\s*feet|\.\s|$)', t)
+    if m: out['ball'] = m.group(1).strip()
+    m = re.search(r'feet\s*(-?\d+(?:\.\d+)?)\D+?aim\s*(-?\d+(?:\.\d+)?)', t)
+    if m: out['feet'], out['eyes'] = nums(m.group(1))[0], nums(m.group(2))[0]
     return out
 
 async def lane_line(j):
@@ -83,13 +93,21 @@ def same_ball(a, b):
 async def lefty_mirrored(j):
     return await j.ev("() => { const c = document.querySelector('#lane, #tgLane canvas, #tgLane'); return c ? (c.getAttribute('aria-label') || '') : ''; }")
 
+async def unfold(j, *sels):
+    """Open a closed fold the way a bowler does (1 tap on its summary); an open one is left alone."""
+    for sel in sels:
+        if await j.visible(f'{sel} > summary') and not await j.page.eval_on_selector(sel, 'd => d.open'):
+            await j.tap(f'{sel} > summary'); await j.settle(200)
+
 async def start_game(j):
-    """From Tonight with a bag loaded, make sure the score pad is open."""
-    if not await j.visible('#tnLog'):
+    """From Tonight with a bag loaded, make sure the score pad is open (IA P1.5: Start bowling opens #/bowl)."""
+    if await j.visible('#tnStartBowl'):
+        await j.tap('#tnStartBowl'); await j.wait('#tnLog')
+    if not await j.visible('#tnLog') or (not await j.visible('#qlStrike') and await j.visible('#qlNext')):
         if await j.visible('#qlNext'):
             await j.tap('#qlNext')
-        elif await j.visible('#tnMore summary'):
-            await j.tap('#tnMore summary')
+        else:
+            await unfold(j, '#tnMore')
     await j.wait('#qlStrike')
 
 
@@ -130,7 +148,7 @@ async def j01_onboarding(j):
         prof = await j.ev("() => JSON.parse(localStorage.getItem('ap_profile') || 'null')"); s.check(prof and prof.get('hand') == 'left', 'hand still left')
     async with j.step('Tonight with no bag offers the next step', critical=True) as s:
         await j.nav('/tonight'); await j.audit('tonight-empty')
-        s.check(await j.visible('#noBag') or await j.visible('#tnPick'), 'Tonight shows either a pick or how to add balls')
+        s.check(await j.visible('#noBag') or await j.visible('#advStart'), 'Tonight shows either a start line or how to add balls')
     async with j.step('Add a ball from the catalogue', task='add-ball', target_taps=6) as s:
         await j.nav('/arsenal'); await j.audit('arsenal-empty')
         if await j.visible('#arsAdd'): await j.tap('#arsAdd')
@@ -155,7 +173,7 @@ async def j01_onboarding(j):
         else: s.check(True, 'no example in the search box')
     async with j.step('Tonight now picks a ball for a lefty') as s:
         await j.nav('/tonight'); await j.settle(400)
-        s.check(await j.visible('#tnPick'), 'Tonight shows a pick'); j.state['tonight'] = await tonight_line(j)
+        s.check(await j.visible('#advStart'), 'Tonight shows a start line'); j.state['tonight'] = await tonight_line(j)
 
 
 # ---------- J02 home prep: bag builder, Status, export ----------
@@ -216,8 +234,7 @@ async def j03_arrival(j):
     await seed_history(j, nights=2)
     await j.page.reload(); await j.settle(500)
     async with j.step('Type the center: last-time card appears', task='arrive', critical=True) as s:
-        if not await j.visible('#tnCenter'):
-            if await j.visible('#tnMore summary'): await j.tap('#tnMore summary')
+        if not await j.visible('#tnCenter'): await unfold(j, '#tnExtra', '#tnMore')
         await j.type('#tnCenter', 'QA Sunset Lanes'); await j.page.dispatch_event('#tnCenter', 'change'); await j.settle(500)
         await j.wait('#tnLast', timeout=5000); await j.audit('tonight-arrival')
         line = await j.text('#tnLastLine'); j.state['last'] = line
@@ -316,9 +333,8 @@ async def j04_solo_game(j):
 async def j05_league(j):
     await boot(j, 'league4', clock=datetime.datetime(2026, 10, 22, 23, 40))
     async with j.step('Set up League scoring with 4 bowlers', task='league-setup', critical=True) as s:
-        if not await j.visible('#tnSetup'):
-            if await j.visible('#tnMore summary'): await j.tap('#tnMore summary')
-        await j.tap('#tnSetup [aria-label="Scoring"] [data-v="league"]'); await j.wait('#tnTeam'); await j.audit('league-setup')
+        if not await j.visible('#tnSetup [aria-label="Scoring"]'): await unfold(j, '#tnExtra', '#tnMore')
+        await j.tap('[aria-label="Scoring"] [data-v="league"]'); await j.wait('#tnTeam'); await unfold(j, '#tnTeam'); await j.audit('league-setup')
         await j.type('#lgMyAvg', '180'); await j.page.press('#lgMyAvg', 'Tab')
         for i, (nm, av, _) in enumerate(PERSONAS['league4']['team']):
             await j.tap('#lgAdd'); await j.wait(f'#lgName{i}')
@@ -352,8 +368,8 @@ async def j05_league(j):
         pj = await j.data("() => { const P = window.__apData.projection(); return [P.shots.length, P.teamShots.length]; }")
         s.check(pj[0] >= 1 and pj[1] >= 1, f'mine {pj[0]}, team {pj[1]}')
     async with j.step('Switch to Baker: frames rotate per frame', task='baker') as s:
-        if await j.visible('#tnMore summary'): await j.tap('#tnMore summary')
-        await j.tap('#tnSetup [aria-label="Scoring"] [data-v="baker"]'); await j.settle(500)
+        if not await j.visible('[aria-label="Scoring"]'): await unfold(j, '#tnExtra', '#tnMore')
+        await j.tap('[aria-label="Scoring"] [data-v="baker"]'); await j.settle(500)
         await j.wait(WHERE); w = await where(j); s.check('Up:' in w, f'Baker pad ({w})')
         await strike(j); w2 = await where(j); s.check(w2 != w and 'Up:' in w2, f'next bowler up ({w2})')
         await j.page.reload(); await j.settle(600); s.check(await where(j) == w2, 'Baker turn survives reload')
@@ -372,9 +388,10 @@ async def drag_line(j, feet, aim, lefty=False):
 async def j06_between_games(j):
     await boot(j, 'righty')
     async with j.step('Tonight: tap Stronger after a read', task='adjust', target_taps=2, critical=True) as s:
-        await j.wait('#tnPick'); t0 = await tonight_line(j); j.state['t0'] = t0
+        await j.wait('#advStart'); await j.tap('#tnStartBowl'); await j.wait('#tnLog'); s.taps = 0   # IA P1.5: reads + Weaker/Stronger sit on Bowl between games; getting to Bowl is navigation
+        t0 = await tonight_line(j); j.state['t0'] = t0
         if await j.visible('[data-read="early"]'): await j.tap('[data-read="early"]'); await j.settle()
-        b = j.page.locator('#tnPick [data-alt="Stronger"], #tnPick [data-alt="Weaker"]')
+        b = j.page.locator('#tonightBody [data-alt="Stronger"]:visible, #tonightBody [data-alt="Weaker"]:visible')
         s.check(await b.count() > 0, 'Weaker/Stronger alternatives offered')
         tm = await tonight_line(j)   # the read itself may already have moved the pick; the alt must move it again
         if await b.count(): await b.first.click(); s.taps += 1; await j.settle(400)

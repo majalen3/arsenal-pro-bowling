@@ -31,6 +31,7 @@ route(/^\/more$/, 'more', () => import('./screens/more.js'));
 route(/^\/welcome$/, null, () => import('./screens/welcome.js'));
 route(/^\/import$/, 'more', () => import('./screens/import.js'));
 route(/^\/tonight$/, 'tonight', () => import('./screens/tonight.js'));
+route(/^\/bowl$/, 'tonight', () => import('./screens/tonight.js').then(m => ({ render: o => m.render(Object.assign({}, o, { bowl: true })) })));
 route(/^\/bag$/, 'tonight', () => import('./screens/bag.js'));
 route(/^\/glossary$/, 'more', () => import('./screens/help.js'));
 route(/^\/guide$/, 'more', () => import('./screens/help.js'));

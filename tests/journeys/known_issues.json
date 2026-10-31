@@ -18,6 +18,5 @@
  "J09/Every screen has a \"?\" when Help is on": "F13",
  "J01/The search box example is a ball the catalogue knows": "F14",
  "J13/Status uses the four bowler words everywhere (no Exclude / Benched / Lock)": "PENDING P1.3 (ball Status)",
- "J15/Tonight (League) fits in 1.5 screens; Start bowling and Add a bowler in the first viewport": "PENDING P1.5 (Tonight trimmed)",
  "_note_pending": "Entries starting PENDING are IA_PLAN.md §7 P1 acceptance criteria written before the build ships (J13-J15). They are expected to fail; when one passes the run lists it under 'Known issues now passing': delete the entry so the step becomes a guard."
 }

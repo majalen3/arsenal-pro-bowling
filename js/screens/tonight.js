@@ -41,15 +41,18 @@ export const TAP_GUARD_MS = 400;   // sim bug 2: a second tap on a log button wi
 let IDX = null, TERT = null;
 // The bowler's hand: only what they told us (cc/hand.js; owner 2026-10-24: no auto-detection). Unset reads boards right-handed.
 export const handOf = () => HAND.handOr();
-export async function render() {
+export async function render(o = {}) {
   const t0 = performance.now();
+  // IA P1.5: Tonight plans the night (bag, start line, who's bowling); the score pad lives on #/bowl ("Start bowling").
+  // #/tonight with a game open or between games of a night goes straight to #/bowl (replaceState: no second render).
+  let BOWL = !!o.bowl, drawn = false, extraOpen = false;
   await ready();
   let sid = openNight(proj()) || newNightId(proj());
   // The current night: stays put across midnight; a new one only after "End night" (or 4 h idle on the next open).
   const curSid = () => { const s = proj().sessions[sid]; if (s && s.ended) sid = openNight(proj()) || newNightId(proj()); return sid; };
   const body = h('div', { class: 'stack', id: 'tonightBody' });
   const net = h('span', { class: 'pill net-chip', id: 'netChip', role: 'status', hidden: navigator.onLine, text: 'Offline \u00b7 saved on this phone' });
-  const el = h('section', { class: 'screen list-screen', id: 'tonight' }, h('header', { class: 'appbar' }, h('h1', { class: 'title', text: 'Tonight' }), net), body);
+  const el = h('section', { class: 'screen list-screen', id: 'tonight' }, h('header', { class: 'appbar' }, h('h1', { class: 'title', id: 'tnTitle', text: BOWL ? 'Bowl' : 'Tonight' }), net), body);
   const setNet = () => { net.hidden = navigator.onLine; };
   window.addEventListener('online', setNet); window.addEventListener('offline', setNet);
   const ql = { leave: new Set(), foul: false, tag: null };   // quick-log taps not yet written
@@ -94,12 +97,16 @@ export async function render() {
     const { bag, list, spare } = bagOf(P, s);
     const bf = R.benchFirstReason({ patternKnown: !!pat, centerKnown: !!center, centerNew: !!center && !prevCenters.has(center.id), tournamentFirstGame: !!bag && bag.format === 'tournament6' && (s.game || 1) === 1 });
     const r = R.rank(list, { demand: d.demand, benchFirst: bf, style: b.style || 'tweener' });
-    const cur = r.order.find(x => x.id === s.pickId) || r.pick;
+    // One first ball (P1.5): the advisor's start ball unless the bowler picked another on the pad or a read moved it.
+    const adv = adviceOf(P, s, b), advA = adv && adv.a && !adv.a.none ? adv.a.A : null;
+    const cur = r.order.find(x => x.id === s.pickId) || (advA && r.order.find(x => x.id === advA.ownedId)) || r.pick;
     const L = cur ? lineFor(cur.cat, { speed: num(b.speed), rev: num(b.rev), ft: pat ? pat.ft : null }) : null;
     const ml = L ? L.ml : null, stand = L ? L.stand : null;
     // Scoring fix 4: league team (frames in lineup order) or Baker (one team game). One pad; the pill says who is up.
     const team = teamOf(P, s), g = team ? team.g : gameOf(P, s);
     const gameOpen = (team ? team.started : g.mine.length > 0) && !g.st.done;
+    if (!BOWL && !drawn && (gameOpen || (g0(P) && g.st.done && !s.ended))) { BOWL = true; history.replaceState(null, '', '#/bowl'); el.querySelector('#tnTitle').textContent = 'Bowl'; }
+    drawn = true;
     WK.keepAwake(WK.shouldHold(gameOpen, prefs().wakeLock));
     // ---- coach line (≤ 2 sentences, starts with a ball name)
     const coach = !cur ? 'Add balls to a bag to get a pick.' : cur === r.pick && bf && cur.benchmark ? `${cur.name} first: ${bf}, so start with your benchmark and read it.`
@@ -124,6 +131,7 @@ export async function render() {
     // M1: optional lane pair (kept on the night; shown next time at this center).
     const lpIn = h('input', { id: 'tnLanes', autocomplete: 'off', placeholder: 'e.g. 15-16', 'aria-label': 'Lane pair (optional)', value: s.lanePair || '' });
     lpIn.onchange = async () => { const v = lpIn.value.trim(), c = CM.cleanPair(v); if (v && !c) return toast('Lane pair like 15-16', { kind: 'bad' }); await save({ lanePair: c }); };
+    const whoHere = !BOWL && !gameOpen && ((adv && adv.ev) === 'league' || (s.mode || 'solo') !== 'solo');   // Who's bowling sits on Tonight itself
     const setup = h('div', { class: 'card', id: 'tnSetup' }, withHelp(h('h2', { class: 'card-title', text: 'Lanes tonight' }), 'ln-house', 'Lanes tonight'),
         h('label', { class: 'fld' }, h('span', {}, 'Pattern ', s.patternOwn ? provChip(s.ft != null ? 'user' : 'assumed', OP.ownLabel(s)) : pat ? provChip('usbc', 'Kegel library') : provChip('assumed', 'assumed house 38 ft')), patIn, dl),
         ownDet,
@@ -132,8 +140,8 @@ export async function render() {
         h('div', { class: 'fld' }, h('span', {}, 'Lane surface ', s.surface === 'unknown' ? provChip('assumed', 'unknown') : null), segmented('Lane surface', [['unknown', 'Unknown'], ['wood', 'Wood'], ['synthetic', 'Synthetic']], s.surface, v => { save({ surface: v, pickId: null }); if (center) add('center.edited', center.id, { fields: { surface: v } }); })),
         h('div', { class: 'fld' }, h('span', { text: 'Lane condition' }), segmented('Lane condition', [['fresh', 'Fresh'], ['transition', 'Transition'], ['burn', 'Burned']], s.stage, v => save({ stage: v, pickId: null }))),
         h('div', { class: 'fld' }, h('span', { text: 'Game' }), segmented('Game', [[1, '1'], [2, '2'], [3, '3'], [4, '4+']], s.game || 1, v => save({ game: +v }), 'wide')),
-        h('div', { class: 'fld' }, h('span', { text: 'Scoring' }), segmented('Scoring', [['solo', 'Just me'], ['league', 'League team'], ['baker', 'Baker']], s.mode || 'solo', v => save({ mode: v }), 'wide')),
-        (s.mode || 'solo') !== 'solo' ? teamSetup(s) : null,
+        whoHere ? null : h('div', { class: 'fld' }, h('span', { text: 'Scoring' }), scoringSeg(s)),
+        !whoHere && (s.mode || 'solo') !== 'solo' ? teamSetup(s) : null,
         goalField(s),
         h('button', { class: 'btn ghost block', id: 'tnBagLink', onclick: () => go('#/bag') }, 'Bag builder \u203a'));
     const alt = (x, lbl) => x ? h('button', { class: 'alt btn', 'data-alt': lbl, onclick: () => save({ pickId: x.id, throwId: null }) }, h('small', { class: 'muted', text: lbl + ' ' }), h('b', { text: x.name })) : h('div', { class: 'alt muted', text: `No ${lbl.toLowerCase()} ball in this bag` });
@@ -168,31 +176,44 @@ export async function render() {
       } }, l)))) : null;
     const pend = P.measurements.filter(m => !m.accepted && m.source === 'lanetrax');
     const measNudge = pend.length ? h('a', { class: 'btn ghost block', id: 'tnMeasNudge', href: '#/card' }, `${pend.length} LaneTrax ${pend.length === 1 ? 'number' : 'numbers'} to review on your Bowler Card \u203a`) : null;
-    if (gameOpen) {
-      // ---- game open (sim bug 4): ball \u00b7 feet \u00b7 aim, the ball-change line, the scoring card, Weaker/Stronger. The rest behind one tap.
+    if (gameOpen || BOWL) {
+      // ---- Bowl (#/bowl), and game open (sim bug 4): ball \u00b7 feet \u00b7 aim, the ball-change line, the scoring card, Weaker/Stronger. The rest behind one tap.
       body.append(h('div', { class: 'card tn-now', id: 'tnNow' },
         h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: cur ? cur.name : 'No ball' }), stand ? ` \u00b7 feet ${stand.feet} \u00b7 aim ${fmtHalf(ml.target)}` : ''),
-        thenLine), quickLog(P, s, cur, b, hand, stand, g, team), alts || '',
+        thenLine), quickLog(P, s, cur, b, hand, stand, g, team), alts || '', !gameOpen && reads ? reads : '',   // between games: the read and Weaker/Stronger in reach (J06)
         h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: 'Bag, lanes and line details' }),
-          advisorCard(P, s, b), h('p', { class: 'coach', id: 'tnCoach', text: coach }), pick || '', reads || '', setup));
-      requestAnimationFrame(padToThumb);
+          ...advisorCard(P, s, b, adv, cur && { name: cur.name, ml }), h('p', { class: 'coach', id: 'tnCoach', text: coach }), pick || '', gameOpen && reads ? reads : '', !gameOpen && s.event === 'practice' ? drillCard(P, s) : '', setup));
+      if (gameOpen) requestAnimationFrame(padToThumb);
       return;
     }
-    // ---- before a game / between games
-    body.append(advisorCard(P, s, b));
+    // ---- Tonight (IA P1.5): bag and start line, hand, who's bowling, Start bowling. The rest behind "More details".
+    const [advCard, bagCard, whyBox] = advisorCard(P, s, b, adv, cur && { name: cur.name, ml });
+    body.append(advCard);
     const lastCard = lastTimeCard(P, s, center); if (lastCard) body.append(lastCard);
     const fc = prefs().focus;
     if (fc && fc.text && fc.from !== curSid()) body.append(h('div', { class: 'row between tn-focus', id: 'tnFocus' }, h('p', { class: 'small', text: fc.text.replace(/^Next focus: /, 'Your focus: ') }),
       h('button', { class: 'icon-btn', 'aria-label': 'Clear focus', html: icon('close'), onclick: () => { setPrefs({ focus: null }); draw(); } })));
-    body.append(h('p', { class: 'coach', id: 'tnCoach', role: 'status', text: coach }));
     body.append(handAsk() || handLine());   // P1.6: "Right-handed \u00b7 change"; asks once while unset (never during a game)
-    if (thenLine) body.append(thenLine);
-    if (pick) body.append(pick);
+    if (whoHere) body.append(whoCard(s));
     if (s.event === 'practice') body.append(drillCard(P, s));
-    body.append(quickLog(P, s, cur, b, hand, stand, g, team));
-    if (reads) body.append(reads);
-    body.append(setup);
+    const night = g0(P) && !s.ended;
+    body.append(h('button', { class: 'btn primary block tn-start', id: 'tnStartBowl', onclick: () => go('#/bowl') },
+      night || (s.game || 1) > 1 ? `Start bowling \u00b7 game ${s.game || 1}` : 'Start bowling'));
+    if (bagCard) body.append(bagCard);
+    body.append(h('details', { class: 'tn-more tn-extra', id: 'tnExtra', open: extraOpen, ontoggle: e => { extraOpen = e.target.open; } }, h('summary', { text: 'More details' }),
+      h('p', { class: 'coach', id: 'tnCoach', role: 'status', text: coach }), thenLine || '', whyBox || '', setup));
     if (measNudge) body.append(measNudge);
+  }
+  // P1.5 "Who's bowling": just me, a league team (frames in lineup order) or Baker; Add a bowler one tap away.
+  function scoringSeg(s) { return segmented('Scoring', [['solo', 'Just me'], ['league', 'League team'], ['baker', 'Baker']], s.mode || 'solo', v => save({ mode: v }), 'wide'); }
+  function whoCard(s) {
+    const mode = s.mode || 'solo';
+    return h('div', { class: 'card', id: 'tnWho' }, h('h2', { class: 'card-title', id: 'tnWhoT', text: 'Who\u2019s bowling' }), scoringSeg(s),
+      mode !== 'solo' ? teamSetup(s) : h('button', { class: 'btn ghost block', id: 'tnAddBowler', onclick: () => { addMate(); save({ mode: 'league' }); } }, 'Add a bowler'));
+  }
+  function addMate() {
+    const lg = prefs().league || {}, tm = (lg.team || []).slice(0, 3);
+    if (tm.length < 3) setPrefs({ league: Object.assign({}, lg, { team: tm.concat([{ who: 'tm-' + Date.now().toString(36), name: '', avg: null, status: 'in' }]) }) });
   }
   // ---- M3 spare drill (practice nights, no game open): your most-missed leaves, Made / Missed per try, one line of totals.
   // Attempts sit on the night (session.edited {drill}); they never touch a score or an average.
@@ -248,11 +269,9 @@ export async function render() {
     const setLg = patch => { setPrefs({ league: Object.assign({}, prefs().league || {}, patch) }); draw(); };
     const setTm = (i, patch) => setLg({ team: tm.map((x, j) => j === i ? Object.assign({}, x, patch) : x) });
     const numIn = (id, label, val, on) => h('input', { id, type: 'number', inputmode: 'numeric', min: 0, max: 300, 'aria-label': label, value: val == null ? '' : String(val), onchange: e => on(e.target.value === '' ? null : Math.trunc(+e.target.value)) });
-    return h('details', { class: 'tn-more', id: 'tnTeam', open: teamOpen == null ? !tm.length : teamOpen, ontoggle: e => { teamOpen = e.target.open; } }, h('summary', { text: 'Team and handicap' }),
-      h('label', { class: 'fld' }, h('span', { text: 'Your league average' }), numIn('lgMyAvg', 'Your league average', lg.myAvg, v => setLg({ myAvg: v }))),
-      h('div', { class: 'fld' }, h('span', { text: 'Handicap basis' }), segmented('Handicap basis', LG.BASES.map(x => [x, String(x)]), lg.basis, v => setLg({ basis: +v }), 'wide')),
-      h('div', { class: 'fld' }, h('span', { text: 'Handicap percent' }), segmented('Handicap percent', LG.PCTS.map(x => [x, x + '%']), lg.pct, v => setLg({ pct: +v }), 'wide')),
-      h('p', { class: 'muted small', id: 'lgRule', text: `Handicap = (basis \u2212 average) \u00d7 percent, fractions dropped. USBC uses ${LG.USBC_PCT}% unless your league rule says otherwise (Rule 100d-2).` }),
+    // P1.5: the bowlers first (names, Add a bowler); averages, handicap and game totals behind one tap.
+    const hd = lg.myAvg != null ? `your average ${lg.myAvg} \u00b7 ${lg.pct}% of ${lg.basis}` : `${lg.pct}% of ${lg.basis} \u00b7 your average not set`;
+    return h('div', { class: 'lg-setup', id: 'tnTeamBox' },
       ...tm.map((t, i) => h('div', { class: 'lg-mate', 'data-mate': i },
         h('div', { class: 'lg-row' },
           h('label', { class: 'fld' }, h('span', { text: `Bowler ${i + 2}` }), h('input', { id: `lgName${i}`, autocomplete: 'off', value: t.name || '', disabled: t.status === 'vacancy', onchange: e => setTm(i, { name: e.target.value.trim().slice(0, 24) }) })),
@@ -260,9 +279,14 @@ export async function render() {
           h('button', { class: 'icon-btn', 'aria-label': `Remove bowler ${i + 2}`, html: icon('close'), onclick: () => setLg({ team: tm.filter((_, j) => j !== i) }) })),
         segmented(`Bowler ${i + 2} status`, [['in', 'Bowling'], ['absent', 'Absent'], ['vacancy', 'Vacancy']], t.status || 'in', v => setTm(i, { status: v }), 'wide'))),
       tm.length < 3 ? h('button', { class: 'btn ghost block', id: 'lgAdd', onclick: () => setLg({ team: tm.concat([{ who: 'tm-' + Date.now().toString(36), name: '', avg: null, status: 'in' }]) }) }, 'Add a bowler') : null,
-      h('p', { class: 'muted small', id: 'lgTotalWhy', text: 'Short on time? Skip the frames: add just your final score for a game.' }),
-      gameTotalButton('lgAddTotal', { sessionId: curSid(), onDone: () => draw() }),
-      h('p', { class: 'muted small', text: `Only your own frames count in your stats.${(s.mode || 'solo') === 'baker' ? ' Baker games are not in averages (USBC Rule 3a).' : ''}` }));
+      h('details', { class: 'tn-more', id: 'tnTeam', open: !!teamOpen, ontoggle: e => { teamOpen = e.target.open; } }, h('summary', {}, 'Handicap ', h('span', { class: 'muted small', id: 'tnTeamSum', text: '\u00b7 ' + hd })),
+        h('label', { class: 'fld' }, h('span', { text: 'Your league average' }), numIn('lgMyAvg', 'Your league average', lg.myAvg, v => setLg({ myAvg: v }))),
+        h('div', { class: 'fld' }, h('span', { text: 'Handicap basis' }), segmented('Handicap basis', LG.BASES.map(x => [x, String(x)]), lg.basis, v => setLg({ basis: +v }), 'wide')),
+        h('div', { class: 'fld' }, h('span', { text: 'Handicap percent' }), segmented('Handicap percent', LG.PCTS.map(x => [x, x + '%']), lg.pct, v => setLg({ pct: +v }), 'wide')),
+        h('p', { class: 'muted small', id: 'lgRule', text: `Handicap = (basis \u2212 average) \u00d7 percent, fractions dropped. USBC uses ${LG.USBC_PCT}% unless your league rule says otherwise (Rule 100d-2).` }),
+        h('p', { class: 'muted small', id: 'lgTotalWhy', text: 'Short on time? Skip the frames: add just your final score for a game.' }),
+        gameTotalButton('lgAddTotal', { sessionId: curSid(), onDone: () => draw() }),
+        h('p', { class: 'muted small', text: `Only your own frames count in your stats.${(s.mode || 'solo') === 'baker' ? ' Baker games are not in averages (USBC Rule 3a).' : ''}` })));
   }
   // Team board (behind one tap): scratch, handicap and total per spot, absentee / vacancy per USBC Rule 112.
   function teamBoard(team, game) {
@@ -460,24 +484,36 @@ export async function render() {
     return box;
   }
   // ---- Bag Advisor (TEAM_PROMPT_BAG_ADVISOR.md): event \u2192 packed bag with roles, evidence and a start line.
-  function advisorCard(P, s, b) {
-    const ap = prefs().advisor || {}, ev = s.event || ap.last || null;
+  // The advisor's answer for the night's event (null until an event is picked); Tonight and the pad share it.
+  function adviceOf(P, s, b) {
+    const ap = prefs().advisor || {}, ev = s.event || ap.last || null; if (!ev) return { ev: null };
+    const mem = ap[ev] || {}, pat = s.ft != null ? { slug: s.patternSlug, name: s.patternName || s.patternSlug, ft: s.ft, ml: s.ml, ratio: s.ratio } : null;
+    const cur = ST.currentBag(P), mine = cur && cur.event === ev ? cur : null, bring = (mine && A.bringOf(mine.bring)) || A.EVENTS[ev].bring;
+    const a = A.advise(P, { event: ev, bring, fixed: mine ? { slots: ST.packedIds(P, mine), spare: mine.spare } : null, pattern: pat, tert: TERT, surface: s.surface, style: b.style || 'tweener', health: P.health, swaps: mine ? {} : mem.swaps || {}, current: cur ? cur.slots.map(x => x.owned) : [],
+      line: c => lineFor(c, { speed: num(b.speed), rev: num(b.rev), ft: pat ? pat.ft : null }).ml });
+    return { ev, mem, pat, mine, bring, a };
+  }
+  // One start line (P1.5): the ball the pad will credit (the advisor's start ball, or the bowler's own pick / read move).
+  function startLine(S) {
+    if (!S || !S.name) return '';
+    const ml = S.ml, st = ml && !ml.none ? standOf(ml.feet) : null;
+    return h('p', { class: 'coach', id: 'advStart', role: 'status', text: st ? `Start with: ${S.name}, from feet ${st.feet}, aim ${fmtHalf(ml.target)} at the arrows.` : `Start with: ${S.name}. ${(ml && ml.reason) || 'spec TBD: no model line'}, so set feet and eyes on Targeting.` },
+      st ? provChip('model', st.assumed ? '2-D model \u00b7 offset 7 assumed' : '2-D model') : null);
+  }
+  function advisorCard(P, s, b, adv, start) {
+    const ap = prefs().advisor || {}, ev = adv.ev;
     const card = h('div', { class: 'card adv', id: 'tnAdvisor' }, withHelp(h('h2', { class: 'card-title', id: 'advTitle', text: 'Where are you bowling?' }), 'bm-matchup', 'Ball choice'));
     const pick = h('div', { class: 'seg wrap', role: 'radiogroup', 'aria-labelledby': 'advTitle', id: 'advEvent' }, ...Object.entries(A.EVENTS).map(([k, e]) =>
       h('button', { class: 'seg-opt', role: 'radio', 'aria-checked': String(k === ev), 'data-event': k, onclick: () => { setPrefs({ advisor: Object.assign({}, prefs().advisor, { last: k }) }); save({ event: k, pickId: null }); } }, e.short)));
     card.append(pick);
-    if (!ev) { card.append(h('p', { class: 'muted small', text: 'Pick one: your bag, first ball and where to stand appear here.' })); return card; }
-    const mem = ap[ev] || {}, pat = s.ft != null ? { slug: s.patternSlug, name: s.patternName || s.patternSlug, ft: s.ft, ml: s.ml, ratio: s.ratio } : null;
-    const ft = pat ? pat.ft : R.HOUSE_ASSUMED.ft, r31 = R.rule31(ft);
+    if (!ev) { card.append(startLine(start), h('p', { class: 'muted small', text: 'Pick one: the bag to pack for it appears here.' })); return [card]; }
     // P1.1/P1.2: when the saved bag is for this event, Tonight shows exactly that bag (its Bring N); else a fresh suggestion.
-    const cur = ST.currentBag(P), mine = cur && cur.event === ev ? cur : null, bring = (mine && A.bringOf(mine.bring)) || A.EVENTS[ev].bring;
-    const a = A.advise(P, { event: ev, bring, fixed: mine ? { slots: ST.packedIds(P, mine), spare: mine.spare } : null, pattern: pat, tert: TERT, surface: s.surface, style: b.style || 'tweener', health: P.health, swaps: mine ? {} : mem.swaps || {}, current: cur ? cur.slots.map(x => x.owned) : [],
-      line: c => lineFor(c, { speed: num(b.speed), rev: num(b.rev), ft: pat ? pat.ft : null }).ml });
-    if (a.none) { card.append(h('p', { class: 'muted', text: a.reason }), h('button', { class: 'btn block', onclick: () => go('#/arsenal') }, 'Open Arsenal \u203a')); return card; }
-    const ml = a.line, st = ml && !ml.none ? standOf(ml.feet) : null;
-    card.append(h('p', { class: 'coach', id: 'advStart', role: 'status', text: st ? `Start with: ${a.A.name}, from feet ${st.feet}, aim ${fmtHalf(ml.target)} at the arrows.` : `Start with: ${a.A.name}. ${(ml && ml.reason) || 'spec TBD: no model line'}, so set feet and eyes on Targeting.` },
-      st ? provChip('model', st.assumed ? '2-D model \u00b7 offset 7 assumed' : '2-D model') : null));
+    const { mem, mine, bring, a } = adv;
+    if (a.none) { card.append(h('p', { class: 'muted', text: a.reason }), h('button', { class: 'btn block', onclick: () => go('#/arsenal') }, 'Open Arsenal \u203a')); return [card]; }
+    card.append(startLine(start && start.name ? start : { name: a.A.name, ml: a.line }));
     const packed = !!(mine && mine.packedTs);
+    // P1.5: the bag itself is its own card under Start bowling (the lanes-first answer stays on top).
+    const bagCard = h('div', { class: 'card adv', id: 'tnBag' }, h('h2', { class: 'card-title', id: 'advBagT', text: `Your bag \u00b7 Bring ${bring}` }));
     const list = h('ul', { class: 'adv-list', id: 'advList' }, ...a.rows.map(r => {
       const conf = provChip(r.confidence.key === 'measured' ? 'device' : r.confidence.key === 'spec' ? 'catalog' : 'assumed', r.confidence.label);
       const li = h('li', { class: 'adv-row', 'data-owned': r.ownedId, 'data-role': r.role },
@@ -492,25 +528,27 @@ export async function render() {
         const m = Object.assign({}, prefs().advisor), e2 = Object.assign({}, m[ev]); e2.swaps = Object.assign({}, e2.swaps); for (const [k, v] of Object.entries(e2.swaps)) if (v === r.ownedId) delete e2.swaps[k];
         e2.swaps[r.ownedId] = x.ownedId; m[ev] = e2; swapOpen = null; setPrefs({ advisor: m }); draw(); toast(`${x.name} in for ${r.name}.`); } }, x.home ? `${x.name} \u00b7 ${ST.HOME_TAG}` : x.name))));
       return li; }));
-    card.append(list);
+    bagCard.append(list);
     const n = a.rows.length;
-    card.append(h('div', { class: 'btn-grid' }, h('button', { class: 'btn primary', id: 'advPack', onclick: async () => {
+    bagCard.append(h('div', { class: 'btn-grid' }, h('button', { class: 'btn primary', id: 'advPack', onclick: async () => {
       const ids = a.slots.concat(a.spare ? [a.spare] : []), slots = ids.map(o => Object.assign({ owned: o, locked: !!(mine && (mine.slots.find(x => x.owned === o) || {}).locked) }, a.fromHome.includes(o) ? { fromHome: true } : {}));
       await add('bag.saved', ST.TONIGHT_BAG, { name: `${A.EVENTS[ev].label}`, format: BE.formatOfBring(bring), bring, slots, spare: a.spare || null, excluded: [], eventDate: (mine && mine.eventDate) || today(), source: 'advisor', event: ev, packedTs: Date.now() });
       const m = Object.assign({}, prefs().advisor), e2 = Object.assign({}, m[ev], { packedTs: Date.now(), swaps: {} }); m[ev] = e2; setPrefs({ advisor: m });
       await save({ bagId: ST.TONIGHT_BAG, pickId: a.A.ownedId }); toast(`Packed: ${a.rows.map(r => r.name).join(', ')}.`); } }, packed ? 'Packed \u2713 Pack again' : `Pack these ${n}`),
       h('button', { class: 'btn ghost', id: 'advBuilder', onclick: () => go('#/bag') }, `Bag builder \u00b7 Bring ${bring} \u203a`)));
-    if (a.left.length) card.append(h('details', { class: 'why-not-list', id: 'advLeft' }, h('summary', { text: `Why not the others? (${a.left.length})` }),
+    // P1.5: the reasoning behind one tap (Why not the others, Then, Why this bag, What would change it).
+    const whyBox = h('details', { class: 'tn-more', id: 'advMore', open: true }, h('summary', { text: 'Why this bag' }));
+    if (a.left.length) whyBox.append(h('details', { class: 'why-not-list', id: 'advLeft' }, h('summary', { text: `Why not the others? (${a.left.length})` }),
       h('ul', { class: 'plain' }, ...a.left.map(x => h('li', { class: 'small', 'data-why-not': x.ownedId, 'data-why': x.key }, h('b', { text: x.name + ': ' }), x.text)))));
-    if (a.plan.length) card.append(h('p', { class: 'small', id: 'advPlan' }, h('b', { text: 'Then: ' }), a.plan.map(x => `${x.k} ${x.name} (${x.when})`).join(' \u2192 ')));
-    card.append(h('p', { class: 'small', id: 'advWhy' }, h('b', { text: 'Why this bag: ' }), a.why),
+    if (a.plan.length) whyBox.append(h('p', { class: 'small', id: 'advPlan' }, h('b', { text: 'Then: ' }), a.plan.map(x => `${x.k} ${x.name} (${x.when})`).join(' \u2192 ')));
+    whyBox.append(h('p', { class: 'small', id: 'advWhy' }, h('b', { text: 'Why this bag: ' }), a.why),
       h('p', { class: 'small muted', id: 'advChange' }, h('b', { text: 'What would change it: ' }), a.change, ' ', h('a', { class: 'srclink', href: A.MIN_SRC.url, target: '_blank', rel: 'noopener', text: A.MIN_SRC.label })));
-    if (a.noData) card.append(h('div', { class: 'row', id: 'advNoData' }, h('button', { class: 'btn sm', onclick: () => go('#/import') }, 'Import results')));
+    if (a.noData) whyBox.append(h('div', { class: 'row', id: 'advNoData' }, h('button', { class: 'btn sm', onclick: () => go('#/import') }, 'Import results')));
     if (packed) { const pl = packList(a.slots.map(o => ({ ownedId: o, catalogId: P.owned[o] && P.owned[o].catalogId, name: short(P.owned[o] && (P.owned[o].name || (catOf(P.owned[o].catalogId) || {}).name)), benchmark: o === a.A.ownedId, status: P.owned[o] && P.owned[o].status })),
         a.spare ? { ownedId: a.spare, name: short(P.owned[a.spare].name) } : null, { health: P.health });
-      card.append(h('details', { class: 'adv-pack', id: 'advPackList', open: true }, h('summary', { text: `Pack list \u00b7 ${pl.rows.length} balls` }),
+      bagCard.append(h('details', { class: 'adv-pack', id: 'advPackList', open: true }, h('summary', { text: `Pack list \u00b7 ${pl.rows.length} balls` }),
         h('ol', { class: 'small' }, ...pl.rows.map(x => h('li', {}, h('b', { text: x.name }), ` \u00b7 ${x.role}`))))); }
-    return card;
+    return [card, bagCard, whyBox];
   }
   // Scoring fix 1: keep the pad in the lower half (thumb reach) while a game is open, unless "details" is open.
   function padToThumb() {
@@ -528,6 +566,6 @@ export async function render() {
   if (!IDX) loadIndex().then(x => { IDX = x; TERT = R.tertiles(x); draw(); }).catch(() => {});
   const offs = [on('data', () => { if (!body.contains(document.activeElement) || document.activeElement.tagName === 'BUTTON') draw(); })];
   window.__apTonightMs = Math.round(performance.now() - t0);
-  return { el, title: 'Tonight', mounted() { if (document.getElementById('tnNow')) padToThumb(); },
+  return { el, title: BOWL ? 'Bowl' : 'Tonight', mounted() { if (document.getElementById('tnNow')) padToThumb(); },
     destroy() { WK.keepAwake(false); offs.forEach(f => f()); window.removeEventListener('online', setNet); window.removeEventListener('offline', setNet); } };
 }
