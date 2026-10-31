@@ -12,6 +12,8 @@ import { gameTotalButton } from './gametotal.js';
 import { applyTheme } from '../main.js';
 import { helpDot } from './help.js';
 import { S } from '../engine.js';
+import { accountCard } from './account.js';
+import { account } from '../account.js';
 export const VERSION = '1.0.0';   // release version (CHANGELOG.md); the offline build id comes from the service worker cache name
 // IA P2: the Me screen (header button on every tab): profile, data, appearance, sync, about. Learn and the Help switch moved to the Learn tab.
 export function render() {
@@ -69,6 +71,7 @@ export function render() {
       h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Bowler profile' }), h('button', { class:'btn sm ghost', id:'editProfile', onclick:editProfile }, h('span', { html:icon('edit') }), 'Edit')),
         pr ? h('p', { text:`${HAND.handOfProfile(pr) ? HAND.HAND_LABEL[HAND.handOfProfile(pr)] : 'Hand not set'}, ${pr.style === 'two' ? 'two-hander' : (pr.style || 'style not set')}, ${(+pr.speed).toFixed(1)} mph, ${pr.rev} rpm${pr.pap ? ', PAP ' + pr.pap : ''}${pr.tilt ? ', tilt ' + pr.tilt : ''}.` }) : h('p', { class:'muted', text:`Not set. The lane uses mid-range starting values (${S.speed} mph, ${S.rev} rpm) until you enter yours.` }),
         h('div', { class:'row between' }, h('span', { text:`My bag: ${pr && pr.owned && pr.owned.length ? pr.owned.length + ' balls' : 'all 22'}` }), h('button', { class:'btn sm ghost', id:'editBag', onclick:editBag }, 'Choose'))),
+      accountCard(),
       h('div', { class:'card', id:'dataCard' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Your data' }), protChip), dataInfo, lastBk,
         h('details', { class:'tn-more', id:'protMore' }, h('summary', { text:'Keep it safe' }), protBody),
         h('details', { class:'tn-more', id:'dataMore' }, h('summary', { text:'What\u2019s saved' }), dataCounts),
@@ -79,14 +82,14 @@ export function render() {
         h('div', { class:'fld', id:'wakeFld' }, h('span', { text:'Keep the screen on during a game' }), segmented('Keep the screen on during a game', [['on', 'On'], ['off', 'Off']], prefs().wakeLock === false ? 'off' : 'on', v => setPrefs({ wakeLock: v === 'on' }), 'wide'),
           h('p', { class:'small muted', id:'wakeNote', text: WK.supported() ? 'Only while a game is open; off at the last frame or after 10 idle minutes.' : 'This browser can\u2019t keep the screen on; set Auto-Lock in your phone settings instead.' }))),
       h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Sync & backup' }), stat),
-        h('p', { class:'small', text:'Your backup code links this device to your saved lines on the server. Keep it private; anyone with it can see your lines.' }),
+        h('p', { class:'small', id:'codeNote', text: account.active() ? 'Signed in: your data syncs to your account. The backup code is used only when you are signed out.' : 'Your backup code links this device to your saved lines on the server. Keep it private; anyone with it can see your lines.' }),
         h('div', { class:'row gap wrap' }, code, h('button', { class:'btn sm ghost', id:'copyCode', onclick:async () => { try { await navigator.clipboard.writeText(deviceId()); toast('Code copied'); const db = await ready(); await db.setMeta('codeCopiedAt', Date.now()); paintData(); } catch (e) { toast('Copy failed. Select the code and copy it.', { kind:'bad' }); } } }, 'Copy'),
           h('button', { class:'btn sm ghost', id:'dlBackup', onclick:downloadBackup }, 'Download backup')),
         h('form', { class:'inline-form', onsubmit:e => { e.preventDefault(); if (useCode(codeIn.value)) { code.textContent = deviceId(); codeIn.value = ''; toast('Code set. Syncing\u2026'); } else toast('That code doesn\u2019t look right (8\u201364 letters, numbers, - or _).', { kind:'bad' }); } },
           h('label', { class:'fld grow' }, h('span', { text:'Restore from another device' }), codeIn), h('button', { class:'btn primary', type:'submit' }, 'Use code'))),
       h('div', { class:'card' }, h('h2', { class:'card-title', text:'About' }),
         h('p', { class:'small', text:'Arsenal Pro models how each ball in your arsenal reads the lane, and coaches your next move. Ball specs come from manufacturer data (marked est. where estimated). Pattern library: Kegel Pattern Library via CarryDown.' }),
-        h('p', { class:'small', id:'aboutPrivacy', text:'Privacy: your games, balls and notes are saved on this phone first and work offline. A copy syncs to the Arsenal Pro server under your backup code so you can restore it. No account, no ads, no tracking, and it is free.' }),
+        h('p', { class:'small', id:'aboutPrivacy', text:'Privacy: your games, balls and notes are saved on this phone first and work offline. A copy syncs to the Arsenal Pro server so you can restore it: under your backup code, or privately under your account if you sign in. An account is optional and only needs an email and password; you can export or delete it on this screen. No ads, no tracking, and it is free.' }),
         h('div', { class:'row gap wrap' }, h('a', { class:'btn ghost', href:'https://github.com/majalen3/arsenal-pro-bowling/blob/main/CHANGELOG.md', target:'_blank', rel:'noopener', id:'aboutChanges' }, 'What\u2019s new'),
           h('a', { class:'btn ghost', href:'https://github.com/majalen3/arsenal-pro-bowling', target:'_blank', rel:'noopener', id:'aboutSource' }, 'Source code')),
         build));
@@ -94,7 +97,8 @@ export function render() {
     paintStat();
   }
   draw();
+  const offA = on('account', () => draw());
   const off = on('status', paintStat), offD = on('data', paintData), offS = on('sync', paintData);
   const el = h('section', { class:'screen list-screen' }, h('header', { class:'appbar' }, h('h1', { class:'title' }, 'Me', helpDot('bm-matchup', 'Speed / rev match'))), body);
-  return { el, title:'Me', destroy:() => { off(); offD(); offS(); } };
+  return { el, title:'Me', destroy:() => { offA(); off(); offD(); offS(); } };
 }
