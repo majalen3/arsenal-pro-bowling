@@ -34,6 +34,9 @@ async def qtap(p, sel):
     # Tonight ignores a repeat throw tap within 400 ms (sim bug 2), so scripted throws wait like a real bowler does.
     await p.wait_for_timeout(420); await p.click(sel)
 
+ART = os.environ.get('E2E_ART') or ('/workspace/shots' if os.access('/workspace', os.W_OK) else os.path.join(os.environ.get('RUNNER_TEMP', '/tmp'), 'e2e-art'))   # review screenshots/PDFs; CI has no /workspace
+os.makedirs(ART, exist_ok=True)
+
 async def shot(p, name):
     if SHOTS: os.makedirs(SHOTS, exist_ok=True); await p.screenshot(path=os.path.join(SHOTS, name + '.png'))
 
@@ -510,6 +513,76 @@ async def gametotal_cycle(b):
     check(await p.is_visible('#lgAddTotal') and 'final score' in await p.text_content('#lgTotalWhy'), '[gametotal] offered in team setup')
     check(not errs, f'[gametotal] no page errors {errs[:3]}'); await c.close()
 
+async def export_cycle(b):
+    # Item E: Export my arsenal from Arsenal and More > Your data: printable Arsenal sheet (window.print, @media print,
+    # Letter/A4), the bag share card (PNG), the arsenal CSV and the full backup. Only data on file; games only where logged.
+    import tempfile, json as _j, subprocess, struct, shutil
+    errs = []; c = await ctx_for(b, 'phone', accept_downloads=True); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 740})
+    await c.add_init_script("navigator.canShare = undefined; window.__printed = 0; window.print = () => { window.__printed++; };")
+    await seed(p); await p.goto(BASE + '?ex#/tonight'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await p.wait_for_selector('#tnAdvisor')
+    await p.click('[data-event=league]'); await p.wait_for_selector('#advPack'); await p.click('#advPack'); await p.wait_for_selector('#advPackList')
+    info = await p.evaluate("""async () => { const m = await import('./js/hub.js'), S = await import('./js/cc/status.js'); const P = m.proj(), bag = S.packedIds(P, S.currentBag(P));
+      const id = bag[0], other = Object.keys(P.owned).find(x => !bag.includes(x)); let n = 0;
+      const game = async (sid, g, strikes) => { for (let f = 1; f <= 10; f++) { if (f <= strikes) await m.add('shot.logged', 'test-ex-' + n++, { sessionId: sid, game: g, frame: f, roll: 1, down: 10, leave: [], ballId: id });
+          else { await m.add('shot.logged', 'test-ex-' + n++, { sessionId: sid, game: g, frame: f, roll: 1, down: 9, leave: [10], ballId: id }); await m.add('shot.logged', 'test-ex-' + n++, { sessionId: sid, game: g, frame: f, roll: 2, down: 1, leave: [], ballId: id }); } }
+        if (strikes >= 10) for (const r of [2, 3]) await m.add('shot.logged', 'test-ex-' + n++, { sessionId: sid, game: g, frame: 10, roll: r, down: 10, leave: [], ballId: id });
+        else await m.add('shot.logged', 'test-ex-' + n++, { sessionId: sid, game: g, frame: 10, roll: 3, down: 10, leave: [], ballId: id }); };
+      await m.add('session.created', 'test-ex-s1', { kind: 'tonight', date: '2026-10-20', ended: true }); await game('test-ex-s1', 1, 10); await game('test-ex-s1', 2, 5);
+      await m.add('ownedBall.edited', other, { fields: { status: 'retired' } });
+      const Q = m.proj(); return { bag, id, other, name: S.itemOfOwned(Q, id).name, games: Q.games.filter(g => g.complete).map(g => g.score), n: Object.keys(Q.owned).length }; }""")
+    await p.evaluate("const q = JSON.parse(localStorage.getItem('ap_profile') || '{}'); localStorage.setItem('ap_profile', JSON.stringify(Object.assign(q, {hand:'right', speed:15.5, rev:310, pap:'5 1/8 x 1/2 up', entered:Object.assign(q.entered || {}, {hand:true, speed:true, rev:true})})))")
+    await p.goto(BASE + '?ex2#/arsenal'); await p.wait_for_selector('#arsExport')
+    await p.click('#arsExport'); await p.wait_for_selector('#expSheet')
+    opts = await p.eval_on_selector_all('#expSheet .exp-opt', 'e => e.map(x => x.id)')
+    check(opts == ['expSheetBtn', 'expCard', 'expCsv', 'expBackup'], f'[export] Arsenal > Export offers sheet, card, CSV, backup {opts}')
+    small = await p.evaluate(SMALL); check(not small, f'[export] options >= 44px {small[:6]}'); await axe_ok(p, '[export] options sheet'); await p.screenshot(path=ART + '/itemE-export-options.png')
+    async with p.expect_download() as dl: await p.click('#expCsv')
+    d = await dl.value; f = os.path.join(tempfile.mkdtemp(), d.suggested_filename); await d.save_as(f); csv = open(f, encoding='utf-8-sig').read().splitlines()
+    check(csv[0].startswith('status,in_tonights_bag,name,brand,cover,surface,core,rg,diff,role,games') and len(csv) == info['n'] + 1, f'[export] CSV: header + one row per ball ({len(csv) - 1} of {info["n"]})')
+    row = next((l for l in csv if info['name'] in l), ''); check(',yes,' in row and ',2,2,' in row, f'[export] CSV marks the bag and the logged games for {info["name"]}: {row[:160]!r}')
+    check(any(l.startswith('Retired,') for l in csv), '[export] CSV groups by Status (Retired row present)')
+    async with p.expect_download() as dl: await p.click('#expBackup')
+    d = await dl.value; f = os.path.join(tempfile.mkdtemp(), d.suggested_filename); await d.save_as(f); bk = _j.load(open(f))
+    check(bk.get('format') == 'backup' and len(bk.get('events', [])) > 20, f'[export] full backup re-uses the backup file ({d.suggested_filename}, {len(bk.get("events", []))} events)')
+    async with p.expect_download() as dl: await p.click('#expCard')
+    d = await dl.value; card = ART + '/itemE-share-card.png'; await d.save_as(card)
+    w, hgt = struct.unpack('>II', open(card, 'rb').read()[16:24]); check(d.suggested_filename.endswith('.png') and (w, hgt) == (1080, 1350), f'[export] bag card PNG 1080x1350 downloaded when sharing files is not offered ({d.suggested_filename} {w}x{hgt})')
+    shared = await p.evaluate("""async () => { const X = await import('./js/screens/export.js'); let got = null; navigator.canShare = o => !!(o.files && o.files.length); const s0 = navigator.share;
+      navigator.share = async o => { got = o.files.map(f => [f.name, f.type, f.size]); }; const r = await X.shareCard(); navigator.share = s0; navigator.canShare = undefined; return [r, got]; }""")
+    check(shared[0] == 'shared' and shared[1] and shared[1][0][1] == 'image/png' and shared[1][0][2] > 10000, f'[export] bag card goes to navigator.share with the PNG file when offered {shared}')
+    await p.click('#expSheetBtn'); await p.wait_for_selector('#arsSheet')
+    t = await p.text_content('#arsSheet')
+    check('Urbanek Honey Badgers' in t and 'Right-handed' in t and '15.5 mph' in t and '310 rpm' in t and '5 1/8 x 1/2 up' in t, '[export] sheet header: team, hand, speed, rev, PAP (entered)')
+    groups = await p.eval_on_selector_all('#arsSheet .ps-group', 'e => e.map(x => x.dataset.group)')
+    check(groups[0] == 'inBag' and 'retired' in groups, f'[export] balls grouped by Status {groups}')
+    hl = await p.eval_on_selector_all('#arsSheet tr.bag', 'e => e.length'); bagli = await p.eval_on_selector_all('#psBag li', 'e => e.length')
+    check(hl == len(info['bag']) == bagli, f'[export] tonight\'s bag highlighted ({hl} rows, {bagli} listed, {len(info["bag"])} packed)')
+    avg = round(sum(info['games']) / len(info['games'])) if info['games'] else None
+    rowt = await p.text_content(f'#arsSheet tr[data-own="{info["id"]}"]')
+    check(avg is not None and f'{avg} (n 2)' in rowt, f'[export] games and average only where logged, with n ({rowt!r}, avg {avg})')
+    blank = await p.evaluate(f"""() => [...document.querySelectorAll('#arsSheet tr[data-own]')].filter(r => r.dataset.own !== {_j.dumps(info['id'])}).every(r => !r.children[7].textContent && !r.children[8].textContent)""")
+    check(blank, '[export] no games/average for balls without logged games')
+    hof = await p.text_content('#psHof'); check('retired' in hof and '300 game' in hof, f'[export] Hall of Fame and earned milestones {hof[:120]!r}')
+    foot = await p.text_content('#psFoot'); check('manufacturer' in foot and 'logged with frames' in foot, '[export] provenance footer')
+    ov = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(ov[1] <= ov[0], f'[export] sheet preview does not scroll the page sideways {ov}')
+    await p.click('#psPrint'); check(await p.evaluate('window.__printed') == 1, '[export] Print or PDF calls window.print()')
+    small = await p.evaluate(SMALL); check(not small, f'[export] sheet screen targets >= 44px {small[:6]}'); await axe_ok(p, '[export] arsenal sheet')
+    await p.evaluate('scrollTo(0, 0)'); await p.wait_for_timeout(300); await p.screenshot(path=ART + '/itemE-sheet-phone.png'); await shot(p, 'phone-export-sheet')
+    await p.emulate_media(media='print')
+    hidden = await p.evaluate("() => ['#tabs', '.appbar', '.ps-hint'].map(s => { const e = document.querySelector(s); return !e || getComputedStyle(e).display === 'none'; })")
+    check(all(hidden), f'[export] print hides the tab bar, app bar and hint {hidden}')
+    for fmt in ['Letter', 'A4']:
+        pdf = f'{ART}/itemE-arsenal-sheet-{fmt}.pdf'; await p.pdf(path=pdf, format=fmt, print_background=True, prefer_css_page_size=False)
+        if not shutil.which('pdfinfo'): check(os.path.getsize(pdf) > 20000, f'[export] {fmt} PDF written (poppler not installed; page check skipped)'); continue
+        out = subprocess.run(['pdfinfo', pdf], capture_output=True, text=True).stdout; pages = int(re.search(r'Pages:\s+(\d+)', out).group(1))
+        txt = subprocess.run(['pdftotext', '-layout', pdf, '-'], capture_output=True, text=True).stdout.lower()
+        check(1 <= pages <= 3 and 'arsenal sheet' in txt and 'tonight' in txt and 'retired' in txt, f'[export] {fmt} PDF: {pages} page(s), sheet text present')
+        subprocess.run(['pdftoppm', '-png', '-r', '110', '-f', '1', '-l', '1', pdf, pdf[:-4]], check=False)
+    await p.emulate_media(media='screen')
+    await p.evaluate("location.hash = '#/more'"); await p.wait_for_selector('#moreExport'); await p.click('#moreExport'); await p.wait_for_selector('#expSheet')
+    check(await p.is_visible('#expSheetBtn'), '[export] More > Your data > Export my arsenal opens the same options')
+    check(not errs, f'[export] no page errors {errs[:3]}'); await c.close()
+
 async def corner_cycle(b):
     # Item 3: corner pin left alone (flat/ring 10; 7 for LH). Only with enough first balls, always n of N, counts labelled
     # "from your frames", coaching options labelled and sourced, nothing on the scoring pad.
@@ -535,7 +608,7 @@ async def corner_cycle(b):
     await axe_ok(p, '[corner] recap'); small = await p.evaluate(SMALL); check(not small, f'[corner] targets >= 44px {small[:6]}')
     w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[corner] no horizontal overflow {w}')
     await p.evaluate("() => { const t = document.querySelector('#toast'); if (t) t.style.visibility = 'hidden'; document.querySelector('#sessRecap').scrollIntoView({ block: 'start' }); }")
-    os.makedirs('/workspace/shots', exist_ok=True); await p.screenshot(path='/workspace/shots/item3-recap-flat10.png'); await shot(p, 'phone-corner-recap')
+    await p.screenshot(path=ART + '/item3-recap-flat10.png'); await shot(p, 'phone-corner-recap')
     await p.evaluate("location.hash = '#/arsenal/insights'"); await p.wait_for_selector('#insCorner')
     ins = await p.text_content('#insCornerLead')
     check('10 pin alone on 14 of 48 first balls' in ins, f'[corner] Insights: all scored games, n of N {ins!r}')
@@ -1565,7 +1638,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('export', lambda: export_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

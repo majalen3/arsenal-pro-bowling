@@ -201,8 +201,10 @@ async def j02_home_prep(j):
         btn = j.page.locator('button, a').filter(has_text=re.compile(r'export|download|share', re.I))
         s.check(await btn.count() > 0, f'Arsenal has an Export button ({await btn.count()})')
         if await btn.count():
+            await btn.first.click(); s.taps += 1; await j.settle(300)
+            csv = j.page.locator('#expCsv'); s.check(await csv.count() > 0, 'Export offers the arsenal list (CSV)')
             async with j.page.expect_download(timeout=6000) as dl:
-                await btn.first.click(); s.taps += 1
+                await (csv.first if await csv.count() else btn.first).click(); s.taps += 1
             d = await dl.value; f = os.path.join(tempfile.mkdtemp(), d.suggested_filename); await d.save_as(f)
             body = open(f, encoding='utf-8', errors='replace').read()
             s.check('Rattler' in body or 'rattler' in body, f'export contains the balls ({d.suggested_filename}, {len(body)} bytes)')

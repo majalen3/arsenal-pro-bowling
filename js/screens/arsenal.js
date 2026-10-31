@@ -89,7 +89,9 @@ export async function render() {
   drawChips(); draw();
   const el = h('section', { class:'screen list-screen' },
     h('header', { class:'appbar arm-head' }, h('div', { class:'arm-titles' }, h('span', { class:'arm-team', text:T.team }), h('h1', { class:'title', text:T.title })), h('div', { class:'appbar-actions' }, h('a', { class:'btn primary sm', id:'arsAdd', href:'#/add-ball' }, 'Add ball'), h('a', { class:'btn ghost sm', href:'#/arsenal/insights' }, 'Insights'))),
-    P ? armory(P) : null, withHelp(h('h2', { class:'group-h arm-cat', text:'Catalog' }), 'eq-cover-types', 'Ball types'),
+    P ? armory(P) : null,
+    P ? h('div', { class:'arm-export' }, h('button', { class:'btn ghost', id:'arsExport', onclick:async () => (await import('./export.js')).openExport() }, 'Export my arsenal')) : null,   // item E: sheet, bag card, CSV, backup
+    withHelp(h('h2', { class:'group-h arm-cat', text:'Catalog' }), 'eq-cover-types', 'Ball types'),
     h('div', { class:'list-tools' }, search, chips, count), sugg, grid, tray);
   return { el, title:T.title };
 }

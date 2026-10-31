@@ -16,9 +16,9 @@ export function records(P) {
     const n = {}; for (const s of playOrder(list)) if ((s.roll || 1) === 1 && s.ballId) n[s.ballId] = (n[s.ballId] || 0) + 1;
     const top = Object.entries(n).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))[0];
     if (!top) continue;
-    const r = by[top[0]] = by[top[0]] || { games: 0, complete: 0, best: null }, g = scoreOf[k];
+    const r = by[top[0]] = by[top[0]] || { games: 0, complete: 0, best: null, sum: 0 }, g = scoreOf[k];
     r.games++;
-    if (g && g.complete && g.score != null) { r.complete++; r.best = r.best == null ? g.score : Math.max(r.best, g.score); }
+    if (g && g.complete && g.score != null) { r.complete++; r.sum += g.score; r.best = r.best == null ? g.score : Math.max(r.best, g.score); }
   }
   return by;
 }

@@ -18,6 +18,7 @@ route(/^\/lane$/, 'lane', () => import('./screens/lane.js'));
 route(/^\/target$/, 'lane', () => import('./screens/target.js'));
 route(/^\/arsenal$/, 'arsenal', () => import('./screens/arsenal.js'));
 route(/^\/arsenal\/insights$/, 'arsenal', () => import('./screens/insights.js'));
+route(/^\/arsenal\/sheet$/, 'arsenal', () => import('./screens/export.js'));
 route(/^\/ball\/([\w-]+)$/, 'arsenal', () => import('./screens/ball.js'));
 route(/^\/compare$/, 'arsenal', () => import('./screens/compare.js'));
 route(/^\/add-ball$/, 'arsenal', () => import('./screens/addball.js'));
