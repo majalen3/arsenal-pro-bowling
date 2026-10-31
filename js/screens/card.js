@@ -95,13 +95,13 @@ export async function render() {
     if (Tn.breakpointBoard) acc.push(h('dl', { class: 'kv' }, ...row('Breakpoint', `board ${Tn.breakpointBoard.v}${Tn.breakpointDistance ? ' at ' + Tn.breakpointDistance.v + ' ft' : ''}`, nd(Tn.breakpointBoard)),
       ...(Tn.entryBoard ? row('Pocket entry', `board ${Tn.entryBoard.v}`, nd(Tn.entryBoard)) : []), ...(Tn.impactAngle ? row('Entry angle', `${Tn.impactAngle.v}\u00b0`, 'measured by LaneTrax (real degrees)') : [])));
     const tk = c.takeaways;
-    body.append(
+    body.append(...[
       tk ? sec('bcTake', 'Coach notes', [h('ul', { class: 'plain' }, h('li', {}, h('b', { text: 'Strength: ' }), tk.strength.text), tk.leak ? h('li', {}, h('b', { text: 'Leak: ' }), tk.leak.text) : null, h('li', {}, h('b', { text: 'Next drill: ' }), tk.drill.text)), h('p', { class: 'muted small', text: `Levels: ${C.SRC.levels.label} (${C.SRC.levels.how}). Drill: ${tk.drill.rule}.` })], '') : null,
       sec('bcSpares', 'Spares', spare, 'Score a game on Tonight (tap the pins left standing) to see single- and multi-pin spares.'),
       sec('bcRelease', 'Release: speed, revs, style', rel.length ? rel : null, 'Import a LaneTrax report (Me \u203a LaneTrax report) or type speed and revs in Me \u203a Bowler profile.'),
       sec('bcCons', 'Consistency (LaneTrax levels)', cons ? [h('dl', { class: 'kv' }, ...lvRow('Speed', cons.speed, 'avg impact'), ...lvRow('Revs', cons.rpm, 'avg'), ...lvRow('Arrows', cons.arrows, 'avg off'), ...lvRow('Spares', cons.conversion, 'conversion')), h('p', { class: 'muted small', text: 'LaneTrax levels speed and revs by how much they vary shot to shot (5 = tightest).' })] : null, 'Import a LaneTrax report to see speed, rev and accuracy consistency.'),
       sec('bcAcc', 'Accuracy and breakpoint', acc, 'Import a LaneTrax report for arrows, breakpoint and entry. Tag "First ball hit" on Tonight for pocket %.'),
-      sec('bcSrc', 'Sources and thresholds', [h('ul', { class: 'plain small bc-src' }, ...Object.values(C.SRC).map(s => h('li', {}, s.url ? h('a', { href: s.url, target: '_blank', rel: 'noopener' }, s.label) : s.label, ` (${s.how})`)))], ''));
+      sec('bcSrc', 'Sources and thresholds', [h('ul', { class: 'plain small bc-src' }, ...Object.values(C.SRC).map(s => h('li', {}, s.url ? h('a', { href: s.url, target: '_blank', rel: 'noopener' }, s.label) : s.label, ` (${s.how})`)))], '')].filter(Boolean));   // Element.append(null) would print "null"
     body.append(h('div', { class: 'btn-grid' }, h('a', { class: 'btn ghost', href: '#/results', id: 'bcToSessions' }, 'Results'),
       figs.length ? h('button', { class: 'btn ghost', id: 'bcShare', onclick: () => sharePng(c, head, figs) }, 'Share as image') : h('a', { class: 'btn ghost', href: '#/import?kind=lanetrax', id: 'bcImport' }, 'Import LaneTrax')));
   }
