@@ -181,7 +181,7 @@ const NAME = { conversion: 'Spare conversion', speed: 'Speed control', rpm: 'Rev
 export function takeaways(c) {
   const cand = [];
   const conv = c.spare.single || c.spare.multi ? (() => { const n = (c.spare.single ? c.spare.single.n : 0) + (c.spare.multi ? c.spare.multi.n : 0), m = (c.spare.single ? c.spare.single.made : 0) + (c.spare.multi ? c.spare.multi.made : 0); return { v: pct(m, n), n, made: m }; })() : c.spare.ltx;
-  if (conv && conv.n) cand.push({ k: 'conversion', level: levelOf('conversion', conv.v), text: `${conv.made}/${conv.n} spares made (${conv.v}%)` });
+  if (conv && conv.n) cand.push({ k: 'conversion', level: levelOf('conversion', conv.v), text: `${conv.made} of ${conv.n} spares made, ${Math.round(conv.v)}%` });   // C5: no nested parentheses, whole percent
   if (c.consistency) for (const [k, key] of [['speed', 'speed'], ['rpm', 'rpm'], ['arrows', 'arrows']]) { const x = c.consistency[key]; if (x && x.level) cand.push({ k, level: x.level, text: `${x.metric ? x.metric.toLowerCase() + ' ' : ''}${x.v} ${x.unit}, LaneTrax ${x.date}` }); }
   if (!cand.length) return null;
   const sorted = cand.slice().sort((a, b) => b.level - a.level || a.k.localeCompare(b.k));

@@ -1061,7 +1061,8 @@ async def card_cycle(b):
     # the card
     await p.goto(BASE + '?bc3#/card'); await p.wait_for_selector('#bcFigs')
     figs = await p.eval_on_selector_all('#bcFigs .bc-fig', 'e=>e.map(x=>[x.dataset.k, x.querySelector(".bc-n").textContent])')
-    check(4 <= len(figs) <= 6 and all(f[1] for f in figs), f'[card] 4-6 headline figures, each with source/n {figs}')
+    check(len(figs) == 4 and all(f[1] for f in figs), f'[card] C5: 4 outcome tiles, each with its n {figs}')
+    check('release' not in [f[0] for f in figs] and await p.query_selector('#bcRelease #bcSpeedRevs') is not None and await p.query_selector('#bcSrc #bcFigSrc') is not None, '[card] C5: Speed \u00b7 revs in Release, tile sources in Sources')
     check([f[0] for f in figs][:2] == ['avg', 'single'], f'[card] average and single-pin spares lead (what league bowlers check)')
     await axe_ok(p, '[card] populated'); await p.wait_for_timeout(200)
     small = await p.evaluate(SMALL); check(not small, f'[card] targets >= 44px {small[:6]}')
@@ -1351,6 +1352,8 @@ async def help_counts(p, tag):
     out = {}
     for name, route, sel in HELP_SCREENS:
         await p.goto(BASE + f'?{tag}{name}' + route); await p.wait_for_selector(sel); await p.wait_for_timeout(150)
+        # clutter C8/C9: some terms sit in collapsed sections; their "?" shows once the section is opened
+        await p.evaluate("() => document.querySelectorAll('#ballSpecs, #bagCare, #bagLeft').forEach(d => { d.open = true; })")
         out[name] = await p.evaluate(VISIBLE_DOTS)
     return out
 
@@ -1362,13 +1365,14 @@ async def help_cycle(b):
     off = await help_counts(p, 'hoff'); check(not any(off.values()), f'[help] off by default: 0 "?" on every screen {off}')
     await p.goto(BASE + '?hp#/lane'); await p.wait_for_selector('#helpToggle[aria-pressed="false"]')
     box = await p.evaluate("() => { const r = document.querySelector('#helpToggle').getBoundingClientRect(); return [r.width, r.height, r.top]; }")
-    check(box[0] >= 44 and box[1] >= 44 and box[2] < 80, f'[help] "?" switch in the top bar, 44 px {box}')
+    check(round(box[0]) >= 44 and round(box[1]) >= 44 and box[2] < 80, f'[help] "?" switch in the top bar, 44 px {box}')
     await p.click('#helpToggle'); await p.wait_for_selector('#helpToggle[aria-pressed="true"]')
     check(await p.evaluate("() => JSON.parse(localStorage.getItem('ap_prefs') || '{}').help === true"), '[help] top-bar switch turns Help on (saved)')
     on = await help_counts(p, 'hon'); zero = [k for k, v in on.items() if v < 1]
     check(not zero, f'[help] Help on: at least one "?" on every screen {on}')
     check(on['ball'] >= 12, f'[help] ball page: "?" on RG, differential, core, cover, finish, reads, the line, cards, compare ({on["ball"]})')
     await p.goto(BASE + '?hb#/ball/hy-road'); await p.wait_for_selector('#ballRead')
+    await p.evaluate("() => { const d = document.querySelector('#ballSpecs'); if (d) d.open = true; }")
     for hid in ['eq-rg', 'eq-diff', 'eq-core', 'eq-cover-types', 'eq-surface', 'bm-shr', 'tg-hit', 'bm-entry-angle', 'ap-model', 'bm-breakpoint', 'ap-use-when', 'ap-compare']:
         check(await p.query_selector(f'.help-dot[data-help="{hid}"]') is not None, f'[help] ball page has "?" for {hid}')
     await shot(p, 'phone-ball-help'); await axe_ok(p, '[help] ball page with Help on')

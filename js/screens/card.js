@@ -60,20 +60,23 @@ export async function render() {
     lsSet(LS.profile, pr); await addMany(evs); emit('profile'); toast(`Now using ${label}.`);
   }
   function draw() {
-    const P = proj(), c = C.bowlerCard(P, { profile: profile() || {} }), head = C.headline(c), figs = C.figures(c);
+    const P = proj(), c = C.bowlerCard(P, { profile: profile() || {} }), head = C.headline(c), allFigs = C.figures(c);
+    // C5: the front shows 4 outcome tiles; Speed · revs (an input) moves into Release, Carry into Accuracy, each tile's source into Sources.
+    const OUTCOME = ['avg', 'strike', 'single', 'spare', 'firstAvg'], figs = allFigs.filter(f => OUTCOME.includes(f.k)).slice(0, 4), moved = k => allFigs.find(f => f.k === k);
     body.innerHTML = '';
     body.append(h('div', { class: 'card bc-head', id: 'bcHead' }, h('p', { class: 'bc-headline', id: 'bcHeadline' }, head.text, figs.length ? null : helpDot('sc-average', 'Average')),
       c.takeaways && c.takeaways.leak ? null : c.takeaways ? h('p', { class: 'bc-focus', text: c.takeaways.drill.text }) : null,
       (lf => lf && !head.text.includes(C.leaveName(lf.leave)) ? h('p', { class: 'bc-focus', id: 'bcLeave', text: lf.text }) : null)(C.leaveFocus(c))));   // F08
     if (figs.length) body.append(h('dl', { class: 'bc-figs bc-grid', id: 'bcFigs' }, ...figs.map(f => h('div', { class: 'bc-fig', 'data-k': f.k },
       h('dt', {}, f.label, FIGHELP[f.k] ? helpDot(FIGHELP[f.k], f.label) : null), h('dd', {}, h('span', { class: 'bc-v', text: String(f.v) }), f.unit ? h('span', { class: 'bc-u', text: f.unit === '%' ? '%' : ' ' + f.unit }) : null),
-      h('dd', { class: 'bc-n', text: [f.src, f.n ? `${f.n} ${f.nUnit || ''}`.trim() : null].filter(Boolean).join(' \u00b7 ') })))));
+      h('dd', { class: 'bc-n', text: f.n ? `${f.n} ${f.nUnit || ''}`.trim() : f.src })))));
     const sp = spark(c.avgTrend.length >= 2 ? c.avgTrend : c.trend, c.avgTrend.length >= 2 ? 'Average by session' : 'Strike % by session');
     if (sp) body.append(h('div', { class: 'card bc-trend', id: 'bcTrend' }, h('p', { class: 'small muted', text: c.avgTrend.length >= 2 ? `Average by session, last ${c.avgTrend.length}` : `Strike % by session, last ${c.trend.length}` }), sp));
     // ---- Details (behind taps). Empty sections say exactly what to log or import.
     const sec = (id, title, kids, empty) => h('details', { class: 'card bc-more', id }, h('summary', { text: title }), ...(kids && kids.filter(Boolean).length ? kids.filter(Boolean) : [h('p', { class: 'muted small bc-empty', text: empty })]));
     const row = (k, v, meta) => [h('dt', { text: k }), h('dd', {}, v, meta ? h('span', { class: 'bc-n', text: ' ' + meta }) : null)];
-    const rel = [];
+    const rel = [], sr = moved('release'), carry = moved('carry');
+    if (sr) rel.push(h('p', { id: 'bcSpeedRevs' }, h('b', { text: 'Speed \u00b7 revs: ' }), `${sr.v} ${sr.unit}`, h('span', { class: 'bc-n', text: ` ${sr.src}${sr.n ? ' \u00b7 ' + sr.n + ' ' + sr.nUnit : ''}` })));
     for (const [k, name] of [['speed', 'Speed'], ['rev', 'Rev rate']]) { const x = c[k]; if (!x.typed && !x.measured) continue;
       rel.push(h('dl', { class: 'kv' }, ...(x.typed ? row(name, `${x.typed.v} ${x.typed.unit}`, x.typed.src.label) : []), ...(x.measured ? row('Measured', `${x.measured.v} ${x.measured.unit}`, `LaneTrax${x.measured.src.at ? ' ' + x.measured.src.at : ''} \u00b7 ${nd(x.measured)}`) : [])));
       if (x.measured && (!x.typed || Math.abs(x.typed.v - x.measured.v) >= (k === 'rev' ? 5 : 0.2))) rel.push(x.measured.enough ? h('button', { class: 'btn sm', 'data-use': k, onclick: () => useMeasured(k, x.measured, P) }, `Use measured ${name.toLowerCase()}`)
@@ -90,6 +93,7 @@ export async function render() {
     if (c.leaves.length) spare.push(h('p', { class: 'small', text: 'By leave: ' + c.leaves.slice(0, 8).map(l => `${l.leave} ${l.made}/${l.n}`).join(', ') }));
     if (c.spare.ltx) spare.push(h('dl', { class: 'kv' }, ...row('LaneTrax spares', `${c.spare.ltx.made} of ${c.spare.ltx.n} (${c.spare.ltx.v}%)`, c.spare.ltx.dates)));
     const acc = [], A = c.accuracy, Tn = c.tend;
+    if (carry) acc.push(h('dl', { class: 'kv', id: 'bcCarry' }, ...row('Carry', `${carry.v}%`, `${carry.src} \u00b7 ${carry.n} ${carry.nUnit}`)));
     if (A.arrows) acc.push(h('dl', { class: 'kv' }, ...row('At the arrows', `${A.arrows.v} boards off target`, `LaneTrax \u00b7 ${nd(A.arrows)}`)));
     if (A.pocket) acc.push(h('dl', { class: 'kv' }, ...row('Pocket hits', `${A.pocket.v}%`, `${A.pocket.n} first balls you tagged`)));
     if (Tn.breakpointBoard) acc.push(h('dl', { class: 'kv' }, ...row('Breakpoint', `board ${Tn.breakpointBoard.v}${Tn.breakpointDistance ? ' at ' + Tn.breakpointDistance.v + ' ft' : ''}`, nd(Tn.breakpointBoard)),
@@ -101,7 +105,7 @@ export async function render() {
       sec('bcRelease', 'Release: speed, revs, style', rel.length ? rel : null, 'Import a LaneTrax report (Me \u203a LaneTrax report) or type speed and revs in Me \u203a Bowler profile.'),
       sec('bcCons', 'Consistency (LaneTrax levels)', cons ? [h('dl', { class: 'kv' }, ...lvRow('Speed', cons.speed, 'avg impact'), ...lvRow('Revs', cons.rpm, 'avg'), ...lvRow('Arrows', cons.arrows, 'avg off'), ...lvRow('Spares', cons.conversion, 'conversion')), h('p', { class: 'muted small', text: 'LaneTrax levels speed and revs by how much they vary shot to shot (5 = tightest).' })] : null, 'Import a LaneTrax report to see speed, rev and accuracy consistency.'),
       sec('bcAcc', 'Accuracy and breakpoint', acc, 'Import a LaneTrax report for arrows, breakpoint and entry. Tag "First ball hit" on Tonight for pocket %.'),
-      sec('bcSrc', 'Sources and thresholds', [h('ul', { class: 'plain small bc-src' }, ...Object.values(C.SRC).map(s => h('li', {}, s.url ? h('a', { href: s.url, target: '_blank', rel: 'noopener' }, s.label) : s.label, ` (${s.how})`)))], '')].filter(Boolean));   // Element.append(null) would print "null"
+      sec('bcSrc', 'Sources and thresholds', [figs.length ? h('ul', { class: 'plain small bc-src', id: 'bcFigSrc' }, ...figs.map(f => h('li', { text: `${f.label}: ${[f.src, f.n ? `${f.n} ${f.nUnit || ''}`.trim() : null].filter(Boolean).join(' \u00b7 ')}` }))) : null, h('ul', { class: 'plain small bc-src' }, ...Object.values(C.SRC).map(s => h('li', {}, s.url ? h('a', { href: s.url, target: '_blank', rel: 'noopener' }, s.label) : s.label, ` (${s.how})`)))], '')].filter(Boolean));   // Element.append(null) would print "null"
     body.append(h('div', { class: 'btn-grid' }, h('a', { class: 'btn ghost', href: '#/results', id: 'bcToSessions' }, 'Results'),
       figs.length ? h('button', { class: 'btn ghost', id: 'bcShare', onclick: () => sharePng(c, head, figs) }, 'Share as image') : h('a', { class: 'btn ghost', href: '#/import?kind=lanetrax', id: 'bcImport' }, 'Import LaneTrax')));
   }
