@@ -374,8 +374,12 @@ async def j06_between_games(j):
         if await j.visible('[data-read="early"]'): await j.tap('[data-read="early"]'); await j.settle()
         b = j.page.locator('#tnPick [data-alt="Stronger"], #tnPick [data-alt="Weaker"]')
         s.check(await b.count() > 0, 'Weaker/Stronger alternatives offered')
+        tm = await tonight_line(j)   # the read itself may already have moved the pick; the alt must move it again
         if await b.count(): await b.first.click(); s.taps += 1; await j.settle(400)
-        t1 = await tonight_line(j); j.state['t1'] = t1; s.check(t1.get('ball') != t0.get('ball'), f'pick changed {t0.get("ball")} -> {t1.get("ball")}')
+        t1 = await tonight_line(j); s.check(t1.get('ball') != tm.get('ball'), f'pick changed {tm.get("ball")} -> {t1.get("ball")}')
+        if t1.get('ball') == t0.get('ball') and await b.count():   # back on the default ball: one more alt so the Lane check (F03) tests a non-default pick
+            await b.first.click(); await j.settle(400); t1 = await tonight_line(j)   # setup for the next step, not counted
+        j.state['t1'] = t1
     async with j.step('Lane opens with the new ball', carry='ball') as s:
         await j.nav('/lane'); await j.wait('#lane')
         l = await lane_line(j); s.check(same_ball(l.get('ball'), j.state['t1'].get('ball')), f'Lane {l.get("ball")} vs Tonight {j.state["t1"].get("ball")}')
@@ -671,7 +675,7 @@ async def first_viewport(j, sel_or_text, limit=740):
                       " return el ? Math.round(el.getBoundingClientRect().bottom) : null; }", [sel_or_text, limit])
 
 async def click_text(j, s, pattern, scope='body'):
-    loc = j.page.locator(f'{scope} button, {scope} a, {scope} [role=radio], {scope} [role=button], {scope} label').filter(has_text=re.compile(pattern, re.I))
+    loc = j.page.locator(f'{scope} button, {scope} a, {scope} [role=radio], {scope} [role=button], {scope} label, {scope} summary').filter(has_text=re.compile(pattern, re.I))
     if not await loc.count(): return False
     await loc.first.scroll_into_view_if_needed(); await loc.first.click(); s.taps += 1; await j.settle(400); return True
 
@@ -700,7 +704,8 @@ async def j13_status(j):
         st = next((b['status'] for b in await owned(j) if tgt and b['id'] == tgt['id']), None)
         s.check(ok and st == 'proShop', f'{j.state["psName"]} stored as proShop ({st})')
     async with j.step('Without a reload, the builder leaves it out and says why ("At the pro shop")', carry='status=proShop') as s:
-        await j.nav('/bag'); await j.settle(500); t = await visible_text(j)
+        await j.nav('/bag'); await j.settle(500)
+        await click_text(j, s, r'^\s*Show all\b')   # Left out lists the first few; the rest are one tap away
         why = await j.ev("n => { const re = /why not|left out/i; const sec = [...document.querySelectorAll('section, details, div')].find(e => re.test((e.querySelector('h2,h3,summary') || {}).textContent || ''));"
                          " return sec ? sec.innerText : ''; }", j.state['psName'])
         s.check(bool(why), 'a "Why not" / "Left out" section exists')
@@ -709,6 +714,8 @@ async def j13_status(j):
         s.check(swap, 'a Swap button opens the eligible balls')
         offer = await j.ev("() => { const d = document.querySelector('.sheet, [role=dialog]'); return d ? d.innerText : ''; }") if swap else ''
         s.check(swap and not name_in(j.state['psName'], offer), 'Swap does not offer it')
+        if swap:   # close the sheet the way a bowler would (Cancel), so the next step starts from the tab bar
+            if not await click_text(j, s, r'^\s*Cancel\s*$', '.sheet, [role=dialog]'): await j.page.keyboard.press('Escape')
     async with j.step('Tonight and the score pad ball chip never offer it', carry='status=proShop') as s:
         await j.nav('/tonight'); await j.settle(400)
         pick = (await tonight_line(j)).get('ball', '')
@@ -758,8 +765,9 @@ async def j14_bag(j):
         if ok and await inp.count():
             await inp.first.fill('7'); await inp.first.press('Enter'); s.taps += 1; await j.settle(500)
         t = await visible_text(j); s.check(re.search(r'Bring\s*:?\s*7\b', t), 'Bring: 7 accepted')
-        await j.nav('/tonight'); await j.settle(300); await j.nav('/bag'); await j.settle(400)
     async with j.step('Builder reads as 3 steps: where, your bag for tonight, left out (why not)') as s:
+        await j.nav('/tonight'); await j.settle(300); await j.nav('/bag'); await j.settle(400)
+        await click_text(j, s, r'^\s*Show all\b')
         t = await visible_text(j)
         for w in (r'Where|lanes', r'Your bag for tonight|Tonight.s bag', r'Left out|Why not'):
             s.check(re.search(w, t, re.I), f'step heading /{w}/')
@@ -779,11 +787,13 @@ async def j14_bag(j):
     async with j.step('"Pack these N" is visible without scrolling') as s:
         b = await first_viewport(j, r'Pack these \d+')
         s.check(b is not None and b <= 740, f'Pack button bottom at {b} px (<= 740)')
-    async with j.step('Pack saves THE bag: Tonight, the Bag header and the ball chip show the same balls', task='bag', target_taps=1, carry='bag') as s:
+    async with j.step('Pack these N saves the one bag (1 tap)', task='bag', target_taps=1, carry='bag') as s:
         ok = await click_text(j, s, r'Pack these \d+')
-        saved = await j.data("() => { const B = Object.values(window.__apData.projection().bags || {}).sort((a, b) => (b.ts || 0) - (a.ts || 0))[0]; return B ? (B.items || B.balls || B.owned || []).map(x => typeof x === 'string' ? x : (x.ownedId || x.id)) : []; }")
+        saved = await j.data("() => { const B = Object.values(window.__apData.projection().bags || {}).sort((a, b) => (b.packedTs || b.ts || 0) - (a.packedTs || a.ts || 0))[0]; return B ? (B.slots || B.items || B.balls || []).map(x => typeof x === 'string' ? x : (x.owned || x.ownedId || x.id)).filter(Boolean) : []; }")
         sn = [names.get(i, i) for i in saved]; j.state['bag'] = sn
         s.check(ok and sn, f'a bag is saved ({sn})')
+    async with j.step('After a reload, the Bag header, Tonight and the ball chip show the same packed balls', carry='bag') as s:
+        sn = j.state['bag']
         await j.page.reload(); await j.settle(500); await j.nav('/bag'); await j.settle(400); t = await visible_text(j)
         s.check(re.search(rf'\b{len(sn)} packed\b', t), f'Bag header says "{len(sn)} packed"')
         await j.nav('/tonight'); await j.settle(400); t = await visible_text(j)
