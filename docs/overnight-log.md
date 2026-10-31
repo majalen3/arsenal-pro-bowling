@@ -389,10 +389,16 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - Help is OFF by default and the top-bar "?" toggle stays. Even with Help on, the Bowl pad shows no "?" dots (#32).
 - Add ball focuses the search box. Back now restores the list position (each history entry keeps its scroll), which J08 had only passed by luck before.
 - Taps for the 12 core tasks (IA_PLAN §6): before ≈38 taps + 8 scrolls, plan ≈31 taps, **measured 30 taps + 0 scrolls**. By task: 1:2 · 2:3 · 3:4 · 4:2 · 5:2 · 6:0 · 7:2 · 8:1 · 9:5 · 10:3 · 11:2 · 12:4. Task 9 is +1 because of the kept "Where would you use it?" step: no level is invented.
-- The Tonight (League, 360×780) height budget goes from 1110 to 1130 px, for the owner-required 44 px chip row. Measured at 1122. Start bowling and Add a bowler are still inside the first 740 px.
+- The Tonight (League, 360×780) height budget stays at 1110 px. The first build put the owner-required 44 px chip on its own row (1122 px, budget briefly 1130). The FINDINGS_2 fix moved the chip into the hand row: 1072 px, budget back at 1110. Start bowling and Add a bowler are still inside the first 740 px.
 - Tests:
   - New e2e `ia5` (tabs, Me, redirects, Help off, the chip, Bowl with no dots, axe) and `task12` (each task ≤ plan+1).
-  - Full e2e local run: 738/0 (an earlier run failed only the height budget, which is now re-set to 1130).
+  - Full e2e local run: 738/0 (an earlier run failed only the height budget; see the chip-row fix above).
   - Journeys were renamed to the new homes (J01/J09/J11/J15) and the visual baselines were updated, including the new learn baseline. Lighthouse routes were updated too.
   - Unit tests 258/0, engine 7500/0.
 - Screenshots: `/workspace/shots/item5-tonight-5tab.png`, `item5-bag-5tab.png`, `item5-learn-5tab.png`, `item5-bowl-5tab.png`, `item5-results-5tab.png`.
+
+## FINDINGS_2 fixes (Oct 31)
+- `55b7d76` Stand·Aim chip shares the hand row (League Tonight 1072 px ≤1110); Learn links wrap (CI showed 369 px sideways scroll with DejaVu); sw v52.
+- `f03e5fb` J04 test: tap the picker's Done only if it is still there (auto-return race seen on live).
+- `a25d9ec` F15 wide fonts: Weaker/Stronger buttons (grid `minmax(0,1fr)`, wrapping) and the maker-lookup button wrap. With DejaVu, [tonight] went from 366 px to 360 px and [addball] from 364 px to 360 px.
+- `b42b9de` ui-tests CI installs Roboto, as journeys.yml already does. The remaining DejaVu-only fails (tonightfold 1152 px, whynot Pack position, aimbox/help click timeouts) are height and position budgets measured in a wider font. Recorded as an open risk in FINDINGS_2 (F15).
