@@ -655,6 +655,10 @@ async def targeting_cycle(b):
     check(await p.query_selector('#tabs [aria-current=page]') is None and await p.is_visible('#tabs'), '[target] a tool: no tab of its own, tab bar still there (IA P2)')
     await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())"); await shot(p, 'phone-target-walkthrough')
     await axe_ok(p, '[target] walkthrough')
+    # C10 (clutter audit): the 1-of-3 card shows on the first visit only, even when it was not dismissed
+    await p.reload(); await p.wait_for_selector('#tgCoach'); await p.wait_for_timeout(300)
+    check(await p.query_selector('#tgTour') is None, '[target] C10 walkthrough on first visit only (not repeated when left open)')
+    await p.click('#tgHelp'); await p.wait_for_selector('#tgTour')
     await p.click('#tgTourNext'); await p.click('#tgTourNext'); t3 = await p.text_content('#tgTour'); await p.click('#tgTourNext')
     check('3 of 3' in t3 and await p.query_selector('#tgTour') is None, '[target] 3-step walkthrough, dismissible')
     await p.reload(); await p.wait_for_selector('#tgCoach'); await p.wait_for_timeout(300)

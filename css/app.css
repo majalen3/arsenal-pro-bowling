@@ -58,6 +58,7 @@ input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;bord
 .tab[aria-current=page]{color:var(--accent-ink)}
 .tab[aria-current=page]::before{content:"";position:absolute;top:6px;width:52px;height:30px;border-radius:var(--r-pill);background:var(--accent-soft);z-index:-1}
 body[data-tab=none] .tabbar{display:none}
+body:has(.ps-screen) .tabbar{background:var(--surface)}   /* C10: opaque over the white sheet so tab labels keep 4.5:1 */
 body[data-tab=none] #view{padding-bottom:var(--s4)}
 /* IA P2: nothing extra during active scoring: no help bubbles on the pad or its now-line, even with Help on (fold extras keep theirs). */
 body[data-tab=bowl] #tnLog .help-dot,body[data-tab=bowl] #tnNow .help-dot{display:none}
@@ -700,6 +701,9 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .ps-bag li{display:flex;align-items:baseline;gap:6px;padding:5px 8px;border:1.5px solid #DAAF37;border-radius:4px;background:#fbf6e6;-webkit-print-color-adjust:exact;print-color-adjust:exact;break-inside:avoid}
 .ps-bag li small{color:var(--ink-2);margin-left:auto;text-align:right}
 .ps-dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none;border:1px solid rgba(0,0,0,.35);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.ps-tscroll{overflow-x:auto}
+/* C10 (clutter audit): on a phone the sheet fits the screen; only a wide ball table scrolls, inside its own region. Print is unchanged. */
+@media screen and (max-width:719px){.ps-paper{min-width:0;padding:18px 14px}.ps-head{margin:-18px -14px 0;padding:14px 14px 12px}.ps-facts{margin-left:-14px;margin-right:-14px;padding:8px 14px}.ps-table{min-width:600px}.ps-bag ol{grid-template-columns:1fr}.ps-facts{gap:4px 6px}.ps-facts dd{margin:0 10px 0 0}}
 .ps-table{width:100%;border-collapse:collapse;font-size:10px;font-variant-numeric:tabular-nums}
 .ps-table th{text-align:left;font-size:8.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2);font-weight:700;padding:3px 5px;border-bottom:1px solid var(--ink)}
 .ps-table td{padding:4px 5px;border-bottom:1px solid var(--rule);vertical-align:top}
@@ -720,7 +724,7 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
   html,body,#app,#view,.ps-screen{background:#fff!important;min-height:0!important}
   #app,#view{padding:0!important;margin:0!important;max-width:none!important}
   #tabs,.tabbar,.no-print,#toast,.help-toggle,.me-btn,.sheet-root,.tb-help{display:none!important}
-  .ps-screen,.ps-scroll{padding:0!important;margin:0!important;overflow:visible!important}
+  .ps-screen,.ps-scroll,.ps-tscroll{padding:0!important;margin:0!important;overflow:visible!important}
   .ps-paper{width:auto;min-width:0;max-width:none;margin:0;padding:0;box-shadow:none;border-radius:0}
   .ps-head{margin:0;border-radius:0;padding:12px 14px 10px}.ps-facts{margin:0 0 12px;padding:6px 14px}
   .ps-group{break-before:auto}

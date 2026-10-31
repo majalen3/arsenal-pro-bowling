@@ -94,7 +94,7 @@ export async function render() {
     h('section', { class: 'ps-bag', id: 'psBag' }, h('h2', { text: 'Tonight\u2019s bag' + (m.bagSaved ? ' \u00b7 saved ' + m.bagSaved : '') }),
       m.bag.length ? h('ol', {}, ...m.bag.map(r => h('li', {}, h('span', { class: 'ps-dot', style: { background: r.color || '#888' } }), h('b', { text: r.name }), h('small', { text: [r.coverKind, r.role].filter(Boolean).join(' \u00b7 ') }))))
         : h('p', { class: 'ps-muted', text: 'No bag saved yet. Build one on Bag.' })),
-    ...(m.groups.length ? m.groups.map(g => h('section', { class: 'ps-group', 'data-group': g.key }, h('h2', { text: `${g.label} \u00b7 ${g.rows.length}` }), table(g)))
+    ...(m.groups.length ? m.groups.map(g => h('section', { class: 'ps-group', 'data-group': g.key }, h('h2', { text: `${g.label} \u00b7 ${g.rows.length}` }), h('div', { class: 'ps-tscroll', tabindex: '0', role: 'region', 'aria-label': `${g.label} table` }, table(g))))
       : [h('p', { class: 'ps-muted', text: 'No balls on file yet.' })]),
     h('section', { class: 'ps-hof', id: 'psHof' }, h('h2', { text: 'Hall of Fame and milestones' }),
       m.hall.length ? h('ul', {}, ...m.hall.map(r => h('li', {}, h('b', { text: r.name }), ` retired \u00b7 ${r.games ? r.games + ' games' : 'no games logged'}${r.best != null ? ' \u00b7 best ' + r.best : ''}`))) : h('p', { class: 'ps-muted', text: 'No retired balls.' }),
@@ -105,7 +105,7 @@ export async function render() {
       h('p', { text: m.team && m.team !== 'Arsenal Pro' ? `Arsenal Pro ${m.version} \u00b7 ${m.team}` : `Arsenal Pro ${m.version}` })));
   const el = h('section', { class: 'screen list-screen ps-screen' },
     h('header', { class: 'appbar no-print' }, h('a', { class: 'btn ghost sm', href: '#/bag?view=all', id: 'psBack' }, 'Back'), h('h1', { class: 'title', text: 'Sheet' }),
-      h('div', { class: 'appbar-actions' }, h('button', { class: 'btn primary sm', id: 'psPrint', onclick: () => window.print() }, 'Print or PDF'))),
+      h('div', { class: 'appbar-actions' }, h('button', { class: 'btn primary sm', id: 'psPrint', 'aria-label': 'Print or save as PDF', onclick: () => window.print() }, 'Print'))),
     h('p', { class: 'small muted no-print ps-hint', text: 'Prints on Letter or A4. In the print dialog choose \u201cSave as PDF\u201d to keep a file.' }),
     h('div', { class: 'ps-scroll', tabindex: '0', role: 'region', 'aria-label': 'Arsenal sheet preview' }, paper));
   return { el, title: 'Arsenal sheet' };
