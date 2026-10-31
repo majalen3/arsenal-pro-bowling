@@ -1,4 +1,4 @@
-import { profile, setProfile, prefs, setPrefs, deviceId, useCode, status, on, API_BASE } from '../store.js';
+import { profile, setProfile, prefs, setPrefs, deviceId, useCode, status, on } from '../store.js';
 import * as hub from '../hub.js';
 const { ready } = hub;
 import * as PR from '../cc/protect.js';
@@ -11,7 +11,7 @@ import { profileForm, ownedPicker } from './welcome.js';
 import { gameTotalButton } from './gametotal.js';
 import { applyTheme } from '../main.js';
 import { helpDot } from './help.js';
-export const VERSION = '2.0.0';
+export const VERSION = '1.0.0';   // release version (CHANGELOG.md); the offline build id comes from the service worker cache name
 // IA P2: the Me screen (header button on every tab): profile, data, appearance, sync, about. Learn and the Help switch moved to the Learn tab.
 export function render() {
   const p = Object.assign({ hand:null, style:'tweener', speed:15, rev:220, pap:'', tilt:'', owned:[] }, profile() || {});
@@ -63,6 +63,7 @@ export function render() {
   function draw() {
     const pr = profile();
     body.innerHTML = '';
+    const build = h('p', { class:'small muted', id:'aboutVersion', text:`Version ${VERSION}` });
     body.append(
       h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Bowler profile' }), h('button', { class:'btn sm ghost', id:'editProfile', onclick:editProfile }, h('span', { html:icon('edit') }), 'Edit')),
         pr ? h('p', { text:`${HAND.handOfProfile(pr) ? HAND.HAND_LABEL[HAND.handOfProfile(pr)] : 'Hand not set'}, ${pr.style === 'two' ? 'two-hander' : pr.style}, ${(+pr.speed).toFixed(1)} mph, ${pr.rev} rpm${pr.pap ? ', PAP ' + pr.pap : ''}${pr.tilt ? ', tilt ' + pr.tilt : ''}.` }) : h('p', { class:'muted', text:'Not set. The lane uses its defaults (15 mph, 220 rpm).' }),
@@ -84,7 +85,11 @@ export function render() {
           h('label', { class:'fld grow' }, h('span', { text:'Restore from another device' }), codeIn), h('button', { class:'btn primary', type:'submit' }, 'Use code'))),
       h('div', { class:'card' }, h('h2', { class:'card-title', text:'About' }),
         h('p', { class:'small', text:'Arsenal Pro models how each ball in your arsenal reads the lane, and coaches your next move. Ball specs come from manufacturer data (marked est. where estimated). Pattern library: Kegel Pattern Library via CarryDown.' }),
-        h('p', { class:'small muted', text:`Version ${VERSION} \u00b7 API ${API_BASE.replace(/^https?:\/\//, '')}` })));
+        h('p', { class:'small', id:'aboutPrivacy', text:'Privacy: your games, balls and notes are saved on this phone first and work offline. A copy syncs to the Arsenal Pro server under your backup code so you can restore it. No account, no ads, no tracking, and it is free.' }),
+        h('p', { class:'small' }, h('a', { href:'https://github.com/majalen3/arsenal-pro-bowling/blob/main/CHANGELOG.md', target:'_blank', rel:'noopener', id:'aboutChanges' }, 'What\u2019s new'), ' \u00b7 ',
+          h('a', { href:'https://github.com/majalen3/arsenal-pro-bowling', target:'_blank', rel:'noopener' }, 'Source code')),
+        build));
+    if (self.caches) caches.keys().then(ks => { const k = ks.find(x => /^arsenal-pro-v\d+$/.test(x)); if (k) build.textContent += ` \u00b7 offline build ${k.replace('arsenal-pro-', '')}`; }).catch(() => {});
     paintStat();
   }
   draw();
