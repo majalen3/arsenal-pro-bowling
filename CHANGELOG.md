@@ -2,6 +2,13 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## 1.1.0 (2026-10-31)
+
+### For bowlers
+- **Arsenal Pro is for any bowler.** No team name, no one else's stats: the first run starts empty and asks for your hand, style, speed and revs (or skip).
+- **Example arsenal:** on Tonight, load 10 catalog balls and 2 bags marked "example" to look around. Remove them any time on Me → Imports. Or tap "Add my own ball".
+- **Optional account (Me → Account):** sign in to keep your balls, profile and games private to you and on every phone. Choose whether this phone's data goes in. Save your recovery key, export your data, or delete the account any time. Everything still works without an account.
+
 ## 1.0.0 (2026-10-31)
 
 The first full release. Everything below is in the app today.

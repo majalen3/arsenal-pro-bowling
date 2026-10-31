@@ -1741,7 +1741,7 @@ async def ia5_cycle(b):
     check(not r['cur'] and r['bar'] != 'none' and 'Me' in r['title'] and not r['me'], f'[ia5] Me opens #/me: no tab current, tab bar stays, no Me button on Me {r}')
     # v1.0 release: Me > About states the version, a plain privacy note, and opens outside links safely.
     ab = await p.evaluate("() => ({ v: (document.querySelector('#aboutVersion') || {}).textContent || '', priv: (document.querySelector('#aboutPrivacy') || {}).textContent || '', ext: [...document.querySelectorAll('.screen a[target=_blank]')].every(a => (a.rel || '').includes('noopener')), api: document.body.innerText.includes('onrender') })")
-    check(ab['v'].startswith('Version 1.0.0') and 'account is optional' in ab['priv'] and 'No ads, no tracking' in ab['priv'] and ab['ext'] and not ab['api'], f'[release] Me > About: version 1.0.0, privacy note, outside links noopener, no server host shown {ab}')
+    check(ab['v'].startswith('Version 1.1.0') and 'account is optional' in ab['priv'] and 'No ads, no tracking' in ab['priv'] and ab['ext'] and not ab['api'], f'[release] Me > About: version 1.1.0, privacy note, outside links noopener, no server host shown {ab}')
     for old, new in [('#/sessions', '#/results'), ('#/arsenal', '#/bag?view=all'), ('#/more', '#/me'), ('#/patterns', '#/learn/patterns')]:
         await p.goto(BASE + '?i5r' + old); await p.wait_for_timeout(500)
         check(p.url.split('#')[-1] == new[1:], f'[ia5] redirect {old} -> {new} ({p.url.split("#")[-1]})')

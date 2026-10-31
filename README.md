@@ -15,14 +15,15 @@ Arsenal Pro is a free bowling companion for league and practice nights. It picks
 | **Results** | The latest night first, then every night, your lines, lane notes and the Bowler Card (average, strikes, single-pin spares, the leave to work on). |
 | **Bag** | Tonight's bag and all your balls: status (in my bag, at home, at the pro shop, retired), the 3-step bag builder, compare, add a ball from a 145-row spec catalogue or by typing the specs. |
 | **Learn** | 709 oil patterns (Kegel library), the bowling guide and a 114-term glossary. Help bubbles are off until you turn them on. |
-| **Me** (top right) | Bowler profile (hand, speed, revs), backup code, backup file, imports (CSV, LaneTrax session report PDF, read on the phone), text size, About. |
+| **Me** (top right) | Bowler profile (hand, speed, revs), optional account, backup code, backup file, imports (CSV, LaneTrax session report PDF, read on the phone), text size, About. |
 
 Lane and Targeting open from the "Stand · Aim" chip. They show a labelled 2-D model of the ball path; it is a model, not a measurement.
 
 ## Your data and privacy
 
 - Everything is saved on your phone first (IndexedDB) and the app works with no signal.
-- A copy syncs to the Arsenal Pro server under your **backup code**, so you can restore on a new phone (Me › Restore from another device). There is no account, no ads and no tracking.
+- A copy syncs to the Arsenal Pro server under your **backup code**, so you can restore on a new phone (Me › Restore from another device). No ads and no tracking.
+- **Optional account** (Me › Account): sign in with an email and password to keep your arsenal, profile, games and shots private to you and synced across phones. You choose whether this phone's data goes in. Export or delete the account on the same card. Without an account everything works as before.
 - Me › Download backup saves a file you keep. Results › Export games (CSV) gives you your scores.
 - LaneTrax PDFs are read on the phone; the file itself is never uploaded.
 

@@ -14,7 +14,7 @@ import { helpDot } from './help.js';
 import { START as S } from '../engine.js';
 import { accountCard } from './account.js';
 import { account } from '../account.js';
-export const VERSION = '1.0.0';   // release version (CHANGELOG.md); the offline build id comes from the service worker cache name
+export const VERSION = '1.1.0';   // release version (CHANGELOG.md); the offline build id comes from the service worker cache name
 // IA P2: the Me screen (header button on every tab): profile, data, appearance, sync, about. Learn and the Help switch moved to the Learn tab.
 export function render() {
   const p = Object.assign({ hand:null, style:null, speed:+S.speed, rev:+S.rev, pap:'', tilt:'', owned:[] }, profile() || {});
