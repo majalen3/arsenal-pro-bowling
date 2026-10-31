@@ -220,6 +220,8 @@ async def j02_home_prep(j):
         s.check(await btn.count() > 0, f'Arsenal has an Export button ({await btn.count()})')
         if await btn.count():
             await btn.first.click(); s.taps += 1; await j.settle(300)
+            try: await j.page.wait_for_selector('#expCsv', timeout=5000)   # export screen renders after its data loads
+            except Exception: pass
             csv = j.page.locator('#expCsv'); s.check(await csv.count() > 0, 'Export offers the arsenal list (CSV)')
             async with j.page.expect_download(timeout=6000) as dl:
                 await (csv.first if await csv.count() else btn.first).click(); s.taps += 1
