@@ -63,7 +63,8 @@ export async function render() {
     const P = proj(), c = C.bowlerCard(P, { profile: profile() || {} }), head = C.headline(c), figs = C.figures(c);
     body.innerHTML = '';
     body.append(h('div', { class: 'card bc-head', id: 'bcHead' }, h('p', { class: 'bc-headline', id: 'bcHeadline' }, head.text, figs.length ? null : helpDot('sc-average', 'Average')),
-      c.takeaways && c.takeaways.leak ? null : c.takeaways ? h('p', { class: 'bc-focus', text: c.takeaways.drill.text }) : null));
+      c.takeaways && c.takeaways.leak ? null : c.takeaways ? h('p', { class: 'bc-focus', text: c.takeaways.drill.text }) : null,
+      (lf => lf && !head.text.includes(C.leaveName(lf.leave)) ? h('p', { class: 'bc-focus', id: 'bcLeave', text: lf.text }) : null)(C.leaveFocus(c))));   // F08
     if (figs.length) body.append(h('dl', { class: 'bc-figs bc-grid', id: 'bcFigs' }, ...figs.map(f => h('div', { class: 'bc-fig', 'data-k': f.k },
       h('dt', {}, f.label, FIGHELP[f.k] ? helpDot(FIGHELP[f.k], f.label) : null), h('dd', {}, h('span', { class: 'bc-v', text: String(f.v) }), f.unit ? h('span', { class: 'bc-u', text: f.unit === '%' ? '%' : ' ' + f.unit }) : null),
       h('dd', { class: 'bc-n', text: [f.src, f.n ? `${f.n} ${f.nUnit || ''}`.trim() : null].filter(Boolean).join(' \u00b7 ') })))));

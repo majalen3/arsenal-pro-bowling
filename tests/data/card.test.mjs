@@ -117,3 +117,12 @@ test('Sim2 #11: untouched welcome defaults read "default (not entered)", typed v
   const c2 = C.bowlerCard(project(ev));
   assert.equal(c2.speed.typed.src.label, 'you reported'); assert.equal(C.figures(c2).find(x => x.k === 'release').src, 'you reported');
 });
+
+test('F08: leaveFocus names the leave with the lowest make rate, seen twice or more, in plain counts', async () => {
+  const C = await import('../../js/cc/card.js');
+  const lf = C.leaveFocus({ leaves: [{ leave: '10', n: 4, made: 1 }, { leave: '6-10', n: 3, made: 2 }, { leave: '7', n: 1, made: 0 }] });
+  assert.equal(lf.leave, '10'); assert.equal(lf.text, 'Leave to work on: the 10 pin, 1 of 4 made.');
+  assert.ok(!/bad|poor|weak|great|good/i.test(lf.text), 'no judging words');
+  assert.equal(C.leaveFocus({ leaves: [{ leave: '10', n: 2, made: 2 }] }), null, 'all made: nothing to name');
+  assert.equal(C.leaveFocus({}), null);
+});

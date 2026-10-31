@@ -199,6 +199,13 @@ export function headline(c) {
   if (c.empty) return { text: 'Score a game on Tonight or import a LaneTrax report to fill your card.', k: 'empty' };
   return { text: 'Score a game on Tonight to see your strikes and spares here.', k: 'thin' };
 }
+// F08: the one leave to work on, from every scored throw on the card (same rule as the recap's next focus): the leave seen
+// at least twice with the lowest make rate. Informational, non-evaluative: names the leave and the count, nothing else.
+export const leaveName = k => k.includes('-') ? `${k} leave` : `${k} pin`;
+export function leaveFocus(c) {
+  const L = (c.leaves || []).filter(l => l.n >= 2 && l.made < l.n).sort((a, b) => (a.made / a.n) - (b.made / b.n) || b.n - a.n)[0];
+  return L ? { leave: L.leave, made: L.made, n: L.n, text: `Leave to work on: the ${leaveName(L.leave)}, ${L.made} of ${L.n} made.` } : null;
+}
 // Headline figures, in the order league bowlers check them (average, spares, single pins, first ball, carry, strikes);
 // each passes usability (plain bowling words) + applicability (changes a decision). Speed/rev feed ball choice. Max 6.
 export function figures(c) {
