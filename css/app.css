@@ -138,8 +138,10 @@ details.card summary{cursor:pointer;font-weight:800;min-height:var(--tap);displa
 .ball-btn{display:flex;align-items:center;gap:var(--s3);min-height:52px;padding:4px 10px 4px 6px;margin-left:-6px;border-radius:var(--r-md);text-align:left;min-width:0;flex:1}
 .ball-btn:hover{background:var(--surface-2)}
 .ball-btn-text{display:flex;flex-direction:column;min-width:0}
-.ball-btn-name{font-size:var(--fs-xl);font-weight:800;letter-spacing:-.01em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ball-btn-sub{font-size:var(--fs-xs);color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ball-btn-name{font-size:var(--fs-xl);font-weight:800;letter-spacing:-.01em;line-height:1.15;overflow-wrap:break-word}   /* F12: wrap, never clip the ball name */
+.ball-btn-sub{font-size:var(--fs-xs);color:var(--text-2);overflow-wrap:break-word}
+/* F12: on Lane the ball button takes the first row, the tools wrap to a right-aligned second row, so the name is never clipped */
+.appbar:has(#ballBtn){flex-wrap:wrap;row-gap:0} .appbar #ballBtn{flex:1 1 100%} .appbar:has(#ballBtn) > :not(#ballBtn):first-of-type{margin-left:auto}
 .ball-btn .chev{width:20px;height:20px;color:var(--text-2)}
 .sync-dot{width:10px;height:10px;border-radius:50%;background:var(--text-3);margin:0 6px}
 .sync-dot[data-state=ok]{background:var(--good)} .sync-dot[data-state=off]{background:var(--warn)}
@@ -416,9 +418,9 @@ noscript p{padding:24px}
 /* ---- cycle 4: 1-tap ball switch strip + back-to-saved chip */
 .qball-row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 var(--s4) var(--s2)}
 .qball-row::-webkit-scrollbar{display:none}
-.qball{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;min-height:var(--tap);max-width:150px;padding:0 12px 0 6px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--line);font-size:var(--fs-sm);font-weight:600;color:var(--text)}
+.qball{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;min-height:var(--tap);padding:0 12px 0 6px;border-radius:var(--r-pill);background:var(--surface);border:1px solid var(--line);font-size:var(--fs-sm);font-weight:600;color:var(--text)}
 .qball:hover{border-color:var(--line-2)} .qball:active{transform:scale(.96);background:var(--accent-soft)}
-.qball-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qball-name{white-space:nowrap}   /* F12: the strip scrolls sideways, so names show in full */
 .qball.all{padding:0 12px;color:var(--text-2)} .qball.all .ic{width:20px;height:20px}
 .ball-orb.xs{width:28px;height:28px;flex:0 0 28px;box-shadow:none}.ball-orb.xs::after{width:3px;height:3px;box-shadow:4px 2px 0 rgba(0,0,0,.55),2px 5px 0 rgba(0,0,0,.55)}
 .cond-grp{display:flex;gap:var(--s2)}
@@ -524,7 +526,8 @@ noscript p{padding:24px}
 .tg-setup{display:grid;gap:6px} .tg-setup summary{min-height:var(--tap);display:flex;align-items:center;cursor:pointer}
 .tg-tour{border:2px solid var(--gold)} .tg-tour .row{gap:var(--s2)}
 #tgHelp{font-weight:800;font-size:var(--fs-lg)}
-#tgSources summary{min-height:var(--tap);display:flex;align-items:center;cursor:pointer}
+#tgSources summary,#tgLimits summary{min-height:var(--tap);display:flex;align-items:center;cursor:pointer}   /* F11: Model limit fold 44 px */
+#tgBoxReset{min-height:var(--tap)}
 @media (min-width:900px){.target-screen{max-width:880px;margin-inline:auto}.tg-lane{height:calc(100dvh - 260px)}}
 .target-screen>.btn.block{width:auto;display:flex;justify-content:center;gap:var(--s2);margin-block:var(--s2)}
 .tg-find{display:grid;gap:var(--s2)}
