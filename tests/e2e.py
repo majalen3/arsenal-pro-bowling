@@ -688,7 +688,7 @@ async def targeting_cycle(b):
     await p.goto(BASE + '?tg#/bowl'); await bowl_more(p); await p.wait_for_selector('#tnFind'); await p.click('#tnFind'); await p.wait_for_selector('#tgFindLine', timeout=15000)
     fl = (await p.text_content('#tgFindLine')).strip(); ms = int(await p.get_attribute('#tgFindOut', 'data-ms') or 99999)
     if cdp: await cdp.send('Emulation.setCPUThrottlingRate', {'rate': 1})
-    check('find=1' in p.url and re.match(r'^Your starting line with [^(]+ \(same as Tonight\): stand \d+, aim [\d.\u00bd]+ at the arrows\. Pocket \d+% \(model estimate, assumed accuracy \u00b11\.5 bds, no LaneTrax import; 200 simulated shots\)\.$', fl) is not None, f'[find] Tonight -> stand, aim, Pocket % with basis + n [{fl}]')
+    check('find=1' in p.url and re.match(r'^(Your starting line with [^(]+ \(same as Tonight\)|Model starting line with [^(]+ \(Tonight shows your own line\)): stand \d+, aim [\d.\u00bd]+ at the arrows\. Pocket \d+% \(model estimate, assumed accuracy \u00b11\.5 bds, no LaneTrax import; 200 simulated shots\)\.$', fl) is not None, f'[find] Tonight -> stand, aim, Pocket % with basis + n [{fl}]')
     check(ms < 1500, f'[find] search under 1.5 s at 4x CPU throttle ({ms} ms{"" if cdp else ", no throttle"})')
     allf = await p.text_content('#tgFindCard'); check('strike' not in fl.lower() and 'No strike % shown' in allf and 'Not higher' in allf or 'High because' in allf, '[find] no strike %, says why; why-lower/higher note')
     check('17\u201318' in allf and 'nationalbowlingacademy.com' in (await p.inner_html('#tgFindInputs')) and 'not a guarantee' in allf, '[find] window + source + inputs + "not a guarantee"')

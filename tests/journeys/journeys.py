@@ -448,6 +448,7 @@ async def j06_between_games(j):
     async with j.step('F01: 25/15 is the one line on Tonight, Bowl and the pick card', carry='feet=25, eyes=15') as s:
         adv = await j.text('#advStart') if await j.visible('#advStart') else ''
         s.check('feet 25' in adv and 'aim 15 ' in adv, f'Start line says feet 25, aim 15 ("{adv[:80]}")')
+        s.check('your line' in adv and '2-D model' not in adv, f'Start line is labelled as your line, not the model ("{adv[-70:]}")')
         chip = await j.text('#tnAimChip') if await j.visible('#tnAimChip') else ''
         s.check('Stand 25' in chip and 'Aim 15' in chip, f'aim chip "{chip}"')
         await j.nav('/bowl'); await j.wait('#tnNowLine'); now = await j.text('#tnNowLine')

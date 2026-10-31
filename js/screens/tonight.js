@@ -514,7 +514,7 @@ export async function render(o = {}) {
     if (!S || !S.name) return '';
     const ml = S.ml, st = ml && !ml.none ? standOf(ml.feet) : null;
     return h('p', { class: 'coach', id: 'advStart', role: 'status', text: st ? `Start with: ${S.name}, from feet ${st.feet}, aim ${fmtHalf(ml.target)} at the arrows.` : `Start with: ${S.name}. ${(ml && ml.reason) || 'spec TBD: no model line'}, so set feet and eyes on Targeting.` },
-      st ? provChip('model', st.assumed ? '2-D model \u00b7 offset 7 assumed' : '2-D model') : null, ' ', aimChip(st, ml));
+      st ? (ml && ml.kept ? provChip('user', 'your line (set on Lane or Targeting)') : provChip('model', st.assumed ? '2-D model \u00b7 offset 7 assumed' : '2-D model')) : null, ' ', aimChip(st, ml));
   }
   // IA P2: the Stand \u00b7 Aim chip opens the Lane (Lane/Target have no tab of their own). Without a model line it still opens the Lane to set them.
   function aimChip(st, ml) {
