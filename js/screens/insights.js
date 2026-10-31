@@ -4,8 +4,7 @@ import { setBall } from '../ctl.js';
 import { go } from '../router.js';
 import { backBar } from './ball.js';
 import { proj } from '../hub.js';
-import { profile } from '../store.js';
-import { bowlerCard, headline, lastGames, sessionsOf } from '../cc/card.js';
+import { lastGames, sessionsOf } from '../cc/card.js';
 import * as CO from '../cc/corner.js';
 import { cornerBlock } from './corner.js';
 import { hand } from '../cc/hand.js';
@@ -35,8 +34,8 @@ export function render() {
         L ? h('p', { class:'muted small', id:'insLastN', text:`${L.n} ${L.n === 1 ? 'game' : 'games'}${L.scored ? `, ${L.scoredGames} scored ball by ball` : ''}; practice nights left out.` }) : null,
         // Item 3: corner pin left alone across all scored games (enough samples only; counts from frames).
         P ? cornerBlock('insCorner', CO.cornerInsight(CO.cornerLeaves(sessionsOf(P).flatMap(x => x.games), hand()), { scope:'all', hand: hand() })) : null); })(),
-    (() => { const P = proj(), hd = P ? headline(bowlerCard(P, { profile:profile() || {} })) : { text:'Score a game on Tonight to see your numbers here.' };
-      return h('div', { class:'card', id:'insGame' }, withHelp(h('h2', { class:'card-title', text:'Your game' }), 'bm-revs', 'Your game'), h('p', { id:'insHead', text:hd.text }), h('a', { class:'btn ghost', href:'#/card' }, 'My Bowler Card')); })(),
+    // Clutter audit C6: the "Your game" card repeated the Bowler Card headline; Insights keeps only the link to it.
+    h('a', { class:'btn ghost block', id:'insGame', href:'#/card' }, 'My Bowler Card \u203a'),
     h('details', { class:'card tn-more', id:'insArsenal' }, h('summary', { text:'Arsenal charts: oil coverage, core map, bag builder' }),
     h('div', { class:'card' }, withHelp(h('h2', { class:'card-title', text:'Coverage by oil' }), 'ln-oil', 'Coverage by oil'), bars, h('p', { class:'muted small', text:`Thinnest is ${g.thin}. ${g.tbd ? g.tbd + ' ball' + (g.tbd === 1 ? '' : 's') + ' still spec TBD.' : 'All 22 balls have specs.'}` })),
     h('div', { class:'card' }, withHelp(h('h2', { class:'card-title', text:'Core map: RG vs differential' }), 'eq-rg', 'Core map'), h('div', { class:'chart-wrap' }, cv), h('p', { class:'muted small', text:'Low RG = revs up earlier. High differential = more flare / hook potential.' })),

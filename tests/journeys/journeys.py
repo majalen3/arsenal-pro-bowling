@@ -507,7 +507,7 @@ async def j08_insights(j):
         lv = await j.text('#bcLeave') if await j.visible('#bcLeave') else ''
         s.check(not lv or not re.search(r'\b(bad|poor|weak|terrible|great|good|awful)\b', lv, re.I), f'leave line is informational, not evaluative ("{lv}")')
     async with j.step('Insights agrees with the Card average', carry='average') as s:
-        await j.goto('/arsenal/insights'); await j.wait('#insHead'); await j.audit('insights')
+        await j.goto('/arsenal/insights'); await j.wait('#insLastHead'); await j.audit('insights')
         t = await j.text('.screen'); a = nums(j.state.get('cardAvg', ''))
         s.check(bool(a), f'the Card shows an average ({j.state.get("cardAvg")!r})')
         if a: s.check(str(a[0]) in t, f'Card average {a[0]} appears on Insights')
