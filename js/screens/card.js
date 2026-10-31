@@ -45,7 +45,7 @@ async function sharePng(card, head, figs) {
 export async function render() {
   await ready();
   const el = h('section', { class: 'screen bc' }), body = h('div', { class: 'stack', id: 'bcBody' });
-  el.append(backBar('My Bowler Card', '#/sessions'), body);
+  el.append(backBar('My Bowler Card', '#/results'), body);
   async function useMeasured(k, m, P) {
     const label = k === 'style' ? `${STYLE[m]}` : `${m.v} ${m.unit}`;
     if (!await confirmSheet({ title: `Use ${label}?`, text: k === 'style' ? 'From your measured rev rate (bowling.com ranges). Tonight and Bag Advisor will use it.' : `Measured by LaneTrax (${nd(m)}). Replaces what you typed; Tonight, Targeting and Bag Advisor will use it.`, confirm: 'Use measured', danger: false })) return;
@@ -82,7 +82,7 @@ export async function render() {
       if (c.rev.measured && c.rev.measured.enough && c.style.typed !== c.style.k && c.style.typed !== 'two') rel.push(h('button', { class: 'btn sm', 'data-use': 'style', onclick: () => useMeasured('style', c.style.k, P) }, `Use ${c.style.k}`)); }
     const tr = c.release; const trk = [['Tilt', tr.tilt], ['Rotation', tr.rotation], ['PAP', tr.pap]].filter(([, v]) => v);
     if (trk.length) rel.push(h('dl', { class: 'kv' }, ...trk.flatMap(([k, v]) => row(k, `${v.v}${v.unit === '°' ? '\u00b0' : ' ' + (v.unit || '')}`, 'you reported'))));
-    else rel.push(h('p', { class: 'muted small', text: 'Tilt, rotation and PAP: type them in More \u203a Bowler profile. LaneTrax does not measure them.' }));
+    else rel.push(h('p', { class: 'muted small', text: 'Tilt, rotation and PAP: type them in Me \u203a Bowler profile. LaneTrax does not measure them.' }));
     const cons = c.consistency, lvRow = (k, x, what) => x ? row(k, `Level ${x.level} of 5`, `${what} ${x.v} ${x.unit} \u00b7 ${x.n} shots \u00b7 ${x.date}`) : [];
     const spare = [];
     if (c.spare.single || c.spare.multi) spare.push(h('dl', { class: 'kv' }, ...(c.spare.single ? row('Single pin', `${c.spare.single.made} of ${c.spare.single.n} (${c.spare.single.v}%)`, `your games \u00b7 ${c.spare.single.dates || ''}`) : []), ...(c.spare.multi ? row('Multi pin', `${c.spare.multi.made} of ${c.spare.multi.n} (${c.spare.multi.v}%)`, 'your games') : [])));
@@ -97,11 +97,11 @@ export async function render() {
     body.append(
       tk ? sec('bcTake', 'Coach notes', [h('ul', { class: 'plain' }, h('li', {}, h('b', { text: 'Strength: ' }), tk.strength.text), tk.leak ? h('li', {}, h('b', { text: 'Leak: ' }), tk.leak.text) : null, h('li', {}, h('b', { text: 'Next drill: ' }), tk.drill.text)), h('p', { class: 'muted small', text: `Levels: ${C.SRC.levels.label} (${C.SRC.levels.how}). Drill: ${tk.drill.rule}.` })], '') : null,
       sec('bcSpares', 'Spares', spare, 'Score a game on Tonight (tap the pins left standing) to see single- and multi-pin spares.'),
-      sec('bcRelease', 'Release: speed, revs, style', rel.length ? rel : null, 'Import a LaneTrax report (More \u203a LaneTrax report) or type speed and revs in More \u203a Bowler profile.'),
+      sec('bcRelease', 'Release: speed, revs, style', rel.length ? rel : null, 'Import a LaneTrax report (Me \u203a LaneTrax report) or type speed and revs in Me \u203a Bowler profile.'),
       sec('bcCons', 'Consistency (LaneTrax levels)', cons ? [h('dl', { class: 'kv' }, ...lvRow('Speed', cons.speed, 'avg impact'), ...lvRow('Revs', cons.rpm, 'avg'), ...lvRow('Arrows', cons.arrows, 'avg off'), ...lvRow('Spares', cons.conversion, 'conversion')), h('p', { class: 'muted small', text: 'LaneTrax levels speed and revs by how much they vary shot to shot (5 = tightest).' })] : null, 'Import a LaneTrax report to see speed, rev and accuracy consistency.'),
       sec('bcAcc', 'Accuracy and breakpoint', acc, 'Import a LaneTrax report for arrows, breakpoint and entry. Tag "First ball hit" on Tonight for pocket %.'),
       sec('bcSrc', 'Sources and thresholds', [h('ul', { class: 'plain small bc-src' }, ...Object.values(C.SRC).map(s => h('li', {}, s.url ? h('a', { href: s.url, target: '_blank', rel: 'noopener' }, s.label) : s.label, ` (${s.how})`)))], ''));
-    body.append(h('div', { class: 'btn-grid' }, h('a', { class: 'btn ghost', href: '#/sessions', id: 'bcToSessions' }, 'Sessions'),
+    body.append(h('div', { class: 'btn-grid' }, h('a', { class: 'btn ghost', href: '#/results', id: 'bcToSessions' }, 'Results'),
       figs.length ? h('button', { class: 'btn ghost', id: 'bcShare', onclick: () => sharePng(c, head, figs) }, 'Share as image') : h('a', { class: 'btn ghost', href: '#/import?kind=lanetrax', id: 'bcImport' }, 'Import LaneTrax')));
   }
   function drawKeep() { const open = new Set([...body.querySelectorAll('details[open]')].map(d => d.id)); draw(); for (const id of open) { const d = body.querySelector('#' + id); if (d) d.open = true; } }

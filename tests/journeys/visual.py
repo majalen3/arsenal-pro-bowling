@@ -8,9 +8,10 @@ from personas import NIGHT0, boot, seed_history
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 VIEWPORTS = [(360, 780), (414, 896)]
-SCREENS = [('tonight', '/tonight'), ('lane', '/lane'), ('target', '/target'), ('arsenal', '/arsenal'), ('ball', '/ball/rattler-big-bite'),
-           ('bag', '/bag'), ('patterns', '/patterns'), ('sessions', '/sessions'), ('session', '/session/qa-night-2'), ('card', '/card'),
-           ('insights', '/arsenal/insights'), ('more', '/more'), ('glossary', '/glossary')]
+# IA P2: names kept for the baseline files; routes are the new homes (arsenal = Bag > All my balls, sessions = Results, more = Me).
+SCREENS = [('tonight', '/tonight'), ('lane', '/lane'), ('target', '/target'), ('arsenal', '/bag?view=all'), ('ball', '/ball/rattler-big-bite'),
+           ('bag', '/bag'), ('patterns', '/learn/patterns'), ('sessions', '/results'), ('session', '/session/qa-night-2'), ('card', '/card'),
+           ('insights', '/arsenal/insights'), ('more', '/me'), ('learn', '/learn'), ('glossary', '/glossary')]
 HIDE = "() => { document.querySelectorAll('.toast, #toast, .toasts').forEach(e => e.remove()); }"
 
 
@@ -39,7 +40,7 @@ async def run(b, run, update=False, tol=0.02):
             try:
                 # Boot on a neutral screen, wait for the event log, then route in-app: a pixel diff must not depend on a
                 # cold-load race (that race is asserted by J08 'Insights cold load' instead).
-                await page.goto(run.base + '?v=' + name + '#/more'); await page.evaluate("async () => { const m = await import('./js/hub.js'); await m.ready(); }")
+                await page.goto(run.base + '?v=' + name + '#/me'); await page.evaluate("async () => { const m = await import('./js/hub.js'); await m.ready(); }")
                 await page.evaluate("r => { location.hash = r; }", route); await page.wait_for_timeout(700); await page.evaluate(HIDE)
                 await page.screenshot(path=cur, animations='disabled', caret='hide')
                 if update or not os.path.exists(base):

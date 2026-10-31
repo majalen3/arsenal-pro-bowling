@@ -20,7 +20,7 @@ const patNow = () => { const P = proj(), sess = P ? ((P.sessions || {})[openNigh
 export function render({ query }) {
   const ids = (query.get('ids') || '').split(',').filter(Boolean).slice(0, 3);
   const ps = ids.map(id => balls.find(b => b.id === id)).filter(Boolean);
-  if (ps.length < 2) return { el:h('section', { class:'screen' }, backBar('Compare', '#/arsenal'), emptyState('Pick two balls', 'Choose two or three balls in Arsenal to compare them side by side.', { label:'Go to Arsenal', run:() => go('#/arsenal') })), title:'Compare' };
+  if (ps.length < 2) return { el:h('section', { class:'screen' }, backBar('Compare', '#/bag?view=all'), emptyState('Pick two balls', 'Choose two or three balls in Bag \u203a All my balls to compare them side by side.', { label:'Go to Arsenal', run:() => go('#/bag?view=all') })), title:'Compare' };
   const lanes = [];
   const swap = i => { const s = sheet({ title:'Swap ball', body:h('div', { class:'blist' }, ...balls.filter(b => !ids.includes(b.id)).map(b => ballRow(b, { onPick:x => { s.close(); const n = ids.slice(); n[i] = x.id; go(`#/compare?ids=${n.join(',')}`, { replace:true }); } }))) }); };
   const res = ps.map(b => analyze(b));
@@ -46,7 +46,7 @@ export function render({ query }) {
     h('thead', {}, h('tr', {}, h('th', { scope:'col' }, h('span', { class:'sr-only', text:'Spec' })), ...ps.map(b => h('th', { scope:'col', text:b.name })))),
     h('tbody', {}, ...rows.map(([k, fn, score]) => { const vals = ps.map((b, i) => fn(b, i)); const sc = score ? ps.map((b, i) => score(b, i)) : null; const min = sc ? Math.min(...sc) : null; const diff = new Set(vals).size > 1;
       return h('tr', { class:diff ? 'differs' : 'same' }, h('th', { scope:'row', text:k }), ...vals.map((v, i) => h('td', { class:sc && sc[i] === min && diff ? 'best' : '' , text:v }))); })));
-  const el = h('section', { class:'screen compare' }, backBar('Compare', '#/arsenal'),
+  const el = h('section', { class:'screen compare' }, backBar('Compare', '#/bag?view=all'),
     h('p', { class:'muted small pad-x' }, helpDot('ap-compare', 'Compare'), ` Same line for both: feet ${S.release}, ${S.speed} mph, ${S.rev} rpm on ${PATTERN_LABEL[S.pattern]}, ${FINISH_LABEL[S.finish]}. Highlighted rows differ; gold = closer to a strike.`),
     h('div', { class:'cmp-body n' + ps.length }, h('div', { class:'cmp-cols n' + ps.length }, ...cols), h('div', { class:'table-wrap' }, table)));
   let ls = [];

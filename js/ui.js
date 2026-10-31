@@ -14,6 +14,11 @@ export function h(tag, attrs={}, ...kids) {
   return e;
 }
 const P = {
+  // IA P2 tabs: Bowl (a pin), Results (bars), Learn (an open book), Me (a person)
+  bowl:'<path d="M12 3c1.6 0 2.2 1.6 1.7 3.2-.3 1-.9 1.6-.9 2.6 0 1.4 2.2 3.4 2.2 6.6 0 2.6-1.3 5.6-3 5.6s-3-3-3-5.6c0-3.2 2.2-5.2 2.2-6.6 0-1-.6-1.6-.9-2.6C9.8 4.6 10.4 3 12 3z"/><path d="M10.6 8.4h2.8"/>',
+  results:'<path d="M4 20h16"/><path d="M7 20v-6M12 20V8M17 20v-9"/>',
+  learn:'<path d="M12 6.5C10 5 7 4.5 4 5v13c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5z"/><path d="M12 6.5v13"/>',
+  me:'<circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>',
   lane:'<path d="M8 3h8l2 18H6L8 3z"/><path d="M12 3v18" opacity=".45"/><circle cx="12" cy="7" r="1.3" fill="currentColor" stroke="none"/>',
   arsenal:'<circle cx="12" cy="12" r="8.5"/><circle cx="10" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="13.5" cy="8.4" r="1" fill="currentColor" stroke="none"/><circle cx="12.4" cy="11.6" r="1" fill="currentColor" stroke="none"/>',
   patterns:'<path d="M4 20V10M9 20V5M14 20v-8M19 20V8"/>',

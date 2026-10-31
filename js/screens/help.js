@@ -59,7 +59,7 @@ export async function render({ query }) {
   }
   if (want && G) { const t = HP.find(G.terms, want); if (t && tree && t.tree !== tree) tree = ''; }
   search.oninput = draw; paintTrees(); draw();
-  const el = h('section', { class: 'screen list-screen', id: 'glossary' }, h('header', { class: 'appbar' }, h('button', { class: 'icon-btn', 'aria-label': 'Back', html: icon('back'), onclick: () => back('#/more') }), h('h1', { class: 'title', text: 'Bowling Guide' })),
+  const el = h('section', { class: 'screen list-screen', id: 'glossary' }, h('header', { class: 'appbar' }, h('button', { class: 'icon-btn', 'aria-label': 'Back', html: icon('back'), onclick: () => back('#/me') }), h('h1', { class: 'title', text: 'Bowling Guide' })),
     h('div', { class: 'list-tools' }, h('p', { class: 'small muted', id: 'glIntro', text: 'Plain answers to bowling words, each with its sources. Search, or browse a topic.' }), search, trees, count), list);
   if (want) requestAnimationFrame(() => { const x = el.querySelector('#gl-' + CSS.escape(want)); if (x) x.scrollIntoView({ block: 'start' }); });
   return { el, title: 'Bowling Guide' };

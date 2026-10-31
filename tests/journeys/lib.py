@@ -213,6 +213,8 @@ class Journey:
         tab = self.page.locator(f'nav a[href="#{route}"]').first
         if await tab.count() and await tab.is_visible():
             await self.tap(f'nav a[href="#{route}"]')
+        elif route == '/me' and await self.page.locator('#meBtn').count():   # IA P2: Me is the top-right button
+            await self.tap('#meBtn')
         else:
             await self.page.evaluate("r => location.hash = r", route)
             if self.cur: self.cur.taps += 1

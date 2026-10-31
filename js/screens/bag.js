@@ -24,11 +24,13 @@ const SVC = [['refresh', 'Refresh'], ['resurface', 'Resurface'], ['detox', 'Deto
 const STAGE = { fresh: 'fresh', transition: 'in transition', burn: 'burned' };
 const LEFT_SHOWN = 4;
 let TERT = null;
+// IA P2: the Bag tab has two views: tonight's bag (this builder) and All my balls (the Armory and catalog, #/bag?view=all).
+export const bagView = v => h('div', { class: 'list-tools', id: 'bagView' }, segmented('Bag view', [['pack', 'Tonight\u2019s bag'], ['all', 'All my balls']], v, k => go(k === 'all' ? '#/bag?view=all' : '#/bag'), 'wide'));
 export async function render() {
   await ready();
   const body = h('div', { class: 'stack', id: 'bagBody' });
   const el = h('section', { class: 'screen list-screen', id: 'bag' },
-    h('header', { class: 'appbar' }, h('button', { class: 'btn ghost', id: 'bagBack', 'aria-label': 'Back to Tonight', onclick: () => go('#/tonight') }, '\u2039 Tonight'), h('h1', { class: 'title', text: 'Bag' }), h('div', { class: 'appbar-actions' }, h('a', { class: 'btn ghost sm', id: 'bagAdd', href: '#/add-ball' }, 'Add ball'))), body);
+    h('header', { class: 'appbar' }, h('h1', { class: 'title', text: 'Bag' }), h('div', { class: 'appbar-actions' }, h('a', { class: 'btn ghost sm', id: 'bagAdd', href: '#/add-ball' }, 'Add ball'))), bagView('pack'), body);
   let proposal = null, careId = null, otherOpen = false;
   if (!TERT) loadIndex().then(x => { TERT = R.tertiles(x); if (el.isConnected) draw(); }).catch(() => {});
   const itemOf = (P, id) => ST.itemOfOwned(P, id);

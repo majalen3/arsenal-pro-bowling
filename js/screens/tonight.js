@@ -4,7 +4,7 @@
 // and stand for spare hints, 400 ms double-tap guard, and a game-open layout that shows only what you need mid-game.
 import { fmtHalf } from '../labels.js';
 import { h, icon, toast, segmented } from '../ui.js';
-import { go } from '../router.js';
+import { go, retab } from '../router.js';
 import { ready, proj, add, addMany, loadStarter } from '../hub.js';
 import { on, today, deviceId, prefs, setPrefs, profile } from '../store.js';
 import { mkEvent, voidEvent } from '../data/events.js';
@@ -85,9 +85,9 @@ export async function render(o = {}) {
     body.innerHTML = '';
     if (!Object.keys(P.owned).length) {
       body.append(h('div', { class: 'card', id: 'noBag' }, h('h2', { class: 'card-title', text: 'No balls in your bag yet' }),
-        h('p', { class: 'muted', text: 'Tonight ranks only balls you own. Load your reported arsenal (10 balls, 2 bags, all marked user-reported) or pick balls on More.' }),
-        h('button', { class: 'btn primary block', id: 'loadStarter', onclick: async () => { await loadStarter(); toast('Arsenal loaded. Not yours? Undo it on More \u2192 Imports.'); } }, 'Load starter arsenal'),
-        h('button', { class: 'btn block', onclick: () => go('#/more') }, 'Choose balls on More')));
+        h('p', { class: 'muted', text: 'Tonight ranks only balls you own. Load your reported arsenal (10 balls, 2 bags, all marked user-reported) or pick balls on Me.' }),
+        h('button', { class: 'btn primary block', id: 'loadStarter', onclick: async () => { await loadStarter(); toast('Arsenal loaded. Not yours? Undo it on Me \u2192 Imports.'); } }, 'Load starter arsenal'),
+        h('button', { class: 'btn block', onclick: () => go('#/me') }, 'Choose balls on Me')));
       return;
     }
     const pat = s.ft != null ? { slug: s.patternSlug, name: s.patternName || s.patternSlug, ft: s.ft, ml: s.ml, ratio: s.ratio } : null;
@@ -105,7 +105,7 @@ export async function render(o = {}) {
     // Scoring fix 4: league team (frames in lineup order) or Baker (one team game). One pad; the pill says who is up.
     const team = teamOf(P, s), g = team ? team.g : gameOf(P, s);
     const gameOpen = (team ? team.started : g.mine.length > 0) && !g.st.done;
-    if (!BOWL && !drawn && (gameOpen || (g0(P) && g.st.done && !s.ended))) { BOWL = true; history.replaceState(null, '', '#/bowl'); el.querySelector('#tnTitle').textContent = 'Bowl'; }
+    if (!BOWL && !drawn && (gameOpen || (g0(P) && g.st.done && !s.ended))) { BOWL = true; history.replaceState(null, '', '#/bowl'); retab('bowl'); el.querySelector('#tnTitle').textContent = 'Bowl'; }
     drawn = true;
     WK.keepAwake(WK.shouldHold(gameOpen, prefs().wakeLock));
     // ---- coach line (≤ 2 sentences, starts with a ball name)
@@ -179,7 +179,7 @@ export async function render(o = {}) {
     if (gameOpen || BOWL) {
       // ---- Bowl (#/bowl), and game open (sim bug 4): ball \u00b7 feet \u00b7 aim, the ball-change line, the scoring card, Weaker/Stronger. The rest behind one tap.
       body.append(h('div', { class: 'card tn-now', id: 'tnNow' },
-        h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: cur ? cur.name : 'No ball' }), stand ? ` \u00b7 feet ${stand.feet} \u00b7 aim ${fmtHalf(ml.target)}` : ''),
+        h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: cur ? cur.name : 'No ball' }), ' ', aimChip(stand, ml)),
         thenLine), quickLog(P, s, cur, b, hand, stand, g, team), alts || '', !gameOpen && reads ? reads : '',   // between games: the read and Weaker/Stronger in reach (J06)
         h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: 'Bag, lanes and line details' }),
           ...advisorCard(P, s, b, adv, cur && { name: cur.name, ml }), h('p', { class: 'coach', id: 'tnCoach', text: coach }), pick || '', gameOpen && reads ? reads : '', !gameOpen && s.event === 'practice' ? drillCard(P, s) : '', setup));
@@ -390,7 +390,7 @@ export async function render(o = {}) {
       const rc = nightRecap(P, sid);
       if (rc) card.append(rc);
       card.append(h('button', { class: 'btn primary block', id: 'qlNext', onclick: () => save({ game: game + 1 }) }, `Start game ${game + 1}`),
-        h('button', { class: 'btn ghost block', id: 'qlEnd', onclick: async () => { await save({ ended: true, endedTs: Date.now() }); toast('Night saved. It is on Past sessions.'); go('#/session/' + encodeURIComponent(sid)); } }, 'End night'));
+        h('button', { class: 'btn ghost block', id: 'qlEnd', onclick: async () => { await save({ ended: true, endedTs: Date.now() }); toast('Night saved. It is on Results.'); go('#/session/' + encodeURIComponent(sid)); } }, 'End night'));
       const pn = protectNudge(P); if (pn) card.append(pn);
     } else {
       const pins = h('div', { class: 'pins', id: 'qlPins', role: 'group', 'aria-label': facingLeave ? 'Tap the pins still standing' : 'Tap the pins left standing' },
@@ -498,7 +498,12 @@ export async function render(o = {}) {
     if (!S || !S.name) return '';
     const ml = S.ml, st = ml && !ml.none ? standOf(ml.feet) : null;
     return h('p', { class: 'coach', id: 'advStart', role: 'status', text: st ? `Start with: ${S.name}, from feet ${st.feet}, aim ${fmtHalf(ml.target)} at the arrows.` : `Start with: ${S.name}. ${(ml && ml.reason) || 'spec TBD: no model line'}, so set feet and eyes on Targeting.` },
-      st ? provChip('model', st.assumed ? '2-D model \u00b7 offset 7 assumed' : '2-D model') : null);
+      st ? provChip('model', st.assumed ? '2-D model \u00b7 offset 7 assumed' : '2-D model') : null, ' ', aimChip(st, ml));
+  }
+  // IA P2: the Stand \u00b7 Aim chip opens the Lane (Lane/Target have no tab of their own). Without a model line it still opens the Lane to set them.
+  function aimChip(st, ml) {
+    return h('a', { class: 'chip aim-chip', id: 'tnAimChip', href: '#/lane', 'aria-label': st ? `Stand ${st.feet}, aim ${fmtHalf(ml.target)}: open the lane` : 'Set stand and aim on the lane' },
+      st ? `Stand ${st.feet} \u00b7 Aim ${fmtHalf(ml.target)} \u203a` : 'Stand \u00b7 Aim \u203a');
   }
   function advisorCard(P, s, b, adv, start) {
     const ap = prefs().advisor || {}, ev = adv.ev;
@@ -509,7 +514,7 @@ export async function render(o = {}) {
     if (!ev) { card.append(startLine(start), h('p', { class: 'muted small', text: 'Pick one: the bag to pack for it appears here.' })); return [card]; }
     // P1.1/P1.2: when the saved bag is for this event, Tonight shows exactly that bag (its Bring N); else a fresh suggestion.
     const { mem, mine, bring, a } = adv;
-    if (a.none) { card.append(h('p', { class: 'muted', text: a.reason }), h('button', { class: 'btn block', onclick: () => go('#/arsenal') }, 'Open Arsenal \u203a')); return [card]; }
+    if (a.none) { card.append(h('p', { class: 'muted', text: a.reason }), h('button', { class: 'btn block', onclick: () => go('#/bag?view=all') }, 'Open Bag \u203a')); return [card]; }
     card.append(startLine(start && start.name ? start : { name: a.A.name, ml: a.line }));
     const packed = !!(mine && mine.packedTs);
     // P1.5: the bag itself is its own card under Start bowling (the lanes-first answer stays on top).

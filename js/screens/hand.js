@@ -3,7 +3,7 @@ import { h, sheet, toast } from '../ui.js';
 import { go } from '../router.js';
 import * as H from '../cc/hand.js';
 const rerender = () => go(location.hash, { replace: true });
-function pick(v, close) { H.setHand(v); toast(`${H.HAND_LABEL[v]}. Change it any time in More \u203a Bowler profile.`); if (close) { close(); setTimeout(rerender, 80); } else rerender(); }
+function pick(v, close) { H.setHand(v); toast(`${H.HAND_LABEL[v]}. Change it any time in Me \u203a Bowler profile.`); if (close) { close(); setTimeout(rerender, 80); } else rerender(); }
 // Shown on the first hand-dependent screen while the hand is unset; gone for good after an answer or "Not now".
 export function handAsk() {
   if (!H.needsAsk()) return null;

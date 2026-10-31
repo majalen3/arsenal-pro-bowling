@@ -16,7 +16,7 @@ export function backBar(title, fallback) {
 }
 export async function render({ params }) {
   const b = balls.find(x => x.id === params[0]);
-  if (!b) return { el:h('section', { class:'screen' }, backBar('Ball', '#/arsenal'), emptyState('Ball not found', 'That ball is not in this arsenal.', { label:'Back to Arsenal', run:() => go('#/arsenal') })), title:'Ball' };
+  if (!b) return { el:h('section', { class:'screen' }, backBar('Ball', '#/bag?view=all'), emptyState('Ball not found', 'That ball is not in this arsenal.', { label:'Back to Bag', run:() => go('#/bag?view=all') })), title:'Ball' };
   const r = readInfo(b, readMed()), a = analyze(b), onLane = b.id === app.ball.id;
   const spec = (k, v, hid) => h('div', { class:'spec' }, h('div', { class:'spec-k' }, k, hid ? helpDot(hid, k) : null), h('div', { class:'spec-v', html:v }));
   await ready();
@@ -25,7 +25,7 @@ export async function render({ params }) {
   const ownCard = own ? h('div', { class:'card', id:'ballOwned' }, withHelp(h('h2', { class:'card-title', text:'Your ball' }), 'ap-status', 'Ball status'),
     statusField(P, own.id), whyNotLine(P, own.id, { demand: demandOf({ pattern: null }).demand, idAttr: 'ballWhyNot' })) : null;
   const lines = linesForBall(b.id), surf = lsGet(LS.surface).filter(x => x.ballId === b.id).slice(-5).reverse();
-  const el = h('section', { class:'screen detail' }, backBar(b.name, '#/arsenal'),
+  const el = h('section', { class:'screen detail' }, backBar(b.name, '#/bag?view=all'),
     h('div', { class:'hero' }, h('span', { class:'ball-orb xl', style:{ '--c':b.color }, 'aria-hidden':'true' }),
       h('div', {}, h('div', { class:'muted small', text:`${b.brand}${b.year ? ' · ' + b.year : ''}` }), h('p', { class:'hero-role', text:b.role }),
         h('div', { class:'row gap wrap' },

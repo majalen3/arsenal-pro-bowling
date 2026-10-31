@@ -182,7 +182,7 @@ export function render({ query }) {
   ready().then(() => { const P = proj(); const list = Object.values(P.imports).filter(i => i.kind !== 'seed' || !i.undone).sort((a, b) => b.ts - a.ts);
     if (!list.length) return; imports.append(h('h2', { class: 'section-title', text: 'Past imports' }), ...list.map(i => h('div', { class: 'row between card tight' }, h('span', { class: 'small', text: `${i.label || i.fileName || i.kind}${i.undone ? ' \u00b7 undone' : ''}` }), i.undone ? null : h('button', { class: 'btn sm ghost', 'data-undo': i.id, onclick: async (ev) => { await undoImport(i.id); ev.target.closest('.card').querySelector('span').textContent += ' \u00b7 undone'; ev.target.remove(); toast('Import undone'); } }, 'Undo')))); });
   const el = h('section', { class: 'screen list-screen' },
-    h('header', { class: 'appbar' }, h('button', { class: 'icon-btn', 'aria-label': 'Back', html: icon('back'), onclick: () => back('#/more') }), h('h1', { class: 'title', text: 'Import' })),
+    h('header', { class: 'appbar' }, h('button', { class: 'icon-btn', 'aria-label': 'Back', html: icon('back'), onclick: () => back('#/me') }), h('h1', { class: 'title', text: 'Import' })),
     h('div', { class: 'stack' },
       h('div', { class: 'card' },
         h('p', { class: 'small', text: 'Files are read on this phone. Nothing is saved until you tap Import, and every import can be undone.' }),

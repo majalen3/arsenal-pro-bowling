@@ -139,6 +139,10 @@ Counting starts with the tab tap. Seconds are KLM estimates (A).
 | 12 | Fix a past frame | ≥5P | 4P | Results → Fix a frame (last night) → frame → pins |
 | | **Total** | **≈38P + 8S** (≈58 s) | **≈31P + 0S** (≈40 s) | −7 taps, −8 scrolls |
 
+**Measured after P2 (e2e `task12`, 2026-10-31, 360×780, starter bag; a tap on a field to type counts 1, typing and Enter count 0):** 1: 2 · 2: 3 · 3: 4 · 4: 2 · 5: 2 · 6: 0 · 7: 2 · 8: 1 · 9: 5 · 10: 3 · 11: 2 · 12: 4 = **30P + 0S**.
+- Tasks 2 and 4 are one tap under plan because the League choice is remembered.
+- Task 9 is one tap over plan: a catalogue ball with no printed oil condition asks "Where would you use it?" before Save. That step was kept, because no level is made up.
+
 The win is less about the tap total and more about **zero scrolling on core tasks**, plus findability for 7 and 10. Today those depend on knowing that More hides them.
 
 ## 7. Phases, acceptance criteria and e2e checks

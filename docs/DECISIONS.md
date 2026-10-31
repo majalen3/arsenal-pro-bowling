@@ -186,3 +186,12 @@ The owner's target is a board (1–39, halves allowed), not an engine angle. We 
   - Nothing is shown on Tonight or the pad.
 - The hand comes from `cc/hand.js`: 7 pin for left-handers. When it is unset, the text reads RH and says so.
 - The engine is untouched. No new events or tables, so /api/me is unchanged. Glossary +1 term (`bm-flat10`), so the help unit test now expects 114.
+
+## IA P2: five tabs + Me, Help off by default (owner 2026-10-31)
+- **Owner call:** "Do the 5-tab layout but keep Help off by default." The tabs are Tonight, Bowl, Results, Bag and Learn. Me (profile, data, imports, settings) is a top-right button on every tab screen. There is no More tab.
+- **#31 overridden.** #31 put the Armory/catalog on the Arsenal tab under a "no new top-level tabs" rule. P2 replaces that rule with the owner-approved five. The Armory and catalog are unchanged and live at Bag › "All my balls" (`#/bag?view=all`). Bag opens on "Tonight's bag".
+- **#32 kept.** Help bubbles stay **off by default** (`prefs.help` unset = off), and the "?" toggle stays in the app bar. The Off/On switch moved from More to Learn (`#helpFld`). On Bowl, no "?" shows on the pad or its now-line even with Help on (CSS, `body[data-tab=bowl]`).
+- **Old hashes redirect** with replaceState, so Back does not bounce, and the query is kept: `#/sessions`→`#/results`, `#/arsenal`→`#/bag?view=all`, `#/more`→`#/me`, `#/patterns`→`#/learn/patterns`. Deeper routes (`#/arsenal/insights`, `#/ball/…`, `#/session/…`) are unchanged.
+- **Lane/Target** open from the "Stand F · Aim T ›" chip on Tonight's start line and Bowl's now-line. No tab is current there, and the tab bar stays.
+- **Results** opens on "Latest night": the same recap headline as the night view, "Full recap ›" and "Fix a frame". The fix link (`#/session/ID?fix=1`) opens straight on the frame picker of that night's last scored game.
+- No data, schema or engine change. `simulatePath` is untouched and the 3-D flag stays off.

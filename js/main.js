@@ -1,5 +1,5 @@
 import { restoreState, startSync, deviceId, prefs, profile, rawGet } from './store.js';
-import { route, start, go, setDecorate } from './router.js';
+import { route, redirect, start, go, setDecorate } from './router.js';
 import { helpToggle } from './screens/help.js';
 import { $, $$, toast, icon } from './ui.js';
 import { listenInstall, isStandalone, askPersist } from './cc/protect.js';
@@ -14,29 +14,37 @@ applyTextSize(prefs().textSize); applyTheme(); matchMedia('(prefers-color-scheme
 restoreState(); deviceId();
 // GAP (a): keep the install offer for later (shown once after the first saved game, never mid-game). Installed apps ask for persistent storage at boot (no prompt there).
 listenInstall(); if (isStandalone()) askPersist();
+// IA P2 (owner 2026-10-31: "Do the 5-tab layout but keep Help off by default"): Tonight / Bowl / Results / Bag / Learn, Me in the top bar.
+// Lane and Target are tools (no tab of their own): they open from the Stand · Aim chip on Tonight and Bowl, and from Learn.
 route(/^\/lane$/, 'lane', () => import('./screens/lane.js'));
 route(/^\/target$/, 'lane', () => import('./screens/target.js'));
-route(/^\/arsenal$/, 'arsenal', () => import('./screens/arsenal.js'));
-route(/^\/arsenal\/insights$/, 'arsenal', () => import('./screens/insights.js'));
-route(/^\/arsenal\/sheet$/, 'arsenal', () => import('./screens/export.js'));
-route(/^\/ball\/([\w-]+)$/, 'arsenal', () => import('./screens/ball.js'));
-route(/^\/compare$/, 'arsenal', () => import('./screens/compare.js'));
-route(/^\/add-ball$/, 'arsenal', () => import('./screens/addball.js'));
-route(/^\/patterns$/, 'patterns', () => import('./screens/patterns.js'));
-route(/^\/pattern\/([\w.-]+)$/, 'patterns', () => import('./screens/pattern.js'));
-route(/^\/sessions$/, 'sessions', () => import('./screens/sessions.js'));
-route(/^\/session\/([\w.%-]+)$/, 'sessions', () => import('./screens/session.js'));
-route(/^\/card$/, 'sessions', () => import('./screens/card.js'));
-route(/^\/more$/, 'more', () => import('./screens/more.js'));
+route(/^\/arsenal\/insights$/, 'bag', () => import('./screens/insights.js'));
+route(/^\/arsenal\/sheet$/, 'bag', () => import('./screens/export.js'));
+route(/^\/ball\/([\w-]+)$/, 'bag', () => import('./screens/ball.js'));
+route(/^\/compare$/, 'bag', () => import('./screens/compare.js'));
+route(/^\/add-ball$/, 'bag', () => import('./screens/addball.js'));
+// Bag tab: the bag builder first; "All my balls" (the Armory and catalog) is a view of the same tab (#/bag?view=all).
+route(/^\/bag$/, 'bag', () => Promise.all([import('./screens/bag.js'), import('./screens/arsenal.js')]).then(([b, a]) => ({ render: o => (o.query && o.query.get('view') === 'all' ? a : b).render(o) })));
+route(/^\/learn$/, 'learn', () => import('./screens/learn.js'));
+route(/^\/learn\/patterns$/, 'learn', () => import('./screens/patterns.js'));
+route(/^\/pattern\/([\w.-]+)$/, 'learn', () => import('./screens/pattern.js'));
+route(/^\/glossary$/, 'learn', () => import('./screens/help.js'));
+route(/^\/guide$/, 'learn', () => import('./screens/help.js'));
+route(/^\/results$/, 'results', () => import('./screens/sessions.js'));
+route(/^\/session\/([\w.%-]+)$/, 'results', () => import('./screens/session.js'));
+route(/^\/card$/, 'results', () => import('./screens/card.js'));
+route(/^\/me$/, 'me', () => import('./screens/more.js'));
+route(/^\/import$/, 'me', () => import('./screens/import.js'));
 route(/^\/welcome$/, null, () => import('./screens/welcome.js'));
-route(/^\/import$/, 'more', () => import('./screens/import.js'));
 route(/^\/tonight$/, 'tonight', () => import('./screens/tonight.js'));
-route(/^\/bowl$/, 'tonight', () => import('./screens/tonight.js').then(m => ({ render: o => m.render(Object.assign({}, o, { bowl: true })) })));
-route(/^\/bag$/, 'tonight', () => import('./screens/bag.js'));
-route(/^\/glossary$/, 'more', () => import('./screens/help.js'));
-route(/^\/guide$/, 'more', () => import('./screens/help.js'));
+route(/^\/bowl$/, 'bowl', () => import('./screens/tonight.js').then(m => ({ render: o => m.render(Object.assign({}, o, { bowl: true })) })));
+// Old hashes land on their new home (IA_PLAN §7 P2).
+redirect(/^\/sessions$/, '/results');
+redirect(/^\/arsenal$/, '/bag?view=all');
+redirect(/^\/more$/, '/me');
+redirect(/^\/patterns$/, '/learn/patterns');
 // tab bar / rail
-const TABS = [['tonight', 'Tonight'], ['lane', 'Lane'], ['arsenal', 'Arsenal'], ['patterns', 'Patterns'], ['sessions', 'Sessions'], ['more', 'More']];
+const TABS = [['tonight', 'Tonight'], ['bowl', 'Bowl'], ['results', 'Results'], ['bag', 'Bag'], ['learn', 'Learn']];
 const nav = $('#tabs');
 nav.innerHTML = TABS.map(([k, l]) => `<a class="tab" href="#/${k}" data-tab="${k}">${icon(k)}<span>${l}</span></a>`).join('');
 function setTab(t) { $$('.tab', nav).forEach(a => { if (a.dataset.tab === t) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }); document.body.dataset.tab = t || 'none'; }
@@ -48,6 +56,8 @@ setDecorate((el, path) => {
   const bar = el.querySelector('.appbar'); if (!bar || bar.querySelector('#helpToggle')) return;
   const t = helpToggle(() => go(location.hash || '#/tonight', { replace:true })), acts = bar.querySelector('.appbar-actions');
   if (acts) acts.prepend(t); else bar.append(t);
+  // IA P2: "Me" (profile and settings) top-right on every screen; it replaces the More tab.
+  if (path !== '/me') { const me = Object.assign(document.createElement('a'), { className:'icon-btn me-btn', id:'meBtn', href:'#/me', innerHTML:icon('me') }); me.setAttribute('aria-label', 'Me: profile and settings'); t.after(me); }
 });
 start($('#view'), setTab);
 startSync();

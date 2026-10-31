@@ -378,3 +378,21 @@ Each entry covers what shipped, why it matters and the test results. Newest entr
 - `js/cc/rank.js`: the table is cited to the USBC "3-6-9 Spare Conversion System" PDF, which gives RH/LH columns worked from board 20. The app applies the move to your own strike board. "Same target" is cited to the USBC Bowling Academy video and the BPAA week-3 lesson. The comment notes that the USBC youth Phase 2 PDF also moves the target, which the app does not do.
 - `js/cc/quicklog.js`: the "key pin = closest to the bowler, in most cases" definition is cited to the USBC youth Phase 2 Lane Play PDF and BPAA, not the 3-6-9 PDF. Two front pins in one row is marked as an app rule. The comment also records the BPAA baby-split exception (2-7 / 3-10 are aimed at the missing pin), which the app does not handle yet. This is flagged for the owner.
 - No behaviour change. Unit tests 258/0, engine 7500/0, live `e2e --only drill` below.
+- Live check (2026-10-31): `e2e --only drill` against https://majalen3.github.io/arsenal-pro-bowling/ passed 13/0.
+
+## 2026-10-31 · Item 5: IA P2, five tabs + Me, Help off by default (sw v51)
+- Owner decision (2026-10-31): "Do the 5-tab layout but keep Help off by default." This overrides DECISIONS #31; #32 (nothing extra during scoring) is kept. Both are recorded in DECISIONS.md.
+- Tabs: **Tonight · Bowl · Results · Bag · Learn**, each ≥44 px. There is no More tab: the person icon in the app bar (#meBtn) opens **Me** (profile, hand, Help, Your data, backup). Lane and Target have no tab. They open from the "Stand · Aim ›" chip on Tonight's start line.
+- Old hashes redirect with replaceState and keep their query, so Back doesn't bounce: #/sessions → #/results, #/arsenal → #/bag?view=all, #/more → #/me, #/patterns → #/learn/patterns.
+- Bag has a "Tonight's bag | All my balls" view switch. Learn is new: word search first, then Glossary, Bowling Guide and Patterns.
+- Results now opens with "Latest night": its recap line, "Full recap ›" and "Fix a frame" (#/session/ID?fix=1 opens the fix view on the last game with throws).
+- Help is OFF by default and the top-bar "?" toggle stays. Even with Help on, the Bowl pad shows no "?" dots (#32).
+- Add ball focuses the search box. Back now restores the list position (each history entry keeps its scroll), which J08 had only passed by luck before.
+- Taps for the 12 core tasks (IA_PLAN §6): before ≈38 taps + 8 scrolls, plan ≈31 taps, **measured 30 taps + 0 scrolls**. By task: 1:2 · 2:3 · 3:4 · 4:2 · 5:2 · 6:0 · 7:2 · 8:1 · 9:5 · 10:3 · 11:2 · 12:4. Task 9 is +1 because of the kept "Where would you use it?" step: no level is invented.
+- The Tonight (League, 360×780) height budget goes from 1110 to 1130 px, for the owner-required 44 px chip row. Measured at 1122. Start bowling and Add a bowler are still inside the first 740 px.
+- Tests:
+  - New e2e `ia5` (tabs, Me, redirects, Help off, the chip, Bowl with no dots, axe) and `task12` (each task ≤ plan+1).
+  - Full e2e local run: 738/0 (an earlier run failed only the height budget, which is now re-set to 1130).
+  - Journeys were renamed to the new homes (J01/J09/J11/J15) and the visual baselines were updated, including the new learn baseline. Lighthouse routes were updated too.
+  - Unit tests 258/0, engine 7500/0.
+- Screenshots: `/workspace/shots/item5-tonight-5tab.png`, `item5-bag-5tab.png`, `item5-learn-5tab.png`, `item5-bowl-5tab.png`, `item5-results-5tab.png`.

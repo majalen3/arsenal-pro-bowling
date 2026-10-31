@@ -1,11 +1,16 @@
-// Hash router: #/lane, #/arsenal, #/arsenal/insights, #/ball/:id, #/compare?ids=a,b, #/patterns, #/pattern/:slug, #/sessions, #/more, #/welcome
+// Hash router (IA P2): #/tonight, #/bowl, #/results, #/bag, #/learn, #/me, tools #/lane and #/target, details (#/ball/:id, #/session/:id, #/pattern/:slug, ...). Old hashes redirect.
 // Browser/Android back works through history; sheets push a history entry so back closes them first.
 import { nav, topSheet, closeAllSheets, $ } from './ui.js';
 const routes = [];
-let cur = null, latest = null, first = true, mountEl = null, onTab = null, decorate = null;
+let cur = null, latest = null, first = true, mountEl = null, onTab = null, decorate = null, popped = false, scrollT = 0;
 // Called after every screen mounts (main.js adds the top-bar Help "?" switch).
 export function setDecorate(fn) { decorate = fn; }
 export function route(re, tab, load) { routes.push({ re, tab, load }); }
+// IA P2: old hashes land on their new home (replace, so Back does not bounce). to: '/new' or '/new?k=v' (merged with the old query).
+const redirects = [];
+export function redirect(re, to) { redirects.push({ re, to }); }
+// A screen that swaps its own hash (Tonight -> Bowl while a game is open) re-marks the tab.
+export function retab(t) { if (cur) cur.tab = t; onTab && onTab(t); }
 export function go(hash, { replace = false } = {}) {
   if (nav.pending) { nav.queued = { hash, replace }; return; }
   if (replace) { history.replaceState(null, '', hash); render(); }
@@ -18,13 +23,23 @@ export function start(el, tabCb) {
   window.addEventListener('popstate', () => {
     if (nav.pending) { nav.pending--; if (!nav.pending && nav.queued) { const q = nav.queued; nav.queued = null; setTimeout(() => go(q.hash, q)); } return; }
     if (topSheet()) { topSheet().close(true); return; }
+    popped = true;   // Back/Forward: the next render puts the list back where it was
   });
-  window.addEventListener('hashchange', () => { sessionStorage.setItem('ap_nav', '1'); if (topSheet()) closeAllSheets(true); render(); });
+  // Each history entry remembers its scroll (in history.state), so Back to a long list (Results -> a night -> Back) keeps the position.
+  window.addEventListener('scroll', () => { clearTimeout(scrollT); scrollT = setTimeout(() => {
+    try { history.replaceState(Object.assign({}, history.state, { y: Math.round(scrollY) }), ''); } catch (e) {} }, 120); }, { passive: true });
+  window.addEventListener('hashchange', () => { clearTimeout(scrollT); sessionStorage.setItem('ap_nav', '1'); if (topSheet()) closeAllSheets(true); render(); });
   render();
 }
 async function render() {
   const raw = location.hash.replace(/^#/, '') || '/tonight';   // Tonight is the home screen (GAP §2c: don't open on Lane)
-  const [path, qs] = raw.split('?'); const query = new URLSearchParams(qs || '');
+  let [path, qs] = raw.split('?'); let query = new URLSearchParams(qs || '');
+  const rd = redirects.find(x => x.re.test(path));
+  if (rd) {
+    const [to, tq] = rd.to.split('?'); new URLSearchParams(tq || '').forEach((v, k) => { if (!query.has(k)) query.set(k, v); });
+    path = path.replace(rd.re, to); const q = query.toString();
+    history.replaceState(null, '', '#' + path + (q ? '?' + q : ''));
+  }
   let m = null, r = routes.find(x => (m = path.match(x.re)));
   if (!r) { r = routes.find(x => x.re.test('/tonight')) || routes[0]; m = ['/tonight']; }
   const token = {}; latest = token;
@@ -39,7 +54,9 @@ async function render() {
   if (decorate) { try { decorate(scr.el, path); } catch (e) { console.error(e); } }
   document.title = scr.title ? `${scr.title} · Arsenal Pro` : 'Arsenal Pro';
   onTab && onTab(r.tab);
-  if (!first) { window.scrollTo(0, 0); const hd = scr.el.querySelector('h1'); if (hd) { hd.tabIndex = -1; hd.focus({ preventScroll:true }); } }
+  const back = popped && history.state && history.state.y > 0 ? history.state.y : 0; popped = false;
+  if (back) requestAnimationFrame(() => { scrollTo(0, back); if (Math.abs(scrollY - back) > 2) setTimeout(() => scrollTo(0, back), 150); });
+  if (!first) { if (!back) window.scrollTo(0, 0); const hd = scr.el.querySelector('h1'); if (hd) { hd.tabIndex = -1; hd.focus({ preventScroll:true }); } }
   first = false;
   scr.mounted && scr.mounted();
 }

@@ -25,7 +25,7 @@ export function render() {
   const cv = h('canvas', { class:'chart', id:'rgChart', role:'img', 'aria-label':`Chart of core RG (across) against differential (up) for ${balls.filter(specOK).length} balls. Tap a dot to open the ball. The Arsenal list has every ball with its specs.` });
   const maxc = Math.max(g.cnt.heavy, g.cnt.medium, g.cnt.light);
   const bars = h('div', { class:'bars' }, ...['heavy', 'medium', 'light'].map(o => h('div', { class:'bar-row' + (o === g.thin ? ' thin' : '') }, h('span', { class:'bar-k', text:o[0].toUpperCase() + o.slice(1) + ' oil' }), h('span', { class:'bar' }, h('i', { style:{ width:(g.cnt[o] / maxc * 100) + '%' } })), h('b', { class:'num', text:String(g.cnt[o]) }))));
-  const el = h('section', { class:'screen detail' }, backBar('Arsenal insights', '#/arsenal'),
+  const el = h('section', { class:'screen detail' }, backBar('Arsenal insights', '#/bag?view=all'),
     (() => { const P = proj(), L = P ? lastGames(P, 10) : null;
       // Sim bug 7: lead with the last 10 games (practice left out); arsenal charts sit behind one tap.
       return h('div', { class:'card', id:'insLast' }, withHelp(h('h2', { class:'card-title', text:L ? `Last ${L.n} ${L.n === 1 ? 'game' : 'games'}` : 'Last 10 games' }), 'sc-average', 'Average'),

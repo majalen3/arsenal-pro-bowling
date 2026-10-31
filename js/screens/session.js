@@ -21,14 +21,18 @@ const sign = (d, u) => (d > 0 ? '+' : d < 0 ? '\u2212' : '\u00b1') + Math.abs(d)
 export function marksRow(g) {
   return h('ol', { class: 'bc-frames', 'aria-label': `Game ${g.game} frames` }, ...g.frames.map(f => h('li', {}, h('span', { class: 'bc-m', text: f.marks.join(' ') || '\u00a0' }), h('span', { class: 'bc-c', text: f.cum != null ? String(f.cum) : '' }))));
 }
-export async function render({ params }) {
+export async function render({ params, query }) {
   await ready();
   const id = params[0], el = h('section', { class: 'screen bc' }), body = h('div', { class: 'stack' });
-  el.append(backBar('Session', '#/sessions'), body);
+  el.append(backBar('Session', '#/results'), body);
   const fx = fixState();   // sim2 #4: fix a frame of any game on this night
+  // IA P2: Results > "Fix a frame" (?fix=1) opens straight on the frame picker of the night's last scored game.
+  let fixFirst = !!(query && query.get('fix'));
+  if (fixFirst) { const P0 = proj(), s0 = P0 && C.sessionsOf(P0).find(x => x.id === id), g0 = s0 && [...s0.games].reverse().find(g => g.throws && g.throws.length);
+    if (g0) { Object.assign(fx, { game: g0.game, pick: g0.game, f: null, throws: [] }); fx.leave && fx.leave.clear(); fx.foul = false; } else fixFirst = false; }
   function draw() {
     const P = proj(), list = C.sessionsOf(P), s = list.find(x => x.id === id); body.innerHTML = '';
-    if (!s) { body.append(emptyState('Session not found', 'It may have been undone. Your sessions are listed on Sessions.', { label: 'Open Sessions', run: () => go('#/sessions') })); return; }
+    if (!s) { body.append(emptyState('Session not found', 'It may have been undone. Your sessions are listed on Results.', { label: 'Open Results', run: () => go('#/results') })); return; }
     const r = C.recapOf(list, id, { myAvg: (P.sessions[id] || {}).event === 'league' ? (prefs().league || {}).myAvg : null }), st = s.stats;   // sim2 #8, same as Tonight's recap
     body.append(h('p', { class: 'bc-sub muted', id: 'sessWhen', text: `${fmtDate(s.date)} \u00b7 ${s.source}${s.ballId ? ' \u00b7 ' + ballName(P, s.ballId) : ''}` }),
       h('div', { class: 'card bc-head', id: 'sessRecap' }, h('p', { class: 'bc-headline', id: 'sessHead', text: r.head }),
@@ -98,6 +102,7 @@ export async function render({ params }) {
     body.append(h('a', { class: 'btn ghost block', href: '#/card', id: 'sessToCard' }, 'My Bowler Card'));
   }
   draw();
+  if (fixFirst) setTimeout(() => { const b = el.querySelector(`.fix-game[data-game="${fx.game}"]`); if (b) b.scrollIntoView({ block: "center" }); }, 60);
   const off = on('data', () => { if (body.contains(document.activeElement) && document.activeElement.tagName === 'SELECT') return; const o = new Set([...body.querySelectorAll('details[open]')].map(d => d.id)); draw(); for (const i of o) { const d = body.querySelector('#' + i); if (d) d.open = true; } });
   return { el, title: 'Session', destroy() { off(); } };
 }

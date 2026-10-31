@@ -35,7 +35,7 @@ export async function render() {
   await ready();
   const body = h('div', { class: 'stack', id: 'abBody' });
   const el = h('section', { class: 'screen list-screen', id: 'addBall' },
-    h('header', { class: 'appbar' }, h('button', { class: 'btn ghost', id: 'abBack', 'aria-label': 'Back to Arsenal', onclick: () => go('#/arsenal') }, '\u2039 Arsenal'), h('h1', { class: 'title', text: 'Add a ball' })), body);
+    h('header', { class: 'appbar' }, h('button', { class: 'btn ghost', id: 'abBack', 'aria-label': 'Back to Bag', onclick: () => go('#/bag') }, '\u2039 Bag'), h('h1', { class: 'title', text: 'Add a ball' })), body);
   const st = { q: '', brand: '', pick: null, look: null, lookState: 'idle', lookMsg: '', weight: 15, weightSet: false, level: null, ctl: null, makerCands: null, saving: false, manual: {} };
   const q = h('input', { type: 'search', class: 'search', id: 'abQ', placeholder: 'e.g. Storm Phaze II', 'aria-label': 'Ball brand and model', autocomplete: 'off', enterkeyhint: 'search' });
   const brandSel = h('select', { id: 'abBrand', 'aria-label': 'Brand for the maker lookup' }, h('option', { value: '', text: 'Brand: detect from name' }),
@@ -219,5 +219,7 @@ export async function render() {
   drawResults();
   const pre = new URLSearchParams((location.hash.split('?')[1] || '')).get('q');
   if (pre) { q.value = st.q = pre; drawResults(); }
+  // IA P2 task 9: the search field is the first step, so it takes focus (a tap fewer on the way to a saved ball).
+  if (!q.value) setTimeout(() => { if (document.body.contains(q)) q.focus({ preventScroll: true }); }, 0);
   return { el, title: 'Add a ball' };
 }

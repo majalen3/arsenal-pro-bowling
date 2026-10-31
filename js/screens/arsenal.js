@@ -11,6 +11,7 @@ import { catOf } from '../cc/cats.js';
 import * as A from '../cc/armory.js';
 import { helpDot, withHelp } from './help.js';
 import * as ST from '../cc/status.js';
+import { bagView } from './bag.js';
 const st = { q:'', f:'all', picked:[] };
 const PAT_OIL = { house:'medium', cheetah:'medium', sport:'heavy', scorpion:'heavy', shark:'heavy', dry:'light' };
 const short = c => c.split(' / ')[0].replace('Strong ', 'Str. ').replace('Medium ', 'Med. ').replace('Asymmetrical', 'Asym').replace('Symmetrical', 'Sym');
@@ -89,6 +90,7 @@ export async function render() {
   drawChips(); draw();
   const el = h('section', { class:'screen list-screen' },
     h('header', { class:'appbar arm-head' }, h('div', { class:'arm-titles' }, h('span', { class:'arm-team', text:T.team }), h('h1', { class:'title', text:T.title })), h('div', { class:'appbar-actions' }, h('a', { class:'btn primary sm', id:'arsAdd', href:'#/add-ball' }, 'Add ball'), h('a', { class:'btn ghost sm', href:'#/arsenal/insights' }, 'Insights'))),
+    bagView('all'),
     P ? armory(P) : null,
     P ? h('div', { class:'arm-export' }, h('button', { class:'btn ghost', id:'arsExport', onclick:async () => (await import('./export.js')).openExport() }, 'Export my arsenal')) : null,   // item E: sheet, bag card, CSV, backup
     withHelp(h('h2', { class:'group-h arm-cat', text:'Catalog' }), 'eq-cover-types', 'Ball types'),

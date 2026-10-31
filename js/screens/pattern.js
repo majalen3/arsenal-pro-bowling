@@ -17,7 +17,7 @@ export function grid(steps, ft) {
 export function render({ params }) {
   const slug = params[0];
   const body = h('div', { class:'stack' }, skeleton(3));
-  const el = h('section', { class:'screen detail' }, backBar('Pattern', '#/patterns'), body);
+  const el = h('section', { class:'screen detail' }, backBar('Pattern', '#/learn/patterns'), body);
   const hm = h('canvas', { class:'heat', role:'img' }), cb = h('canvas', { class:'cross' , role:'img' });
   let g = null, ft = 0;
   function draw() {
@@ -39,7 +39,7 @@ export function render({ params }) {
   async function load() {
     try {
       const p = (await loadIndex()).find(x => x.slug === slug);
-      if (!p) { body.innerHTML = ''; body.append(emptyState('Pattern not found', 'It may have been renamed in the library.', { label:'All patterns', run:() => go('#/patterns') })); return; }
+      if (!p) { body.innerHTML = ''; body.append(emptyState('Pattern not found', 'It may have been renamed in the library.', { label:'All patterns', run:() => go('#/learn/patterns') })); return; }
       const steps = await loadSteps(slug); ft = p.ft || 0; g = grid(steps, ft);
       el.querySelector('.title').textContent = p.name; document.title = p.name + ' \u00b7 Arsenal Pro';
       const pre = nearestPreset(ft);

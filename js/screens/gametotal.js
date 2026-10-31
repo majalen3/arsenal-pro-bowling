@@ -1,5 +1,5 @@
 // Item 2: "Add a game total": a 2-field sheet (score, game) + optional ball. Offered on the night (Session) view, in
-// More › Your data and in Tonight's team setup; never on the scoring pad. Saves one game.logged event.
+// Me › Your data and in Tonight's team setup; never on the scoring pad. Saves one game.logged event.
 import { h, sheet, toast } from '../ui.js';
 import { proj, addMany } from '../hub.js';
 import { mkEvent } from '../data/events.js';

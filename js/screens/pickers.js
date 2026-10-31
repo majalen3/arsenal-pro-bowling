@@ -49,7 +49,7 @@ export function openConditions() {
     h('h3', { class:'label', text:'Surface' }),
     segmented('Surface', FINISHES.map(f => [f, FINISH_LABEL[f].replace(' grit', '')]), S.finish, v => adjust({ finish:v }, { animate:true }), 'wrap'),
     stepper({ id:'oil', label:'Oil volume', min:RANGES.oil[0], max:RANGES.oil[1], step:RANGES.oil[2], value:S.oil, fmt:v => '×' + (+v).toFixed(1), onChange:v => adjust({ oil:v }), hint:'1.0 is a typical house volume. Higher = more oil.' }),
-    h('button', { class:'btn ghost', onclick:() => { s.close(); go('#/patterns'); } }, 'Browse 700+ real patterns'));
+    h('button', { class:'btn ghost', onclick:() => { s.close(); go('#/learn/patterns'); } }, 'Browse 700+ real patterns'));
   const s = sheet({ title:'Lane conditions', body, id:'condSheet' });
 }
 export function tunePanel() {
@@ -70,6 +70,6 @@ export function openLines() {
   if (!ls.length) body.append(h('p', { class:'muted', text:`No saved lines for ${app.ball.name} yet. Tap the bookmark on the lane to save the line you're throwing.` }));
   ls.forEach(l => body.append(h('button', { class:'line-row', onclick:() => { applyLine(l); s.close(); } },
     h('span', { class:'line-name', text:l.name }), h('span', { class:'line-meta', text:`Feet ${l.release} · Target ${fmtBoard(l.eyes != null ? +l.eyes : +arrowsBoard(+l.release, +l.aim).toFixed(1))} · ${l.speed} mph · ${PATTERN_LABEL[l.pattern] || l.pattern}${l.synced ? '' : ' · on this device'}` }))));
-  body.append(h('button', { class:'btn ghost', onclick:() => { s.close(); go('#/sessions'); } }, 'All lines and sessions'));
+  body.append(h('button', { class:'btn ghost', onclick:() => { s.close(); go('#/results'); } }, 'All lines and sessions'));
   const s = sheet({ title:`Lines · ${app.ball.name}`, body, id:'linesSheet' });
 }

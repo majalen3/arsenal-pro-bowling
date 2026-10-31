@@ -108,7 +108,7 @@ async def run(b, kind):
     await p.click('#backBtn'); await p.wait_for_timeout(400)
     st = await p.evaluate("JSON.parse(localStorage.getItem('ap_state')||'{}')")
     check(float(st.get('release')) == lines[0]['release'] and float(st.get('aim')) == lines[0]['aim'] and not await p.is_visible('#backBtn'), t + 'J3 back to saved line in 1 tap (save, miss, back = 3 taps)')
-    await p.click('#tabs a[href="#/sessions"]'); await p.wait_for_selector('.line-card')
+    await p.click('#tabs a[href="#/results"]'); await p.wait_for_selector('.line-card')
     check(await p.locator('.line-card').count() == 1, t + 'saved line visible in Sessions'); await shot(p, f'{kind}-sessions')
     # load line from sessions -> lane
     await p.click('.line-card .line-row'); await p.wait_for_timeout(500)
@@ -121,7 +121,7 @@ async def run(b, kind):
     await p.click('#useOnLane'); await p.wait_for_selector('#patChip')
     check('Sport' in (await p.text_content('#patChip')) or 'Shark' in (await p.text_content('#patChip')), t + 'J4 pattern applied to lane (' + (await p.text_content('#patChip')).strip() + ')')
     # J5 compare 2 balls in Arsenal
-    await p.click('#tabs a[href="#/arsenal"]'); await p.wait_for_selector('#arsGrid')
+    await p.click('#tabs a[href="#/bag"]'); await p.click('#bagView [data-v="all"]'); await p.wait_for_selector('#arsGrid')
     await p.click('.cmp-btn >> nth=0'); await p.click('.cmp-btn >> nth=1'); await p.click('#trayGo'); await p.wait_for_selector('.cmp-table')
     check(await p.locator('.cmp-col').count() == 2, t + 'J5 compare two balls'); await p.wait_for_timeout(700); await shot(p, f'{kind}-compare')
     # back button: sheet closes before route changes
@@ -374,7 +374,7 @@ async def bag_cycle(b):
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
     await seed(p); await p.goto(BASE + '?bag#/bowl'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await bowl_more(p); await p.wait_for_selector('#tnBagLink')
     await p.click('#tnBagLink'); await p.wait_for_selector('#bagRows')
-    check(await p.query_selector('#tabs a[href="#/tonight"][aria-current=page]') is not None, '[bag] reached from Tonight; Tonight tab stays current')
+    check(await p.query_selector('#tabs a[href="#/bag"][aria-current=page]') is not None, '[bag] reached from Tonight; the Bag tab is current (IA P2)')
     steps = await p.eval_on_selector_all('#bagBody .card-title', 'e => e.map(x => x.textContent)')
     check(steps[:3] == ['1 \u00b7 Where & lanes', '2 \u00b7 Your bag for tonight', '3 \u00b7 Left out (why not) \u00b7 7'], f'[bag] three steps in order {steps[:3]}')
     roles = await p.eval_on_selector_all('#bagRows [data-role-label]', 'e => e.map(x => x.textContent)')
@@ -639,7 +639,7 @@ async def targeting_cycle(b):
     await p.click('#tnFind'); await p.wait_for_selector('#tgFindCard')
     check('#/target' in p.url and 'Big Bite' in await p.eval_on_selector('#tgBall', 'e => e.selectedOptions[0].textContent'), '[target] Tonight "Find my strike line" opens Targeting with tonight\'s ball and runs Find')
     await p.goto(BASE + '?tg#/target'); await p.wait_for_selector('#tgTour')
-    check(await p.query_selector('#tabs a[href="#/lane"][aria-current=page]') is not None, '[target] lives under the Lane tab')
+    check(await p.query_selector('#tabs [aria-current=page]') is None and await p.is_visible('#tabs'), '[target] a tool: no tab of its own, tab bar still there (IA P2)')
     await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())"); await shot(p, 'phone-target-walkthrough')
     await axe_ok(p, '[target] walkthrough')
     await p.click('#tgTourNext'); await p.click('#tgTourNext'); t3 = await p.text_content('#tgTour'); await p.click('#tgTourNext')
@@ -735,7 +735,7 @@ async def addball_cycle(b):
     p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
     await seed(p); await p.goto(BASE + '?ab#/bowl'); await p.wait_for_selector('#noBag'); await p.click('#loadStarter'); await bowl_more(p); await p.wait_for_selector('#tnBagLink')
     await p.goto(BASE + '?ab#/arsenal'); await p.click('#arsAdd'); await p.wait_for_selector('#abQ')
-    check(await p.query_selector('#tabs a[href="#/arsenal"][aria-current=page]') is not None, '[addball] reached from Arsenal (Add ball)')
+    check(await p.query_selector('#tabs a[href="#/bag"][aria-current=page]') is not None, '[addball] reached from Bag (Add ball); Bag tab current')
     taps = 0
     await p.fill('#abQ', 'Storm Phaze II'); await p.wait_for_selector('#abNoMatch')
     check(await p.get_attribute('#abMaker', 'disabled') is None, '[addball] not in catalogue -> maker lookup offered (brand detected)')
@@ -1065,12 +1065,12 @@ async def sim_cycle(b):
     await p.mouse.click(x, y); await p.wait_for_timeout(120); await p.mouse.click(x, y); await p.wait_for_timeout(600)
     wh = await p.text_content('#qlWhere'); check('Frame 2' in wh, f'[sim] double tap on X logs one strike ({wh!r})')
     check(await p.is_visible('#tnNow') and await p.eval_on_selector('#tnMore', 'e => !e.open') and await p.query_selector('#tnMore #tnPick') is not None, '[sim] game open: ball/feet/aim + scoring up front, the rest behind one tap')
-    check(f'feet {feet}' in await p.text_content('#tnNowLine'), '[sim] game-open line uses the same stand as the pick card')
+    check(f'Stand {feet}' in await p.text_content('#tnNowLine'), '[sim] game-open line (Stand · Aim chip) uses the same stand as the pick card')
     await axe_ok(p, '[sim] game open'); await shot(p, 'phone-tonight-game-open')
     await p.click('#qlPins [data-pin="7"]'); await p.wait_for_selector('#qlHint')
     hint = await p.text_content('#qlHint'); check('lefty' in hint and f'strike stand {feet}' in hint, f'[sim] lefty spare hint uses hand + real strike stand ({hint[:90]!r})')
     await p.reload(); await p.wait_for_selector('#tnNow'); check(await p.is_visible('#tnLog') and 'Frame 2' in await p.text_content('#qlWhere'), '[sim] scoring card restored after reload')
-    aim = (await p.text_content('#tnNowLine')).split('aim')[-1].strip()
+    aim = (await p.text_content('#tnNowLine')).split('Aim')[-1].strip(' \u203a')
     await c.set_offline(True); await p.evaluate("() => window.dispatchEvent(new Event('offline'))"); await p.wait_for_selector('#netChip:not([hidden])')
     check('Offline' in await p.text_content('#netChip'), '[sim] offline chip shows'); await shot(p, 'phone-tonight-offline')
     await c.set_offline(False); await p.evaluate("() => window.dispatchEvent(new Event('online'))"); await p.wait_for_selector('#netChip', state='hidden')
@@ -1297,7 +1297,7 @@ async def armory_cycle(b):
     check(await p.evaluate("() => document.querySelectorAll('#armBenchShelf .ped').length") == 4 and not await p.evaluate("() => document.querySelector('#armBench').open"), '[armory] bench (4) folded behind a tap')
     check(await p.evaluate("() => !document.querySelector('#armory [data-m]')"), '[armory] no marks without logged games')
     spec = await p.text_content('#armBag [data-own="own-rattler-big-bite"] .plate-spec'); check('RG' in spec and 'Diff' in spec, f'[armory] nameplate shows catalog RG/Diff ({spec})')
-    check(await p.query_selector('#tabs a[href="#/arsenal"][aria-current=page]') is not None and await p.query_selector('#tabs a[href*="armory"]') is None, '[armory] same Arsenal tab, no new tab')
+    check(await p.query_selector('#tabs a[href="#/bag"][aria-current=page]') is not None and await p.query_selector('#tabs a[href*="armory"]') is None, '[armory] a view of the Bag tab, no tab of its own')
     await axe_ok(p, '[armory]'); small = await p.evaluate(SMALL); check(not small, f'[armory] targets >= 44px {small[:6]}')
     w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[armory] no horizontal overflow at 360 {w}')
     await shot(p, 'phone-armory')
@@ -1351,23 +1351,23 @@ async def help_cycle(b):
     check(1 <= sents <= 2, f'[help] bubble is 1-2 sentences ({sents}: {txt[:60]})')
     await axe_ok(p, '[help] bubble'); await p.click('#helpMore'); await p.wait_for_selector('#gl-eq-rg[open]')
     check('Bowling Guide' in (await p.text_content('.appbar .title')), '[help] "Learn more" opens the Bowling Guide at the term')
-    check(await p.query_selector('#tabs a[href="#/more"][aria-current=page]') is not None, '[help] Guide lives under More (no new tab)')
+    check(await p.query_selector('#tabs a[href="#/learn"][aria-current=page]') is not None, '[help] Guide lives under the Learn tab')
     await p.goto(BASE + '?hp3#/bowl'); await p.wait_for_selector('#tnLog')
     check(await p.query_selector('#tnLog .help-dot') is None, '[help] never inside the scoring pad')
     await p.goto(BASE + '?hp4#/lane'); await p.wait_for_selector('.help-dot[data-help="bm-shr"]')
     await p.click('.help-dot[data-help="bm-shr"]'); await p.wait_for_selector('#helpSheet #helpText')
     txt = await p.text_content('#helpText'); check(txt.startswith('Every ball skids'), f'[help] Lane bubble shows the v1 text ({txt[:40]})')
     await p.keyboard.press('Escape'); await p.wait_for_timeout(300)
-    await p.goto(BASE + '?hp5#/more'); await p.wait_for_selector('#helpFld'); await p.click('#helpFld [data-v="off"]')
+    await p.goto(BASE + '?hp5#/learn'); await p.wait_for_selector('#helpFld'); await p.click('#helpFld [data-v="off"]')
     await p.wait_for_selector('#helpToggle[aria-pressed="false"]'); check(True, '[help] More switch and top-bar switch stay in step')
     off2 = await help_counts(p, 'hoff2'); check(not any(off2.values()), f'[help] off again: 0 "?" everywhere {off2}')
     check(not errs, f'[help] no page errors {errs[:3]}'); await c.close()
 
 async def guide_cycle(b):
-    # P1.7 Bowling Guide: one tap from More (first card, Glossary in the first viewport = learnfirst), searchable, 7 topic chips.
+    # P1.7 -> P2 Bowling Guide: one tap from the Learn tab (first card, Glossary in the first viewport = learnfirst), searchable, 7 topic chips.
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 740})
-    await seed(p); await p.goto(BASE + '?lf#/more'); await p.wait_for_selector('#helpCard')
-    first = await p.evaluate("() => document.querySelector('#view .card').id"); check(first == 'helpCard', f'[learnfirst] More opens with Learn ({first})')
+    await seed(p); await p.goto(BASE + '?lf#/learn'); await p.wait_for_selector('#helpCard')
+    first = await p.evaluate("() => document.querySelector('#view .card').id"); check(first == 'helpCard', f'[learnfirst] Learn opens with the Guide card ({first})')
     vis = await p.evaluate("() => ['#goGuide', '#goGlossary', '#helpFld'].map(s => { const r = document.querySelector(s).getBoundingClientRect(); return r.bottom <= innerHeight - 64 && r.top >= 0; })")
     check(all(vis), f'[learnfirst] Bowling Guide, Glossary and the Help switch are in the first viewport {vis}')
     await p.click('#goGuide'); await p.wait_for_selector('#glTrees')
@@ -1671,7 +1671,7 @@ async def oneline_cycle(b):
             await c.close()
 
 async def tonightfold_cycle(b):
-    # IA P1.5: Tonight is the plan (lanes first), Bowl is the pad. League: <= 1110 px tall at 360 wide, Start bowling and
+    # IA P1.5: Tonight is the plan (lanes first), Bowl is the pad. League: <= 1130 px tall (P2: +44 px Stand · Aim chip row, owner-required, was 1110) at 360 wide, Start bowling and
     # Add a bowler inside the first 740 px, no first-ball card; Start bowling opens #/bowl; #/tonight with a game open lands on Bowl.
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
     await seed(p); await p.evaluate("localStorage.setItem('ap_profile', JSON.stringify({hand: 'right', handSource: 'user-reported', style: 'tweener', speed: 15, rev: 300}))")
@@ -1680,7 +1680,7 @@ async def tonightfold_cycle(b):
     await p.wait_for_selector('#tnStartBowl')
     await p.click('#advEvent [data-event="league"]'); await p.wait_for_selector('#tnWho'); await p.wait_for_timeout(300)
     m = await p.evaluate("() => ({ h: document.scrollingElement.scrollHeight, sb: document.querySelector('#tnStartBowl').getBoundingClientRect().bottom + scrollY, ab: document.querySelector('#tnAddBowler').getBoundingClientRect().bottom + scrollY, who: document.querySelector('#tnWho').getBoundingClientRect().top < document.querySelector('#tnStartBowl').getBoundingClientRect().top, pad: !!document.querySelector('#qlStrike'), pick: !!document.querySelector('#tnPick'), extra: !document.querySelector('#tnExtra').open })")
-    check(m['h'] <= 1110, f"[tonightfold] League Tonight <= 1110 px tall ({m['h']})")
+    check(m['h'] <= 1130, f"[tonightfold] League Tonight <= 1130 px tall ({m['h']})")
     check(m['sb'] <= 740 and m['ab'] <= 740, f"[tonightfold] Start bowling ({round(m['sb'])}) and Add a bowler ({round(m['ab'])}) in the first 740 px")
     check(m['who'] and not m['pad'] and not m['pick'] and m['extra'], f'[tonightfold] Who\'s bowling above Start bowling; no pad, no first-ball card; extras folded {m}')
     t = await p.text_content('#tnHand'); check(t.startswith('Right-handed') and 'change' in t, f'[tonightfold] P1.6 "Right-handed \u00b7 change" visible ({t})')
@@ -1695,11 +1695,131 @@ async def tonightfold_cycle(b):
     check(not errs, '[tonightfold] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
+async def ia5_cycle(b):
+    # IA P2 (owner 2026-10-31): five tabs Tonight, Bowl, Results, Bag, Learn + a Me button; old hashes redirect; Help off by
+    # default with the "?" toggle kept; Lane/Target from the Stand · Aim chip; Bowl shows no help bubbles even with Help on.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.goto(BASE + '?i5#/tonight'); await p.wait_for_selector('#noBag, #tnStartBowl')
+    if await p.query_selector('#loadStarter'): await p.click('#loadStarter')
+    await p.wait_for_selector('#tnStartBowl')
+    tabs = await p.eval_on_selector_all('#tabs .tab', 'e => e.map(x => [x.dataset.tab, x.textContent.trim(), Math.round(x.getBoundingClientRect().height), Math.round(x.getBoundingClientRect().width)])')
+    check([t[1] for t in tabs] == ['Tonight', 'Bowl', 'Results', 'Bag', 'Learn'], f'[ia5] five tabs Tonight, Bowl, Results, Bag, Learn; no More {[t[1] for t in tabs]}')
+    check(all(t[2] >= 44 and t[3] >= 44 for t in tabs), f'[ia5] every tab >= 44 px {tabs}')
+    for hsh, cur in [('#/tonight', 'tonight'), ('#/bowl', 'bowl'), ('#/results', 'results'), ('#/bag', 'bag'), ('#/learn', 'learn')]:
+        await p.evaluate(f"location.hash = '{hsh}'"); await p.wait_for_timeout(350)
+        r = await p.evaluate("() => ({ cur: (document.querySelector('#tabs [aria-current=page]') || {}).dataset?.tab || null, me: !!document.querySelector('#meBtn'), help: !!document.querySelector('#helpToggle, [data-help-toggle], .help-toggle'), w: document.documentElement.scrollWidth })")
+        check(r['cur'] == cur and r['me'] and r['w'] <= 360, f'[ia5] {hsh}: {cur} tab current, Me button top-right, no overflow {r}')
+    await p.click('#meBtn'); await p.wait_for_function("() => location.hash === '#/me' && document.querySelector('.appbar h1').textContent.includes('Me')")
+    r = await p.evaluate("() => ({ cur: !!document.querySelector('#tabs [aria-current=page]'), bar: getComputedStyle(document.querySelector('#tabs')).display, title: document.querySelector('.appbar h1').textContent, me: !!document.querySelector('#meBtn') })")
+    check(not r['cur'] and r['bar'] != 'none' and 'Me' in r['title'] and not r['me'], f'[ia5] Me opens #/me: no tab current, tab bar stays, no Me button on Me {r}')
+    for old, new in [('#/sessions', '#/results'), ('#/arsenal', '#/bag?view=all'), ('#/more', '#/me'), ('#/patterns', '#/learn/patterns')]:
+        await p.goto(BASE + '?i5r' + old); await p.wait_for_timeout(500)
+        check(p.url.split('#')[-1] == new[1:], f'[ia5] redirect {old} -> {new} ({p.url.split("#")[-1]})')
+    await p.goto(BASE + '?i5r#/sessions?x=1'); await p.wait_for_timeout(400); check(p.url.endswith('#/results?x=1'), f'[ia5] redirect keeps the query ({p.url.split("#")[-1]})')
+    await p.goto(BASE + '?i5r#/arsenal'); await p.wait_for_selector('#bagView'); check(await p.get_attribute('#bagView [data-v="all"]', 'aria-pressed') == 'true' or await p.query_selector('#bagView [data-v="all"][aria-checked=true], #bagView [data-v="all"].on'), '[ia5] #/arsenal lands on Bag > All my balls')
+    hp = await p.evaluate("() => JSON.parse(localStorage.getItem('ap_prefs') || '{}').help")
+    check(not hp, f'[ia5] DECISIONS #32 kept: Help is off by default ({hp})')
+    await p.goto(BASE + '?i5#/tonight'); await p.wait_for_selector('#tnAimChip')
+    t = await p.text_content('#tnAimChip'); check('Stand' in t and 'Aim' in t, f'[ia5] Tonight: Stand · Aim chip ({t})')
+    await p.click('#tnAimChip'); await p.wait_for_function("() => location.hash === '#/lane' && document.body.dataset.tab === 'lane'")
+    r = await p.evaluate("() => ({ cur: !!document.querySelector('#tabs [aria-current=page]'), bar: getComputedStyle(document.querySelector('#tabs')).display })")
+    check(not r['cur'] and r['bar'] != 'none', f'[ia5] the chip opens Lane/Target: no tab current, bar visible {r}')
+    # Bowl with a game open and Help ON: no help bubble and no card other than the now-line, the pad and the closed fold.
+    await p.evaluate("() => { const x = JSON.parse(localStorage.getItem('ap_prefs') || '{}'); x.help = true; localStorage.setItem('ap_prefs', JSON.stringify(x)); }")
+    await p.goto(BASE + '?i5b#/tonight'); await p.wait_for_selector('#tnStartBowl'); await p.click('#tnStartBowl'); await p.wait_for_selector('#qlStrike')
+    await qtap(p, '#qlStrike'); await p.wait_for_function("() => document.querySelector('#qlWhere').textContent.includes('Frame 2')")
+    r = await p.evaluate("""() => { const vis = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).display !== 'none' && getComputedStyle(e).visibility !== 'hidden'; };
+      const v = document.querySelector('#view'), fold = document.querySelector('#tnMore');
+      return { dots: [...v.querySelectorAll('.help-dot')].filter(vis).filter(e => !(fold && !fold.open && fold.contains(e) && !e.closest('summary'))).map(e => e.dataset.help),
+        cards: [...v.querySelectorAll('.card')].filter(vis).filter(e => !e.closest('#tnLog') && e.id !== 'tnNow' && !e.closest('#tnNow') && !(fold && fold.contains(e))).map(e => e.id || e.className),
+        fold: fold ? !fold.open : true, chip: !!document.querySelector('#tnNow #tnAimChip') }; }""")
+    check(not r['dots'], f'[ia5] Bowl (game open, Help on): 0 help bubbles {r["dots"]}')
+    check(not r['cards'] and r['fold'] and r['chip'], f'[ia5] Bowl: now-line (with Stand · Aim chip) + pad only; extras folded {r}')
+    await axe_ok(p, '[ia5] bowl'); await shot(p, 'ia5-bowl')
+    check(not errs, '[ia5] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
+async def task12_cycle(b):
+    # IA P2: the top-12 task tap counts on the 5-tab layout (IA_PLAN §6 plan column, within +1). A tap on a field to type counts 1;
+    # typing and Enter count 0. Each task starts on another tab, as a bowler would.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.evaluate("localStorage.setItem('ap_profile', JSON.stringify({hand: 'right', handSource: 'user-reported', style: 'tweener', speed: 15, rev: 300}))")
+    await p.goto(BASE + '?t12#/tonight'); await p.wait_for_selector('#noBag, #tnStartBowl')
+    if await p.query_selector('#loadStarter'): await p.click('#loadStarter')
+    await p.wait_for_selector('#tnStartBowl')
+    plan = {1: 2, 2: 4, 3: 4, 4: 3, 5: 2, 6: 0, 7: 2, 8: 1, 9: 4, 10: 3, 11: 2, 12: 4}
+    names = {1: 'Log a frame', 2: 'Start a league night', 3: 'Add a bowler', 4: "Pick tonight's bag", 5: 'Change ball mid-game', 6: 'Find stand/aim', 7: 'Look up a term', 8: "See last night's recap", 9: 'Add a ball', 10: 'Set handedness', 11: 'Export games', 12: 'Fix a past frame'}
+    got = {}; n = [0]
+    async def tap(sel, q=False):
+        n[0] += 1
+        if q: await qtap(p, sel)
+        else: await p.click(sel)
+    async def start(hsh): await p.goto(BASE + '?t12#' + hsh); await p.wait_for_timeout(400); n[0] = 0
+    async def tab(t): await tap(f'#tabs [data-tab="{t}"]'); await p.wait_for_timeout(300)
+    async def task(k, fn):
+        try: await fn(); got[k] = n[0]
+        except Exception as e: got[k] = None; print(f'  task {k} failed: {str(e)[:160]}')
+    async def t10():
+        await start('/results'); await tab('tonight'); await tap('#tnHandChange'); await p.wait_for_selector('#handSheetL'); await tap('#handSheetL')
+        await p.wait_for_function("() => (document.querySelector('#tnHand') || {}).textContent?.startsWith('Left-handed')")
+        await p.evaluate("() => { const x = JSON.parse(localStorage.getItem('ap_profile')); x.hand = 'right'; localStorage.setItem('ap_profile', JSON.stringify(x)); }")
+    async def t3():
+        await start('/results'); await tab('tonight'); await tap('#advEvent [data-event="league"]'); await p.wait_for_selector('#tnAddBowler'); await tap('#tnAddBowler')
+        await p.wait_for_timeout(300); sel = '#tnWho input[type=text], #tnWho input:not([type])'
+        await tap(sel); await p.keyboard.type('Ann'); await p.keyboard.press('Tab'); await p.wait_for_timeout(300)
+        nm = await p.evaluate("() => (JSON.parse(localStorage.getItem('ap_prefs') || '{}').league || {}).team || []")
+        assert any(x.get('name') == 'Ann' for x in nm), nm
+        await p.evaluate("() => { const x = JSON.parse(localStorage.getItem('ap_prefs')); x.league.team = []; localStorage.setItem('ap_prefs', JSON.stringify(x)); }")   # solo again for the next tasks
+    async def t4():
+        await start('/results'); await tab('tonight')
+        if not await p.query_selector('#advEvent [data-event="league"][aria-pressed=true], #advEvent [data-event="league"][aria-checked=true]'): await tap('#advEvent [data-event="league"]')
+        await tap('#tnStartBowl'); await p.wait_for_selector('#qlStrike')
+        got[2] = n[0] + 1   # task 2 = the same path + the first throw
+    async def t1():
+        await start('/results'); await tab('bowl'); await p.wait_for_selector('#qlStrike'); w0 = await p.text_content('#qlWhere'); await tap('#qlStrike', True)
+        await p.wait_for_function("w0 => document.querySelector('#qlWhere').textContent !== w0", arg=w0)
+    async def t5():
+        await start('/bowl'); await p.wait_for_selector('#qlBall'); await tap('#qlBall'); await p.wait_for_selector('#qlBallPick')
+        cur = await p.text_content('#qlBall'); ids = await p.eval_on_selector_all('#qlBallPick [data-ball]', 'e => e.map(x => [x.dataset.ball, x.textContent])')
+        other = next(i for i, t in ids if t.split('\u00b7')[0].strip()[:8] not in cur); await tap(f'#qlBallPick [data-ball="{other}"]')
+        await p.wait_for_function("() => !document.querySelector('#qlBallPick')")
+    async def t6():
+        await start('/bowl'); await p.wait_for_selector('#tnAimChip'); t = await p.text_content('#tnAimChip'); assert 'Stand' in t and 'Aim' in t, t
+    async def t7():
+        await start('/bowl'); await tab('learn'); await tap('#lnSearch'); await p.keyboard.type('pocket'); await p.keyboard.press('Enter')
+        await p.wait_for_function("() => location.hash.startsWith('#/glossary') && /pocket/i.test(document.querySelector('#view').textContent)")
+    async def t8():
+        await start('/bowl'); await tab('results'); await p.wait_for_selector('#resLast #resLastHead')
+    async def t11():
+        await start('/bowl'); await tab('results'); await p.wait_for_selector('#gamesCsv')
+        async with p.expect_download(): await tap('#gamesCsv')
+    async def t12():
+        await start('/bowl')
+        for _ in range(3): await qtap(p, '#qlStrike')
+        n[0] = 0; await tab('results'); await tap('#resFix'); await p.wait_for_selector('.fix-game [data-fix="1"]'); await tap('.fix-game [data-fix="1"]')
+        await p.wait_for_selector('[data-fixing]'); await tap('.fix-game [data-k="strike"]', True); await p.wait_for_selector('[data-undo-fix], [data-fix-msg]')
+    async def t9():
+        await start('/results'); await tab('bag'); await tap('#bagAdd'); await p.wait_for_selector('#abQ'); await p.wait_for_timeout(100)
+        if not await p.evaluate("() => document.activeElement && document.activeElement.id === 'abQ'"): n[0] += 1
+        await p.keyboard.type('Hy-Road')
+        await p.wait_for_selector('#abList [data-pick]'); await tap('#abList [data-pick]'); await p.wait_for_selector('#abConfirm')
+        if await p.query_selector('#abConfirm [data-v="15"]'): await tap('#abConfirm [data-v="15"]')
+        if await p.query_selector('#abLevel'): await tap('#abLevel [data-v="5"]')
+        await tap('#abSave'); await p.wait_for_function("() => !location.hash.startsWith('#/add-ball')")
+    for k, fn in [(10, t10), (3, t3), (4, t4), (1, t1), (5, t5), (6, t6), (7, t7), (8, t8), (11, t11), (12, t12), (9, t9)]: await task(k, fn)
+    rows = [(k, names[k], plan[k], got.get(k)) for k in sorted(plan)]
+    for k, nm, pl, g in rows: check(g is not None and g <= pl + 1, f'[task12] {k:>2}. {nm}: {g} taps (plan {pl})')
+    tot = sum(g for _, _, _, g in rows if g is not None); print(f'  task12 total: {tot} taps (plan 31)')
+    try: open(os.path.join(ART, 'task12.json'), 'w').write(json.dumps({'tasks': [{'k': k, 'task': nm, 'plan': pl, 'taps': g} for k, nm, pl, g in rows], 'total': tot}, indent=1))
+    except OSError: pass
+    check(not errs, '[task12] no page errors ' + ' | '.join(errs[:2]))
+    await c.close()
+
 async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('tonightfold', lambda: tonightfold_cycle(b)), ('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('export', lambda: export_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('tonightfold', lambda: tonightfold_cycle(b)), ('ia5', lambda: ia5_cycle(b)), ('task12', lambda: task12_cycle(b)), ('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('export', lambda: export_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

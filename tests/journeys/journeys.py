@@ -62,9 +62,9 @@ async def tonight_line(j):
     sel = '#advStart' if await j.visible('#advStart') else '#tnNowLine' if await j.visible('#tnNowLine') else None
     if not sel: return out
     t = (await j.text(sel)).replace('\u00bd', '.5')
-    m = re.match(r'\s*(?:Start with:\s*)?(.+?)(?:,\s*from feet|\s*\u00b7\s*feet|\.\s|$)', t)
+    m = re.match(r'\s*(?:Start with:\s*)?(.+?)(?:,\s*from feet|\s*\u00b7\s*feet|\s+Stand\s|\.\s|$)', t)
     if m: out['ball'] = m.group(1).strip()
-    m = re.search(r'feet\s*(-?\d+(?:\.\d+)?)\D+?aim\s*(-?\d+(?:\.\d+)?)', t)
+    m = re.search(r'(?:feet|stand)\s*(-?\d+(?:\.\d+)?)\D+?aim\s*(-?\d+(?:\.\d+)?)', t, re.I)   # IA P2: the pad line reads "BALL Stand F · Aim T ›" 
     if m: out['feet'], out['eyes'] = nums(m.group(1))[0], nums(m.group(2))[0]
     return out
 
@@ -133,12 +133,12 @@ async def j01_onboarding(j):
     tot = sum(x.taps for x in j.steps if x.task == 'onboard')
     async with j.step('Onboarding total taps', target_taps=10) as s:
         s.taps = 0; s.check(tot <= 10, f'onboarding took {tot} taps (target <= 10)')
-    async with j.step('Hand carries to More profile', carry='hand=left') as s:
-        await j.nav('/more'); await j.audit('more')
+    async with j.step('Hand carries to Me profile', carry='hand=left') as s:
+        await j.nav('/me'); await j.audit('me')
         txt = await j.page.inner_text('body')
         prof = await j.ev("() => JSON.parse(localStorage.getItem('ap_profile') || 'null')")
         s.check(prof and prof.get('hand') == 'left', f"profile saved hand=left ({prof and prof.get('hand')})")
-        s.check(re.search(r'\bleft\b', txt, re.I) is not None, 'More shows the hand as Left')
+        s.check(re.search(r'\bleft\b', txt, re.I) is not None, 'Me shows the hand as Left')
     async with j.step('Hand carries to Lane (mirrored)', carry='hand=left') as s:
         await j.nav('/lane'); await j.wait('#lane'); await j.audit('lane')
         lbl = await lefty_mirrored(j); s.check('left' in lbl.lower() or 'mirror' in lbl.lower(), f'lane is drawn for a left-hander ({lbl[:80]})')
@@ -150,7 +150,7 @@ async def j01_onboarding(j):
         await j.nav('/tonight'); await j.audit('tonight-empty')
         s.check(await j.visible('#noBag') or await j.visible('#advStart'), 'Tonight shows either a start line or how to add balls')
     async with j.step('Add a ball from the catalogue', task='add-ball', target_taps=6) as s:
-        await j.nav('/arsenal'); await j.audit('arsenal-empty')
+        await j.nav('/bag'); await j.tap('#bagView [data-v="all"]'); await j.settle(); await j.audit('arsenal-empty')
         if await j.visible('#arsAdd'): await j.tap('#arsAdd')
         else: await j.goto('/add-ball')
         await j.wait('#abQ, #abSearch'); await j.audit('add-ball')
@@ -202,7 +202,7 @@ async def j02_home_prep(j):
         await j.tap('#bagCare [aria-label="Status"] [data-v="proShop"]'); await j.settle(400)
         s.check(await j.page.get_attribute('#bagCare [aria-label="Status"] [data-v="proShop"]', 'aria-checked') == 'true', f'{opt[1]} is now Pro shop')
     async with j.step('Status carries to the Arsenal page', carry='status=proShop') as s:
-        await j.nav('/arsenal'); await j.audit('arsenal')
+        await j.nav('/bag'); await j.tap('#bagView [data-v="all"]'); await j.settle(); await j.audit('arsenal')
         txt = await j.text('#armory') if await j.page.locator('#armory').count() else await j.text('.screen')
         s.check(re.search(r'pro shop', txt, re.I), 'Arsenal shows the ball as at the pro shop')
     async with j.step('Status carries to Tonight (ball not suggested)', carry='status=proShop') as s:
@@ -215,8 +215,8 @@ async def j02_home_prep(j):
         await j.goto('/ball/' + oid.replace('own-', '')); await j.settle(500); await j.audit('ball')
         txt = await j.text('.screen'); s.check(re.search(r'pro shop', txt, re.I), 'ball page says Pro shop')
     async with j.step('Export the arsenal (file)', task='export', target_taps=3) as s:
-        await j.nav('/arsenal')
-        btn = j.page.locator('button, a').filter(has_text=re.compile(r'export|download|share', re.I))
+        await j.nav('/me'); await j.settle()   # IA P2: shortest path is Me › Your data › Export my arsenal (also on Bag › All my balls, +1 tap)
+        btn = j.page.locator('#moreExport, #arsExport').filter(has_text=re.compile(r'export', re.I))
         s.check(await btn.count() > 0, f'Arsenal has an Export button ({await btn.count()})')
         if await btn.count():
             await btn.first.click(); s.taps += 1; await j.settle(300)
@@ -307,7 +307,7 @@ async def j04_solo_game(j):
     async with j.step('The "now" line follows the ball change', carry='ball in hand') as s:
         await j.settle(300)
         line = (await j.text('#tnNowLine')) if await j.visible('#tnNowLine') else ''
-        s.check(not line or same_ball(line.split('·')[0].strip(), j.state['ball1']), f'top line "{line[:60]}" names the ball in hand "{j.state["ball1"][:30]}"')
+        s.check(not line or same_ball(re.split(r'\s+Stand\b|·', line)[0].strip(), j.state['ball1']), f'top line "{line[:60]}" names the ball in hand "{j.state["ball1"][:30]}"')
     async with j.step('Frames 3-5 with the new ball', task='frame') as s:
         await open_frame(j, [7]); await strike(j); await spare(j, [2, 4])
         shots = await j.data("() => window.__apData.projection().shots.slice(-4).map(x => x.ballId)")
@@ -331,7 +331,7 @@ async def j04_solo_game(j):
         tot = await j.data("() => { const P = window.__apData.projection(); const g = P.games[P.games.length - 1]; return g ? (g.score ?? g.total) : null; }")
         j.state['score'] = tot; s.check(tot == 247, f'score 247 (X 9/ X(fixed) X 8/ X X X X X9/) = {tot}')
     async with j.step('The game shows on Sessions with the same score', carry='night id, score') as s:
-        await j.nav('/sessions'); await j.audit('sessions')
+        await j.nav('/results'); await j.audit('results')
         txt = await j.text('#sessBody') if await j.page.locator('#sessBody').count() else await j.text('.screen')
         s.check(str(j.state['score']) in txt, f'{j.state["score"]} appears on Sessions')
 
@@ -499,7 +499,7 @@ async def j08_insights(j):
         lv = await j.text('#sessByLeave') if await j.page.locator('#sessByLeave').count() else ''
         s.check(re.search(r'\b10\b', lv), f'by-leave shows the 10 ("{lv[:80]}")')
     async with j.step('Sessions -> a night -> Back keeps the list position') as s:
-        await j.nav('/sessions'); await j.settle(300); await j.ev("() => scrollTo(0, 400)"); await j.settle(200); y0 = await j.ev("() => scrollY")
+        await j.nav('/results'); await j.settle(300); await j.ev("() => scrollTo(0, 400)"); await j.settle(200); y0 = await j.ev("() => scrollY")
         s.check(y0 > 0, f'Sessions list is long enough to scroll ({y0})')
         row = j.page.locator('#nightList a.night-row').last
         await row.scroll_into_view_if_needed(); y0 = await j.ev("() => scrollY"); await row.click(); s.taps += 1; await j.settle(500)
@@ -509,13 +509,13 @@ async def j08_insights(j):
 
 
 # ---------- J09 learning: Help ?, Bowling Guide, Learn more ----------
-HELP_SCREENS = ['/tonight', '/lane', '/target', '/arsenal', '/ball/rattler-big-bite', '/bag', '/patterns', '/sessions', '/card', '/more']
+HELP_SCREENS = ['/tonight', '/lane', '/target', '/bag?view=all', '/ball/rattler-big-bite', '/bag', '/learn/patterns', '/results', '/card', '/me']   # IA P2 homes
 
 async def j09_learning(j):
     await boot(j, 'beginner')
     await j.ev("async () => { const m = await import('./js/hub.js'); await m.ready(); if (!Object.keys(m.proj().owned || {}).length) await m.loadStarter(); }")
-    async with j.step('Turn Help on in More', task='help', target_taps=2, critical=True) as s:
-        await j.nav('/more'); await j.wait('#helpFld'); await j.tap('#helpFld [data-v="on"]')
+    async with j.step('Turn Help on in Learn', task='help', target_taps=2, critical=True) as s:
+        await j.nav('/learn'); await j.wait('#helpFld'); await j.tap('#helpFld [data-v="on"]')
         s.check(await j.page.get_attribute('#helpFld [data-v="on"]', 'aria-checked') == 'true', 'Help on')
     counts = {}
     async with j.step('Every screen has a "?" when Help is on') as s:
@@ -546,7 +546,7 @@ async def j09_learning(j):
             else: await j.page.keyboard.press('Escape')
         elif direct:
             await g.first.click(); s.taps += 1; await j.settle(400)
-        s.check(direct or via_dot, f'the Guide is reachable from Lane in <= 2 taps ({"direct link" if direct else "? then Learn more" if via_dot else "only via More"})')
+        s.check(direct or via_dot, f'the Guide is reachable from Lane in <= 2 taps ({"direct link" if direct else "? then Learn more" if via_dot else "only via Learn"})')
     async with j.step('Top-bar "?" turns Help off and on from the Lane screen', task='help', target_taps=2) as s:
         await j.goto('/lane'); await j.settle(300)
         if await j.visible('#helpToggle'):
@@ -559,7 +559,7 @@ async def j09_learning(j):
         await j.type('#glSearch', 'breakpoint'); await j.settle(300)
         c = await j.text('#glCount'); s.check(nums(c) and nums(c)[0] >= 1, f'"{c}"')
     async with j.step('Turn Help off: no "?" anywhere', task='help') as s:
-        await j.goto('/more'); await j.tap('#helpFld [data-v="off"]'); left = {}
+        await j.goto('/learn'); await j.tap('#helpFld [data-v="off"]'); left = {}
         for r in HELP_SCREENS:
             await j.goto(r); await j.settle(250); n = await j.page.locator('.help-dot').count()
             if n: left[r] = n
@@ -618,8 +618,8 @@ async def j11_data_trust(j):
         except Exception:
             ok = False
         s.check(ok, f'outbox empty; {j.api.posts} POSTs answered by the mock, 0 reached production')
-    async with j.step('More: storage chip and last backup are readable', task='data') as s:
-        await j.nav('/more'); await j.audit('more')
+    async with j.step('Me: storage chip and last backup are readable', task='data') as s:
+        await j.nav('/me'); await j.audit('me')
         chip = await j.text('#protChip') if await j.page.locator('#protChip').count() else ''
         s.check(chip, f'storage chip "{chip[:50]}"')
     backup = None
@@ -629,7 +629,7 @@ async def j11_data_trust(j):
         d = await dl.value; backup = os.path.join(j.run.media, f'{j.id}-{d.suggested_filename}'); await d.save_as(backup)
         j.state['backup'] = backup; body = json.load(open(backup)); s.check(isinstance(body, dict), f'{d.suggested_filename} parses')
     async with j.step('Export games CSV from Sessions', task='export', target_taps=2) as s:
-        await j.nav('/sessions'); await j.wait('#gamesCsv')
+        await j.nav('/results'); await j.wait('#gamesCsv')
         async with j.page.expect_download(timeout=8000) as dl:
             await j.tap('#gamesCsv')
         d = await dl.value; f = os.path.join(j.run.media, f'{j.id}-{d.suggested_filename}'); await d.save_as(f)
@@ -652,13 +652,13 @@ async def j12_coach(j):
     async with j.step('Coach imports the bowler\'s backup', critical=True, task='import') as s:
         await seed_history(j, nights=2)
         async with j.page.expect_download(timeout=8000) as dl:
-            await j.goto('/more'); await j.tap('#dlBackup')
+            await j.goto('/me'); await j.tap('#dlBackup')
         d = await dl.value; f = os.path.join(j.run.media, f'{j.id}-bowler.json'); await d.save_as(f)
         await j.wipe({'onboarded': True})
         await j.goto('/import'); await j.wait('#impFile', state='attached'); await j.page.set_input_files('#impFile', f); await j.wait('#impPreview'); await j.tap('#impCommit'); await j.wait('#impDone', timeout=10000)
         n = await j.data("() => Object.keys(window.__apData.projection().sessions).length"); s.check(n >= 2, f'{n} sessions')
     async with j.step('Sessions -> a night -> Card in <= 3 taps', task='review', target_taps=3) as s:
-        await j.nav('/sessions'); await j.wait('#nightList')
+        await j.nav('/results'); await j.wait('#nightList')
         await j.tap('#nightList a, #nightList .night-row'); await j.settle(500)
         s.check('#/session/' in j.page.url, 'night opened')
         if await j.visible('#sessToCard'): await j.tap('#sessToCard'); await j.settle(400)
@@ -846,11 +846,11 @@ async def j15_front(j):
         await j.nav('/tonight'); await j.settle(300)
         if await j.page.locator('#advEvent [data-event="league"]').count(): await j.page.click('#advEvent [data-event="league"]'); await j.settle(400)
         h = await j.ev("() => document.scrollingElement.scrollHeight")
-        s.check(h <= 1110, f'scrollHeight {h} <= 1110')
+        s.check(h <= 1130, f'scrollHeight {h} <= 1130')   # P2: +Stand · Aim chip row (owner-required); still < 1.5 screens (1170)
         sb = await first_viewport(j, r'Start bowling'); s.check(sb is not None and sb <= 740, f'Start bowling bottom {sb} px')
         ab = await first_viewport(j, r'Add a bowler'); s.check(ab is not None and ab <= 740, f'Add a bowler bottom {ab} px')
-    async with j.step('More: Learn card first; Glossary in <= 2 taps with no scroll', task='learn', target_taps=2) as s:
-        await j.nav('/more'); s.taps += 1; await j.settle(400)
+    async with j.step('Learn tab: search first; Glossary in <= 2 taps with no scroll', task='learn', target_taps=2) as s:
+        await j.nav('/learn'); await j.settle(400)
         g = await first_viewport(j, r'Glossary'); s.check(g is not None and g <= 740, f'Glossary link bottom {g} px')
-        first = await j.ev("() => { const c = [...document.querySelectorAll('.screen section, .screen .card, .screen details')].find(e => e.getBoundingClientRect().height > 0); return c ? c.innerText.slice(0, 80) : ''; }")
-        s.check(re.search(r'^\s*Learn', first), f'first card is Learn ("{first[:40]}")')
+        first = await j.ev("() => { const c = [...document.querySelectorAll('.screen form, .screen section, .screen .card, .screen details')].find(e => e.getBoundingClientRect().height > 0); return c ? (c.id || '') + ' ' + c.innerText.slice(0, 80) : ''; }")
+        s.check(re.search(r'^lnForm|^\s*Learn', first), f'first block is the word search / Learn ("{first[:40]}")')

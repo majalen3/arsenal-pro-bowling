@@ -1,5 +1,5 @@
 import { balls } from '../data.js';
-import { allLines, applyLine, deleteLine, restoreLine, lsGet, LS, saveNote, logFinish, on, today } from '../store.js';
+import { allLines, applyLine, deleteLine, restoreLine, lsGet, LS, saveNote, logFinish, on, today, prefs } from '../store.js';
 import { h, icon, toast, confirmSheet, emptyState, segmented } from '../ui.js';
 import { go } from '../router.js';
 import { arrowsBoard } from '../cc/geom.js';
@@ -69,7 +69,14 @@ export async function render() {
     const line = x => { const s = x.stats; if (s.avg != null) return `${s.games} game${s.games === 1 ? '' : 's'} \u00b7 ${s.avg} avg${s.games > 1 ? ' \u00b7 ' + s.series + ' series' : ''}`;
       if (s.ltx) return `${s.ltx.shots} shots \u00b7 ${s.ltx.strikes} strikes \u00b7 ${s.ltx.spareMade}/${s.ltx.spare} spares`;
       const t = s.throws; return t ? `In progress \u00b7 ${t.strikes} strikes on ${t.first} first balls` : 'Saved'; };
-    return [h('a', { class:'btn ghost block', href:'#/card', id:'goCard' }, 'My Bowler Card'),
+    // IA P2: Results opens on the last night's recap (same headline as the night view), with Fix a frame one tap away.
+    const last = list[0], r = C.recapOf(list, last.id, { myAvg: (P.sessions[last.id] || {}).event === 'league' ? (prefs().league || {}).myAvg : null });
+    const fixable = last.games.some(g => g.throws && g.throws.length);
+    const lastCard = h('div', { class:'card', id:'resLast' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Latest night' }), h('span', { class:'muted small', id:'resLastWhen', text:fmt(last.date) })),
+      h('p', { class:'bc-headline', id:'resLastHead', text:r ? r.head : line(last) }),
+      h('div', { class:'btn-grid' }, h('a', { class:'btn primary', id:'resRecap', href:'#/session/' + encodeURIComponent(last.id) }, 'Full recap \u203a'),
+        fixable ? h('a', { class:'btn ghost', id:'resFix', href:'#/session/' + encodeURIComponent(last.id) + '?fix=1' }, 'Fix a frame') : null));
+    return [lastCard, h('a', { class:'btn ghost block', href:'#/card', id:'goCard' }, 'My Bowler Card'),
       h('ul', { class:'plain night-list', id:'nightList' }, ...list.map(x => h('li', {}, h('a', { class:'night-row', href:'#/session/' + encodeURIComponent(x.id), 'data-sid':x.id },
         h('span', { class:'line-text' }, h('span', { class:'line-name', text:fmt(x.date) }), h('span', { class:'line-meta', text:line(x) })),
         h('span', { class:'pill', text:x.source === 'Scored on Tonight' ? 'Scored' : x.source }))))),
@@ -81,6 +88,6 @@ export async function render() {
   function draw() { body.innerHTML = ''; body.append(...(st.tab === 'nights' ? nights() : st.tab === 'lines' ? lines() : st.tab === 'shots' ? shots() : notes())); }
   draw();
   const offs = [on('data', () => st.tab === 'nights' && draw()), on('lines', () => st.tab === 'lines' && draw()), on('alley', () => st.tab === 'notes' && !body.contains(document.activeElement) && draw())];
-  const el = h('section', { class:'screen list-screen' }, h('header', { class:'appbar' }, h('h1', { class:'title' }, 'Sessions', helpDot('sc-average', 'Average'))), h('div', { class:'list-tools' }, seg), body);
-  return { el, title:'Sessions', destroy() { offs.forEach(f => f()); } };
+  const el = h('section', { class:'screen list-screen' }, h('header', { class:'appbar' }, h('h1', { class:'title' }, 'Results', helpDot('sc-average', 'Average'))), h('div', { class:'list-tools' }, seg), body);
+  return { el, title:'Results', destroy() { offs.forEach(f => f()); } };
 }

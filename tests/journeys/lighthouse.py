@@ -8,7 +8,7 @@ Exit 1 when any screen is under budget; scores go to summary.json next to the HT
 import argparse, glob, json, os, subprocess, sys
 
 BUDGET = {'performance': 0.80, 'accessibility': 0.95, 'best-practices': 0.90}
-ROUTES = [('welcome', '#/welcome'), ('tonight', '#/tonight'), ('lane', '#/lane'), ('arsenal', '#/arsenal'), ('sessions', '#/sessions'), ('more', '#/more')]
+ROUTES = [('welcome', '#/welcome'), ('tonight', '#/tonight'), ('bowl', '#/bowl'), ('lane', '#/lane'), ('results', '#/results'), ('bag', '#/bag'), ('learn', '#/learn'), ('me', '#/me')]   # IA P2 five tabs + Me
 
 
 def chrome():
