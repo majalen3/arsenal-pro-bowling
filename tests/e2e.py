@@ -176,7 +176,7 @@ async def deck_cases(b):
     check(rl < 15 < rr, f'[lefty] press near the foul line: screen left = low boards, screen right = high boards {rl} {rr}')
     await p.evaluate("localStorage.clear();localStorage.setItem('ap_prefs','{\"onboarded\":true}');localStorage.setItem('ap_profile','{\"hand\":\"left\"}')")
     await p.reload(); await p.wait_for_selector('#deck'); await p.wait_for_timeout(300)
-    await p.evaluate("localStorage.setItem('ap_profile','{\"hand\":\"right\"}')"); await p.reload(); await p.wait_for_selector('#deck')
+    await p.evaluate("localStorage.setItem('ap_profile','{\"hand\":\"right\",\"speed\":15,\"rev\":220}')"); await p.reload(); await p.wait_for_selector('#deck')
     await p.click('[data-miss=right]'); await p.click('[data-miss=right]'); await p.wait_for_timeout(500)
     check(await p.get_attribute('#deckCard', 'data-tone') == 'info' and 'Light' in await p.get_attribute('#deck', 'aria-label'), '[deck] light hit coloured as light')
     if SHOTS: await (await p.query_selector('#deckCard')).screenshot(path=os.path.join(SHOTS, 'phone-deck-light.png'))
@@ -872,15 +872,35 @@ async def quicklog_cycle(b):
 class MockEvents:
     """In-memory stand-in for /api/events + the v1 endpoints (same contract as arsenal-pro-api). Intercepts the API host,
     so nothing reaches production. online=False makes every request fail like airplane mode."""
-    def __init__(self): self.rows, self.seq, self.online, self.quota, self.posts = [], 0, True, 5000, 0
+    def __init__(self): self.rows, self.seq, self.online, self.quota, self.posts, self.users, self.tokens, self.authlog = [], 0, True, 5000, 0, {}, {}, []
     def mine(self, dev): return [r for r in self.rows if r[0] == dev]
     async def handle(self, route):
         req = route.request
         if not self.online: return await route.abort('internetdisconnected')
         from urllib.parse import urlparse, parse_qs
-        u = urlparse(req.url); dev = req.headers.get('x-device-id'); hdr = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, X-Device-Id', 'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS', 'Access-Control-Expose-Headers': 'Retry-After'}
+        u = urlparse(req.url); dev = req.headers.get('x-device-id'); auth = req.headers.get('authorization'); hdr = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, X-Device-Id, Authorization', 'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS', 'Access-Control-Expose-Headers': 'Retry-After'}
         if req.method == 'OPTIONS': return await route.fulfill(status=204, headers=hdr)
         def js(st, body): return route.fulfill(status=st, headers=hdr, content_type='application/json', body=json.dumps(body))
+        # Accounts (2026-10-31): same contract as arsenal-pro-api's /api/auth/* and /api/account*; events under 'u:<id>'.
+        if u.path.startswith('/api/auth/') or u.path.startswith('/api/account'):
+            body = json.loads(req.post_data or '{}') if req.method != 'GET' else {}
+            def issue(i): t = f'tok{len(self.tokens) + 1}'; self.tokens[t] = i; return {'token': t, 'expiresAt': '2099-01-01T00:00:00.000Z', 'user': {'id': i, 'email': self.users[i]['email']}}
+            if u.path == '/api/auth/signup':
+                if any(x['email'] == body.get('email') for x in self.users.values()): return await js(409, {'error': 'An account with that email already exists. Sign in instead.'})
+                i = f'user{len(self.users) + 1}'; self.users[i] = {'email': body['email'], 'password': body['password']}; return await js(201, dict(issue(i), recoveryKey=f'RKEY-{i}-0000'))
+            if u.path == '/api/auth/login':
+                i = next((k for k, x in self.users.items() if x['email'] == body.get('email') and x['password'] == body.get('password')), None)
+                return await js(200, issue(i)) if i else await js(401, {'error': 'Email or password is wrong.'})
+            i = self.tokens.get((auth or '').replace('Bearer ', '')); self.authlog.append((req.method, u.path, bool(auth), dev))
+            if not i: return await js(401, {'error': 'Not signed in.'})
+            if u.path == '/api/auth/logout': self.tokens = {t: v for t, v in self.tokens.items() if 'Bearer ' + t != auth}; return await js(200, {'ok': True})
+            if u.path == '/api/account' and req.method == 'DELETE':
+                if body.get('password') != self.users[i]['password']: return await js(403, {'error': 'Password is wrong.'})
+                self.rows = [r for r in self.rows if r[0] != 'u:' + i]; self.tokens = {t: v for t, v in self.tokens.items() if v != i}; del self.users[i]; return await js(200, {'deleted': {'account': 1}})
+            if u.path == '/api/account/export': return await js(200, {'user': {'id': i}, 'events': [r[2] for r in self.mine('u:' + i)]})
+            if u.path == '/api/account': return await js(200, {'user': {'id': i, 'email': self.users[i]['email']}})
+            dev = 'u:' + i
+            u = u._replace(path=u.path.replace('/api/account/events', '/api/events'))
         if u.path == '/api/events' and req.method == 'POST':
             self.posts += 1
             if len(req.post_data or '') > 20480: return await js(413, {'error': 'body too large'})
@@ -1721,7 +1741,7 @@ async def ia5_cycle(b):
     check(not r['cur'] and r['bar'] != 'none' and 'Me' in r['title'] and not r['me'], f'[ia5] Me opens #/me: no tab current, tab bar stays, no Me button on Me {r}')
     # v1.0 release: Me > About states the version, a plain privacy note, and opens outside links safely.
     ab = await p.evaluate("() => ({ v: (document.querySelector('#aboutVersion') || {}).textContent || '', priv: (document.querySelector('#aboutPrivacy') || {}).textContent || '', ext: [...document.querySelectorAll('.screen a[target=_blank]')].every(a => (a.rel || '').includes('noopener')), api: document.body.innerText.includes('onrender') })")
-    check(ab['v'].startswith('Version 1.0.0') and 'No account, no ads, no tracking' in ab['priv'] and ab['ext'] and not ab['api'], f'[release] Me > About: version 1.0.0, privacy note, outside links noopener, no server host shown {ab}')
+    check(ab['v'].startswith('Version 1.0.0') and 'account is optional' in ab['priv'] and 'No ads, no tracking' in ab['priv'] and ab['ext'] and not ab['api'], f'[release] Me > About: version 1.0.0, privacy note, outside links noopener, no server host shown {ab}')
     for old, new in [('#/sessions', '#/results'), ('#/arsenal', '#/bag?view=all'), ('#/more', '#/me'), ('#/patterns', '#/learn/patterns')]:
         await p.goto(BASE + '?i5r' + old); await p.wait_for_timeout(500)
         check(p.url.split('#')[-1] == new[1:], f'[ia5] redirect {old} -> {new} ({p.url.split("#")[-1]})')
@@ -1825,11 +1845,70 @@ async def task12_cycle(b):
     check(not errs, '[task12] no page errors ' + ' | '.join(errs[:2]))
     await c.close()
 
+async def account_cycle(b):
+    # Optional accounts (2026-10-31): signed out works; create -> recovery key -> add this phone's data -> second phone signs in and gets it;
+    # sign out keeps data; delete needs the password. Mock API only (nothing reaches production).
+    errs = []; m = MockEvents()
+    async def phone(dev):
+        c = await b.new_context(viewport={'width': 414, 'height': 896}, is_mobile=True, has_touch=True); c.set_default_timeout(10000)
+        await c.route(API, m.handle); p = await page(c, errs); await p.goto(BASE); await p.evaluate(WIPE)
+        await p.evaluate(f"localStorage.setItem('ap_prefs', JSON.stringify({{onboarded:true}})); localStorage.setItem('ap_device', '{dev}')"); return c, p
+    c1, p = await phone('d-e2e-acct-0001')
+    await p.goto(BASE + '?acct1#/tonight'); await p.wait_for_selector('#noBag')
+    check(await p.locator('#acctSignIn, #acctCreate, #acctSheet').count() == 0, '[account] Tonight never asks to sign in')
+    await load_sample(p); await p.wait_for_function("() => window.__apSync && window.__apSync.outbox() === 0", timeout=15000)
+    n = len(m.mine('d-e2e-acct-0001')); check(n > 0 and not m.authlog, f'[account] signed out: data backs up under the backup code only ({n} events, 0 account calls)')
+    await p.goto(BASE + '?acct2#/more'); await p.wait_for_selector('#accountCard #acctCreate')
+    sz = await p.evaluate("['#acctSignIn','#acctCreate'].map(s => document.querySelector(s).getBoundingClientRect().height)")
+    check(min(sz) >= 44, f'[account] Me: Sign in / Create account are 44 px {sz}')
+    priv = await p.text_content('#aboutPrivacy'); check('account is optional' in priv and 'export or delete' in priv, '[account] privacy note explains the optional account')
+    await shot(p, 'phone-me-signin')
+    await p.click('#acctCreate'); await p.wait_for_selector('#acctSheet #acctEmail')
+    await p.fill('#acctEmail', 'e2e@example.com'); await p.fill('#acctPass', 'short'); await p.click('#acctSubmit')
+    check('8 characters' in await p.text_content('#acctErr'), '[account] short password: plain error, nothing sent')
+    await p.fill('#acctPass', 'e2e-password-1'); await p.click('#acctSubmit'); await p.wait_for_selector('#recKeySheet #recKey')
+    check((await p.text_content('#recKey')) == 'RKEY-user1-0000', '[account] recovery key shown once after create')
+    check(await apx(p, "JSON.parse(localStorage.getItem('ap_account')).pending === true") and not m.mine('u:user1'), '[account] nothing goes to the account before the choice')
+    await p.click('#recDone'); await p.wait_for_selector('#migSheet #migAdd')
+    await shot(p, 'phone-me-migrate')
+    await p.click('#migAdd'); await p.wait_for_function(f"() => window.__apSync && window.__apSync.state().code === 'acct:user1' && window.__apSync.outbox() === 0", timeout=15000)
+    ev = await apx(p, "window.__apData.events()")
+    check(len(m.mine('u:user1')) == ev, f"[account] 'Add this phone's data': all {ev} events in the account ({len(m.mine('u:user1'))})")
+    check(all(a for (_, path, a, d) in m.authlog if path.startswith('/api/account')) and all(d is None for (_, path, a, d) in m.authlog), '[account] account calls use the bearer token, never the backup code')
+    await p.wait_for_selector('#accountCard #acctWho'); check('e2e@example.com' in await p.text_content('#acctWho'), '[account] Me shows who is signed in')
+    # Second phone: sign in, no local data -> no migration question, pull gives the same arsenal.
+    c2, q = await phone('d-e2e-acct-0002')
+    await q.goto(BASE + '?acct3#/more'); await q.wait_for_selector('#acctSignIn'); await q.click('#acctSignIn')
+    await q.fill('#acctEmail', 'e2e@example.com'); await q.fill('#acctPass', 'wrong-password'); await q.click('#acctSubmit')
+    await q.wait_for_function("() => document.querySelector('#acctErr').textContent.length > 0"); check('wrong' in await q.text_content('#acctErr'), '[account] wrong password: plain error')
+    await q.fill('#acctPass', 'e2e-password-1'); await q.click('#acctSubmit')
+    await q.wait_for_function(f"() => window.__apData && window.__apData.events() === {ev}", timeout=15000)
+    check(await q.locator('#migSheet').count() == 0, '[account] empty phone: no migration question')
+    h1, h2 = await apx(p, "window.__apData.hash()"), await apx(q, "window.__apData.hash()")
+    check(h1 == h2, '[account] second phone signed in: identical arsenal and history')
+    await q.goto(BASE + '?acct4#/arsenal'); await q.wait_for_selector('#armBag'); await q.wait_for_timeout(300)
+    nb = await q.locator('#armBag .ped, #armBag [data-ball], #armBag button').count(); check(nb > 0, f'[account] signed-in arsenal shows the synced balls ({nb})')
+    await shot(q, 'phone-arsenal-signedin')
+    # Isolation: a different account sees none of it.
+    c3, r = await phone('d-e2e-acct-0003'); await r.goto(BASE + '?acct5#/more'); await r.click('#acctCreate')
+    await r.fill('#acctEmail', 'other@example.com'); await r.fill('#acctPass', 'other-password'); await r.click('#acctSubmit'); await r.wait_for_selector('#recDone'); await r.click('#recDone')
+    await r.wait_for_function("() => window.__apSync && window.__apSync.state().code === 'acct:user2'", timeout=15000); await apx(r, "window.__apSync.run()")
+    check(await apx(r, "window.__apData.events()") == 0, '[account] another account gets none of user1\'s data')
+    # Sign out keeps the phone's data; delete needs the password and removes the server copy.
+    await q.goto(BASE + '?acct6#/more'); await q.click('#acctSignOut'); await q.click('#soKeep'); await q.wait_for_selector('#acctSignIn')
+    check(await apx(q, "window.__apData.events()") == ev, '[account] sign out keeps data on this phone')
+    await p.goto(BASE + '?acct7#/more'); await p.click('#acctMore summary'); await p.click('#acctDelete'); await p.fill('#delPass', 'nope-nope'); await p.click('#delConfirm')
+    await p.wait_for_function("() => document.querySelector('#delErr').textContent.length > 0"); check('user1' in m.users, '[account] delete with the wrong password does nothing')
+    await p.fill('#delPass', 'e2e-password-1'); await p.click('#delConfirm'); await p.wait_for_selector('#acctSignIn')
+    check('user1' not in m.users and not m.mine('u:user1') and await apx(p, "window.__apData.events()") == ev, '[account] delete: account and server copy gone, phone keeps its data')
+    check(not errs, f'[account] no page errors {errs[:3]}')
+    for c in (c1, c2, c3): await c.close()
+
 async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('tonightfold', lambda: tonightfold_cycle(b)), ('ia5', lambda: ia5_cycle(b)), ('task12', lambda: task12_cycle(b)), ('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('export', lambda: export_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('account', lambda: account_cycle(b)), ('tonightfold', lambda: tonightfold_cycle(b)), ('ia5', lambda: ia5_cycle(b)), ('task12', lambda: task12_cycle(b)), ('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('export', lambda: export_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)
