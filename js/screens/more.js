@@ -86,8 +86,8 @@ export function render() {
       h('div', { class:'card' }, h('h2', { class:'card-title', text:'About' }),
         h('p', { class:'small', text:'Arsenal Pro models how each ball in your arsenal reads the lane, and coaches your next move. Ball specs come from manufacturer data (marked est. where estimated). Pattern library: Kegel Pattern Library via CarryDown.' }),
         h('p', { class:'small', id:'aboutPrivacy', text:'Privacy: your games, balls and notes are saved on this phone first and work offline. A copy syncs to the Arsenal Pro server under your backup code so you can restore it. No account, no ads, no tracking, and it is free.' }),
-        h('p', { class:'small' }, h('a', { href:'https://github.com/majalen3/arsenal-pro-bowling/blob/main/CHANGELOG.md', target:'_blank', rel:'noopener', id:'aboutChanges' }, 'What\u2019s new'), ' \u00b7 ',
-          h('a', { href:'https://github.com/majalen3/arsenal-pro-bowling', target:'_blank', rel:'noopener' }, 'Source code')),
+        h('div', { class:'row gap wrap' }, h('a', { class:'btn ghost', href:'https://github.com/majalen3/arsenal-pro-bowling/blob/main/CHANGELOG.md', target:'_blank', rel:'noopener', id:'aboutChanges' }, 'What\u2019s new'),
+          h('a', { class:'btn ghost', href:'https://github.com/majalen3/arsenal-pro-bowling', target:'_blank', rel:'noopener', id:'aboutSource' }, 'Source code')),
         build));
     if (self.caches) caches.keys().then(ks => { const k = ks.find(x => /^arsenal-pro-v\d+$/.test(x)); if (k) build.textContent += ` \u00b7 offline build ${k.replace('arsenal-pro-', '')}`; }).catch(() => {});
     paintStat();
