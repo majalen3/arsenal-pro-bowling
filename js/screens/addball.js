@@ -37,7 +37,7 @@ export async function render() {
   const el = h('section', { class: 'screen list-screen', id: 'addBall' },
     h('header', { class: 'appbar' }, h('button', { class: 'btn ghost', id: 'abBack', 'aria-label': 'Back to Bag', onclick: () => go('#/bag') }, '\u2039 Bag'), h('h1', { class: 'title', text: 'Add a ball' })), body);
   const st = { q: '', brand: '', pick: null, look: null, lookState: 'idle', lookMsg: '', weight: 15, weightSet: false, level: null, ctl: null, makerCands: null, saving: false, manual: {} };
-  const q = h('input', { type: 'search', class: 'search', id: 'abQ', placeholder: 'e.g. Storm Phaze II', 'aria-label': 'Ball brand and model', autocomplete: 'off', enterkeyhint: 'search' });
+  const q = h('input', { type: 'search', class: 'search', id: 'abQ', placeholder: 'e.g. Storm Hy-Road Pearl', 'aria-label': 'Ball brand and model', autocomplete: 'off', enterkeyhint: 'search' });
   const brandSel = h('select', { id: 'abBrand', 'aria-label': 'Brand for the maker lookup' }, h('option', { value: '', text: 'Brand: detect from name' }),
     ...A.LOOKUP_BRANDS.concat(Object.keys(A.UNSUPPORTED)).map(b => h('option', { value: b, text: b })));
   const results = h('div', { id: 'abResults', 'aria-live': 'polite' }), detail = h('div', { class: 'stack', id: 'abDetail' });

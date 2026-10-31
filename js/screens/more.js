@@ -10,6 +10,7 @@ import * as HAND from '../cc/hand.js';
 import { profileForm, ownedPicker } from './welcome.js';
 import { gameTotalButton } from './gametotal.js';
 import { applyTheme } from '../main.js';
+import { helpDot } from './help.js';
 export const VERSION = '2.0.0';
 // IA P2: the Me screen (header button on every tab): profile, data, appearance, sync, about. Learn and the Help switch moved to the Learn tab.
 export function render() {
@@ -88,6 +89,6 @@ export function render() {
   }
   draw();
   const off = on('status', paintStat), offD = on('data', paintData), offS = on('sync', paintData);
-  const el = h('section', { class:'screen list-screen' }, h('header', { class:'appbar' }, h('h1', { class:'title', text:'Me' })), body);
+  const el = h('section', { class:'screen list-screen' }, h('header', { class:'appbar' }, h('h1', { class:'title' }, 'Me', helpDot('bm-matchup', 'Speed / rev match'))), body);
   return { el, title:'Me', destroy:() => { off(); offD(); offS(); } };
 }
