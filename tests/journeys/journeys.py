@@ -233,7 +233,9 @@ async def j02_home_prep(j):
 
 # ---------- J03 arrival: center memory, pattern, Tonight stand/aim ----------
 async def j03_arrival(j):
-    await boot(j, 'righty', clock=NIGHT0)
+    # Tonight reads the bowler's own speed/rev (d9997bd); the 2-D model finds no strike line for 15 mph / 300 rpm on the 41 ft
+    # sport preset and Tonight honestly says so. J03 is about the same line on every screen, so its bowler throws 250 rpm.
+    await boot(j, 'righty250', clock=NIGHT0)
     await seed_history(j, nights=2)
     await j.page.reload(); await j.settle(500)
     async with j.step('Type the center: last-time card appears', task='arrive', critical=True) as s:
@@ -756,7 +758,7 @@ async def j13_status(j):
         s.check(ok and st == 'proShop', f'{j.state["psName"]} stored as proShop ({st})')
     async with j.step('Without a reload, the builder leaves it out and says why ("At the pro shop")', carry='status=proShop') as s:
         await j.nav('/bag'); await j.settle(500)
-        await click_text(j, s, r'^\s*Show all\b')   # Left out lists the first few; the rest are one tap away
+        await unfold(j, '#bagLeft', '#bagLeftAll')   # C9: Left out is folded; it lists the first few and the rest are one tap away
         why = await j.ev("n => { const re = /why not|left out/i; const sec = [...document.querySelectorAll('section, details, div')].find(e => re.test((e.querySelector('h2,h3,summary') || {}).textContent || ''));"
                          " return sec ? sec.innerText : ''; }", j.state['psName'])
         s.check(bool(why), 'a "Why not" / "Left out" section exists')
@@ -784,7 +786,7 @@ async def j13_status(j):
             await j.goto('/ball/' + b2['id'].replace('own-', '')); await j.settle(400); ok = await click_text(j, s, r'^\s*At home\s*$')
         st = next((b['status'] for b in await owned(j) if b2 and b['id'] == b2['id']), None)
         s.check(ok and st == 'benched', f'{n2} stored as At home (benched) ({st})')
-        await j.nav('/bag'); await j.settle(400); t = await visible_text(j)
+        await j.nav('/bag'); await j.settle(400); await unfold(j, '#bagLeft', '#bagLeftAll'); t = await visible_text(j)   # C9: Left out is folded
         s.check(re.search(r'grab from home', t, re.I), 'the builder tags it "grab from home"')
     async with j.step('Retired: never offered, history kept') as s:
         b3 = next((b for b in await owned(j) if b['status'] == 'inBag'), None); n3 = b3 and names.get(b3['id'], '')
@@ -818,7 +820,7 @@ async def j14_bag(j):
         t = await visible_text(j); s.check(re.search(r'Bring\s*:?\s*7\b', t), 'Bring: 7 accepted')
     async with j.step('Builder reads as 3 steps: where, your bag for tonight, left out (why not)') as s:
         await j.nav('/tonight'); await j.settle(300); await j.nav('/bag'); await j.settle(400)
-        await click_text(j, s, r'^\s*Show all\b')
+        await unfold(j, '#bagLeft', '#bagLeftAll')   # C9: Left out (why not) is folded; a bowler opens it with one tap
         t = await visible_text(j)
         for w in (r'Where|lanes', r'Your bag for tonight|Tonight.s bag', r'Left out|Why not'):
             s.check(re.search(w, t, re.I), f'step heading /{w}/')

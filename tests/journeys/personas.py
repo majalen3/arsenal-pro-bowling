@@ -5,6 +5,7 @@ import datetime
 # Profiles. 'hand' is always set explicitly (owner, 2026-10-24: hand is chosen, never guessed).
 PERSONAS = {
     'righty':   dict(label='Righty league bowler', hand='right', style='tweener', speed=15.0, rev=300, pap='4 3/4 x 1/2 up', starter=True, avg=180),
+    'righty250': dict(label='Righty league bowler, 250 rpm', hand='right', style='tweener', speed=15.0, rev=250, pap='4 3/4 x 1/2 up', starter=True, avg=180),
     'lefty':    dict(label='Lefty stroker', hand='left', style='stroker', speed=14.5, rev=250, pap='', starter=True, avg=170),
     'beginner': dict(label='Beginner, two balls, help on', hand='right', style='stroker', speed=13.5, rev=200, pap='', starter=False, avg=120, help=True),
     'league4':  dict(label='League team of 4 (captain scores for the team)', hand='right', style='tweener', speed=15.5, rev=320, pap='', starter=True, avg=180,
