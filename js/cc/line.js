@@ -3,6 +3,7 @@
 import { prefs, setPrefs } from '../store.js';
 import { DEFAULTS as TGD } from './target.js';
 import { modelLine } from './model.js';
+import { START } from '../engine.js';
 import { rule31, HOUSE_ASSUMED } from './rank.js';
 // Stand board = laydown + offset − drift (Breakdown Bowling). Offset/drift are the bowler's Targeting settings, else the assumed 7 / 0.
 export function standOf(lay) {
@@ -25,7 +26,7 @@ export function clearKept(id) { const m = Object.assign({}, prefs().myLines); if
 // ml is the 2-D model line; when the bowler kept their own line, ml.feet/ml.target are theirs (ml.kept = true) and the
 // model's breakpoint/holds numbers are dropped, because they describe the model's line, not this one.
 export function lineFor(cat, { speed, rev, ft } = {}) {
-  const f = ft == null ? HOUSE_ASSUMED.ft : ft, sp = speed || 15, rv = rev || 220;
+  const f = ft == null ? HOUSE_ASSUMED.ft : ft, sp = speed || START.speed, rv = rev || START.rev;
   const k = [cat && cat.id, sp, rv, f].join('|');
   let ml = memo.get(k);
   if (!ml) { ml = cat ? modelLine(cat, { speed: sp, rev: rv, ft: f, finish: 'factory', target31: rule31(f).target }) : { none: true, reason: 'no ball' }; memo.set(k, ml); }

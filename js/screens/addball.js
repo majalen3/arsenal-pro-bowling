@@ -1,6 +1,7 @@
 // #/add-ball (docs/TEAM_PROMPT_ADD_BALL.md). Type a name → catalogue match → maker-site lookup (server, allowlisted,
 // cached) → confirm every field with its source chip → engine card vs the benchmark on tonight's pattern → grid placement
 // → save as an owned ball At home (status key `benched`). Nothing is saved until the user taps Add. Unknown fields read "spec TBD".
+import { START } from '../engine.js';
 import { h, toast, segmented } from '../ui.js';
 import { go } from '../router.js';
 import { ready, proj, add } from '../hub.js';
@@ -134,7 +135,7 @@ export async function render() {
     // ---- 3. engine card
     const b = P.bowler || {}, num = f => { const v = f && typeof f === 'object' ? f.v : f; return v == null || isNaN(+v) ? null : +v; };
     const s = (P.sessions || {})[openNight(P) || ''] || {}, ft = s.ft != null ? s.ft : HOUSE_ASSUMED.ft, patName = s.ft != null ? (s.patternName || s.patternSlug || 'Tonight') : 'House shot (assumed)';
-    const speed = num(b.speed) || 15, rev = num(b.rev) || 220, eng = h('div', { class: 'card', id: 'abEngine' }, h('h2', { class: 'card-title', text: '3. Ball motion vs the benchmark' }));
+    const speed = num(b.speed) || START.speed, rev = num(b.rev) || START.rev, eng = h('div', { class: 'card', id: 'abEngine' }, h('h2', { class: 'card-title', text: '3. Ball motion vs the benchmark' }));
     const miss = A.missing(fields);
     if (miss.length) eng.append(h('p', { class: 'small', id: 'abNoEngine', text: `Spec TBD: no engine run. Missing ${miss.join(', ')}.` }));
     else {

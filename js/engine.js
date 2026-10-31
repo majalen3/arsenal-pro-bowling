@@ -5,7 +5,9 @@ import { balls, rgOf, diffOf } from './data.js';
 export const LW=220, LH=880;
 // Control state. Ranges/steps are the v1 input ranges.
 // speed/rev start mid-range of the app's own hints (15–17 mph, 200–300 rpm) until the bowler enters theirs (de-brand 2026-10-31).
-export const S = { speed:16, rev:250, release:12, aim:-4, oil:1, finish:'factory', pattern:'house' };
+// START: the fixed fallback when no profile is set (S below is the live lane state and changes).
+export const START = Object.freeze({ speed:16, rev:250 });
+export const S = { speed:START.speed, rev:START.rev, release:12, aim:-4, oil:1, finish:'factory', pattern:'house' };
 export const RANGES = { speed:[12,22,0.5], rev:[100,500,10], release:[5,30,1], aim:[-8,8,0.5], oil:[0.6,1.5,0.1] };
 export const FINISHES = ['factory','500','1000','2000','3000','polished'];
 export const PATTERNS = ['house','sport','cheetah','scorpion','shark','dry'];

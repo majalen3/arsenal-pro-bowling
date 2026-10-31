@@ -4,7 +4,7 @@
  "ap_surface": "[{\"ballId\":\"rattler-big-bite\",\"date\":\"2026-09-01\",\"finish\":\"2000\",\"synced\":true}]",
  "ap_notes": "[{\"lane\":\"Lanes 5-6\",\"oil\":\"House\",\"adjustment\":\"2 left\",\"synced\":true},{\"lane\":\"Lanes 5-6\",\"oil\":\"House\",\"adjustment\":\"2 left\",\"synced\":true}]",
  "ap_shots": "[{\"t\":1760000000000,\"ballId\":\"rattler-big-bite\",\"pattern\":\"house\",\"miss\":\"high\",\"before\":{\"release\":12},\"after\":{\"release\":13}},{\"t\":1760000060000,\"ballId\":\"rattler-big-bite\",\"pattern\":\"house\",\"miss\":\"light\"},{\"t\":1760200000000,\"ballId\":\"hy-road-pearl\",\"pattern\":\"sport\",\"miss\":\"left\"}]",
- "ap_profile": "{\"hand\":\"right\",\"style\":\"tweener\",\"speed\":15,\"rev\":220,\"pap\":\"5 1/8\",\"tilt\":\"\",\"owned\":[\"rattler-big-bite\",\"ice-storm\"]}",
+ "ap_profile": "{\"hand\":\"right\",\"style\":\"tweener\",\"speed\":16,\"rev\":250,\"pap\":\"4 3/4\",\"tilt\":\"\",\"owned\":[\"rattler-big-bite\",\"ice-storm\"]}",
  "ap_dels": "[1003,1004]",
  "ap_state": "{\"ball\":\"rattler-big-bite\"}"
 }

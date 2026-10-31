@@ -24,7 +24,7 @@ test('migration golden: counts per key', () => {
   assert.ok(P.notes.every(n => n.date === null));
   assert.equal(P.shots.length, 3); assert.equal(Object.keys(P.sessions).length, 2);
   assert.ok(Object.values(P.sessions).every(s => s.synthetic && s.kind === 'legacy'));
-  assert.equal(P.bowler.hand, 'right'); assert.equal(P.bowler.speed.v, 15); assert.equal(P.bowler.speed.at, 'unknown');
+  assert.equal(P.bowler.hand, 'right'); assert.equal(P.bowler.speed.v, 16); assert.equal(P.bowler.speed.at, 'unknown');
   assert.equal(Object.keys(P.owned).length, 2);
   assert.equal(P.surface[0].type, 'surfaceChange');
 });

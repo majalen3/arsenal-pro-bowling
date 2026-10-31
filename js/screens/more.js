@@ -11,7 +11,7 @@ import { profileForm, ownedPicker } from './welcome.js';
 import { gameTotalButton } from './gametotal.js';
 import { applyTheme } from '../main.js';
 import { helpDot } from './help.js';
-import { S } from '../engine.js';
+import { START as S } from '../engine.js';
 import { accountCard } from './account.js';
 import { account } from '../account.js';
 export const VERSION = '1.0.0';   // release version (CHANGELOG.md); the offline build id comes from the service worker cache name

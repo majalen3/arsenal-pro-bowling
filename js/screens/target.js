@@ -5,7 +5,7 @@ import { h, icon, toast } from '../ui.js';
 import { go } from '../router.js';
 import { ready, proj } from '../hub.js';
 import { app, today, profile, prefs, setPrefs, saveLine, linesForBall, on } from '../store.js';
-import { S, RANGES } from '../engine.js';
+import { S, START, RANGES } from '../engine.js';
 import { balls, specOK } from '../data.js';
 import { catOf } from '../cc/cats.js';
 import { createLane } from '../lane.js';
@@ -34,7 +34,7 @@ export async function render({ query } = {}) {
   const P = proj(), b = P.bowler || {}, lefty = HAND.isLefty;   // explicit hand only (cc/hand.js)
   const sess = (P.sessions || {})[openNight(P) || ''] || {};   // the open night (sim bug 3), not the calendar day
   const ft = sess.ft != null ? +sess.ft : HOUSE_ASSUMED.ft;
-  const speed = num(b.speed) || 15, rev = num(b.rev) || 220;   // sim2 #1: the same release as Tonight's line (js/cc/line.js defaults)
+  const speed = num(b.speed) || START.speed, rev = num(b.rev) || START.rev;   // sim2 #1: the same release as Tonight's line (js/cc/line.js defaults)
   const relSrc = k => { const f = b[k]; return f && f.prov ? (f.prov.kind === 'device' ? ['device', f.prov.label || 'LaneTrax'] : f.prov.ref === 'default' ? ['assumed', 'default (not entered)'] : ['user', 'your profile']) : ['assumed', 'assumed']; };
   // balls: owned (not pro shop / retired) + the Lane ball; ?ball= picks one (Tonight link)
   const owned = Object.values(P.owned || {}).filter(o => !['proShop', 'retired'].includes(o.status)).map(o => catOf(o.catalogId)).filter(Boolean);

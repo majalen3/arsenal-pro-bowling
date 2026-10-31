@@ -2,6 +2,7 @@
 // js/cc/rank.js (pure); the line check is the unchanged engine via js/cc/model.js. Every number shows its source.
 // Sim fixes (docs/user-simulations.md): one line source (cc/line.js), nights not days (cc/night.js), the bowler's own hand
 // and stand for spare hints, 400 ms double-tap guard, and a game-open layout that shows only what you need mid-game.
+import { START } from '../engine.js';
 import { fmtHalf } from '../labels.js';
 import { h, icon, toast, segmented } from '../ui.js';
 import { go, retab } from '../router.js';
@@ -179,7 +180,7 @@ export async function render(o = {}) {
           h('span', { class: 'pill gold', id: 'tnLevel', text: cur.level != null ? `Level ${cur.level} \u00b7 demand ${d.demand}` : `spec TBD \u00b7 demand ${d.demand}` }),
           h('ul', { class: 'why', id: 'tnWhy' }, ...cur.why.concat(d.why.slice(0, 2)).map(w => h('li', {}, w.t, provChip(SRC_PROV[w.src] || null, w.src)))),
           lineBox,
-          stand ? h('p', { class: 'muted small', text: `Model runs on the nearest preset (${ml.preset}, ${ml.presetLen} ft) with your ${num(b.speed) || 15} mph and ${num(b.rev) || 220} rpm. An estimate, not a promise.` }) : null));
+          stand ? h('p', { class: 'muted small', text: `Model runs on the nearest preset (${ml.preset}, ${ml.presetLen} ft) with your ${num(b.speed) || START.speed} mph and ${num(b.rev) || START.rev} rpm. An estimate, not a promise.` }) : null));
     }
     const reads = cur ? h('div', { class: 'card', id: 'tnReads' }, withHelp(h('h2', { class: 'card-title', text: 'How did it read?' }), 'tg-hit', 'How did it read'),
       h('div', { class: 'btn-grid' }, ...Object.entries(R.READS).map(([k, l]) => h('button', { class: 'btn', 'data-read': k, onclick: async () => {
