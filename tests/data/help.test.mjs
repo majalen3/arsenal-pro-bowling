@@ -20,7 +20,7 @@ test('search matches term, id and glossary words; all words must match', async (
   assert.ok(search(G.terms, 'handicap').some(t => t.id === 'sc-handicap'));
   assert.ok(search(G.terms, 'tg-369').some(t => t.id === 'tg-369'));
   assert.equal(search(G.terms, 'zzzz nothing').length, 0);
-  assert.equal(search(G.terms, '').length, 114);
+  assert.equal(search(G.terms, '').length, 119);
 });
 test('grouped by tree in glossary order', async () => {
   _reset(); const G = await loadGlossary(fake); const g = byTree(G.terms, G.trees);
