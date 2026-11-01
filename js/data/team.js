@@ -9,8 +9,10 @@ export const normCode = c => { const s = String(c || '').toUpperCase().replace(/
 export const joinLink = (code, base = 'https://majalen3.github.io/arsenal-pro-bowling/') => `${base}#/team?join=${encodeURIComponent(normCode(code))}`;
 const clip = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
 // "Tonight I'm bringing": ball name, role and one reason the bowler typed (or nothing). Max 8 balls, server caps mirrored.
+// Word-boundary shortening for the server's caps (a role never ends mid-word).
+export const shorten = (v, n) => { const t = clip(v, 400); if (t.length <= n) return t; const cut = t.slice(0, n - 1), sp = cut.lastIndexOf(' '); return (sp > n / 2 ? cut.slice(0, sp) : cut).replace(/[\s,;:\u00b7-]+$/, '') + '\u2026'; };
 export function bagShare(rows, why = {}, title = 'Tonight I\u2019m bringing') {
-  return { title: clip(title, 40), balls: (rows || []).slice(0, 8).map(r => ({ name: clip(r.name, 60), role: clip(r.role, 24), why: clip(why[r.id], 80) })).filter(b => b.name) };
+  return { title: clip(title, 40), balls: (rows || []).slice(0, 8).map(r => ({ name: clip(r.name, 60), role: shorten(r.role, 24), why: clip(why[r.id], 80) })).filter(b => b.name) };
 }
 export const tagsShare = tags => ({ tags: [...new Set(tags || [])].slice(0, 10) });
 export const regularShare = r => r ? { center: clip(r.center, 60), nights: Math.max(0, Math.min(200, r.nights | 0)), days: 90 } : null;

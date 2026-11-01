@@ -70,3 +70,13 @@ test('team client: per-account cache for offline, 404 drops the team, sign-out f
   next = { status: 200, json: { left: true } }; await T.leave('t1'); assert.deepEqual(calls.at(-1).slice(0, 2), ['DELETE', '/api/account/teams/t1/members/me']);
   T.forget(); assert.equal(storage.getItem(CACHE_KEY), null);
 });
+
+test('team share helpers: roles shorten at a word, empty seasons share nothing', async () => {
+  const T = await import('../../js/data/team.js');
+  assert.equal(T.shorten('Benchmark house-shot reaction', 24), 'Benchmark house-shot\u2026');
+  assert.ok(T.shorten('Benchmark house-shot reaction', 24).length <= 24);
+  assert.equal(T.shorten('Control', 24), 'Control');
+  const b = T.bagShare([{ id: 'a', name: 'Ball A', role: 'Benchmark house-shot reaction' }], { a: 'for when the fronts dry up' });
+  assert.deepEqual(b.balls[0], { name: 'Ball A', role: 'Benchmark house-shot\u2026', why: 'for when the fronts dry up' });
+  assert.deepEqual(C.statsShare({ sessions: {}, events: [] }).items, []);
+});

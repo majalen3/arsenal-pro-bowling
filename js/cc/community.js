@@ -90,8 +90,9 @@ export function wrappedLines(w) {
 // Shared stats (tactic 1): plain counts the bowler chooses to show the team. src names where each count comes from.
 export function statsShare(P, { now = Date.now() } = {}) {
   const w = wrappedOf(P, { now }), items = [];
-  items.push({ label: 'Nights this season', value: String(w.nights), src: 'your log' });
-  items.push({ label: 'Games logged', value: String(w.games), src: 'your log' });
+  if (!w.games) return { items };   // nothing logged this season: nothing to share (no zeros on a teammate's screen)
+  items.push({ label: 'Nights this season', value: String(w.nights), src: 'logged in app' });
+  items.push({ label: 'Games logged', value: String(w.games), src: 'logged in app' });
   if (w.spares && w.spares.enough) items.push({ label: 'Spares made', value: `${w.spares.n} of ${w.spares.of}`, src: 'scored frames' });
   return { items };
 }

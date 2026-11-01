@@ -735,7 +735,7 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 #recKey{display:block;font-size:var(--fs-lg);line-height:1.4;text-align:center}
 .gl-tree>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;cursor:pointer;list-style:none}.gl-tree>summary::-webkit-details-marker{display:none}.gl-tree>summary .group-h{margin:0}
 /* My Team (2026-10-31): seven league-night buttons wrap at 44 px; teammate cards stay plain (no ranks, no colours by number). */
-.tm .seg.wrap,.me-tags .seg.wrap{display:flex;flex-wrap:wrap}.tm .seg.wrap .seg-opt{flex:1 1 22%;min-height:var(--tap);padding:0 6px}
+.tm .seg.wrap{display:flex;flex-wrap:wrap;border-radius:var(--r-md,16px)}.tm .seg.wrap .seg-opt{flex:1 1 22%;min-height:var(--tap);padding:0 6px}
 .tm-card .tm-tags{margin:var(--s1) 0}.tm-balls li{padding:var(--s1) 0;border-top:1px solid var(--line)}.tm-balls li:first-child{border-top:0}
 .tm-note{padding:var(--s2) 0;border-top:1px solid var(--line)}.tm-note:first-child{border-top:0}
 .tm .btn,.tm .seg-opt,.tm-sheet .btn{min-height:var(--tap)}

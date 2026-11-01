@@ -28,7 +28,7 @@ export function myShares(P, pr = profile(), pf = prefs()) {
   const reg = pf.homeCenter ? C.regularOf(P, pf.homeCenter) : null;
   return {
     bag: m.bag.length ? bagShare(m.bag, pf.teamWhy || {}) : null,
-    stats: P ? C.statsShare(P) : null,
+    stats: (x => x && x.items.length ? x : null)(P ? C.statsShare(P) : null),
     tags: (t => t.length ? tagsShare(t) : null)(C.tagsOf(pr || {}, pf.tags || {})),
     regular: reg ? regularShare(reg) : null,
     bagRows: m.bag,
@@ -86,7 +86,7 @@ export async function render({ query }) {
       h('h2', { class: 'card-title', text: 'Join with an invite' }), h('label', { class: 'fld' }, h('span', { text: 'Invite code' }), code),
       h('label', { class: 'fld' }, h('span', { text: 'Your name on the team' }), me2),
       h('p', { class: 'small muted' }, 'Joining means you agree to the ', h('a', { href: '#/conduct', id: 'tmConduct1' }, 'code of conduct'), '.'),
-      h('button', { class: 'btn primary block', type: 'submit', id: 'tmJoinBtn' }, 'Join team'));
+      h('button', { class: 'btn block ' + (prefs().teamJoin ? 'primary' : 'ghost'), type: 'submit', id: 'tmJoinBtn' }, 'Join team'));
     const startCard = h('form', { class: 'card stack', id: 'tmStart', onsubmit: async e => { e.preventDefault(); if (busy) return;
       if (!nm.value.trim() || !me1.value.trim()) return toast('Add a team name and your name.', { kind: 'bad' });
       busy = true; const r = await team.create(nm.value.trim(), me1.value.trim(), night, time); busy = false;
@@ -95,14 +95,16 @@ export async function render({ query }) {
       h('label', { class: 'fld' }, h('span', { text: 'Your name on the team' }), me1),
       h('div', { class: 'fld' }, h('span', { text: 'League night (optional)' }), segmented('League night', NIGHTS.map(n => [n, n]), '', v => { night = v; }, 'wrap tm-nights')),
       h('label', { class: 'fld' }, h('span', { text: 'Start time (optional)' }), tIn),
-      h('button', { class: 'btn ghost block', type: 'submit', id: 'tmStartBtn' }, 'Start team'));
+      h('button', { class: 'btn block ' + (prefs().teamJoin ? 'ghost' : 'primary'), type: 'submit', id: 'tmStartBtn' }, 'Start team'));
     body.append(prefs().teamJoin ? joinCard : startCard, prefs().teamJoin ? startCard : joinCard);
   }
 
+  let gen = 0;
   async function draw() {
-    body.innerHTML = '';
+    const my = ++gen; body.innerHTML = '';
     if (!account.active()) return signedOut();
     let list = team.cached(), fresh = await team.list();
+    if (my !== gen) return;
     chip.hidden = !fresh.offline;
     if (fresh.ok) list = { teams: fresh.json.teams }; else if (!list) { body.append(emptyState('Could not load your teams', fresh.error)); return; }
     const teams = list.teams || [];
@@ -110,6 +112,7 @@ export async function render({ query }) {
     if (!teams.find(t => t.id === tid)) tid = teams[0].id;
     if (teams.length > 1) body.append(h('div', { class: 'list-tools', id: 'tmPick' }, segmented('Team', teams.map(t => [t.id, t.name]), tid, v => { tid = v; setPrefs({ teamLast: v }); draw(); }, 'wide')));
     let v = team.cached(tid), r = await team.view(tid);
+    if (my !== gen) return;
     if (r.ok) v = { at: Date.now(), view: r.json };
     else if (r.status === 404) { toast('You are no longer on that team.'); tid = null; return draw(); }
     chip.hidden = r.ok; if (!v) { body.append(emptyState('Could not load the team', r.error)); return; }
@@ -124,7 +127,7 @@ export async function render({ query }) {
       h('p', { id: 'tmNight', text: nightText(T) })));
     // Me first, then teammates in join order (never sorted by any number).
     const meM = V.members.find(m => m.memberId === me.memberId), others = V.members.filter(m => m.memberId !== me.memberId);
-    body.append(h('h2', { class: 'section-title', text: 'Tonight I\u2019m bringing' }));
+    body.append(h('h2', { class: 'section-title', text: 'Bowlers' }));
     if (meM) body.append(memberCard(meM, { me: true, actions: h('button', { class: 'btn ghost block', id: 'tmShareBtn', disabled: !live, onclick: () => shareSheet(T.id, mine) }, 'Choose what I share') }));
     for (const m of others) body.append(memberCard(m, { actions: h('div', { class: 'row gap wrap' },
       sec ? h('button', { class: 'btn ghost', 'data-remove': m.memberId, disabled: !live, onclick: () => removeMember(T.id, m) }, 'Remove') : null,
@@ -153,7 +156,7 @@ export async function render({ query }) {
         : k === 'stats' && data ? data.items.map(i => `${i.label}: ${i.value}`).join('; ')
         : k === 'tags' && data ? data.tags.map(x => C.TAG_LABEL[x]).join(', ')
         : k === 'regular' && data ? `${data.center}: ${data.nights} nights in 90 days` : null;
-      const none = { bag: 'Pack tonight\u2019s bag first (Bag tab).', stats: 'Nothing logged yet.', tags: 'Pick your tags on Me.', regular: 'Set your home center on Me.' }[k];
+      const none = { bag: 'Pack tonight\u2019s bag first (Bag tab).', stats: 'No games logged this season yet.', tags: 'Pick your tags on Me.', regular: 'Set your home center on Me.' }[k];
       return h('div', { class: 'fld', 'data-share': k }, h('span', { text: KIND_LABEL[k] }), h('p', { class: 'small muted', text: prev || none }),
         segmented(KIND_LABEL[k], [['off', 'Not shared'], ['on', 'Shared']], shareOn(t, k) && data ? 'on' : 'off', async val => {
           if (val === 'on' && !data) { toast(none); return; }
