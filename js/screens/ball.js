@@ -12,6 +12,7 @@ import { helpDot, withHelp } from './help.js';
 import { ready, proj } from '../hub.js';
 import { statusField, whyNotLine } from './status.js';
 import { demandOf } from '../cc/rank.js';
+import { drillSummary } from './drillscan.js';
 export function backBar(title, fallback) {
   return h('header', { class:'appbar' }, h('button', { class:'icon-btn', 'aria-label':'Back', html:icon('back'), onclick:() => back(fallback) }), h('h1', { class:'title', text:title }));
 }
@@ -25,7 +26,10 @@ export async function render({ params }) {
   // P1.3: an owned ball shows where it is (one Status) and, when it isn't in tonight's bag, the shared "why not".
   const P = proj(), own = P ? Object.values(P.owned).find(o => o.catalogId === b.id) : null;
   const ownCard = own ? h('div', { class:'card', id:'ballOwned' }, withHelp(h('h2', { class:'card-title', text:'Your ball' }), 'ap-status', 'Ball status'),
-    statusField(P, own.id), whyNotLine(P, own.id, { demand: demandOf({ pattern: null }).demand, idAttr: 'ballWhyNot' })) : null;
+    statusField(P, own.id), whyNotLine(P, own.id, { demand: demandOf({ pattern: null }).demand, idAttr: 'ballWhyNot' }),
+    // Queue item 6: the drill card (grip + layout as the driller wrote it), from a photo or typed; one line plus one link.
+    h('div', { class:'row between gap', id:'ballDrill' }, h('span', { class:'small' + (own.drill ? '' : ' muted'), id:'ballDrillSum', text: own.drill ? 'Drill card: ' + drillSummary(own.drill) : 'No drill card saved.' }),
+      h('a', { class:'btn sm ghost', id:'ballDrillScan', href:'#/drill-card?own=' + encodeURIComponent(own.id) }, own.drill ? 'View or edit' : 'Scan a drill card'))) : null;
   const lines = linesForBall(b.id), surf = lsGet(LS.surface).filter(x => x.ballId === b.id).slice(-5).reverse();
   const el = h('section', { class:'screen detail' }, backBar(b.name, '#/bag?view=all'),
     h('div', { class:'hero' }, h('span', { class:'ball-orb xl', style:{ '--c':b.color }, 'aria-hidden':'true' }),

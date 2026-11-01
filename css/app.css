@@ -750,3 +750,21 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .kit-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:var(--tap);border-top:1px solid var(--line)}.kit-row:first-child{border-top:0}
 .kit-row .btn{min-height:var(--tap)}
 @media print{#kit .kit-sheet{padding:0;border-radius:0}#kit .kit-grid{grid-template-columns:repeat(3,1fr);gap:10px}#kit{padding:0!important}}
+/* Drill card import (queue item 6): the photo stays in view (sticky) while the bowler checks the form below it. */
+.dc-photo{position:sticky;top:calc(60px + env(safe-area-inset-top));z-index:3;display:flex;gap:var(--s2);align-items:flex-end;background:var(--bg);padding:4px 0}
+.dc-photo[hidden]{display:none}
+.dc-img{display:block;flex:1;min-width:0;max-height:24vh;object-fit:contain;object-position:left;border-radius:var(--r-md, 10px)}
+.dc-img.dc-min{max-height:72px}
+.dc-file{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.dc-photo .btn,#dcCtl .btn,.dc-foot .btn,.dc-fld input,.dc-fld select{min-height:44px}
+.dc-fld{display:flex;flex-direction:column;gap:4px;padding:6px 8px;border-radius:8px;scroll-margin-top:calc(24vh + 140px);scroll-margin-bottom:140px}
+#drillScan:not(:has(.dc-img:not([hidden]))) .dc-fld{scroll-margin-top:240px}
+.dc-fld.low{background:var(--warn-soft, #fff3cd);outline:2px solid var(--warn, #c98a00)}
+.dc-src{font-size:var(--fs-xs);font-weight:700;padding:2px 8px;border-radius:var(--r-pill);background:var(--surface-3)}
+.dc-src.card{background:var(--accent-soft);color:var(--accent-ink)}
+.dc-src.low{background:var(--warn-soft);color:var(--warn);outline:1px solid var(--warn)}
+.dc-err{color:var(--bad, #b3261e)}
+.dc-foot{position:sticky;bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + 8px);padding:var(--s2) 0;z-index:3}
+.dc-review{margin:0;padding-left:18px;max-height:44vh;overflow:auto}
+.dc-check{min-height:44px;align-items:center}
+.dc-check input{width:24px;height:24px}

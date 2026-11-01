@@ -30,6 +30,7 @@ JOURNEYS = [
     ('J17', 'Share cards: Old Friends and Season Wrapped, made on the phone', 'righty', J.j17_cards),
     ('J18', 'Pro shop kit: QR per ball, scan opens Add a ball prefilled', 'righty', J.j18_kit),
     ('J19', 'Identity tags and the Regular badge', 'righty', J.j19_tags_regular),
+    ('J20', 'Drill card photo import', 'righty', J.j20_drillcard),
 ]
 
 

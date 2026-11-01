@@ -84,6 +84,8 @@ test('vendored OCR stays small enough and is never in the offline shell', () => 
   assert.ok(total <= 5.6e6, `total ${total}`);
   for (const f of ['LICENSE-tesseract.js.txt', 'LICENSE-tesseract.js-core.txt']) assert.match(fs.readFileSync(new URL(f, dir), 'utf8'), /Apache License/);
   const sw = fs.readFileSync(new URL('../../sw.js', import.meta.url), 'utf8');
-  assert.ok(!/vendor\/tesseract/.test(sw), 'OCR files must not be precached');
+  const shell = sw.slice(sw.indexOf('const SHELL'), sw.indexOf('];', sw.indexOf('const SHELL')));
+  assert.ok(!/'js\/vendor\/tesseract/.test(shell), 'OCR files must not be precached');
+  assert.ok(/'js\/cc\/drillcard\.js'/.test(shell) && /'js\/screens\/drillscan\.js'/.test(shell));
   assert.ok(!fs.readdirSync(new URL('./fixtures/', import.meta.url)).some(f => /\.jpe?g$/i.test(f)), 'no real card photos in the repo');
 });

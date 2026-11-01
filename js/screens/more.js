@@ -71,7 +71,8 @@ export function render() {
     body.append(
       h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Bowler profile' }), h('button', { class:'btn sm ghost', id:'editProfile', onclick:editProfile }, h('span', { html:icon('edit') }), 'Edit')),
         pr ? h('p', { text:`${HAND.handOfProfile(pr) ? HAND.HAND_LABEL[HAND.handOfProfile(pr)] : 'Hand not set'}, ${pr.style === 'two' ? 'two-hander' : (pr.style || 'style not set')}, ${(+pr.speed).toFixed(1)} mph, ${pr.rev} rpm${pr.pap ? ', PAP ' + pr.pap : ''}${pr.tilt ? ', tilt ' + pr.tilt : ''}.` }) : h('p', { class:'muted', text:`Not set. The lane uses mid-range starting values (${S.speed} mph, ${S.rev} rpm) until you enter yours.` }),
-        h('div', { class:'row between' }, h('span', { text:`My bag: ${pr && pr.owned && pr.owned.length ? pr.owned.length + ' balls' : 'all 22'}` }), h('button', { class:'btn sm ghost', id:'editBag', onclick:editBag }, 'Choose'))),
+        h('div', { class:'row between' }, h('span', { text:`My bag: ${pr && pr.owned && pr.owned.length ? pr.owned.length + ' balls' : 'all 22'}` }), h('button', { class:'btn sm ghost', id:'editBag', onclick:editBag }, 'Choose')),
+        h('div', { class:'row between' }, h('span', { class:'small muted', text:'PAP from your drill card' }), h('a', { class:'btn sm ghost', id:'meDrillScan', href:'#/me/drill-card' }, 'Scan a drill card'))),
       accountCard(), communityCard(),
       h('div', { class:'card', id:'dataCard' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Your data' }), protChip), dataInfo, lastBk,
         h('details', { class:'tn-more', id:'protMore' }, h('summary', { text:'Keep it safe' }), protBody),

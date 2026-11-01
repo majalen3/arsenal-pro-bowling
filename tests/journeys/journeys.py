@@ -1018,3 +1018,47 @@ async def j19_tags_regular(j):
             s.check(re.search(r'Regular at', await j.text('#regularBadge')), 'Regular at <center> badge')
         else:
             s.check(False, f'badge after 4 nights ({await j.text("#regularLine")})')
+
+
+DRILL_FIX = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'fixtures', 'drillcard-synthetic.png')
+
+async def j20_drillcard(j):
+    """Queue item 6: a drill card photo becomes checked, sourced fields on the ball; nothing saves before Save. Synthetic card only."""
+    await boot(j, 'righty')
+    o = await j.data("() => { const o = Object.values(window.__apData.projection().owned).find(x => !x.removed && x.catalogId); return o && { id: o.id, cat: o.catalogId }; }")
+    j.state.update(o or {})
+    async with j.step('Ball page: Scan a drill card, pick the photo, read it on the phone', task='drill', target_taps=4, critical=True) as s:
+        await j.nav('/ball/' + o['cat']); await j.wait('#ballDrillScan')
+        s.check('No drill card' in await j.text('#ballDrillSum'), 'ball says no drill card yet')
+        await j.tap('#ballDrillScan'); await j.wait('#dcFile', state='attached')
+        before = await j.data("() => window.__apData.projection().owned[" + json.dumps(o['id']) + "].drill || null")
+        await j.page.set_input_files('#dcFile', DRILL_FIX); await j.wait('#dcImg')
+        await j.tap('#dcRead')
+        await j.page.wait_for_function("() => /^Read \\d+ value/.test(document.querySelector('#dcMsg').textContent)", timeout=60000)
+        s.check(await j.page.input_value('#dc_pap_over') == '4 7/8', 'PAP over read as 4 7/8')
+        s.check(await j.page.input_value('#dc_pap_up') == '-1/4', 'PAP down read as -1/4 (down is minus)')
+        s.check(await j.page.input_value('#dc_lf_actual') == '4 1/8', 'left span read')
+        n_card = await j.page.locator('.dc-src.card, .dc-src.low').count(); n_low = await j.page.locator('.dc-fld.low').count()
+        s.check(n_card >= 18 and n_low >= 1, f'{n_card} values marked read from card, {n_low} highlighted to check')
+        s.check('Down (\u2212) below' in await j.text('#dcPapRule') or 'down (\u2212) below' in await j.text('#dcPapRule'), 'PAP sign rule shown')
+        s.check(await j.data("() => window.__apData.projection().owned[" + json.dumps(o['id']) + "].drill || null") == before, 'nothing saved by reading')
+        await j.audit('drill-card')
+    async with j.step('Fix a missed value, review, save; the ball shows the card with its sources', task='drill', target_taps=3, critical=True) as s:
+        await j.type('#dc_bridge', '1/4'); await j.settle(150)
+        s.check((await j.text('[data-k="bridge"] .dc-src')).strip() == 'typed', 'typed value is labelled typed')
+        await j.tap('#dcReviewBtn'); await j.wait('#dcReview')
+        rv = await j.text('#dcReview'); s.check('PAP over (inches): 4 7/8 (read from card)' in rv and 'Bridge: 1/4 (typed)' in rv and 'Left hole, actual grip span: 4 1/8' in rv, 'review lists values with sources')
+        await j.audit('drill-review')
+        await j.tap('#dcSave'); await j.wait('#ballDrillSum')
+        sm = await j.text('#ballDrillSum'); s.check('PAP 4 7/8 x 1/4 down' in sm and 'typed' in sm, f'ball summary: {sm!r}')
+        d = await j.data("() => window.__apData.projection().owned[" + json.dumps(o['id']) + "].drill")
+        s.check(d['fields']['bridge']['src'] == 'typed' and d['fields']['pap.over']['src'] == 'card' and d['pap']['convention'] == 'up +, down -', 'saved with provenance and the sign rule')
+    async with j.step('Me: type a PAP from a handwritten card, compare, save to the profile', task='drill', target_taps=6) as s:
+        await j.nav('/me'); await j.tap('#meDrillScan'); await j.wait('#dc_pap_over')
+        await j.type('#dc_pap_over', '5 1/8'); await j.type('#dc_pap_up', '3/8'); await j.settle(150)
+        cmp = await j.text('#dcPapCmp'); s.check('This card: 5 1/8 x 3/8 up' in cmp, f'comparison shown: {cmp!r}')
+        s.check(not EVAL_WORDS.search(cmp), 'comparison is plain info')
+        await j.tap('#dcReviewBtn'); await j.wait('#dcSetPap')
+        await j.tap('#dcSave'); await j.wait('#editProfile')
+        s.check(await j.data("() => JSON.parse(localStorage.getItem('ap_profile')).pap") == '5 1/8 x 3/8 up', 'profile PAP saved in the usual form')
+        s.check(not j.console, f'no console errors {j.console[:2]}')
