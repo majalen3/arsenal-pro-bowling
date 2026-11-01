@@ -8,6 +8,7 @@ import { ready, proj, add } from '../hub.js';
 import { API_BASE, today } from '../store.js';
 import { chip } from '../data/schema.js';
 import { norm } from '../data/match.js';
+import { catFromHash } from '../cc/kit.js';
 import * as A from '../cc/addball.js';
 import * as G from '../cc/bag.js';
 import { HOUSE_ASSUMED } from '../cc/rank.js';
@@ -220,7 +221,13 @@ export async function render() {
   drawResults();
   const pre = new URLSearchParams((location.hash.split('?')[1] || '')).get('q');
   if (pre) { q.value = st.q = pre; drawResults(); }
+  // Pro shop kit (owner 2026-10-31, tactic 3): a printed QR opens #/add-ball?cat=<catalogue id> with that ball picked.
+  // Nothing saves until the bowler taps Add, same as a search.
+  const catId = catFromHash(location.hash), fromQR = catId && A.entryById(catId);
+  if (fromQR) { q.value = st.q = `${fromQR.brand} ${fromQR.name}`; drawResults(); pick(fromQR);
+    results.prepend(h('p', { class: 'small', id: 'abFromKit', role: 'status', text: 'Opened from a pro shop code. Check it is your ball, then add it.' })); }
+  else if (catId) results.prepend(h('p', { class: 'small', id: 'abFromKit', role: 'status', text: 'That code names a ball this app does not know yet. Search for it by name.' }));
   // IA P2 task 9: the search field is the first step, so it takes focus (a tap fewer on the way to a saved ball).
-  if (!q.value) setTimeout(() => { if (document.body.contains(q)) q.focus({ preventScroll: true }); }, 0);
+  if (!q.value && !catId) setTimeout(() => { if (document.body.contains(q)) q.focus({ preventScroll: true }); }, 0);
   return { el, title: 'Add a ball' };
 }

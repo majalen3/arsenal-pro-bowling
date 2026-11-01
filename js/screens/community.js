@@ -29,7 +29,7 @@ export function communityCard() {
         h('span', { class: 'prov', text: ' from your logged nights' })) : null,
       h('details', { class: 'tn-more', id: 'proShopMore', open: pf.proShop ? true : null }, h('summary', { text: 'My pro shop' }),
         h('label', { class: 'fld' }, h('span', { text: 'Pro shop name (optional)' }), shop),
-        h('p', { class: 'small muted', text: 'Shown on your Bowler Card and pro shop kit so teammates know where you drill. The app never contacts the shop.' })),
+        h('p', { class: 'small muted', text: 'Shown at the top of your pro shop kit. Kept on this phone; the app never contacts the shop.' })),
       h('div', { class: 'btn-grid' }, h('a', { class: 'btn ghost', href: '#/team', id: 'goTeam' }, 'My Team'), h('a', { class: 'btn ghost', href: '#/wrapped', id: 'goWrapped' }, 'Season Wrapped'),
         h('a', { class: 'btn ghost', href: '#/kit', id: 'goKit' }, 'Pro shop kit')));
   }
