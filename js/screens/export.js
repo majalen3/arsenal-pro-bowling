@@ -10,6 +10,8 @@ import * as X from '../cc/export.js';
 import { toCSV } from '../data/csv.js';
 import * as PR from '../cc/protect.js';
 import { VERSION } from './more.js';
+import * as K from './cards.js';
+import * as C from '../cc/community.js';
 const model = () => X.sheetModel(proj(), profile(), { catOf, version: VERSION });
 function save(blob, name) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove();
@@ -19,49 +21,31 @@ export function saveCsv(m = model()) {
   const rows = X.arsenalRows(m); save(new Blob(['\ufeff' + toCSV(rows)], { type: 'text/csv' }), X.fileStem(m, 'list') + '.csv');
   toast(`Saved ${rows.length - 1} ball${rows.length === 2 ? '' : 's'} as CSV`);
 }
-// ---- share card: the current bag on a 1080 x 1350 canvas in the Arsenal Pro green and gold.
-const FONT = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif';
-function fit(ctx, t, w) { t = String(t || ''); if (ctx.measureText(t).width <= w) return t; while (t.length > 1 && ctx.measureText(t + '\u2026').width > w) t = t.slice(0, -1); return t + '\u2026'; }
-export function drawCard(m, canvas = document.createElement('canvas')) {
-  const W = 1080, H = 1350, P = 72; canvas.width = W; canvas.height = H; const c = canvas.getContext('2d');
+// ---- share card: the current bag on a 1080 x 1350 canvas (frame in js/screens/cards.js). Refined 2026-10-31: role and the
+// bowler's own reason per ball (My Team "why"), tags; no averages on a shared picture (non-evaluative; the sheet keeps them).
+export function drawCard(m, canvas = document.createElement('canvas'), { why = prefs().teamWhy || {}, tags = [] } = {}) {
   const list = m.bag.length ? m.bag : (m.groups.find(g => g.key === 'inBag') || { rows: [] }).rows;
-  c.fillStyle = '#0F4D34'; c.fillRect(0, 0, W, H);
-  c.fillStyle = '#000'; c.fillRect(0, 0, W, 210); c.fillStyle = '#DAAF37'; c.fillRect(0, 210, W, 8);
-  c.fillStyle = '#DAAF37'; c.font = `800 34px ${FONT}`; c.textBaseline = 'alphabetic'; c.fillText(m.team.toUpperCase(), P, 92);
-  c.fillStyle = '#fff'; c.font = `800 64px ${FONT}`;
-  c.fillText(fit(c, (m.name ? m.name + '\u2019s ' : 'My ') + (m.bag.length ? 'bag' : 'balls in the bag'), W - 2 * P), P, 170);
-  c.font = `600 30px ${FONT}`; c.fillStyle = 'rgba(255,255,255,.82)';
-  const sub = [m.facts.filter(f => f[0] !== 'PAP').map(f => f[1]).join(' \u00b7 '), m.bag.length && m.bagSaved ? 'Bag saved ' + m.bagSaved : m.date].filter(Boolean).join('  |  ');
-  c.fillText(fit(c, sub, W - 2 * P), P, 280);
-  const shown = list.slice(0, 6), rowH = 148, top = 330;
+  const sub = [m.facts.filter(f => f[0] !== 'PAP').map(f => f[1]).join(' \u00b7 '), tags.join(' \u00b7 '), m.bag.length && m.bagSaved ? 'Bag saved ' + m.bagSaved : m.date].filter(Boolean).join('  |  ');
+  const c = K.frame(canvas, { eyebrow: m.team, title: (m.name ? m.name + '\u2019s ' : 'My ') + (m.bag.length ? 'bag' : 'balls in the bag'), sub,
+    note: 'Specs from the maker' + (m.sources.you ? ' or entered by the bowler' : '') });
+  const { PAD: P, W, FONT, fit } = K, shown = list.slice(0, 6), rowH = 148, top = 330;
   if (!shown.length) { c.fillStyle = '#fff'; c.font = `600 40px ${FONT}`; c.fillText('No balls in the bag yet.', P, top + 80); }
   shown.forEach((r, i) => {
-    const y = top + i * rowH, cy = y + 62;
-    c.fillStyle = 'rgba(0,0,0,.28)'; c.beginPath(); c.roundRect ? c.roundRect(P - 16, y, W - 2 * P + 32, rowH - 18, 22) : c.rect(P - 16, y, W - 2 * P + 32, rowH - 18); c.fill();
-    c.beginPath(); c.arc(P + 44, cy, 40, 0, Math.PI * 2); c.fillStyle = r.color || '#6b7a72'; c.fill(); c.lineWidth = 4; c.strokeStyle = '#DAAF37'; c.stroke();
-    const x = P + 112, w = W - x - P;
+    const y = top + i * rowH, cy = y + 62, x = P + 112, w = W - x - P;
+    K.panel(c, P - 16, y, W - 2 * P + 32, rowH - 18); K.orb(c, P + 44, cy, 40, r.color);
     c.fillStyle = '#fff'; c.font = `800 40px ${FONT}`; c.fillText(fit(c, (r.benchmark ? '\u2605 ' : '') + r.name, w), x, cy - 8);
-    c.fillStyle = '#DAAF37'; c.font = `600 28px ${FONT}`;
+    c.fillStyle = K.GOLD; c.font = `600 28px ${FONT}`;
     const spec = [r.brand, r.coverKind, r.rg != null ? 'RG ' + X.fmtRG(r.rg) : '', r.diff != null ? 'Diff ' + X.fmtDiff(r.diff) : ''].filter(Boolean).join(' \u00b7 ');
     c.fillText(fit(c, spec || 'Specs not entered', w), x, cy + 30);
-    if (r.role || r.avg != null) { c.fillStyle = 'rgba(255,255,255,.75)'; c.font = `500 24px ${FONT}`;
-      c.fillText(fit(c, [r.role, r.avg != null ? `avg ${r.avg} in ${r.complete} game${r.complete === 1 ? '' : 's'}` : ''].filter(Boolean).join(' \u00b7 '), w), x, cy + 62); }
+    const third = [r.role, why[r.id] ? '\u201c' + why[r.id] + '\u201d' : ''].filter(Boolean).join(' \u00b7 ');
+    if (third) { c.fillStyle = 'rgba(255,255,255,.78)'; c.font = `500 24px ${FONT}`; c.fillText(fit(c, third, w), x, cy + 62); }
   });
   if (list.length > shown.length) { c.fillStyle = '#fff'; c.font = `600 30px ${FONT}`; c.fillText(`+ ${list.length - shown.length} more`, P, top + shown.length * rowH + 30); }
-  c.fillStyle = '#000'; c.fillRect(0, H - 96, W, 96); c.fillStyle = '#DAAF37'; c.font = `700 28px ${FONT}`; c.fillText('Arsenal Pro', P, H - 38);
-  c.fillStyle = 'rgba(255,255,255,.7)'; c.font = `500 24px ${FONT}`; const note = 'Specs from the maker' + (m.sources.you ? ' or entered by the bowler' : '');
-  c.fillText(note, W - P - c.measureText(note).width, H - 38);
   return canvas;
 }
-export async function shareCard(m = model()) {
-  const cv = drawCard(m), name = X.fileStem(m, 'bag') + '.png';
-  const blob = await new Promise(r => cv.toBlob(r, 'image/png')); if (!blob) { toast('Could not draw the card.', { kind: 'bad' }); return; }
-  const file = typeof File === 'function' ? new File([blob], name, { type: 'image/png' }) : null;
-  if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
-    try { await navigator.share({ files: [file], title: 'My bag' }); return 'shared'; } catch (e) { if (e && e.name === 'AbortError') return 'cancelled'; }
-  }
-  save(blob, name); toast('Bag card saved as an image.'); return 'saved';
-}
+const tagWords = () => C.tagsOf(profile() || {}, prefs().tags || {}).map(t => C.TAG_LABEL[t]);
+export async function shareCard(m = model()) { return K.sharePng(drawCard(m, undefined, { tags: tagWords() }), X.fileStem(m, 'bag') + '.png', 'My bag', 'Bag card saved as an image.'); }
+export async function shareOldFriends(m = model()) { return K.sharePng(K.drawOldFriends(m), X.fileStem(m, 'old-friends') + '.png', 'Old Friends', 'Old Friends card saved as an image.'); }
 // The options sheet (Arsenal header button, More > Your data).
 export async function openExport() {
   await ready(); const m = model(), n = m.rows.length;
@@ -71,6 +55,7 @@ export async function openExport() {
     h('p', { class: 'small muted', text: n ? `${n} ball${n === 1 ? '' : 's'} on file${m.bag.length ? `, ${m.bag.length} in tonight\u2019s bag` : ''}.` : 'No balls on file yet. Add a ball first.' }),
     opt('expSheetBtn', 'Arsenal sheet', 'Print it or save as PDF', () => { s.close(); go('#/arsenal/sheet'); }),
     opt('expCard', 'Bag card (image)', 'Share or save a picture of your bag', async () => { await shareCard(m); }),
+    m.hall.length ? opt('expOld', 'Old Friends card (image)', 'Your retired balls and the games you bowled together', async () => { await shareOldFriends(m); }) : null,
     opt('expCsv', 'Arsenal list (CSV)', 'Opens in Excel, Numbers or Sheets', () => saveCsv(m)),
     opt('expBackup', 'Full backup (JSON)', 'Everything, to restore on another phone', async () => { const db = await ready(); await PR.saveBackupFile(db, prefs()); toast('Backup file saved.'); })) });
   return s;

@@ -51,7 +51,8 @@ function armory(P) {
     withHelp(h('h2', { class:'group-h', id:'armBagH', text:`In my bag \u00b7 ${sh.bag.length}` }), 'ap-status', 'Ball status'),
     shelf(sh.bag, 'armBag', 'In my bag', empty),
     sh.bench.length ? fold('armBench', 'At home and at the pro shop', sh.bench.length, shelf(sh.bench, 'armBenchShelf', 'At home and at the pro shop')) : null,
-    fold('armHall', 'Old Friends', sh.hall.length, sh.hall.length ? shelf(sh.hall, 'armHallShelf', 'Old Friends')
+    fold('armHall', 'Old Friends', sh.hall.length, sh.hall.length ? h('div', { class:'stack' }, shelf(sh.hall, 'armHallShelf', 'Old Friends'),
+        h('button', { class:'btn ghost block', id:'armHallShare', onclick:() => import('./export.js').then(m => m.shareOldFriends()) }, 'Share an Old Friends card'))
       : h('div', { class:'stack', id:'armHallNone' }, h('p', { class:'muted small', text:'Retired balls rest here with their record. Set a ball\u2019s Status to Retired on its page or in Bag.' }), h('a', { class:'btn ghost sm', href:'#/bag' }, 'Open Bag'))),
     h('p', { class:'muted small', id:'armNote', text:'Marks appear only from games you log with frames.' }));
 }

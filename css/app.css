@@ -739,3 +739,4 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .tm-card .tm-tags{margin:var(--s1) 0}.tm-balls li{padding:var(--s1) 0;border-top:1px solid var(--line)}.tm-balls li:first-child{border-top:0}
 .tm-note{padding:var(--s2) 0;border-top:1px solid var(--line)}.tm-note:first-child{border-top:0}
 .tm .btn,.tm .seg-opt,.tm-sheet .btn{min-height:var(--tap)}
+.wr-card,.kit-card{width:100%;height:auto;border-radius:var(--r-sm);display:block}

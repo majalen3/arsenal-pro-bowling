@@ -76,7 +76,7 @@ export async function render() {
       h('p', { class:'bc-headline', id:'resLastHead', text:r ? r.head : line(last) }),
       h('div', { class:'btn-grid' }, h('a', { class:'btn primary', id:'resRecap', href:'#/session/' + encodeURIComponent(last.id) }, 'Full recap \u203a'),
         fixable ? h('a', { class:'btn ghost', id:'resFix', href:'#/session/' + encodeURIComponent(last.id) + '?fix=1' }, 'Fix a frame') : null));
-    return [lastCard, h('a', { class:'btn ghost block', href:'#/card', id:'goCard' }, 'My Bowler Card'),
+    return [lastCard, h('div', { class:'btn-grid' }, h('a', { class:'btn ghost', href:'#/card', id:'goCard' }, 'My Bowler Card'), h('a', { class:'btn ghost', href:'#/wrapped', id:'goWrapped2' }, 'Season Wrapped')),
       h('ul', { class:'plain night-list', id:'nightList' }, ...list.map(x => h('li', {}, h('a', { class:'night-row', href:'#/session/' + encodeURIComponent(x.id), 'data-sid':x.id },
         h('span', { class:'line-text' }, h('span', { class:'line-name', text:fmt(x.date) }), h('span', { class:'line-meta', text:line(x) })),
         h('span', { class:'pill', text:x.source === 'Scored on Tonight' ? 'Scored' : x.source }))))),

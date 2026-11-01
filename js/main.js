@@ -35,6 +35,7 @@ route(/^\/guide$/, 'learn', () => import('./screens/help.js'));
 route(/^\/results$/, 'results', () => import('./screens/sessions.js'));
 route(/^\/session\/([\w.%-]+)$/, 'results', () => import('./screens/session.js'));
 route(/^\/card$/, 'results', () => import('./screens/card.js'));
+route(/^\/wrapped$/, 'results', () => import('./screens/wrapped.js'));
 route(/^\/me$/, 'me', () => import('./screens/more.js'));
 route(/^\/import$/, 'me', () => import('./screens/import.js'));
 route(/^\/welcome$/, null, () => import('./screens/welcome.js'));
