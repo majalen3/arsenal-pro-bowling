@@ -2,7 +2,7 @@
 Times are Keystroke-Level-Model estimates (Card, Moran & Newell; same constants as tests/ux/harness.py), not real users:
 the first tap of a step costs M 1.35 s + P 1.1 s + 0.2 s, later taps P + 0.2 s, a scroll 1.0 s, a typed char 0.28 s,
 a precise drag 1.5 s extra. Measured wall-clock is reported next to it."""
-import json, os, re, time, traceback
+import json, os, re, time, traceback, secrets, datetime as _dt
 from urllib.parse import urlparse, parse_qs
 
 API = '**/arsenal-pro-api.onrender.com/**'
@@ -57,6 +57,7 @@ class MockAPI:
     host is answered here, so no journey can write to the live database. online=False behaves like airplane mode."""
     def __init__(self):
         self.rows, self.seq, self.online, self.posts, self.calls = [], 0, True, 0, []
+        self.acct = MockAccounts()
 
     async def handle(self, route):
         req = route.request
@@ -64,20 +65,31 @@ class MockAPI:
         if not self.online:
             return await route.abort('internetdisconnected')
         u = urlparse(req.url); dev = req.headers.get('x-device-id')
-        hdr = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, X-Device-Id',
+        hdr = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, X-Device-Id, Authorization',
                'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS', 'Access-Control-Expose-Headers': 'Retry-After'}
         if req.method == 'OPTIONS':
             return await route.fulfill(status=204, headers=hdr)
         js = lambda st, body: route.fulfill(status=st, headers=hdr, content_type='application/json', body=json.dumps(body))
+        if u.path.startswith('/api/auth') or u.path.startswith('/api/account'):
+            if u.path in ('/api/account/events',):
+                uid = self.acct.uid(req)
+                if not uid: return await js(401, {'error': 'Not signed in.'})
+                dev, path = 'acct:' + uid, '/api/events'
+            else:
+                st, body = self.acct.handle(req.method, u.path, json.loads(req.post_data or '{}') if req.post_data else {}, req)
+                if st == 'POSTED': self.posts += 1
+                return await js(body[0], body[1]) if st == 'POSTED' else await js(st, body)
+        else:
+            path = u.path
         mine = [r for r in self.rows if r[0] == dev]
-        if u.path == '/api/events' and req.method == 'POST':
+        if path == '/api/events' and req.method == 'POST':
             self.posts += 1
             evs = json.loads(req.post_data or '{"events":[]}')['events']; known = {r[2]['id'] for r in mine}; acc = 0
             for e in evs:
                 if e['id'] not in known:
                     self.seq += 1; self.rows.append((dev, self.seq, e)); known.add(e['id']); acc += 1
             return await js(200, {'accepted': acc, 'duplicates': len(evs) - acc, 'cursor': str(self.seq), 'stored': len(known), 'quota': 5000})
-        if u.path == '/api/events':
+        if path == '/api/events':
             q = parse_qs(u.query); after = int(q.get('after', ['0'])[0]); lim = int(q.get('limit', ['500'])[0])
             page = [r for r in mine if r[1] > after][:lim + 1]; more = len(page) > lim; page = page[:lim]
             return await js(200, {'events': [dict(r[2], serverSeq=str(r[1])) for r in page], 'cursor': str(page[-1][1] if page else after), 'more': more})
@@ -85,6 +97,126 @@ class MockAPI:
             return await js(200, [])
         self.posts += 1
         return await js(201, {'id': 1})
+
+
+class MockAccounts:
+    """In-memory accounts + My Team (same contract as arsenal-pro-api lib/teams.js, server-side checks included: membership
+    404, secretary-only 403, invite expiry/revoke 410). Journeys sign up here, never on the live API."""
+    NIGHTS = ('', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
+    def __init__(self):
+        self.users, self.tokens, self.teams, self.members, self.invites, self.shares, self.notes, self.reports, self.n = {}, {}, {}, [], [], {}, [], [], 0
+    def uid(self, req):
+        a = req.headers.get('authorization') or ''
+        return self.tokens.get(a[7:]) if a.startswith('Bearer ') else None
+    def _id(self): return secrets.token_hex(8)
+    def _now(self): return _dt.datetime.now(_dt.timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.000Z')
+    def _sess(self, uid):
+        t = secrets.token_urlsafe(24); self.tokens[t] = uid
+        u = next(v for v in self.users.values() if v['id'] == uid)
+        return {'token': t, 'expiresAt': '2027-01-01T00:00:00.000Z', 'user': {'id': uid, 'email': u['email'], 'createdAt': u['at']}}
+    def _team(self, t): return {'id': t['id'], 'name': t['name'], 'night': t['night'], 'time': t['time'], 'createdAt': t['at']}
+    def handle(self, m, path, b, req):
+        W = lambda st, j: ('POSTED', (st, j)) if m != 'GET' else (st, j)
+        if path == '/api/auth/signup' and m == 'POST':
+            e = (b.get('email') or '').strip().lower()
+            if '@' not in e: return W(400, {'error': 'a valid email is required'})
+            if len(b.get('password') or '') < 10: return W(400, {'error': 'use at least 10 characters'})
+            if e in self.users: return W(409, {'error': 'an account with this email already exists; sign in instead'})
+            self.users[e] = {'id': self._id(), 'email': e, 'pw': b['password'], 'at': self._now()}
+            return W(201, dict(self._sess(self.users[e]['id']), recoveryKey='QA-RECOVERY-KEY-NOT-REAL'))
+        if path == '/api/auth/login' and m == 'POST':
+            u = self.users.get((b.get('email') or '').strip().lower())
+            if not u or u['pw'] != b.get('password'): return W(401, {'error': 'email or password is wrong'})
+            return W(200, self._sess(u['id']))
+        uid = self.uid(req)
+        if not uid: return W(401, {'error': 'Not signed in.'})
+        if path == '/api/auth/logout': return W(200, {'ok': True})
+        if path == '/api/account' and m == 'GET':
+            u = next(v for v in self.users.values() if v['id'] == uid); return 200, {'user': {'id': uid, 'email': u['email'], 'createdAt': u['at']}, 'stored': 0, 'quota': 20000}
+        P = '/api/account/teams'
+        if not path.startswith(P): return W(404, {'error': 'not found'})
+        rest = [x for x in path[len(P):].split('/') if x]
+        me = lambda tid: next((x for x in self.members if x['tid'] == tid and x['uid'] == uid), None)
+        if not rest and m == 'GET':
+            out = []
+            for x in [x for x in self.members if x['uid'] == uid]:
+                t = self.teams[x['tid']]; out.append(dict(self._team(t), role=x['role'], memberId=x['id'], displayName=x['dn'], members=sum(1 for y in self.members if y['tid'] == t['id'])))
+            return 200, {'teams': out}
+        if not rest and m == 'POST':
+            name, dn = (b.get('name') or '').strip()[:40], (b.get('displayName') or '').strip()[:30]
+            if not name or not dn: return W(400, {'error': 'team name and your display name are required'})
+            if b.get('night', '') not in self.NIGHTS: return W(400, {'error': 'league night must be Mon-Sun and time HH:MM'})
+            t = {'id': self._id(), 'name': name, 'night': b.get('night') or '', 'time': b.get('time') or '', 'at': self._now()}; self.teams[t['id']] = t
+            mid = self._id(); self.members.append({'id': mid, 'tid': t['id'], 'uid': uid, 'role': 'secretary', 'dn': dn, 'at': self._now()})
+            return W(201, {'team': self._team(t), 'memberId': mid, 'role': 'secretary'})
+        if rest == ['join'] and m == 'POST':
+            code = re.sub(r'[^A-Z0-9]', '', (b.get('code') or '').upper()); dn = (b.get('displayName') or '').strip()[:30]
+            if len(code) != 8: return W(400, {'error': 'invite code is 8 letters and numbers (XXXX-XXXX)'})
+            if not dn: return W(400, {'error': 'your display name is required (1-30 characters)'})
+            inv = next((i for i in self.invites if i['code'] == code), None)
+            if not inv or inv['revoked'] or inv['uses'] >= inv['max']: return W(410, {'error': 'this invite has expired or was turned off; ask the secretary for a new one'})
+            t = self.teams[inv['tid']]; x = me(t['id'])
+            if x: return W(200, {'team': self._team(t), 'memberId': x['id'], 'role': x['role'], 'already': True})
+            mid = self._id(); self.members.append({'id': mid, 'tid': t['id'], 'uid': uid, 'role': 'member', 'dn': dn, 'at': self._now()}); inv['uses'] += 1
+            return W(201, {'team': self._team(t), 'memberId': mid, 'role': 'member'})
+        tid = rest[0]; x = me(tid)
+        if not x or tid not in self.teams: return W(404, {'error': 'team not found'})
+        t, sec, sub = self.teams[tid], x['role'] == 'secretary', rest[1:]
+        deny = lambda: W(403, {'error': 'only the league secretary can do this'})
+        if not sub and m == 'GET':
+            ms = [y for y in self.members if y['tid'] == tid]
+            return 200, {'team': self._team(t), 'me': {'memberId': x['id'], 'role': x['role'], 'displayName': x['dn']},
+                         'members': [{'memberId': y['id'], 'displayName': y['dn'], 'role': y['role'], 'joinedAt': y['at'],
+                                      'shares': {k: v for (mid, k), v in self.shares.items() if mid == y['id']}} for y in ms],
+                         'notes': [{'id': n['id'], 'memberId': n['mid'], 'lanes': n['lanes'], 'text': n['text'], 'createdAt': n['at']} for n in reversed(self.notes) if n['tid'] == tid],
+                         'reports': [dict(r) for r in self.reports if r['tid'] == tid] if sec else None}
+        if not sub and m == 'DELETE':
+            if not sec: return deny()
+            del self.teams[tid]; self.members = [y for y in self.members if y['tid'] != tid]; return W(200, {'deleted': 1})
+        if sub == ['settings'] and m == 'POST':
+            if not sec: return deny()
+            for k in ('name', 'night', 'time'):
+                if k in b: t[k] = b[k]
+            return W(200, {'team': self._team(t)})
+        if sub == ['me'] and m == 'POST': x['dn'] = (b.get('displayName') or x['dn'])[:30]; return W(200, {'displayName': x['dn']})
+        if sub == ['invites'] and m == 'POST':
+            if not sec: return deny()
+            code = ''.join(secrets.choice('ABCDEFGHJKMNPQRSTUVWXYZ23456789') for _ in range(8)); iid = self._id()
+            self.invites.append({'id': iid, 'tid': tid, 'code': code, 'uses': 0, 'max': int(b.get('maxUses') or 30), 'revoked': False, 'exp': '2026-12-31T00:00:00.000Z'})
+            return W(201, {'id': iid, 'code': code[:4] + '-' + code[4:], 'expiresAt': '2026-12-31T00:00:00.000Z', 'maxUses': int(b.get('maxUses') or 30)})
+        if sub == ['invites'] and m == 'GET':
+            if not sec: return 403, {'error': 'only the league secretary can do this'}
+            return 200, {'invites': [{'id': i['id'], 'createdAt': self._now(), 'expiresAt': i['exp'], 'uses': i['uses'], 'maxUses': i['max'], 'revoked': i['revoked']} for i in self.invites if i['tid'] == tid and not i['revoked']]}
+        if len(sub) == 2 and sub[0] == 'invites' and m == 'DELETE':
+            if not sec: return deny()
+            n = 0
+            for i in self.invites:
+                if i['id'] == sub[1] and i['tid'] == tid: i['revoked'] = True; n += 1
+            return W(200, {'revoked': n})
+        if len(sub) == 2 and sub[0] == 'shares':
+            if m == 'POST': self.shares[(x['id'], sub[1])] = {'data': b.get('data'), 'updatedAt': self._now()}; return W(200, {'kind': sub[1], 'data': b.get('data'), 'updatedAt': self._now()})
+            if m == 'DELETE': return W(200, {'deleted': 1 if self.shares.pop((x['id'], sub[1]), None) else 0})
+        if sub == ['notes'] and m == 'POST':
+            self.n += 1; n = {'id': str(self.n), 'tid': tid, 'mid': x['id'], 'lanes': b.get('lanes') or '', 'text': (b.get('text') or '')[:280], 'at': self._now()}; self.notes.append(n)
+            return W(201, {'id': n['id'], 'memberId': x['id'], 'lanes': n['lanes'], 'text': n['text'], 'createdAt': n['at']})
+        if len(sub) == 2 and sub[0] == 'notes' and m == 'DELETE':
+            n = next((n for n in self.notes if n['id'] == sub[1] and n['tid'] == tid), None)
+            if not n: return W(404, {'error': 'note not found'})
+            if n['mid'] != x['id'] and not sec: return W(403, {'error': 'only the author or the secretary can delete this note'})
+            self.notes.remove(n); return W(200, {'deleted': 1})
+        if sub == ['reports'] and m == 'POST':
+            self.n += 1; self.reports.append({'id': str(self.n), 'tid': tid, 'reporter': x['id'], 'aboutMember': b.get('memberId'), 'noteId': b.get('noteId'), 'reason': (b.get('reason') or '')[:200], 'createdAt': self._now()})
+            return W(201, {'id': str(self.n)})
+        if len(sub) == 2 and sub[0] == 'reports' and m == 'DELETE':
+            if not sec: return deny()
+            before = len(self.reports); self.reports = [r for r in self.reports if not (r['id'] == sub[1] and r['tid'] == tid)]; return W(200, {'dismissed': before - len(self.reports)})
+        if len(sub) == 2 and sub[0] == 'members' and m == 'DELETE':
+            target = x if sub[1] == 'me' else next((y for y in self.members if y['id'] == sub[1] and y['tid'] == tid), None)
+            if sub[1] != 'me' and not sec: return W(403, {'error': 'only the league secretary can remove a member'})
+            if not target: return W(404, {'error': 'member not on this team'})
+            self.members.remove(target); [self.shares.pop(k) for k in list(self.shares) if k[0] == target['id']]
+            return W(200, {'left': sub[1] == 'me', 'removed': sub[1] != 'me'})
+        return W(404, {'error': 'not found'})
 
 
 class Abort(Exception):

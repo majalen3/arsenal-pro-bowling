@@ -26,6 +26,10 @@ JOURNEYS = [
     ('J13', 'Ball Status: four words, one source, pro shop never offered (IA P1.3, pending)', 'righty', J.j13_status),
     ('J14', 'Bag builder: one bag, Bring: N, 3 steps with why-not (IA P1.1/P1.2/P1.4, pending)', 'righty', J.j14_bag),
     ('J15', 'Front page: hand chip, Tonight fold, Learn first (IA P1.5-P1.7, pending)', 'righty', J.j15_front),
+    ('J16', 'My Team: start, invite, share the bag, teammate joins and sees it, note, offline, leave', 'righty', J.j16_team),
+    ('J17', 'Share cards: Old Friends and Season Wrapped, made on the phone', 'righty', J.j17_cards),
+    ('J18', 'Pro shop kit: QR per ball, scan opens Add a ball prefilled', 'righty', J.j18_kit),
+    ('J19', 'Identity tags and the Regular badge', 'righty', J.j19_tags_regular),
 ]
 
 

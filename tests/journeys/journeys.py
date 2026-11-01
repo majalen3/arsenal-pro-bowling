@@ -2,6 +2,7 @@
 screen is what the next screen shows (ball, stand/aim, hand, night id, focus). Steps are named so docs/QA_PLAN.md and
 tests/journeys/known_issues.json can refer to them as '<journey id>/<step name>'."""
 import datetime, json, os, re, tempfile
+import lib
 from personas import PERSONAS, NIGHT0, boot, seed_history
 
 WHERE = '#qlWhere'
@@ -881,3 +882,139 @@ async def j15_front(j):
         g = await first_viewport(j, r'Glossary'); s.check(g is not None and g <= 740, f'Glossary link bottom {g} px')
         first = await j.ev("() => { const c = [...document.querySelectorAll('.screen form, .screen section, .screen .card, .screen details')].find(e => e.getBoundingClientRect().height > 0); return c ? (c.id || '') + ' ' + c.innerText.slice(0, 80) : ''; }")
         s.check(re.search(r'^lnForm|^\s*Learn', first), f'first block is the word search / Learn ("{first[:40]}")')
+
+
+# --- Community (owner 2026-10-31, docs/TEAM_PROMPT_COMMUNITY_DIRECTOR.md). Accounts and teams run on lib.MockAccounts, never the live API. ---
+SIGNUP = "async em => { const m = await import('./js/account.js'); const r = await m.account.signup(em, 'correct horse battery 9'); return !!r.ok; }"
+EVAL_WORDS = re.compile(r'\b(average|avg|best game|worst|rank|ranked|beat|percentile|score of)\b', re.I)
+
+
+async def second_bowler(j, name='Sam'):
+    """A teammate's phone: a fresh context sharing this journey's mock API (same teams), no balls of their own."""
+    ctx = await j.ctx.browser.new_context(viewport={'width': 360, 'height': 780}, is_mobile=True, has_touch=True, timezone_id='UTC', locale='en-US', service_workers='block')
+    await ctx.route(lib.API, j.api.handle)
+    p = await ctx.new_page(); errs = []
+    p.on('pageerror', lambda e: errs.append(str(e)[:200]))
+    await p.goto(j.run.base + 'tests/axe.min.js'); await p.evaluate(lib.WIPE)
+    await p.evaluate("() => { localStorage.setItem('ap_profile', JSON.stringify({hand:'left',style:'stroker',speed:14,rev:250,pap:'',tilt:'',owned:[],entered:{hand:true,style:true}})); localStorage.setItem('ap_prefs', JSON.stringify({onboarded:true})); }")
+    await p.goto(j.run.base + '?qa=teammate#/tonight'); await p.wait_for_function("() => window.__apData", timeout=15000)
+    ok = await p.evaluate(SIGNUP, f'{name.lower()}@example.test')
+    return ctx, p, errs, ok
+
+
+async def j16_team(j):
+    await boot(j, 'righty')
+    names = list((await ball_names(j)).values())
+    ok = await j.ev(SIGNUP, 'maja@example.test')
+    async with j.step('Secretary starts a team from the Bag (name, display name, night)', task='team', target_taps=6, critical=True) as s:
+        s.check(ok, 'signed in (mock API)')
+        await j.nav('/bag'); await j.tap('#bagTeam'); await j.wait('#tmStart')
+        await j.type('#tmName', 'Thursday Rollers'); await j.type('#tmMe1', 'Maja'); await j.tap('#tmStart .seg-opt[data-v=Thu]')
+        await j.tap('#tmStartBtn'); await j.wait('#tmHead')
+        s.check('Thursday Rollers' in await j.text('#tmHead'), 'team header shows the name')
+        s.check(await j.visible('#tmSec'), 'secretary tools shown to the secretary')
+        await j.audit('team')
+    async with j.step('Secretary makes an invite and shares the bag and tags', task='team', target_taps=6) as s:
+        await j.tap('#tmInvite'); await j.wait('#tmCodeOut'); code = await j.text('#tmCodeOut'); j.state['code'] = code
+        s.check(re.fullmatch(r'[A-Z0-9]{4}-[A-Z0-9]{4}', code), f'invite code {code}')
+        await j.tap('#tmShareBtn'); await j.wait('#tmShareSheet')
+        for k in ('bag', 'tags'):
+            await j.tap(f'#tmShareSheet [data-share={k}] .seg-opt[data-v=on]'); await j.settle(350)
+        await j.tap('#tmShareDone'); await j.settle(600)
+        sh = [k for (mid, k) in j.api.acct.shares]; s.check('bag' in sh and 'tags' in sh, f'shares on the server: {sorted(sh)}')
+        s.check('stats' not in sh, 'stats not shared (opt-in only)')
+    ctx2 = None
+    try:
+        async with j.step('Teammate opens the invite link, joins and sees the shared bag', critical=True) as s:
+            ctx2, b, errs, ok2 = await second_bowler(j)
+            s.check(ok2, 'teammate signed in (mock API)')
+            await b.goto(j.run.base + '#/team?join=' + j.state['code']); await b.wait_for_selector('#tmJoin')
+            s.check(await b.input_value('#tmCode') == j.state['code'], 'invite code prefilled from the link')
+            await b.fill('#tmMe2', 'Sam'); await b.click('#tmJoinBtn'); await b.wait_for_selector('#tmHead'); await b.wait_for_timeout(500)
+            cards = await b.evaluate("() => [...document.querySelectorAll('.tm-card')].map(c => c.innerText)")
+            mate = [c for c in cards if 'Maja' in c]
+            s.check(mate, f'Maja card on the teammate phone ({len(cards)} cards)')
+            s.check(mate and sum(name_in(n, mate[0]) for n in names) >= 2, 'the shared bag lists her balls')
+            s.check(mate and not EVAL_WORDS.search(mate[0]), 'no ranking or average on the card')
+            s.check(not await b.locator('#tmSec').count() or not await b.locator('#tmSec').is_visible(), 'secretary tools hidden from a member')
+            await b.fill('#tmNoteLanes', '5-6'); await b.fill('#tmNoteText', 'Left lane hooks early after game 1'); await b.click('#tmNoteAdd'); await b.wait_for_timeout(600)
+            s.check(not errs, f'no page errors on the teammate phone {errs[:2]}')
+        async with j.step('The lane-pair note reaches the secretary; offline shows the last copy') as s:
+            await j.page.reload(); await j.settle(500); await j.wait('#tmHead')
+            s.check('Left lane hooks early' in await j.text('#tmNotes'), 'note shows for the secretary')
+            j.api.online = False; await j.page.reload(); await j.settle(800); await j.wait('#tmHead', timeout=10000)
+            s.check(await j.visible('#teamOffline') or await j.visible('#tmStale'), 'offline chip / last-synced line shown')
+            j.api.online = True
+        async with j.step('Teammate leaves; their shares go with them', task='team') as s:
+            await b.reload(); await b.wait_for_selector('#tmLeave', state='attached'); await b.locator('#tmLeave').scroll_into_view_if_needed(); await b.click('#tmLeave')
+            btn = b.locator('.sheet button.danger, [role=dialog] button.danger').first
+            if await btn.count(): await btn.click()
+            await b.wait_for_timeout(700)
+            left = [m for m in j.api.acct.members if m['dn'] == 'Sam']
+            s.check(not left, 'teammate no longer a member on the server')
+    finally:
+        if ctx2: await ctx2.close()
+
+
+async def j17_cards(j):
+    await boot(j, 'righty'); await seed_history(j, nights=3)
+    balls = await owned(j)
+    async with j.step('Retired ball shows in the Old Friends fold with a share button', task='cards', target_taps=3) as s:
+        await j.ev("async id => { const m = await import('./js/hub.js'); await m.ready(); await m.add('ownedBall.edited', id, { fields: { status: 'retired' } }); }", balls[-1]['id'])
+        await j.goto('/bag?view=all'); await j.settle(500)
+        if not await j.visible('#armHallShare'): await j.tap('#armHall summary')
+        s.check(await j.visible('#armHallShare'), 'Share an Old Friends card button')
+        async with j.page.expect_download(timeout=8000) as dl:
+            await j.tap('#armHallShare')
+        f = (await dl.value).suggested_filename; s.check(f.endswith('.png'), f'PNG made on the phone ({f})')
+    async with j.step('Season Wrapped: facts with a source, no judging words, share as PNG', task='cards', target_taps=2) as s:
+        await j.goto('/wrapped'); await j.wait('#wrList')
+        t = await j.text('#wrList'); s.check(len(t) > 40, 'Wrapped lines shown')
+        s.check(not EVAL_WORDS.search(t), 'no average/best/rank wording')
+        s.check(await j.visible('#wrProv'), 'source pill (your log + dates)')
+        async with j.page.expect_download(timeout=8000) as dl:
+            await j.tap('#wrShare')
+        s.check((await dl.value).suggested_filename.endswith('.png'), 'Wrapped PNG')
+        await j.audit('wrapped')
+
+
+async def j18_kit(j):
+    await boot(j, 'righty')
+    async with j.step('Pro shop kit: add owned balls, one QR per ball, print', task='kit', target_taps=4) as s:
+        await j.nav('/me'); await j.tap('#goKit'); await j.wait('#kitQ')
+        await j.tap('#kitMine'); await j.settle(400)
+        n = await j.page.locator('figure.kit-cell[data-kit]').count(); s.check(n >= 2, f'{n} QR cells')
+        foot = await j.text('#kitSheet'); s.check('scan to add a ball' in foot.lower() and 'works offline' in foot.lower(), 'header and footer on the sheet')
+        s.check(await j.visible('#kitPrint'), 'Print button')
+        j.state['cat'] = await j.ev("() => document.querySelector('figure.kit-cell[data-kit]').dataset.kit")
+        await j.audit('kit')
+    async with j.step('Scanning a code opens Add a ball with the ball filled in', critical=True) as s:
+        await j.goto('/add-ball?cat=' + j.state['cat']); await j.wait('#abFromKit')
+        name = await j.ev("id => import('./js/cc/addball.js').then(A => { const e = A.entryById(id); return e && (e.name || '') })", j.state['cat'])
+        q = await j.page.input_value('#abQ')
+        s.check(name and name.split()[-1].lower() in q.lower(), f'search filled ({q!r} for {name!r})')
+        await j.goto('/add-ball?cat=not-a-ball'); await j.settle(500)
+        s.check(not j.console, f'unknown code handled without errors {j.console[:2]}')
+
+
+async def j19_tags_regular(j):
+    await boot(j, 'righty'); await seed_history(j, nights=3)
+    async with j.step('Identity tags: optional, toggled on Me, kept after a reload', task='tags', target_taps=3) as s:
+        await j.nav('/me'); await j.wait('#tagPicker')
+        tag = await j.ev("() => [...document.querySelectorAll('#tagPicker [data-tag]')].find(b => b.getAttribute('aria-pressed') === 'false').dataset.tag")
+        await j.tap(f'#tagPicker [data-tag="{tag}"]'); await j.settle(250)
+        await j.page.reload(); await j.settle(500); await j.wait('#tagPicker')
+        s.check(await j.ev("t => document.querySelector(`#tagPicker [data-tag=\"${t}\"]`).getAttribute('aria-pressed')", tag) == 'true', f'tag {tag} kept')
+        t = re.sub(r'nothing here is ranked|never ranked', '', await j.text('#commCard'), flags=re.I)
+        s.check(not EVAL_WORDS.search(t), 'no ranking words (beyond "nothing here is ranked")')
+        await j.audit('me-community')
+    async with j.step('Regular badge: 3 nights says how many more; a 4th night earns it', task='tags') as s:
+        cid = await j.ev("() => import('./js/hub.js').then(async m => { await m.ready(); return Object.keys(m.proj().centers || {})[0] })")
+        await j.select('#homeCenter', value=cid); await j.settle(300)
+        line = await j.text('#regularLine'); s.check('badge shows at 4' in line and not await j.visible('#regularBadge'), f'3 nights: {line}')
+        await j.ev("async () => { const m = await import('./js/hub.js'); await m.ready(); await m.add('session.created', 'qa-night-4th', { kind: 'tonight', date: '2026-09-24', centerId: 'center-qa-sunset-lanes', ended: true, event: 'league' }); }")
+        await j.page.reload(); await j.settle(500); await j.nav('/me'); await j.settle(400)
+        if await j.page.locator('#regularBadge').count():
+            s.check(re.search(r'Regular at', await j.text('#regularBadge')), 'Regular at <center> badge')
+        else:
+            s.check(False, f'badge after 4 nights ({await j.text("#regularLine")})')
