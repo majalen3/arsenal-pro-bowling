@@ -556,7 +556,7 @@ async def export_cycle(b):
     await p.goto(BASE + '?ex2#/arsenal'); await p.wait_for_selector('#arsExport')
     await p.click('#arsExport'); await p.wait_for_selector('#expSheet')
     opts = await p.eval_on_selector_all('#expSheet .exp-opt', 'e => e.map(x => x.id)')
-    check(opts == ['expSheetBtn', 'expCard', 'expCsv', 'expBackup'], f'[export] Arsenal > Export offers sheet, card, CSV, backup {opts}')
+    check([o for o in opts if o != 'expOld'] == ['expSheetBtn', 'expCard', 'expCsv', 'expBackup'], f'[export] Arsenal > Export offers sheet, card, CSV, backup (+ Old Friends card when a ball is retired) {opts}')
     small = await p.evaluate(SMALL); check(not small, f'[export] options >= 44px {small[:6]}'); await axe_ok(p, '[export] options sheet'); await p.screenshot(path=ART + '/itemE-export-options.png')
     async with p.expect_download() as dl: await p.click('#expCsv')
     d = await dl.value; f = os.path.join(tempfile.mkdtemp(), d.suggested_filename); await d.save_as(f); csv = open(f, encoding='utf-8-sig').read().splitlines()
