@@ -20,7 +20,7 @@
    "Targeting & Spares"
   ],
   "counts": {
-   "Scoring & League Basics": 13,
+   "Scoring & League Basics": 18,
    "Equipment — Balls": 26,
    "Equipment — Shoes, Approach & Accessories": 19,
    "Styles & Approaches": 15,
@@ -3494,6 +3494,122 @@
    "weak_evidence": false,
    "v1_rank": null,
    "added": "2026-10-24 (P1.3 status pass)"
+  },
+  {
+   "id": "team",
+   "tree": "Scoring & League Basics",
+   "term": "My Team",
+   "level": "Beginner",
+   "bubble": "Your league team in the app. You choose what each teammate sees; nothing is ranked.",
+   "glossary": "My Team is an optional hub for a league team. Each bowler chooses what to share (tonight's balls with one reason each, plain counts, tags, a home-center badge). Lane-pair notes are shared with the team. It needs a free account; leaving removes what you shared.",
+   "placement": "Bubble (Bag › Team title) + Glossary",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "repo_dec",
+     "url": "docs/DECISIONS.md",
+     "label": "repo",
+     "title": "2026-10-31 My Team under Bag, opt-in sharing"
+    }
+   ],
+   "level_why": "New to the team features.",
+   "evidence": "App rule in DECISIONS.md 2026-10-31.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "team-secretary",
+   "tree": "Scoring & League Basics",
+   "term": "League secretary",
+   "level": "Beginner",
+   "bubble": "The secretary keeps the league running. In My Team they invite, remove and handle reports.",
+   "glossary": "In a USBC league the secretary keeps the records and standings. In My Team, the bowler who starts a team is its secretary: they make invites (good for up to 14 days), set the league night, and see reports. If they leave, the longest-standing teammate takes over.",
+   "placement": "Bubble (My Team › Secretary) + Glossary",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "usbc_league",
+     "url": "https://bowl.com/leagues",
+     "label": "S",
+     "title": "USBC, league officers (secretary)"
+    },
+    {
+     "key": "repo_dec",
+     "url": "docs/DECISIONS.md",
+     "label": "repo",
+     "title": "2026-10-31 secretary role"
+    }
+   ],
+   "level_why": "New to the team features.",
+   "evidence": "App rule in DECISIONS.md 2026-10-31.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "team-notes",
+   "tree": "Scoring & League Basics",
+   "term": "Lane-pair notes",
+   "level": "Beginner",
+   "bubble": "A short note about what a lane pair did tonight, shared with your team.",
+   "glossary": "Leagues move teams across lane pairs each week. A lane-pair note (e.g. “5-6: left lane hooks early”) helps the next teammate on that pair. Only your team sees them; the writer or the secretary can delete one, and anyone can report one.",
+   "placement": "Bubble (My Team › Lane-pair notes) + Glossary",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "repo_dec",
+     "url": "docs/DECISIONS.md",
+     "label": "repo",
+     "title": "2026-10-31 lane-pair notes"
+    }
+   ],
+   "level_why": "New to the team features.",
+   "evidence": "App rule in DECISIONS.md 2026-10-31.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "tags",
+   "tree": "Scoring & League Basics",
+   "term": "Identity tags",
+   "level": "Beginner",
+   "bubble": "Optional words you pick to describe yourself (lefty, two-hander, coach). Never ranked.",
+   "glossary": "Tags are optional and chosen by you. Hand and style tags come from your profile and can be switched off. Tags are shown side by side in a fixed order, never ranked, and only reach a team if you share them.",
+   "placement": "Bubble (Me › Me in the community) + Glossary",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "repo_dec",
+     "url": "docs/DECISIONS.md",
+     "label": "repo",
+     "title": "2026-10-31 identity tags"
+    }
+   ],
+   "level_why": "New to the team features.",
+   "evidence": "App rule in DECISIONS.md 2026-10-31.",
+   "weak_evidence": false,
+   "v1_rank": null
+  },
+  {
+   "id": "regular",
+   "tree": "Scoring & League Basics",
+   "term": "Regular badge",
+   "level": "Beginner",
+   "bubble": "Bowl 4 nights at your home center in 90 days and you're a Regular there, whatever you scored.",
+   "glossary": "Pick a home center on Me. The app counts distinct nights you logged there in the last 90 days; at 4 nights it shows “Regular at <center>”. Scores never count. It is an app rule the owner may tune, and teammates see it only if you share it.",
+   "placement": "Bubble (Me › Home center) + Glossary",
+   "priority": "Low",
+   "sources": [
+    {
+     "key": "repo_dec",
+     "url": "docs/DECISIONS.md",
+     "label": "repo",
+     "title": "2026-10-31 regular threshold (4 nights in 90 days)"
+    }
+   ],
+   "level_why": "New to the team features.",
+   "evidence": "App rule in DECISIONS.md 2026-10-31.",
+   "weak_evidence": false,
+   "v1_rank": null
   }
  ]
 }

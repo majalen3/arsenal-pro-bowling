@@ -13,6 +13,7 @@ import { applyTheme } from '../main.js';
 import { helpDot } from './help.js';
 import { START as S } from '../engine.js';
 import { accountCard } from './account.js';
+import { communityCard } from './community.js';
 import { account } from '../account.js';
 export const VERSION = '1.1.0';   // release version (CHANGELOG.md); the offline build id comes from the service worker cache name
 // IA P2: the Me screen (header button on every tab): profile, data, appearance, sync, about. Learn and the Help switch moved to the Learn tab.
@@ -71,7 +72,7 @@ export function render() {
       h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Bowler profile' }), h('button', { class:'btn sm ghost', id:'editProfile', onclick:editProfile }, h('span', { html:icon('edit') }), 'Edit')),
         pr ? h('p', { text:`${HAND.handOfProfile(pr) ? HAND.HAND_LABEL[HAND.handOfProfile(pr)] : 'Hand not set'}, ${pr.style === 'two' ? 'two-hander' : (pr.style || 'style not set')}, ${(+pr.speed).toFixed(1)} mph, ${pr.rev} rpm${pr.pap ? ', PAP ' + pr.pap : ''}${pr.tilt ? ', tilt ' + pr.tilt : ''}.` }) : h('p', { class:'muted', text:`Not set. The lane uses mid-range starting values (${S.speed} mph, ${S.rev} rpm) until you enter yours.` }),
         h('div', { class:'row between' }, h('span', { text:`My bag: ${pr && pr.owned && pr.owned.length ? pr.owned.length + ' balls' : 'all 22'}` }), h('button', { class:'btn sm ghost', id:'editBag', onclick:editBag }, 'Choose'))),
-      accountCard(),
+      accountCard(), communityCard(),
       h('div', { class:'card', id:'dataCard' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Your data' }), protChip), dataInfo, lastBk,
         h('details', { class:'tn-more', id:'protMore' }, h('summary', { text:'Keep it safe' }), protBody),
         h('details', { class:'tn-more', id:'dataMore' }, h('summary', { text:'What\u2019s saved' }), dataCounts),
@@ -89,7 +90,7 @@ export function render() {
           h('label', { class:'fld grow' }, h('span', { text:'Restore from another device' }), codeIn), h('button', { class:'btn primary', type:'submit' }, 'Use code'))),
       h('div', { class:'card' }, h('h2', { class:'card-title', text:'About' }),
         h('p', { class:'small', text:'Arsenal Pro models how each ball in your arsenal reads the lane, and coaches your next move. Ball specs come from manufacturer data (marked est. where estimated). Pattern library: Kegel Pattern Library via CarryDown.' }),
-        h('p', { class:'small', id:'aboutPrivacy', text:'Privacy: your games, balls and notes are saved on this phone first and work offline. A copy syncs to the Arsenal Pro server so you can restore it: under your backup code, or privately under your account if you sign in. An account is optional and only needs an email and password; you can export or delete it on this screen. No ads, no tracking, and it is free.' }),
+        h('p', { class:'small', id:'aboutPrivacy', text:'Privacy: your games, balls and notes are saved on this phone first and work offline. A copy syncs to the Arsenal Pro server so you can restore it: under your backup code, or privately under your account if you sign in. An account is optional and only needs an email and password; you can export or delete it on this screen. My Team is opt-in: teammates see only the items you choose to share (never your email), and leaving a team removes them. Share cards are made on this phone and are never posted for you. No ads, no tracking, and it is free.' }),
         h('div', { class:'row gap wrap' }, h('a', { class:'btn ghost', href:'https://github.com/majalen3/arsenal-pro-bowling/blob/main/CHANGELOG.md', target:'_blank', rel:'noopener', id:'aboutChanges' }, 'What\u2019s new'),
           h('a', { class:'btn ghost', href:'https://github.com/majalen3/arsenal-pro-bowling', target:'_blank', rel:'noopener', id:'aboutSource' }, 'Source code')),
         build));

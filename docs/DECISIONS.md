@@ -221,3 +221,17 @@ The owner's target is a board (1–39, halves allowed), not an engine angle. We 
 - **Decision:** the shelf of retired balls is called **Old Friends** ("Old friends for retired friends"), replacing "Hall of Fame" everywhere: the Armory shelf heading, the Ball status Help bubble and Guide entry, the export sheet section ("Old Friends and milestones"), tests and current docs.
 - The Status word stays **Retired**; only the shelf heading is Old Friends. The four Status words are unchanged (In my bag / At home / At the pro shop / Retired).
 - Closes F16; the J13 known issue is removed, so "Hall of Fame" anywhere on Arsenal, Bag, Tonight or the ball page now fails CI. Historical logs and release notes keep the old name as written.
+
+## Community: My Team, share cards, pro shop kit, tags, Center Regulars (owner 2026-10-31)
+Prompt: docs/TEAM_PROMPT_COMMUNITY_DIRECTOR.md. API: arsenal-pro-api `lib/teams.js` (additive tables only).
+- **My Team lives under Bag, no new tab.** It is reached from a "Team" button in the Bag top bar and from Me. Five tabs plus Me stays the IA (P2); a team is about what you bring, which is the Bag's job. Route `#/team` (Bag tab), `#/conduct`.
+- **Needs an account; core data does not.** Sharing is opt-in per team and per item (bag, counts, tags, home-center badge), off by default, previewed before it is sent. Teammates see a display name, never an email or account id. Shared items that are switched on are re-sent when the hub opens so the bag is current.
+- **Secretary:** whoever starts the team. Invites (random code, HMAC-stored, 1–14 days, use cap, can be turned off), removes, sets the league night, sees and handles reports. If the secretary leaves, the earliest-joined member takes over; the last member leaving deletes the team.
+- **Non-members get 404** on every team route, so a team's existence never leaks; secretary-only actions return 403 to members.
+- **No profanity filter.** People, not a word list, decide what fits a team: a code of conduct page, Report (secretary only sees it), remove note, remove bowler. Owner may revisit moderation ownership.
+- **Shared stats are plain counts** (nights, games, frames; strike and spare rates only at 30+ chances, `MIN_SHOTS`). No averages, no scores, no ranking; members show in join order.
+- **Offline:** the last synced team view with an "Offline" chip and a "Showing the team as of …" line; changes need a connection.
+- **Leaving / removal / account delete** remove that member's shares, notes and reports. Team data is included in Export my data.
+- **Center Regulars:** home center is opt-in (Me). "Regular at <center>" = **4 or more distinct nights logged there in the last 90 days, any score** (`REGULAR_NIGHTS`, `REGULAR_DAYS` in js/cc/community.js). App rule; owner may tune.
+- **Season:** Aug 1 – Jul 31 (most US leagues start late summer). Used by Season Wrapped. App rule; owner may change.
+- **Identity tags:** two-hander, one-hander, lefty, righty (these four come from the profile and can be switched off), youth, senior, adaptive, collector, coach, league bowler. Optional, fixed order, never ranked.

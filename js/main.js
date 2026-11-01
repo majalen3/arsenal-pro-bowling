@@ -23,6 +23,8 @@ route(/^\/arsenal\/sheet$/, 'bag', () => import('./screens/export.js'));
 route(/^\/ball\/([\w-]+)$/, 'bag', () => import('./screens/ball.js'));
 route(/^\/compare$/, 'bag', () => import('./screens/compare.js'));
 route(/^\/add-ball$/, 'bag', () => import('./screens/addball.js'));
+route(/^\/team$/, 'bag', () => import('./screens/team.js'));
+route(/^\/conduct$/, 'bag', () => import('./screens/conduct.js'));
 // Bag tab: the bag builder first; "All my balls" (the Armory and catalog) is a view of the same tab (#/bag?view=all).
 route(/^\/bag$/, 'bag', () => Promise.all([import('./screens/bag.js'), import('./screens/arsenal.js')]).then(([b, a]) => ({ render: o => (o.query && o.query.get('view') === 'all' ? a : b).render(o) })));
 route(/^\/learn$/, 'learn', () => import('./screens/learn.js'));

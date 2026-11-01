@@ -31,7 +31,7 @@ export async function render() {
   await ready();
   const body = h('div', { class: 'stack', id: 'bagBody' });
   const el = h('section', { class: 'screen list-screen', id: 'bag' },
-    h('header', { class: 'appbar' }, h('h1', { class: 'title', text: 'Bag' }), h('div', { class: 'appbar-actions' }, h('a', { class: 'btn ghost sm', id: 'bagAdd', href: '#/add-ball' }, 'Add ball'))), bagView('pack'), body);
+    h('header', { class: 'appbar' }, h('h1', { class: 'title', text: 'Bag' }), h('div', { class: 'appbar-actions' }, h('a', { class: 'btn ghost sm', id: 'bagTeam', href: '#/team' }, 'Team'), h('a', { class: 'btn ghost sm', id: 'bagAdd', href: '#/add-ball' }, 'Add ball'))), bagView('pack'), body);
   let proposal = null, careId = null, otherOpen = false;
   if (!TERT) loadIndex().then(x => { TERT = R.tertiles(x); if (el.isConnected) draw(); }).catch(() => {});
   const itemOf = (P, id) => ST.itemOfOwned(P, id);
