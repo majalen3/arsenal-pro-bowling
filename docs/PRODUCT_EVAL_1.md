@@ -261,7 +261,7 @@ The Now list (items 1–6) adds up to about 10 agent-days of effort, which fits 
 - **C3** Leaderboards / small-group competition vs no ranking (#28, community rules). Recommendation: don't build. Center Regulars and join-order team lists stay.
 - **C4** An end-of-session share offer vs "nothing extra during scoring" and Help off by default. Recommendation: only after the session, once per moment.
 - **C5** Engine v2 needs owner approval before any physics claim grows.
-- **C6** Catalog: rebuild versus asking bowlingballvideos.com for written permission (an outbound email, needs approval).
+- **C6** Catalog: rebuild versus asking bowlingballvideos.com for written permission (an outbound email, needs approval). **Done 2026-11-02: rebuilt from maker pages (DECISIONS, "Ball catalogue rebuilt from maker pages only").**
 - **C7** Product photos need written permission from makers (outbound requests need approval). The default is no photos.
 - **C8** F06 total-only teammate mode is still open (FINDINGS_2).
 - **C9** Score milestones (300, 200+) are evaluative. Keep them private and earned, or drop them?

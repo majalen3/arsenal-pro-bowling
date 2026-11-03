@@ -2,6 +2,14 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## 1.1.1 (2026-11-02)
+
+### For bowlers
+- **Add a ball: every catalogue ball now comes from its maker's own page.** All 145 rows were re-read from the manufacturer's product page (or its tech sheet) on 2026-11-02. Each ball shows the maker as the source with a link and the date read. Values the maker doesn't print show "spec TBD" instead of a number from somewhere else. Two balls with no maker page (Storm Mix Black White, Storm Tropical Surge Purple) are marked unverified; type their specs from the box.
+
+### Under the hood
+- `js/data/spec_catalog.js` is generated from `tools/catalog/maker_rows.json` by `tools/build_spec_catalog.mjs` (rows are objects with `source`, `checked`, `specStatus`); no third-party catalogue data. Offline build `arsenal-pro-v62`.
+
 ## 1.1.0 (2026-10-31)
 
 ### For bowlers

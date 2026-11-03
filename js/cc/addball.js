@@ -2,7 +2,7 @@
 // Never invents a value: every field is {v, prov}; a field nobody printed stays absent and the UI says "spec TBD".
 // Engine = the unchanged 2-D simulatePath (via analyze / modelLine); cc3d stays off.
 import { balls, coverKind, specOK } from '../data.js';
-import { SPEC_ROWS, CATALOG_SRC } from '../data/spec_catalog.js';
+import { SPEC_ROWS, CATALOG_META } from '../data/spec_catalog.js';
 import { norm } from '../data/match.js';
 import { S, START, OIL_LEN, analyze } from '../engine.js';
 import { modelLine, presetFor } from './model.js';
@@ -17,9 +17,9 @@ export const USBC = { 'rattler-big-bite': '2024-06-25', 'deadly-rattler': '2023-
   'super-nova': '2022-08-02', 'hy-road': '2008-10', 'hy-road-pearl': '2013-05', 'hy-road-x': '2018-09-11', 'hy-road-40': '2025-05-06',
   astrophysix: '2019-05-07', 'guru-supreme': '2015-09', innovator: '2022-09-20', 'bigfoot-hybrid': '2022-10-18', trailblazer: '2021-09-21',
   'counter-attack': '2019-05-21' };
-// Brands the server lookup can try (arsenal-pro-api lib/specfetch.js BRANDS). Motiv blocks automated reads (403).
+// Brands the server lookup can try (arsenal-pro-api lib/specfetch.js BRANDS). Motiv is not in that list yet.
 export const LOOKUP_BRANDS = ['Storm', 'Roto Grip', '900 Global', 'Brunswick', 'Radical', 'DV8', 'Hammer', 'Ebonite', 'Track', 'Columbia 300'];
-export const UNSUPPORTED = { Motiv: 'Motiv blocks automated reads; enter specs from the box or the maker page.' };
+export const UNSUPPORTED = { Motiv: 'No live Motiv lookup yet; showing values read from motivbowling.com, or enter them from the box.' };
 const BRAND_ALIAS = { rotogrip: 'Roto Grip', 'roto grip': 'Roto Grip', '900g': '900 Global', '900 global': '900 Global', columbia: 'Columbia 300',
   'columbia 300': 'Columbia 300', dv8: 'DV8', 'dv 8': 'DV8', strikeforce: 'KR Strikeforce', 'kr strikeforce': 'KR Strikeforce', 'kr': 'KR Strikeforce' };
 const COND_OIL = { Heavy: ['heavy'], 'Medium-Heavy': ['heavy', 'medium'], Medium: ['medium'], 'Medium-Light': ['medium', 'light'], Light: ['light'], Dry: ['light'] };
@@ -30,20 +30,30 @@ const coverTypeOf = c => { const m = /\b(solid|pearl|hybrid|urethane|plastic|pol
 const F = (v, prov, note) => (v == null || v === '' ? undefined : Object.assign({ v, prov }, note ? { note } : {}));
 const pack = o => Object.fromEntries(Object.entries(o).filter(([, x]) => x !== undefined));
 
-// ---- Catalogue: app balls (data.js) first, then the derived third-party catalogue; app wins on a name clash.
+// ---- Catalogue: app balls (data.js) first, then the maker-sourced catalogue rows; app wins on a name clash.
 function appEntry(b) {
   const p = APP_PROV, ct = coverKind(b);
   return { id: b.id, brand: b.brand, name: b.name, src: 'app', fields: pack({
     rg: F(b.rg, p), diff: F(b.diff, p), coverstock: F(b.coverName, p), coverType: F(ct, p), finish: F(b.finish, p), core: F(b.coreName, p),
     symmetry: F(b.core, p), year: F(b.year, p), usbc: F(USBC[b.id], USBC_SRC), oil: F(b.oil && b.oil.length ? b.oil.slice() : null, Object.assign({}, p, { ref: 'app oil tag' })) }) };
 }
-function rowEntry([brand, name, cond, cover, sym, rg, diff]) {
-  const p = CATALOG_SRC, ct = coverTypeOf(cover);
-  return { id: 'sc-' + slug(brand + ' ' + name), brand, name, src: 'catalog', fields: pack({
-    rg: F(rg, p), diff: F(diff, p), coverType: F(ct, p, ct ? null : cover ? `catalogue says "${cover}" (type not stated)` : null),
-    symmetry: F(sym, p), condition: F(cond, p), oil: F(COND_OIL[cond] ? COND_OIL[cond].slice() : null, Object.assign({}, p, { ref: 'catalogue condition' })) }),
-    flag: /^storm$/i.test(brand) && /^mix\b/i.test(name) && /urethane/i.test(cover || '') ? 'Catalogue lists Urethane; confirm the cover on the maker page.' : null };
+// Catalogue rows are read from each maker's own page (tools/catalog/README.md): manufacturer provenance with that URL + read date.
+// Fields the row marks as derived (read from the maker's wording, not a labelled cell) carry a derived chip.
+const hostOf = u => { try { return new URL(u).host.replace(/^www\./, ''); } catch (e) { return 'maker page'; } };
+function rowEntry(r) {
+  const id = 'sc-' + slug(r.brand + ' ' + r.name), base = { id, brand: r.brand, name: r.name, src: 'catalog', source: r.source || null, checked: r.checked || null, specStatus: r.specStatus };
+  if (r.specStatus !== 'maker') return Object.assign(base, { fields: {}, flag: 'No maker page found for this ball; specs unverified. Enter them from the box or the maker page.' });
+  const p = { kind: 'manufacturer', ref: hostOf(r.source), url: r.source, date: r.checked }, der = new Set(r.derived || []);
+  const d = Object.assign({}, p, { kind: 'derived', ref: 'read from the maker\u2019s wording' }), P = k => (der.has(k) ? d : p);
+  const w = r.weight, wNote = w == null ? 'weight not stated' : w === 15 ? '15 lb' : `${w} lb value; 15 lb not printed`;
+  const num = k => { const x = F(r[k], p, wNote); if (x && w != null && w !== 15) x.weightMismatch = true; return x; };
+  const ct = r.coverType ? coverTypeOf(r.coverType) || r.coverType : null;
+  return Object.assign(base, { fields: pack({
+    rg: num('rg'), diff: num('diff'), intDiff: num('intDiff'), coverstock: F(r.coverstock, p), coverType: F(ct, P('coverType'), ct !== r.coverType ? `maker says "${r.coverType}"` : null),
+    finish: F(r.finish, P('finish')), core: F(r.core, p), symmetry: F(r.symmetry, P('symmetry')), releaseDate: F(r.release, p), condition: F(r.conditionText, P('condition')),
+    oil: F(COND_OIL[r.condition] ? COND_OIL[r.condition].slice() : null, Object.assign({}, d, { ref: 'maker condition' })) }), flag: null });
 }
+export const CATALOG_NOTE = CATALOG_META.note;
 let LIST = null;
 export function catalog() {
   if (LIST) return LIST;

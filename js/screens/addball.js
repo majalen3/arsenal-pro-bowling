@@ -51,7 +51,7 @@ export async function render() {
   const brandOf = r => st.brand || r.brand || null;
   function drawResults() {
     results.innerHTML = ''; const r = A.search(st.q), brand = brandOf(r);
-    if (!st.q.trim()) { results.append(h('p', { class: 'muted small', text: `${A.catalog().length} balls in the catalogue. Specs come from the maker\u2019s page when we can read it.` })); return; }
+    if (!st.q.trim()) { results.append(h('p', { class: 'muted small', text: `${A.catalog().length} balls in the catalogue. ${A.CATALOG_NOTE}` })); return; }
     const row = (e, score) => h('button', { class: 'brow-main', 'data-pick': e.id, onclick: () => pick(e) },
       h('span', { class: 'brow-text' }, h('span', { class: 'brow-name', text: `${e.brand} ${e.name}` }),
         h('span', { class: 'brow-meta', text: (e.src === 'app' ? 'app catalogue' : 'catalogue') + (score != null ? ` \u00b7 match ${Math.round(score * 100)}%` : ' \u00b7 exact match') })));
@@ -124,7 +124,8 @@ export async function render() {
         x && x.weightMismatch ? prov('assumed', 'other weight') : null));
     }
     const lvl = G.cellOfCat(cat).level;
-    const src = made && made.source.url ? h('p', { class: 'small', id: 'abSource' }, 'Source: ', h('a', { class: 'srclink', href: made.source.url, target: '_blank', rel: 'noopener noreferrer', text: made.source.ref }), ` \u00b7 read ${made.source.date}`) : null;
+    const srcOf = made && made.source.url ? { url: made.source.url, ref: made.source.ref, date: made.source.date } : e.source ? { url: e.source, ref: new URL(e.source).host.replace(/^www\./, ''), date: e.checked } : null;
+    const src = srcOf ? h('p', { class: 'small', id: 'abSource' }, 'Source: ', h('a', { class: 'srclink', href: srcOf.url, target: '_blank', rel: 'noopener noreferrer', text: srcOf.ref }), srcOf.date ? ` \u00b7 read ${srcOf.date}` : '') : null;
     detail.append(h('div', { class: 'card', id: 'abConfirm' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: `2. Check ${e.brand} ${e.name}` }), helpDot('eq-cover-types', 'Cover types')),
       h('div', { class: 'fld' }, h('span', {}, 'Ball weight ', st.weightSet ? null : prov('assumed', 'assumed 15 lb')),
         segmented('Ball weight', wts.map(w => [String(w), w + ' lb']), String(st.weight), v => { st.weight = +v; st.weightSet = true; draw(); }, 'wide')),
@@ -211,7 +212,7 @@ export async function render() {
   }
   async function save(fields, conflicts, cat, made) {
     st.saving = true;
-    const e = st.pick, data = A.ownedEvent(cat, fields, { weight: st.weightSet ? st.weight : null, src: made ? made.source.url : e.src, entryId: e.id, conflicts });
+    const e = st.pick, data = A.ownedEvent(cat, fields, { weight: st.weightSet ? st.weight : null, src: made ? made.source.url : (e.source || e.src), entryId: e.id, conflicts });
     if (!st.weightSet) data.weightAssumed = st.weight;
     if (JSON.stringify(data).length > 7800) { delete data.spec.fields; }
     const id = 'own-' + slug(cat.id) + '-' + Date.now().toString(36);

@@ -138,7 +138,7 @@ Reddit could not be fetched (WebFetch timed out; JSON came back as HTML). All Re
 | Scout Reactive | 2012 | many colorways, 2007–2018 | colorway unknown, which affects the cover |
 | **Rack Attack Pro Line Urethane (Sports Tec)** | 2020 | **Not on the list.** The list has *Radical Rack Attack Pearl / Solid* (Apr 2015), which are reactive, not urethane. | **Must confirm the physical ball.** If it is the Radical one, the cover in data.js is wrong. |
 
-**`/workspace/physics/ball_specs.csv`** (bowlingballvideos.com catalogue, 145 rows):
+**`/workspace/physics/ball_specs.csv`** (bowlingballvideos.com catalogue, 145 rows; no longer used by the app since 2026-11-02, see DECISIONS "Ball catalogue rebuilt from maker pages only"):
 - It covers **none** of the 11 owned balls exactly. It only has newer Raw Hammer colorways (2.53 / .038), compared with Raw Hammer Black 2.540 / .038 in data.js. These are different colorways, so the gap is not proven to be a conflict.
 - It is still useful for gap-candidate lists:
   - **sym pearl, Medium or heavier:** Hammer Blacklist 2.545/.047; Storm Typhoon 2.53/.042; Motiv Raptor Pursuit 2.48/.055 (Heavy); Radical Evil Eye Pearl 2.495/.046 (Heavy);

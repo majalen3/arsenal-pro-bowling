@@ -36,7 +36,7 @@ It reminds the bowler about maintenance using **cited manufacturer intervals cou
 |---|---|
 | Frontend (ES modules in `js/`, GitHub Pages) | github.com/majalen3/arsenal-pro-bowling · https://majalen3.github.io/arsenal-pro-bowling/ |
 | Backend (Express + Postgres, Render) | github.com/majalen3/arsenal-pro-api |
-| Specs reference (not in repo) | `/workspace/physics/ball_specs.csv` (bowlingballvideos.com catalogue); USBC Approved Ball List PDF (weekly) |
+| Specs reference (not in repo) | `tools/catalog/maker_rows.json` (maker pages, 2026-11-02; replaced the bowlingballvideos.com catalogue); USBC Approved Ball List PDF (weekly) |
 | Tests | existing e2e suite (94 checks) + Playwright venv `/workspace/pwenv` |
 
 **Coordination:** another worker may be editing the UI.

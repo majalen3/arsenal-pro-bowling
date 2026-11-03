@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as A from '../../js/cc/addball.js';
+import { chip } from '../../js/data/schema.js';
 import { S } from '../../js/engine.js';
 import { catOf, registerOwned, clearExtra } from '../../js/cc/cats.js';
 const fx = n => JSON.parse(fs.readFileSync(new URL('./fixtures/' + n, import.meta.url)));
@@ -51,10 +52,20 @@ test('merge: maker wins, catalogue disagreement is a visible conflict', () => {
   assert.equal(g15.conflicts.length, 0, 'data.js Rattler values are the 15 lb row');
   assert.equal(g.fields.usbc.v, '2024-06-25'); assert.equal(g.fields.usbc.prov.kind, 'usbc');
 });
-test('catalogue rows: provenance "catalog", plastic is not engine-ready, Storm Mix flagged', () => {
-  const e = A.entryById('sc-storm-mix-platinum'); assert.ok(e.flag); assert.equal(e.fields.rg ? e.fields.rg.prov.kind : 'catalog', 'catalog');
+test('catalogue rows: maker provenance with URL + read date, plastic not engine-ready, unverified rows empty', () => {
+  const e = A.entryById('sc-storm-mix-platinum'); assert.equal(e.flag, null); assert.equal(e.fields.coverType.v, 'Urethane');
+  assert.equal(e.fields.coverstock.prov.kind, 'manufacturer'); assert.match(e.source, /^https:\/\/www\.stormbowling\.com\//); assert.equal(e.checked, '2026-11-02');
+  const bl = A.entryById('sc-hammer-blacklist'); assert.equal(bl.fields.rg.v, 2.545); assert.equal(bl.fields.rg.prov.kind, 'manufacturer'); assert.equal(bl.fields.rg.prov.ref, 'hammerbowling.com');
+  assert.equal(bl.fields.rg.note, '15 lb'); assert.equal(chip(bl.fields.rg.prov), 'hammerbowling.com spec');
+  const rk = A.entryById('sc-hammer-reckoning'); assert.equal(rk.fields.symmetry.v, 'Asymmetric'); assert.equal(rk.fields.symmetry.prov.kind, 'derived');
   const pl = A.catalog().find(x => x.src === 'catalog' && x.fields.coverType && x.fields.coverType.v === 'Plastic' && x.fields.rg);
   assert.ok(pl); assert.equal(A.engineReady(pl.fields), false); assert.match(A.missing(pl.fields)[0], /Plastic cover/);
+  const rows = A.catalog().filter(x => x.src === 'catalog'); assert.equal(rows.length, 145);
+  for (const r of rows) {
+    assert.doesNotMatch(JSON.stringify(r), /bowlingballvideos|bowwwl|bowlingball\.com|bowlingthismonth/i, r.id);
+    if (r.specStatus === 'maker') { assert.match(r.source, /^https:\/\//, r.id); for (const f of Object.values(r.fields)) assert.ok(['manufacturer', 'derived', 'usbc'].includes(f.prov.kind), r.id); }
+    else { assert.equal(r.specStatus, 'unverified'); assert.deepEqual(r.fields, {}); assert.match(r.flag, /unverified/); }
+  }
 });
 test('engine card: same release as the benchmark, < 1 s, engine state restored, coach voice', () => {
   const keep = JSON.stringify(S), f = A.fromLookup(fx('lookup-phaze-ii.json'), 16).fields, cat = A.toCat(f, { id: 'add-storm-phaze-ii', brand: 'Storm', name: 'Phaze II' });

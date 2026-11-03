@@ -794,8 +794,8 @@ async def addball_cycle(b):
     check('2.493' in await p.text_content('#abConflicts'), '[addball] 16 lb: maker 2.493 vs catalogue 2.480 shown, maker used')
     await axe_ok(p, '[addball] conflict'); await p.wait_for_timeout(200)
     # offline: catalogue values + Retry
-    mode['off'] = True; await p.fill('#abQ', 'Hammer Blacklist'); await p.click('#abList [data-pick="sc-hammer-blacklist"]'); await p.wait_for_selector('#abRetry')
-    check('catalog' in await p.text_content('#abFields [data-f=rg]') and "Can\u2019t reach the maker list offline. Type the name and specs." in await p.text_content('#abStatus'), '[addball] lookup fails: catalogue values with "catalog" chip + Retry + the offline line')
+    mode['off'] = True; await p.fill('#abQ', 'Hammer Reckoning'); await p.click('#abList [data-pick="sc-hammer-reckoning"]'); await p.wait_for_selector('#abRetry')
+    check('hammerbowling.com spec' in await p.text_content('#abFields [data-f=rg]') and 'hammerbowling.com' in await p.text_content('#abSource') and "Can\u2019t reach the maker list offline. Type the name and specs." in await p.text_content('#abStatus'), '[addball] lookup fails: catalogue values with the maker chip + Source link + Retry + the offline line')
     check(await p.query_selector('#abType') is None, '[addball] catalogue ball with every spec: no "Type the specs" card')
     # Airplane mode (navigator.onLine false): say it before any lookup, then a typed ball reaches the engine and saves
     mode['off'] = False; n_calls = len(calls); await c.set_offline(True)
