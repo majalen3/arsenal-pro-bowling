@@ -768,3 +768,6 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .dc-review{margin:0;padding-left:18px;max-height:44vh;overflow:auto}
 .dc-check{min-height:44px;align-items:center}
 .dc-check input{width:24px;height:24px}
+/* ---- Now item 5: Me > Tests and usage (counts on this phone only) */
+.ux-fold summary{min-height:var(--tap);display:flex;align-items:center;cursor:pointer;font-weight:700}
+.ux-pre{white-space:pre-wrap;word-break:break-word;background:var(--surface-2,rgba(127,127,127,.08));padding:var(--s2);border-radius:8px;max-height:50vh;overflow:auto}

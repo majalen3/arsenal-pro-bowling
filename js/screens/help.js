@@ -1,5 +1,6 @@
 // Help bubbles (HELP_BUBBLES_V1.md) and the Glossary screen (#/glossary, reached from More; no new tab, no AI chat).
 // Help is OFF by default. When on: at most one "?" per card, never on the scoring pad (owner rule: nothing during scoring).
+import * as UX from '../cc/ux.js';
 import { h, sheet, icon, toast } from '../ui.js';
 import { back } from '../router.js';
 import { prefs, setPrefs } from '../store.js';
@@ -21,6 +22,7 @@ export function helpToggle(rerender) {
     onclick: () => { setPrefs({ help: !on }); toast(on ? 'Help bubbles off' : 'Help bubbles on: tap a gold \u201c?\u201d'); rerender(); } }, h('span', { class: 'help-i', 'aria-hidden': 'true', text: '?' }));
 }
 export async function openBubble(id, label) {
+  UX.count(document.querySelector('#qlPins') ? 'help.open.midgame' : 'help.open');   // S2 guardrail: mid-game Help opens (on-device count)
   let t = null; try { t = HP.find((await HP.loadGlossary()).terms, id); } catch (e) { t = null; }
   const body = h('div', { class: 'stack', id: 'helpBody' },
     t ? h('p', { id: 'helpText', text: HP.bubbleText(t) }) : h('p', { class: 'muted', text: 'The Bowling Guide isn\u2019t available offline yet. Open it once online.' }),

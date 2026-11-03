@@ -4,6 +4,7 @@ import { helpToggle } from './screens/help.js';
 import { $, $$, toast, icon } from './ui.js';
 import { listenInstall, isStandalone, askPersist } from './cc/protect.js';
 import { applyTextSize } from './cc/wake.js';
+import * as UX from './cc/ux.js';   // Now item 5: on-device counts only (localStorage ap_ux, never synced)
 // theme: dark (alley) default, light, or system
 export function applyTheme(t = prefs().theme || 'dark') {
   const dark = t === 'system' ? matchMedia('(prefers-color-scheme: dark)').matches : t !== 'light';
@@ -39,6 +40,7 @@ route(/^\/session\/([\w.%-]+)$/, 'results', () => import('./screens/session.js')
 route(/^\/card$/, 'results', () => import('./screens/card.js'));
 route(/^\/wrapped$/, 'results', () => import('./screens/wrapped.js'));
 route(/^\/me$/, 'me', () => import('./screens/more.js'));
+route(/^\/me\/usage$/, 'me', () => import('./screens/usage.js'));   // Now item 5: local flags, smoke tests, on-device counts
 route(/^\/kit$/, 'me', () => import('./screens/kit.js'));
 route(/^\/import$/, 'me', () => import('./screens/import.js'));
 route(/^\/welcome$/, null, () => import('./screens/welcome.js'));
@@ -58,6 +60,7 @@ function setTab(t) { $$('.tab', nav).forEach(a => { if (a.dataset.tab === t) a.s
 if (!profile() && !prefs().onboarded && !rawGet('ap_state') && !location.hash) history.replaceState(null, '', '#/welcome');
 // Owner bug 2026-10-24 ("the help feature does nothing, I can't find any '?'"): a "?" switch in every app bar (not Welcome).
 setDecorate((el, path) => {
+  UX.count('screen.' + (path.split('/')[1] || 'tonight'));
   if (path === '/welcome') return;
   const bar = el.querySelector('.appbar'); if (!bar || bar.querySelector('#helpToggle')) return;
   const t = helpToggle(() => go(location.hash || '#/tonight', { replace:true })), acts = bar.querySelector('.appbar-actions');
