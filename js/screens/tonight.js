@@ -34,6 +34,7 @@ import { helpDot, withHelp } from './help.js';
 import { gameTotalButton } from './gametotal.js';
 import * as HAND from '../cc/hand.js';
 import { handAsk, handLine } from './hand.js';
+import * as UX from '../cc/ux.js';   // Now item 5: on-device counts + local flags
 export { standOf };
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
 // F03: the Lane screen's ball follows Tonight's pick (or the ball in hand on Bowl). Quiet: no events, Lane reads app.ball on open.
@@ -193,16 +194,16 @@ export async function render(o = {}) {
     if (gameOpen || BOWL) {
       // ---- Bowl (#/bowl), and game open (sim bug 4): ball \u00b7 feet \u00b7 aim, the ball-change line, the scoring card, Weaker/Stronger. The rest behind one tap.
       body.append(h('div', { class: 'card tn-now', id: 'tnNow' },
-        h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: hb ? hb.name : 'No ball' }), ' ', aimChip(HL && HL.stand, HL && HL.ml)),
+        h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: hb ? hb.name : 'No ball' }), ' ', aimChip(HL && HL.stand, HL && HL.ml, hb && hb.catalogId)),
         gameOpen ? null : thenLine),   // C3: during a game the ball-change plan sits under details
         quickLog(P, s, cur, b, hand, stand, g, team), alts || '', !gameOpen && reads ? reads : '',   // between games: the read and Weaker/Stronger in reach (J06)
         h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: 'Bag, lanes and line details' }),
-          ...advisorCard(P, s, b, adv, cur && { name: cur.name, ml }), h('p', { class: 'coach', id: 'tnCoach', text: coach }), gameOpen && thenLine ? thenLine : '', pick || '', gameOpen && reads ? reads : '', !gameOpen && s.event === 'practice' ? drillCard(P, s) : '', setup));
+          ...advisorCard(P, s, b, adv, cur && { name: cur.name, ml, catalogId: cur.catalogId }), h('p', { class: 'coach', id: 'tnCoach', text: coach }), gameOpen && thenLine ? thenLine : '', pick || '', gameOpen && reads ? reads : '', !gameOpen && s.event === 'practice' ? drillCard(P, s) : '', setup));
       if (gameOpen) requestAnimationFrame(padToThumb);
       return;
     }
     // ---- Tonight (IA P1.5): bag and start line, hand, who's bowling, Start bowling. The rest behind "More details".
-    const [advCard, bagCard, whyBox] = advisorCard(P, s, b, adv, cur && { name: cur.name, ml });
+    const [advCard, bagCard, whyBox] = advisorCard(P, s, b, adv, cur && { name: cur.name, ml, catalogId: cur.catalogId });
     body.append(advCard);
     const lastCard = lastTimeCard(P, s, center); if (lastCard) body.append(lastCard);
     const fc = prefs().focus;
@@ -520,11 +521,12 @@ export async function render(o = {}) {
     if (!S || !S.name) return '';
     const ml = S.ml, st = ml && !ml.none ? standOf(ml.feet) : null;
     return h('p', { class: 'coach', id: 'advStart', role: 'status', text: st ? `Start with: ${S.name}, from feet ${st.feet}, aim ${fmtHalf(ml.target)} at the arrows.` : `Start with: ${S.name}. ${(ml && ml.reason) || 'spec TBD: no model line'}, so set feet and eyes on Targeting.` },
-      st ? (ml && ml.kept ? provChip('user', 'your line (set on Lane or Targeting)') : provChip(st.assumed ? 'assumed' : 'model', '2-D model')) : null, ' ', aimChip(st, ml));
+      st ? (ml && ml.kept ? provChip('user', 'your line (set on Lane or Targeting)') : provChip(st.assumed ? 'assumed' : 'model', '2-D model')) : null, ' ', aimChip(st, ml, S.catalogId || (S.cat && S.cat.id) || null));
   }
-  // IA P2: the Stand \u00b7 Aim chip opens the Lane (Lane/Target have no tab of their own). Without a model line it still opens the Lane to set them.
-  function aimChip(st, ml) {
-    return h('a', { class: 'chip aim-chip', id: 'tnAimChip', href: '#/lane', 'aria-label': st ? `Stand ${st.feet}, aim ${fmtHalf(ml.target)}: open the lane` : 'Set stand and aim on the lane' },
+  // Now item 3 (PRODUCT_EVAL_1 #3, 2026-11-02): the Stand \u00b7 Aim chip opens Targeting in one tap (it used to open the Lane, then
+  // Targeting was a second tap). Lane is one tap back from Targeting's header. Without a model line Targeting still sets feet and eyes.
+  function aimChip(st, ml, cid) {
+    return h('a', { class: 'chip aim-chip', id: 'tnAimChip', href: '#/target' + (cid ? '?ball=' + encodeURIComponent(cid) : ''), onclick: () => UX.count('aim.chip'), 'aria-label': st ? `Stand ${st.feet}, aim ${fmtHalf(ml.target)}: open Targeting` : 'Set stand and aim on Targeting' },
       st ? `Stand ${st.feet} \u00b7 Aim ${fmtHalf(ml.target)} \u203a` : 'Stand \u00b7 Aim \u203a');
   }
   function advisorCard(P, s, b, adv, start) {
@@ -537,7 +539,7 @@ export async function render(o = {}) {
     // P1.1/P1.2: when the saved bag is for this event, Tonight shows exactly that bag (its Bring N); else a fresh suggestion.
     const { mem, mine, bring, a } = adv;
     if (a.none) { card.append(h('p', { class: 'muted', text: a.reason }), h('button', { class: 'btn block', onclick: () => go('#/bag?view=all') }, 'Open Bag \u203a')); return [card]; }
-    card.append(startLine(start && start.name ? start : { name: a.A.name, ml: a.line }));
+    card.append(startLine(start && start.name ? start : { name: a.A.name, ml: a.line, catalogId: a.A.catalogId }));
     const packed = !!(mine && mine.packedTs);
     // P1.5: the bag itself is its own card under Start bowling (the lanes-first answer stays on top).
     const bagCard = h('div', { class: 'card adv', id: 'tnBag' }, h('h2', { class: 'card-title', id: 'advBagT', text: `Your bag \u00b7 Bring ${bring}` }));

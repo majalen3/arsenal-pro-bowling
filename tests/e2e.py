@@ -1766,7 +1766,9 @@ async def ia5_cycle(b):
     check(not hp, f'[ia5] DECISIONS #32 kept: Help is off by default ({hp})')
     await p.goto(BASE + '?i5#/tonight'); await p.wait_for_selector('#tnAimChip')
     t = await p.text_content('#tnAimChip'); check('Stand' in t and 'Aim' in t, f'[ia5] Tonight: Stand · Aim chip ({t})')
-    await p.click('#tnAimChip'); await p.wait_for_function("() => location.hash === '#/lane' && document.body.dataset.tab === 'lane'")
+    # Now item 3 (2026-11-02): one tap from the chip to Targeting (was Lane, then a second tap); Lane is one tap back.
+    await p.click('#tnAimChip'); await p.wait_for_function("() => location.hash.startsWith('#/target') && document.body.dataset.tab === 'lane'")
+    await p.wait_for_selector('#tgCoach'); check(True, '[now3] Aim chip opens Targeting in one tap')
     r = await p.evaluate("() => ({ cur: !!document.querySelector('#tabs [aria-current=page]'), bar: getComputedStyle(document.querySelector('#tabs')).display })")
     check(not r['cur'] and r['bar'] != 'none', f'[ia5] the chip opens Lane/Target: no tab current, bar visible {r}')
     # Bowl with a game open and Help ON: no help bubble and no card other than the now-line, the pad and the closed fold.
