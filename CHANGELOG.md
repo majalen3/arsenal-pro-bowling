@@ -2,7 +2,16 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
-## Unreleased (2026-11-06; offline build v64)
+## Launch foundations Phase 1 — unreleased (2026-11-06; offline build v65)
+- New installations start with zero owned balls. Search the shared catalog locally, filter brands, review multiple physical copies and save; skip/manual unknown models remain available. Adding is not packing: start an empty bag and explicitly Bring chosen balls.
+- Distinct copy names, layouts/surface notes and saved lines resolve by physical ID; no arbitrary attribution of old model-only history to duplicate copies. Unsupported specs remain unmodeled.
+- Backed-up versioned legacy review is append-only, retryable and undoable; explicit older bags and all histories remain. Personal profile fields default unknown, not the owner's values.
+- Local-only sync by default; keep-data signout/expiry never falls back to a backup code. Legacy private dual-writes removed. One private account history per browser; foreign account switching is safely blocked, not yet a complete multi-account feature.
+- Honest local/retention/server acknowledgement and file recovery wording; no permanent-safety promise. Cold-load Insights and quick-reload physical selection repairs. Atomic offline shell v65; engine/catalog/equivalence fixture unchanged.
+- Validation explicitly retains one inherited Ball-title ellipsis flow-probe failure and unrun human/device gates; no blanket all-green/launch-ready claim.
+- Reusable CEO/team brief, fresh source audit and technical validation in `docs/TEAM_PROMPT_CEO_LAUNCH.md`, `docs/LAUNCH_FOUNDATION_AUDIT.md`, `docs/LAUNCH_FOUNDATION_VALIDATION.md`. PWA beta foundations only, not a launch/store readiness claim.
+
+## Prior unmerged Now-list work (2026-11-06; offline build v64)
 
 ### For bowlers
 - Earned starter cards in Armory; Old Friends retained. A single optional Next up idea is off by default.
