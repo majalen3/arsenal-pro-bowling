@@ -12,43 +12,44 @@ const ALL = [BB, SN, C4, HRP, DR, ICE, GURU, RAW, SCOUT, RACK];
 test('B01 cells: level from the app tag, shape is an estimate from cover/core/diff', () => {
   const c = id => { const x = G.cellOf(id); return [x.level, x.shape]; };
   assert.deepEqual(c('rattler-big-bite'), [4, 'smooth']); assert.deepEqual(c('super-nova'), [5, 'medium']);
-  assert.deepEqual(c('ordnance-c4'), [3, 'smooth']); assert.deepEqual(c('hy-road-pearl'), [2, 'medium']);
-  assert.deepEqual(c('deadly-rattler'), [2, 'medium']); assert.deepEqual(c('ice-storm'), [1, 'medium']);
+  assert.deepEqual(c('ordnance-c4'), [3, 'smooth']); assert.deepEqual(c('hy-road-pearl'), [null, null]);
+  assert.deepEqual(c('deadly-rattler'), [2, 'medium']); assert.deepEqual(c('ice-storm'), [null, null]);
   assert.equal(G.cellOf(null).tbd, true);
 });
 // 12 overlap/hole fixtures: [name, items, overlapPairs, holes]
 const FIX = [
-  ['T6 as reported', [BB, SN, C4, HRP, DR], [['own-hrp', 'own-dr']], []],
-  ['League 3 as reported', [BB, HRP], [], [3]],
+  ['T6 as reported', [BB, SN, C4, HRP, DR], [], []],
+  ['League 3 as reported', [BB, HRP], [], []],
   ['BB + DR share the Rattler core but not the cover', [BB, DR], [], [3]],
   ['SN + Guru: same level 5, different shape (medium vs smooth)', [SN, GURU], [], []],
   ['C4 + Raw Hammer: same cell (3, smooth)', [C4, RAW], [['own-c4', 'own-raw']], []],
-  ['SN + Ice: holes at 2,3,4', [SN, ICE], [], [2, 3, 4]],
+  ['SN + Ice: holes at 2,3,4', [SN, ICE], [], []],
   ['BB + C4 + HRP: ladder, no hole', [BB, C4, HRP], [], []],
   ['SN + C4: hole at 4', [SN, C4], [], [4]],
   ['single ball: nothing to compare', [BB], [], []],
-  ['Rack Attack (spec TBD) is left out of the grid', [BB, RACK, HRP], [], [3]],
+  ['Rack Attack (spec TBD) is left out of the grid', [BB, RACK, HRP], [], []],
   ['HRP + Scout: same level, different shape', [HRP, SCOUT], [], []],
-  ['C4 + Raw + SN + Ice: overlap and holes', [C4, RAW, SN, ICE], [['own-c4', 'own-raw']], [2, 4]],
+  ['C4 + Raw + SN + Ice: overlap and holes', [C4, RAW, SN, ICE], [['own-c4', 'own-raw']], [4]],
 ];
 FIX.forEach(([name, items, ov, hs], i) => test(`B${String(i + 2).padStart(2, '0')} ${name}`, () => {
   assert.deepEqual(G.overlaps(items).map(o => [o.a, o.b]), ov); assert.deepEqual(G.holes(items), hs);
 }));
 test('B14 checks on the reported T6: overlap warns, benchmark in the middle, spare ok', () => {
   const c = G.checks([BB, SN, C4, HRP, DR], ICE, { format: 'tournament6' }), w = c.filter(x => x.warn).map(x => x.n);
-  assert.equal(c.length, 10); assert.deepEqual(w, [3]);
+  assert.equal(c.length, 10); assert.deepEqual(w, []);
   assert.match(c[0].text, /benchmark, in the middle/);
 });
 test('B15 checks: no spare, benchmark at the top, USBC check for Rack Attack, pro shop blocked', () => {
-  const c = G.checks([BB, C4, Object.assign({}, HRP, { status: 'proShop' }), RACK], null, { format: 'league3' }), w = n => c.find(x => x.n === n);
+  const c = G.checks([BB, C4, DR, Object.assign({}, HRP, { status: 'proShop' }), RACK], null, { format: 'league3' }), w = n => c.find(x => x.n === n);
   assert.equal(w(1).warn, true); assert.match(w(1).text, /strongest/);
   assert.equal(w(2).warn, true); assert.equal(w(9).warn, true); assert.match(w(9).text, /pro shop/);
   assert.equal(w(10).warn, true); assert.match(w(10).text, /Rack Attack/);
 });
-test('B16 check 7: short pattern without control warns; with Ice Storm it passes', () => {
+test('B16 check 7: spare polyester does not count as reactive control; known pearl does', () => {
   const pat = { name: 'Short', ft: 33, ratio: 2 };
   assert.equal(G.checks([SN, GURU], null, { pattern: pat }).find(x => x.n === 7).warn, true);
-  assert.equal(G.checks([SN, ICE], null, { pattern: pat }).find(x => x.n === 7).warn, false);
+  assert.equal(G.checks([SN, ICE], null, { pattern: pat }).find(x => x.n === 7).warn, true);
+  assert.equal(G.checks([SN, DR], null, { pattern: pat }).find(x => x.n === 7).warn, false);
 });
 test('B17 fill uses owned, available balls only; locked always in; excluded never', () => {
   const owned = ALL.concat([O('shop', 'guru-supreme', { status: 'proShop' }), O('old', 'super-nova', { status: 'retired' })]);
@@ -91,6 +92,6 @@ test('B20 care rules: urethane detox off; Hammer has resurface only', () => {
 });
 test('B21 pack list: role → ball → why; blocked listed with a reason', () => {
   const r = G.packList([BB, SN, HRP, Object.assign({}, C4, { status: 'proShop' })], ICE, {});
-  assert.deepEqual(r.rows.map(x => x.role), ['Stronger', 'Benchmark', 'Weaker / cleaner', 'Spare']);
+  assert.deepEqual(r.rows.map(x => x.role), ['Stronger', 'Benchmark', 'Ball', 'Spare']);
   assert.deepEqual(r.blocked, [{ name: 'c4', why: 'at the pro shop' }]);
 });

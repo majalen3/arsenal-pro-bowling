@@ -2,7 +2,8 @@
 // Nothing here leaves the phone. Counters and flags live in localStorage 'ap_ux', NOT in the IndexedDB event log: the sync
 // outbox uploads every event and backup files carry the log, so a ux.* event there would leave the device (DECISIONS #ux).
 // Data counts (nights, games, shots, balls...) are derived read-only from the existing event-log projection when the summary
-// is built. Only counts and timestamps are stored: no names, no ball ids, no scores, no free text. The bowler can read the
+// is built. Local tap windows retain an opaque owned-ball key for S2; summaries contain only counts/timestamps, never
+// those keys, names, scores or free text. The bowler can read the
 // summary on Me > Tests and usage, share it themselves through the phone's share sheet, or reset it.
 // Pure core (node --test) + a small localStorage wrapper. Smoke tests: docs/SMOKE_TESTS.md.
 export const KEY = 'ap_ux';

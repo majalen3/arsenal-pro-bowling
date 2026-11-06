@@ -2,7 +2,7 @@
 // → break-box check + pocket call + one cited, engine-verified move. Boards are always the bowler's own numbering
 // (1 = their outside edge); only the words left/right flip for a left-hander. Engine global state is restored after every call.
 import { S, OIL_LEN, analyze } from '../engine.js';
-import { specOK } from '../data.js';
+import { modelOK as specOK } from '../data.js';
 import { modelLine, presetFor } from './model.js';
 import { rule31 } from './rank.js';
 import { arrowsBoard, aimFor, REACH, modelOf } from './geom.js';

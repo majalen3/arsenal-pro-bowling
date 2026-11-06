@@ -86,6 +86,7 @@ export async function render({ params, query }) {
         sm.breakpointBoard ? h('dt', { text: 'Breakpoint' }) : null, sm.breakpointBoard ? h('dd', { text: `board ${sm.breakpointBoard.mean} at ${sm.breakpointDistance ? sm.breakpointDistance.mean + ' ft' : '?'}` }) : null,
         sm.impactAngle ? h('dt', { text: 'Entry angle' }) : null, sm.impactAngle ? h('dd', { text: `${sm.impactAngle.mean}\u00b0 (measured by LaneTrax)` }) : null),
         h('p', { class: 'muted small', text: 'Levels 1\u20135 are LaneTrax\u2019s own scale (docs.lanetrax.app).' }));
+      for (const dd of det.querySelectorAll('#sessLtx dd')) dd.append(h('span', { class:'prov', 'data-prov':'device', text:'measured' }));
       // Tag this report to a ball so it feeds the Bag Advisor.
       const owned = Object.values(P.owned || {}).filter(o => o.status !== 'retired');
       const sel = h('select', { id: 'sessBall', 'aria-label': 'Ball used in this session' }, h('option', { value: '', text: 'Not set' }), ...owned.map(o => h('option', { value: o.id, text: ballName(P, o.id), selected: o.id === s.ballId })));

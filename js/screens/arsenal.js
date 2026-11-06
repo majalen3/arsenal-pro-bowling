@@ -9,6 +9,7 @@ import { PATTERN_LABEL } from '../labels.js';
 import { ready, proj } from '../hub.js';
 import { catOf } from '../cc/cats.js';
 import * as A from '../cc/armory.js';
+import * as UX from '../cc/ux.js';
 import { helpDot, withHelp } from './help.js';
 import * as ST from '../cc/status.js';
 import { bagView } from './bag.js';
@@ -41,7 +42,9 @@ function pedestal(it, why) {
     it.earned.length || onLane ? h('div', { class:'ped-marks' }, onLane ? h('span', { class:'pill gold', text:'On lane' }) : null, ...it.earned.map(m => h('span', { class:'pill', 'data-m':m.id, text:m.text }))) : null);
 }
 function armory(P) {
-  const sh = A.shelves(P, catOf);
+  const sh = A.shelves(P, catOf), badges = A.starterBadges(P), next = UX.flag('nextUp') ? A.nextUp(P) : null;
+  if (badges.length) UX.count('badge.view');
+  if (next) UX.count('nextup.view');
   // P1.3: the same "why not" as the ball page and the builder, for any ball not in tonight's bag (status.js).
   const why = it => ST.whyNotFor(P, it.id);
   const shelf = (items, id, label, extra) => h('div', { class:'shelf', id, role:'list', 'aria-label':label }, ...items.map(it => h('div', { role:'listitem' }, pedestal(it, why(it)))), extra || null);
@@ -51,6 +54,10 @@ function armory(P) {
     withHelp(h('h2', { class:'group-h', id:'armBagH', text:`In my bag \u00b7 ${sh.bag.length}` }), 'ap-status', 'Ball status'),
     shelf(sh.bag, 'armBag', 'In my bag', empty),
     sh.bench.length ? fold('armBench', 'At home and at the pro shop', sh.bench.length, shelf(sh.bench, 'armBenchShelf', 'At home and at the pro shop')) : null,
+    badges.length ? h('section', { class:'card', id:'armMilestones', 'aria-labelledby':'armMarksH' }, h('h2', { class:'card-title', id:'armMarksH', text:'Milestones' }),
+      h('div', { class:'badge-shelf' }, ...badges.map(m => h('a', { class:'badge-card', href:m.href, 'data-badge':m.id, onclick:() => UX.count('badge.open') }, h('b', { text:m.title }), h('span', { class:'small muted', text:m.note })))),
+      h('p', { class:'muted small', text:'Private, from what you have logged. Nothing to unlock or keep up with.' })) : null,
+    next ? h('a', { class:'next-up small', id:'armNext', href:next.href, onclick:() => UX.count('nextup.open'), text:next.text }) : null,
     fold('armHall', 'Old Friends', sh.hall.length, sh.hall.length ? h('div', { class:'stack' }, shelf(sh.hall, 'armHallShelf', 'Old Friends'),
         h('button', { class:'btn ghost block', id:'armHallShare', onclick:() => import('./export.js').then(m => m.shareOldFriends()) }, 'Share an Old Friends card'))
       : h('div', { class:'stack', id:'armHallNone' }, h('p', { class:'muted small', text:'Retired balls rest here with their record. Set a ball\u2019s Status to Retired on its page or in Bag.' }), h('a', { class:'btn ghost sm', href:'#/bag' }, 'Open Bag'))),

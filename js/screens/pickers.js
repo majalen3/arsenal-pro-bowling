@@ -1,21 +1,23 @@
 // Bottom-sheet pickers used from the Lane screen: ball, conditions (pattern / surface / oil), tune, lines.
-import { balls, rgTxt, coverKind, CLASSES } from '../data.js';
-import { S, RANGES, FINISHES, PATTERNS, readInfo, readMedian } from '../engine.js';
+import { balls, rgTxt, coverKind, CLASSES, modelOK } from '../data.js';
+import { S, RANGES, FINISHES, PATTERNS, readInfo } from '../engine.js';
 import { app, linesForBall, applyLine, profile, esc } from '../store.js';
 import { h, icon, sheet, segmented, stepper } from '../ui.js';
 import { adjust, setBall, target } from '../ctl.js';
 import { arrowsBoard } from '../cc/geom.js';
 import { PATTERN_LABEL, PATTERN_HINT, FINISH_LABEL, fmtBoard } from '../labels.js';
 import { go } from '../router.js';
+import { proj } from '../hub.js';
+import { releaseSource } from '../cc/provenance.js';
 let med = null;
-export const readMed = () => (med == null ? (med = readMedian()) : med);
+export const readMed = () => { if (med == null) { const a = balls.filter(modelOK).map(b => readInfo(b, 0)?.f).filter(Number.isFinite).sort((a,b)=>a-b); med = a.length ? a[Math.floor(a.length/2)] : null; } return med; };
 export const owned = () => { const p = profile(); return p && Array.isArray(p.owned) && p.owned.length ? p.owned : null; };
 export function ballRow(b, { onPick, onCompare, current }) {
-  const r = readInfo(b, readMed());
+  const r = modelOK(b) ? readInfo(b, readMed()) : null;
   const row = h('div', { class:'brow' + (current ? ' current' : '') },
     h('button', { class:'brow-main', 'aria-current':current ? 'true' : null, onclick:() => onPick(b) },
       h('span', { class:'swatch', style:{ background:b.color }, 'aria-hidden':'true' }),
-      h('span', { class:'brow-text' }, h('span', { class:'brow-name', text:b.name }), h('span', { class:'brow-meta', text:`${coverKind(b)} · RG ${rgTxt(b)}${r ? ' · reads ' + r.tag : ''}` })),
+      h('span', { class:'brow-text' }, h('span', { class:'brow-name', text:b.name }), h('span', { class:'brow-meta' }, `${coverKind(b)} · RG ${rgTxt(b)}`, b.rg != null ? h('span', {class:'prov','data-prov':'manufacturer',text:'maker'}) : null, r ? ` · reads ${r.tag}` : '', r ? h('span',{class:'prov','data-prov':'model',text:'model'}) : null)),
       current ? h('span', { class:'pill gold', text:'On lane' }) : null),
     onCompare && !current ? h('button', { class:'icon-btn', 'aria-label':`Compare ${b.name} with ${app.ball.name}`, title:'Compare with ball on lane', html:icon('compare'), onclick:() => onCompare(b) }) : null);
   return row;
@@ -60,7 +62,9 @@ export function tunePanel() {
     stepper({ id:'target', label:'Target at arrows', min:1, max:39, step:.5, value:target(), fmt:fmtBoard, onChange:v => adjust({ target:v }), hint:'Board you aim over at 15 ft. The model reaches only about 0.8 board either side of your feet board here.' }),
   ];
   const wrap = h('div', { class:'tune stack' }, ...rows);
-  wrap.sync = () => { rows[0].setValue(S.speed); rows[1].setValue(S.rev); rows[2].setValue(S.release); rows[3].setValue(target()); };
+  const sources = () => { const bw = proj()?.bowler || {}; rows.forEach((row,i) => { const src = i < 2 ? releaseSource(bw[i === 0 ? 'speed' : 'rev'], i === 0 ? S.speed : S.rev) : ['assumed','input']; row.querySelector('.step-val').append(h('span',{class:'prov','data-prov':src[0],text:src[1]})); }); };
+  wrap.sync = () => { rows[0].setValue(S.speed); rows[1].setValue(S.rev); rows[2].setValue(S.release); rows[3].setValue(target()); sources(); };
+  sources();
   return wrap;
 }
 export function openTune() { const p = tunePanel(); const s = sheet({ title:'Tune your shot', body:p, id:'tuneSheet' }); return { s, p }; }
