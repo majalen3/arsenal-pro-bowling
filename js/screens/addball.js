@@ -1,6 +1,8 @@
 // #/add-ball (docs/TEAM_PROMPT_ADD_BALL.md). Type a name → catalogue match → maker-site lookup (server, allowlisted,
 // cached) → confirm every field with its source chip → engine card vs the benchmark on tonight's pattern → grid placement
 // → save as an owned ball At home (status key `benched`). Nothing is saved until the user taps Add. Unknown fields read "spec TBD".
+import { catOf } from '../cc/cats.js';
+import { uuid } from '../data/schema.js';
 import { START } from '../engine.js';
 import { h, toast, segmented } from '../ui.js';
 import { go } from '../router.js';
@@ -141,7 +143,8 @@ export async function render() {
     const miss = A.missing(fields);
     if (miss.length) eng.append(h('p', { class: 'small', id: 'abNoEngine', text: `Spec TBD: no engine run. Missing ${miss.join(', ')}.` }));
     else {
-      const c = A.compare(cat, { speed, rev, ft });
+      const ownBench = Object.values(P.owned).find(o => o.benchmark), bench = ownBench && catOf(ownBench.catalogId);
+      const c = bench ? A.compare(cat, { bench, speed, rev, ft }) : { none:true, reason:'No owned benchmark chosen. Add without a comparison; no benchmark or ownership is assumed.' };
       if (c.none) eng.append(h('p', { class: 'small', text: c.reason }));
       else {
         const bar = (r, who) => { const tot = Math.max(1, (r.skid || 0) + (r.hook || 0) + (r.roll || 0)), seg = (cls, v, t) => h('i', { class: cls, style: { width: (100 * (v || 0) / tot) + '%' }, title: `${t} ${v} ft` });
@@ -215,7 +218,7 @@ export async function render() {
     const e = st.pick, data = A.ownedEvent(cat, fields, { weight: st.weightSet ? st.weight : null, src: made ? made.source.url : (e.source || e.src), entryId: e.id, conflicts });
     if (!st.weightSet) data.weightAssumed = st.weight;
     if (JSON.stringify(data).length > 7800) { delete data.spec.fields; }
-    const id = 'own-' + slug(cat.id) + '-' + Date.now().toString(36);
+    const id = 'own-' + uuid();
     await add('ownedBall.created', id, data, { prov: made ? { kind: 'manufacturer', ref: made.source.ref, url: made.source.url } : { kind: 'user' } });
     toast(`${e.name} added to your arsenal (At home).`); go('#/bag');
   }

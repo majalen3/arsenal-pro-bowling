@@ -1,3 +1,4 @@
+import { ballKey } from './cats.js';
 // One stand/aim source (sim bug 5). Lane, Tonight, Targeting and the spare hints all read the bowler's line from here:
 // laydown + aim come from the 2-D model (js/cc/model.js, engine unchanged); stand = laydown + offset − drift.
 import { prefs, setPrefs } from '../store.js';
@@ -30,7 +31,7 @@ export function lineFor(cat, { speed, rev, ft } = {}) {
   const k = [cat && cat.id, sp, rv, f].join('|');
   let ml = memo.get(k);
   if (!ml) { ml = cat ? modelLine(cat, { speed: sp, rev: rv, ft: f, finish: 'factory', target31: rule31(f).target }) : { none: true, reason: 'no ball' }; memo.set(k, ml); }
-  const kept = cat && keptLine(cat.id);
+  const kept = cat && (keptLine(ballKey(cat)) || (cat.legacyLineKey && keptLine(cat.legacyLineKey)));
   if (kept) ml = { feet: kept.lay, target: kept.eyes, kept: true, model: ml };
   return { ml, stand: ml && !ml.none ? standOf(ml.feet) : null, ft: f, assumedFt: ft == null, kept: !!kept };
 }

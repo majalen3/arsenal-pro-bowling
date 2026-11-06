@@ -21,12 +21,12 @@ test('plain words for last backup', () => {
   assert.equal(lastBackupText(now - 5 * DAY, now), 'Last backup file: 5 days ago.');
 });
 test('protect label', () => {
-  assert.equal(protectLabel({}), 'Not protected');
-  assert.equal(protectLabel({ persisted: true }), 'Protected');
-  assert.equal(protectLabel({ standalone: true }), 'Protected');
+  assert.equal(protectLabel({}), 'Local storage only');
+  assert.equal(protectLabel({ persisted: true }), 'Retention requested');
+  assert.equal(protectLabel({ standalone: true }), 'Retention requested');
 });
-test('copied code counts as a backup only once the server has the data', () => {
+test('file backup date never treats code copying or a server acknowledgement as a download', () => {
   assert.equal(lastBackupAt({ codeCopiedAt: 5 }), 0);
-  assert.equal(lastBackupAt({ codeCopiedAt: 5, sync: { lastPushAt: 4 } }), 5);
+  assert.equal(lastBackupAt({ codeCopiedAt: 5, sync: { lastPushAt: 4 } }), 0);
   assert.equal(lastBackupAt({ backupDownloadedAt: 9, codeCopiedAt: 5, sync: { lastPushAt: 4 } }), 9);
 });

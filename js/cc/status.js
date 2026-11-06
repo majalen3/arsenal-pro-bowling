@@ -37,7 +37,7 @@ export function whyNot(x, ctx = {}) {
   if (st === 'retired') return { key: 'retired', text: 'Retired: kept with its history, never packed.', canBring: false };
   if (st === 'proShop') return { key: 'proShop', text: 'At the pro shop: not available until you set it back.', canBring: false };
   if (st === 'benched') return { key: 'home', text: `At home: ${HOME_TAG} if you want it tonight.`, canBring: true };
-  const due = x.cat ? dueOf(x.cat, ctx.health && (ctx.health[x.ownedId] || ctx.health[x.catalogId]), 0) : [];
+  const due = x.cat ? dueOf(x.cat, ctx.health && ctx.health[x.ownedId || x.catalogId], 0) : [];
   if (due.length) return { key: 'due', text: `Service due: ${due[0].type} (${due[0].atLeast ? '\u2265' : ''}${due[0].n} of ${due[0].every} games).`, canBring: true };
   const ov = overlaps(bag.concat([x])).find(o => o.a === x.ownedId || o.b === x.ownedId);
   if (ov) { const other = bag.find(b => b.ownedId === (ov.a === x.ownedId ? ov.b : ov.a));

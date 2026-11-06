@@ -1,4 +1,4 @@
-import { profile, setProfile, prefs, setPrefs, deviceId, useCode, status, on } from '../store.js';
+import { profile, setProfile, prefs, setPrefs, deviceId, useCode, status, on, rawGet, rawSet, memMode } from '../store.js';
 import * as hub from '../hub.js';
 const { ready } = hub;
 import * as PR from '../cc/protect.js';
@@ -18,13 +18,13 @@ import { account } from '../account.js';
 export const VERSION = '1.1.0';   // release version (CHANGELOG.md); the offline build id comes from the service worker cache name
 // IA P2: the Me screen (header button on every tab): profile, data, appearance, sync, about. Learn and the Help switch moved to the Learn tab.
 export function render() {
-  const p = Object.assign({ hand:null, style:null, speed:+S.speed, rev:+S.rev, pap:'', tilt:'', owned:[] }, profile() || {});
+  const p = Object.assign({ hand:null, style:null, speed:null, rev:null, entered:{}, pap:'', tilt:'', owned:[] }, profile() || {});
   const editProfile = () => {
-    const q = { ...p }, f = profileForm(q);
+    const current = profile() || p, q = { ...current, entered:current.entered ? { ...current.entered } : { speed:current.speed != null && current.speed !== '', rev:current.rev != null && current.rev !== '' } }, f = profileForm(q);
     const s = sheet({ title:'Your profile', id:'profSheet', body:h('div', { class:'stack' }, f.hand, f.style, f.speed, f.rev, f.pap, f.tilt,
-      h('button', { class:'btn primary block', id:'profSave', onclick:() => { setProfile(q); adjust({ speed:q.speed, rev:q.rev }); s.close(); toast('Profile saved'); draw(); } }, 'Save profile')) });
+      h('button', { class:'btn primary block', id:'profSave', onclick:() => { setProfile(q); adjust(Object.fromEntries(['speed','rev'].filter(k => q[k] != null && q[k] !== '').map(k => [k, +q[k]]))); s.close(); toast('Profile saved'); draw(); } }, 'Save profile')) });
   };
-  const editBag = () => { const q = { ...p }; const s = sheet({ title:'My bag', id:'bagSheet', body:h('div', { class:'stack' }, ownedPicker(q), h('button', { class:'btn primary block', onclick:() => { setProfile({ ...p, owned:q.owned }); s.close(); toast('Bag saved'); draw(); } }, 'Save bag')) }); };
+  const editBag = () => go('#/welcome' + (hub.db?.meta.ownershipReview?.needed ? '?review=1' : ''));
   const code = h('code', { class:'code', id:'devCode', text:deviceId() });
   const codeIn = h('input', { id:'codeIn', placeholder:'Paste a backup code', 'aria-label':'Backup code', autocomplete:'off', spellcheck:'false' });
   const stat = h('span', { class:'muted small', id:'moreStatus', 'aria-live':'polite' });
@@ -40,39 +40,42 @@ export function render() {
   const lastBk = h('p', { class:'small', id:'lastBackup' });
   const protBody = h('div', { class:'stack', id:'protBody' });
   async function paintProtect() {
-    const st = await PR.state(); protChip.textContent = st.label; protChip.className = 'pill' + (st.label === 'Protected' ? ' gold' : '');
+    const st = await PR.state(); protChip.textContent = st.label; protChip.className = 'pill' + (st.label === 'Retention requested' ? ' gold' : '');
     protBody.innerHTML = '';
-    protBody.append(h('p', { class:'small', text: st.standalone ? 'Installed on this phone: Safari\u2019s 7-day clean-up does not apply.' : 'Safari can clear a website\u2019s data after 7 days without a visit. Apps added to the Home Screen are exempt.' }));
+    protBody.append(h('p', { class:'small', text: st.standalone ? 'Installed on this phone. Browser storage can still be lost; keep a separate backup.' : 'Browsers can clear website data. Home Screen installation may improve retention, but is not a backup.' }));
     if (!st.standalone) { const how = PR.installHow();
       protBody.append(how ? h('p', { class:'small', id:'installHow', text:how }) : h('button', { class:'btn ghost block', id:'installBtn', onclick:async () => { if (await PR.promptInstall()) toast('Installed.'); paintProtect(); } }, 'Install the app')); }
-    if (!st.persisted && navigator.storage && navigator.storage.persist) protBody.append(h('button', { class:'btn ghost block', id:'askPersist', onclick:async () => { const ok = await PR.askPersist(); toast(ok ? 'This browser will keep your data.' : 'The browser said no. Install the app or keep a backup file.'); paintProtect(); } }, 'Ask the browser to keep my data'));
-    protBody.append(h('p', { class:'small muted', text:'A backup file always works: Download backup, below.' }));
+    if (!st.persisted && navigator.storage && navigator.storage.persist) protBody.append(h('button', { class:'btn ghost block', id:'askPersist', onclick:async () => { const ok = await PR.askPersist(); toast(ok ? 'Browser retention permission granted; this is not a backup guarantee.' : 'The browser said no. Install the app or keep a backup file.'); paintProtect(); } }, 'Ask the browser to keep my data'));
+    protBody.append(h('p', { class:'small muted', text:'Download a backup file below and test restoring it. Keep the file private; loss, corruption or an incompatible version can prevent recovery.' }));
   }
   function paintData() {
     const db = hub.db; if (!db) return; const P = db.projection(), m = db.meta;
     const unsynced = db.events().filter(e => !e.synced).length;
     // Plain words (sim bug 8): what is safe and what to do, counts behind a tap. No developer terms.
     const legacy = !m.backupDownloadedAt && db.meta.legacySnapshot;
-    dataInfo.textContent = syncLine(m.sync, unsynced) + (legacy ? ' Your data from the older app version is also kept here until you download a backup file.' : '');
+    dataInfo.textContent = (db.backend.kind === 'memory' || memMode ? 'Storage is unavailable: some changes last only until this tab closes. Download a backup now. ' : '') + syncLine(m.sync, unsynced) + (legacy ? ' Your data from the older app version is also kept here until you download a backup file.' : '');
     lastBk.textContent = PR.lastBackupText(PR.lastBackupAt(m));
     dataCounts.textContent = `On this phone: ${Object.keys(P.owned).length} balls, ${P.games.length} games, ${P.aggregates.length} LaneTrax reports (${db.events().length} saved changes).`;
   }
   // Server sync of the event log (D3). The quota message comes from the server; the phone keeps everything regardless.
   function syncLine(st, unsynced) {
+    if (!account.active() && (rawGet('ap_backup_sync') !== 'true' || hub.db?.meta.accountBinding)) return 'Saved on this phone only. Server sync is paused; no backup-code copy is made. Download a backup file below.';
     if (st && st.quota && st.quota.full) return `Server backup is full; your ${unsynced} newest ${unsynced === 1 ? 'change is' : 'changes are'} kept only on this phone. Download a backup file below.`;
-    if (!unsynced) return st && st.lastPushAt ? 'Backed up to the server.' : 'Saved on this phone. Nothing to back up yet.';
+    if (!unsynced) return st && st.lastPushAt ? 'Server acknowledged the latest sync to your chosen target.' : 'Saved on this phone. Nothing to back up yet.';
     return `Saved on this phone; ${unsynced} ${unsynced === 1 ? 'change' : 'changes'} waiting to back up${st && st.lastError ? (navigator.onLine === false ? ' (offline, will retry)' : ' (server not reached, will retry)') : ''}.`;
   }
-  ready().then(paintData); paintProtect();
+  ready().then(() => { paintData(); draw(); }); paintProtect();
   function draw() {
     const pr = profile();
     body.innerHTML = '';
     const build = h('p', { class:'small muted', id:'aboutVersion', text:`Version ${VERSION}` });
     body.append(
       h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Bowler profile' }), h('button', { class:'btn sm ghost', id:'editProfile', onclick:editProfile }, h('span', { html:icon('edit') }), 'Edit')),
-        pr ? h('p', { text:`${HAND.handOfProfile(pr) ? HAND.HAND_LABEL[HAND.handOfProfile(pr)] : 'Hand not set'}, ${pr.style === 'two' ? 'two-hander' : (pr.style || 'style not set')}, ${(+pr.speed).toFixed(1)} mph, ${pr.rev} rpm${pr.pap ? ', PAP ' + pr.pap : ''}${pr.tilt ? ', tilt ' + pr.tilt : ''}.` }) : h('p', { class:'muted', text:`Not set. The lane uses mid-range starting values (${S.speed} mph, ${S.rev} rpm) until you enter yours.` }),
-        h('div', { class:'row between' }, h('span', { text:`My bag: ${pr && pr.owned && pr.owned.length ? pr.owned.length + ' balls' : 'all 22'}` }), h('button', { class:'btn sm ghost', id:'editBag', onclick:editBag }, 'Choose')),
+        pr ? h('p', { text:`${HAND.handOfProfile(pr) ? HAND.HAND_LABEL[HAND.handOfProfile(pr)] : 'Hand not set'}, ${pr.style === 'two' ? 'two-hander' : (pr.style || 'style not set')}, ${pr.speed != null && pr.speed !== '' ? (+pr.speed).toFixed(1) + ' mph' : 'speed not set'}, ${pr.rev != null && pr.rev !== '' ? pr.rev + ' rpm' : 'revs not set'}${pr.pap ? ', PAP ' + pr.pap : ''}${pr.tilt ? ', tilt ' + pr.tilt : ''}.` }) : h('p', { class:'muted', text:`Not set. The lane uses mid-range starting values (${S.speed} mph, ${S.rev} rpm) until you enter yours.` }),
+        h('div', { class:'row between' }, h('span', { text:`Owned arsenal: ${hub.db ? Object.keys(hub.db.projection().owned).length : 0} physical balls` }), h('button', { class:'btn sm ghost', id:'editBag', onclick:editBag }, hub.db?.meta.ownershipReview?.needed ? 'Review older bag' : 'Add balls')),
         h('div', { class:'row between' }, h('span', { class:'small muted', text:'PAP from your drill card' }), h('a', { class:'btn sm ghost', id:'meDrillScan', href:'#/me/drill-card' }, 'Scan a drill card'))),
+      ...(hub.db?.meta.ownershipReview?.needed ? [h('div', { class:'card', id:'legacyReview' }, h('p', { class:'small', text:'Your older catalog view is preserved. It did not prove which physical balls you own. Review your selections; saved balls, games, layouts and aims are not removed.' }), h('a', { class:'btn ghost block', href:'#/welcome?review=1' }, 'Review older bag'))] : []),
+      ...(hub.db?.meta.ownershipReview?.confirmed ? [h('button', { class:'btn ghost block', id:'undoOwnershipReview', onclick:async () => { await hub.undoOwnershipReview(); draw(); } }, 'Undo older-bag review (keep all history)')] : []),
       accountCard(), communityCard(),
       h('div', { class:'card', id:'dataCard' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Your data' }), protChip), dataInfo, lastBk,
         h('details', { class:'tn-more', id:'protMore' }, h('summary', { text:'Keep it safe' }), protBody),
@@ -84,14 +87,17 @@ export function render() {
         h('div', { class:'fld', id:'wakeFld' }, h('span', { text:'Keep the screen on during a game' }), segmented('Keep the screen on during a game', [['on', 'On'], ['off', 'Off']], prefs().wakeLock === false ? 'off' : 'on', v => setPrefs({ wakeLock: v === 'on' }), 'wide'),
           h('p', { class:'small muted', id:'wakeNote', text: WK.supported() ? 'Only while a game is open; off at the last frame or after 10 idle minutes.' : 'This browser can\u2019t keep the screen on; set Auto-Lock in your phone settings instead.' }))),
       h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Sync & backup' }), stat),
-        h('p', { class:'small', id:'codeNote', text: account.active() ? 'Signed in: your data syncs to your account. The backup code is used only when you are signed out.' : 'Your backup code links this device to your saved lines on the server. Keep it private; anyone with it can see your lines.' }),
-        h('div', { class:'row gap wrap' }, code, h('button', { class:'btn sm ghost', id:'copyCode', onclick:async () => { try { await navigator.clipboard.writeText(deviceId()); toast('Code copied'); const db = await ready(); await db.setMeta('codeCopiedAt', Date.now()); paintData(); } catch (e) { toast('Copy failed. Select the code and copy it.', { kind:'bad' }); } } }, 'Copy'),
-          h('button', { class:'btn sm ghost', id:'dlBackup', onclick:downloadBackup }, 'Download backup')),
-        h('form', { class:'inline-form', onsubmit:e => { e.preventDefault(); if (useCode(codeIn.value)) { code.textContent = deviceId(); codeIn.value = ''; toast('Code set. Syncing\u2026'); } else toast('That code doesn\u2019t look right (8\u201364 letters, numbers, - or _).', { kind:'bad' }); } },
-          h('label', { class:'fld grow' }, h('span', { text:'Restore from another device' }), codeIn), h('button', { class:'btn primary', type:'submit' }, 'Use code'))),
+        h('p', { class:'small', id:'codeNote', text: account.active() ? 'Chosen target: your account. Signing out pauses sync; it never switches to a backup code.' : hub.db?.meta.accountBinding ? 'Account sync paused. This private history stays local until you sign in to its original account. Backup-code copying and another account are blocked.' : rawGet('ap_backup_sync') === 'true' ? 'Chosen target: backup code. Anyone with that private code can access its copy. Download a file too.' : 'Local only. Backup-code sync is optional and is OFF until you enable it. Anyone with a code can access its copy.' }),
+        h('button', { class:'btn ghost block', id:'dlBackup', onclick:downloadBackup }, 'Download backup'),
+        !account.session() && !hub.db?.meta.accountBinding ? h('details', { class:'tn-more', id:'backupCodeTools' }, h('summary', { text:'Optional private backup-code sync' }),
+          h('p', { class:'small', text:'Enabling this copies this phone’s history to the chosen code and brings its remote history here. Use only a private code you are authorized to use. It is not account sign-in.' }),
+          h('div', { class:'row gap wrap' }, code, h('button', { class:'btn sm ghost', id:'copyCode', onclick:async () => { try { await navigator.clipboard.writeText(deviceId()); toast('Private code copied'); } catch (_) { toast('Copy failed', { kind:'bad' }); } } }, 'Copy code')),
+          h('button', { class:'btn ghost block', id:'enableCodeSync', onclick:() => { if (useCode(deviceId())) { draw(); paintData(); toast('Backup-code sync enabled. Check server acknowledgement.'); } } }, 'Enable backup-code sync'),
+          h('form', { class:'stack', onsubmit:e => { e.preventDefault(); if (useCode(codeIn.value)) { code.textContent = deviceId(); codeIn.value = ''; draw(); paintData(); toast('Chosen code set. Waiting for server acknowledgement.'); } else toast('Code not accepted. Account history cannot move to a backup code.', { kind:'bad' }); } },
+            h('label', { class:'fld' }, h('span', { text:'Merge / restore with an authorized backup code' }), codeIn), h('button', { class:'btn primary', type:'submit' }, 'Use code and sync'))) : null),
       h('div', { class:'card' }, h('h2', { class:'card-title', text:'About' }),
         h('p', { class:'small', text:'Arsenal Pro models how each ball in your arsenal reads the lane, and coaches your next move. Ball specs come from manufacturer data (marked est. where estimated). Pattern library: Kegel Pattern Library via CarryDown.' }),
-        h('p', { class:'small', id:'aboutPrivacy', text:'Privacy: your games, balls and notes are saved on this phone first and work offline. A copy syncs to the Arsenal Pro server so you can restore it: under your backup code, or privately under your account if you sign in. An account is optional and only needs an email and password; you can export or delete it on this screen. My Team is opt-in: teammates see only the items you choose to share (never your email), and leaving a team removes them. Share cards are made on this phone and are never posted for you. No ads, no tracking, and it is free.' }),
+        h('p', { class:'small', id:'aboutPrivacy', text:'Privacy: your games, balls and notes are saved on this phone first and work offline. No server copy is made by default. Choose optional backup-code sync or an account; account signout pauses sync, without copying to a code. A server copy is not a permanent retention guarantee. An account is optional and only needs an email and password; you can export or delete it on this screen. My Team is opt-in: teammates see only the items you choose to share (never your email), and leaving a team removes them. Share cards are made on this phone and are never posted for you. No ads, no tracking, and it is free.' }),
         h('div', { class:'row gap wrap' }, h('a', { class:'btn ghost', href:'https://github.com/majalen3/arsenal-pro-bowling/blob/main/CHANGELOG.md', target:'_blank', rel:'noopener', id:'aboutChanges' }, 'What\u2019s new'),
           h('a', { class:'btn ghost', href:'https://github.com/majalen3/arsenal-pro-bowling', target:'_blank', rel:'noopener', id:'aboutSource' }, 'Source code'),
           h('a', { class:'btn ghost', href:'#/me/usage', id:'aboutUsage' }, 'Tests and usage')),   // Now item 5: counts on this phone only

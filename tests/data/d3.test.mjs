@@ -7,7 +7,7 @@ import { createSync, packBatches, BACKOFF } from '../../js/data/sync.js';
 import { mockApi } from './mock_api.mjs';
 const CODE = 'd-backupcode-1234';
 const fakeTimer = () => { const q = []; return { q, set: (f, ms) => { q.push({ f, ms }); return q.length; }, clear: () => {} }; };
-async function phone(api, name, o = {}) { const db = createDB(memoryBackend(), { deviceId: name }); await db.open(); const timer = fakeTimer(); return { db, timer, s: createSync({ db, base: 'https://api.test', deviceId: CODE, fetchFn: api.fetchFn, timer, ...o }) }; }
+async function phone(api, name, o = {}) { const db = createDB(memoryBackend(), { deviceId: name }); await db.open(); const timer = fakeTimer(); return { db, timer, s: createSync({ db, base: 'https://api.test', deviceId: CODE, allowLegacy: () => true, fetchFn: api.fetchFn, timer, ...o }) }; }
 const ev = (type, id, data, ts, dev = 'A') => mkEvent(type, id, data, { ts, deviceId: dev });
 
 test('packBatches: every event once, in order, each body ≤ 15 kB', () => {

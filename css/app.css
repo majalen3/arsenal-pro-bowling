@@ -791,3 +791,13 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 
 /* A wrapped title is preferable to clipping the season name on a phone. */
 #wrapped .appbar .title{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+
+/* Phase1 search-first onboarding: reachable confirmation, no overflow at360px/large text. */
+#welcomeSearch .wel-foot{position:sticky;bottom:0;z-index:3;background:var(--bg);display:flex;flex-direction:column;align-items:stretch;padding:12px 0 calc(12px + env(safe-area-inset-bottom));margin-top:16px}
+#welcomeSearch .wel-foot p{margin:0}
+#welcomeSearch .brow-main{width:100%;flex:none;min-height:60px}
+#welcomeSearch .brow-text{overflow-wrap:anywhere}
+#welcomeSearch input,#welcomeSearch select{max-width:100%;min-height:44px}
+#welcomeSearch .wel-top .brand{font-size:1rem}
+
+@media(max-width:480px){.welcome .btn-grid{grid-template-columns:minmax(0,1fr)}}

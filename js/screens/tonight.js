@@ -15,7 +15,7 @@ import * as Q from '../cc/quicklog.js';
 import * as FX from '../cc/fix.js';
 import * as R from '../cc/rank.js';
 import { loadIndex } from '../patdata.js';
-import { catOf } from '../cc/cats.js';
+import { catOf, ballFor, ballKey } from '../cc/cats.js';
 import * as A from '../cc/advisor.js';
 import { packList } from '../cc/bag.js';
 import { standOf, lineFor } from '../cc/line.js';
@@ -38,7 +38,7 @@ import * as UX from '../cc/ux.js';   // Now item 5: on-device counts + local fla
 export { standOf };
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
 // F03: the Lane screen's ball follows Tonight's pick (or the ball in hand on Bowl). Quiet: no events, Lane reads app.ball on open.
-const laneBall = x => { const c = x && x.cat, e = c && (balls.find(y => y.id === c.id) || (specOK(c) ? c : null)); if (e && app.ball && app.ball.id !== e.id) { app.ball = e; saveState(); } };
+const laneBall = x => { const c = x && (ballFor(x.id) || x.cat); if (c && ballKey(app.ball) !== ballKey(c)) { app.ball = c; saveState(); } };
 const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
 const provChip = (prov, label) => h('span', { class: 'prov', 'data-prov': prov || null, text: label });
 const SRC_PROV = { [R.SRC.assumed]: 'assumed', [R.SRC.model]: 'model', [R.SRC.spec]: 'manufacturer', [R.SRC.usbc]: 'usbc', [R.SRC.bowl]: 'usbc', [R.SRC.tag]: 'catalog' };
@@ -76,7 +76,7 @@ export async function render(o = {}) {
   function inHand(P, s, cur) {
     if (!s.throwId || (cur && s.throwId === cur.id)) return cur;
     const o = (P.owned || {})[s.throwId]; if (!o) return cur;
-    const x = bagOf(P, s).list.find(y => y.ownedId === s.throwId), cat = catOf(o.catalogId);
+    const x = bagOf(P, s).list.find(y => y.ownedId === s.throwId), cat = ballFor(o.id);
     return { id: s.throwId, catalogId: o.catalogId || null, cat, name: x ? x.name : short(o.name || (cat || {}).name || 'Spare ball') };
   }
   function bagOf(P, s) {
@@ -112,13 +112,14 @@ export async function render(o = {}) {
     // One first ball (P1.5): the advisor's start ball unless the bowler picked another on the pad or a read moved it.
     const adv = adviceOf(P, s, b), advA = adv && adv.a && !adv.a.none ? adv.a.A : null;
     const cur = r.order.find(x => x.id === s.pickId) || (advA && r.order.find(x => x.id === advA.ownedId)) || r.pick;
-    const L = cur ? lineFor(cur.cat, { speed: num(b.speed), rev: num(b.rev), ft: pat ? pat.ft : null }) : null;
+    const L = cur ? lineFor(ballFor(cur.id) || cur.cat, { speed: num(b.speed), rev: num(b.rev), ft: pat ? pat.ft : null }) : null;
     const ml = L ? L.ml : null, stand = L ? L.stand : null;
     // F02: the ball in hand (a mid-game change on the pad) drives the Bowl top line; the pick stays the advice.
-    const hb = inHand(P, s, cur), HL = hb === cur ? L : (hb ? lineFor(hb.cat, { speed: num(b.speed), rev: num(b.rev), ft: pat ? pat.ft : null }) : null);
+    const hb = inHand(P, s, cur), HL = hb === cur ? L : (hb ? lineFor(ballFor(hb.id) || hb.cat, { speed: num(b.speed), rev: num(b.rev), ft: pat ? pat.ft : null }) : null);
     // Scoring fix 4: league team (frames in lineup order) or Baker (one team game). One pad; the pill says who is up.
     const team = teamOf(P, s), g = team ? team.g : gameOf(P, s);
     const gameOpen = (team ? team.started : g.mine.length > 0) && !g.st.done;
+    if (!gameOpen && !list.length) body.append(h('div', { class:'card', id:'noPackedBalls' }, h('h2', { class:'card-title', text:'Your arsenal is saved' }), h('p', { class:'small', text:'Choose which physical balls to bring tonight. Adding a ball does not pack it automatically.' }), h('a', { class:'btn primary block', href:'#/bag' }, 'Pack a bag for tonight')));
     if (!BOWL && !drawn && (gameOpen || (g0(P) && g.st.done && !s.ended))) { BOWL = true; history.replaceState(null, '', '#/bowl'); retab('bowl'); el.querySelector('#tnTitle').textContent = 'Bowl'; }
     laneBall((gameOpen || BOWL) ? hb : cur);   // F03: Lane opens with the ball Tonight / Bowl names
     drawn = true;
@@ -181,7 +182,7 @@ export async function render(o = {}) {
       pick = h('div', { class: 'card pick', id: 'tnPick' },
         h('div', { class: 'row between' }, h('span', { class: 'ball-name', id: 'tnPickName', text: cur.name })),
         stand ? h('p', { class: 'tn-line', id: 'tnStand', text: `Feet ${stand.feet} \u00b7 eyes ${fmtHalf(ml.target)} at the arrows` }) : null,
-        stand ? h('button', { class: 'btn primary block', id: 'tnFind', onclick: () => go('#/target?find=1&ball=' + encodeURIComponent(cur.catalogId || '')) }, 'Find my strike line \u203a') : null,
+        stand ? h('button', { class: 'btn primary block', id: 'tnFind', onclick: () => go('#/target?find=1&ball=' + encodeURIComponent(cur.id || cur.catalogId || '')) }, 'Find my strike line \u203a') : null,
         gameOpen ? null : alts,
         h('details', { class: 'tn-more', id: 'tnPickMore' }, h('summary', { text: 'Why this ball, specs and model' }),
           h('span', { class: 'pill gold', id: 'tnLevel', text: cur.level != null ? `Level ${cur.level} \u00b7 demand ${d.demand}` : `spec TBD \u00b7 demand ${d.demand}` }),
@@ -200,7 +201,7 @@ export async function render(o = {}) {
     if (gameOpen || BOWL) {
       // ---- Bowl (#/bowl), and game open (sim bug 4): ball \u00b7 feet \u00b7 aim, the ball-change line, the scoring card, Weaker/Stronger. The rest behind one tap.
       body.append(h('div', { class: 'card tn-now', id: 'tnNow' },
-        h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: hb ? hb.name : 'No ball' }), ' ', aimChip(HL && HL.stand, HL && HL.ml, hb && hb.catalogId)),
+        h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: hb ? hb.name : 'No ball' }), ' ', aimChip(HL && HL.stand, HL && HL.ml, hb && (hb.id || hb.catalogId))),
         gameOpen ? null : thenLine),   // C3: during a game the ball-change plan sits under details
         quickLog(P, s, cur, b, hand, stand, g, team), alts || '', !gameOpen && reads ? reads : '',   // between games: the read and Weaker/Stronger in reach (J06)
         h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: 'Bag, lanes and line details' }),
@@ -488,14 +489,14 @@ export async function render(o = {}) {
       const done = async inst => { setPrefs({ installAsked: true }); PR.askPersist(); if (inst && await PR.promptInstall()) toast('Installed.'); draw(); };
       const how = PR.installHow();
       return h('div', { class: 'tn-recap', id: 'tnProtect', role: 'note' },
-        h('p', { class: 'small', text: 'Your games are stored in this browser. Safari can clear website data after 7 days without a visit; apps on the Home Screen are exempt.' }),
+        h('p', { class: 'small', text: 'Your games are stored in this browser. Browsers can clear website data, including after 7 days in some Safari cases. Home Screen installation may help retention; keep a separate backup.' }),
         how ? h('p', { class: 'small', id: 'tnInstallHow', text: how }) : h('button', { class: 'btn ghost block', id: 'tnInstall', onclick: () => done(true) }, 'Install the app'),
         h('button', { class: 'btn ghost block', id: 'tnInstallLater', onclick: () => done(false) }, how ? 'Got it' : 'Not now'));
     }
     const at = PR.lastBackupAt(db.meta);
     if (!PR.needsBackup({ games: P.games.length, lastBackupAt: at, snoozeUntil: pf.backupSnooze || 0 })) return null;
     return h('div', { class: 'tn-recap', id: 'tnBackup', role: 'note' },
-      h('p', { class: 'small', text: `${PR.lastBackupText(at)} ${P.games.length} ${P.games.length === 1 ? 'game' : 'games'} saved; a backup file restores them on any phone.` }),
+      h('p', { class: 'small', text: `${PR.lastBackupText(at)} ${P.games.length} ${P.games.length === 1 ? 'game' : 'games'} saved; keep a private backup file and test restoring it on a compatible version.` }),
       h('button', { class: 'btn ghost block', id: 'tnBackupNow', onclick: async () => { await PR.saveBackupFile(db, prefs()); toast('Backup file saved.'); draw(); } }, 'Download backup'),
       h('button', { class: 'btn ghost block', id: 'tnBackupLater', onclick: () => { setPrefs({ backupSnooze: Date.now() + PR.NUDGE_DAYS * PR.DAY }); draw(); } }, 'Remind me in 14 days'));
   }
