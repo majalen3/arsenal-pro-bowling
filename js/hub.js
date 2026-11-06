@@ -1,6 +1,6 @@
 // Glue between the UI (store.js) and the v1 event log (js/data/). Opens IndexedDB after first paint, migrates v0 once,
 // offers (never auto-loads) the Example arsenal, and emits 'data' on every change.
-import { setSink, pendingWrites, rawGet, rawSet, hydrateOwnedState, setProfile, deviceId, emit, on, profile, lsGet, lsSet, objGet, LS } from './store.js';
+import { setSink, pendingWrites, rawGet, rawSet, hydrateOwnedState, setOwnedMirror, deviceId, emit, on, profile, lsGet, lsSet, objGet, LS } from './store.js';
 import { createDB } from './data/db.js';
 import { bestBackend, memoryBackend } from './data/idb.js';
 import { mkEvent, voidImport } from './data/events.js';
@@ -90,6 +90,6 @@ export async function undoOwnershipReview() {
   if (!r?.confirmed || !r.importId) return;
   await undoImport(r.importId);
   let original = {}; try { original = JSON.parse(db.meta.foundationSnapshot?.keys.ap_profile || '{}'); } catch (_) {}
-  setProfile({ ...(profile() || {}), owned:original.owned || [], ownedVersion:original.ownedVersion });
+  setOwnedMirror(original.owned || [], original.ownedVersion);
   await db.setMeta('ownershipReview', { ...r, needed:true, confirmed:false, undoneAt:Date.now() });
 }

@@ -1,6 +1,6 @@
 import { balls } from '../data.js';
 import { S, RANGES } from '../engine.js';
-import { profile, setProfile, setPrefs } from '../store.js';
+import { profile, setOwnedMirror, setPrefs } from '../store.js';
 import { h, segmented, stepper, toast } from '../ui.js';
 import { adjust } from '../ctl.js';
 import { go } from '../router.js';
@@ -82,8 +82,8 @@ export async function render({ query } = {}) {
     if (saving || !draft.length) return; saving = true; paintChosen();
     try {
       const evs = selectionEvents(draft, batchId);
-      await addMany(evs); if (evs.some(e => !db.has(e.id))) throw new Error('Write not confirmed'); const current = profile() || {};
-      setProfile({ ...current, ownedVersion:1, owned:[...new Set(Object.values(proj().owned).map(o => o.catalogId).filter(Boolean))] });
+      await addMany(evs); if (evs.some(e => !db.has(e.id))) throw new Error('Write not confirmed');
+      setOwnedMirror([...new Set(Object.values(proj().owned).map(o => o.catalogId).filter(Boolean))], 1);
       if (reviewLegacy) await db.setMeta('ownershipReview', { v:1, needed:false, confirmed:true, importId:batchId, at:Date.now() });
       toast(db.backend.kind === 'memory' ? 'Only until this tab closes. Download a backup from Me.' : 'Saved on this phone. Backup is optional in Me.'); finish();
     } catch (_) { saving = false; paintChosen(); toast('Could not finish saving. Your selections remain here. Retry or download a backup in Me.', { kind:'bad' }); }

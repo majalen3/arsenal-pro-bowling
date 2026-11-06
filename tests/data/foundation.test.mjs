@@ -127,3 +127,14 @@ test('migration drops only its captured queued prefix, preserving edits made whi
  setSink((...a)=>calls.push(a),{dropPending:captured});await Promise.all([original,later]);assert.deepEqual(calls.map(c=>c[1]),['new']);
  await record('test.after','after',{});assert.deepEqual(calls.map(c=>c[1]),['new','after']);
 });
+
+
+test('ownership save and Undo change only their mirror, never re-label device-measured bowler facts',async()=>{
+ globalThis.location={search:''};const s=await import('../../js/store.js'),db=await db0();
+ const fields={speed:{v:17,unit:'mph',at:'pins',prov:{kind:'device',label:'Fictional fixture'}},pap:{v:'Fictional confirmed PAP',prov:{kind:'user'}}};
+ await db.append([mkEvent('bowler.edited','me',{fields})]);const before=structuredClone(db.events()),hash=db.hash();let writes=0;
+ s.setSink((type,id,data)=>{writes++;return db.append([mkEvent(type,id,data)]);});
+ const profile={speed:17,hand:'left',pap:'Fictional confirmed PAP',entered:{speed:true},owned:[]};s.lsSet(s.LS.profile,profile);
+ s.setOwnedMirror(['hy-road'],1);assert.equal(s.profile().ownedVersion,1);assert.deepEqual(s.profile().entered,profile.entered);
+ s.setOwnedMirror(profile.owned,undefined);await Promise.resolve();assert.equal(writes,0);assert.deepEqual(s.profile(),profile);assert.deepEqual(db.events(),before);assert.equal(db.hash(),hash);
+});

@@ -134,6 +134,8 @@ export function useCode(v) {
 }
 export function startSync() { localStatus(); }
 export const profile = () => objGet(LS.profile);
+// Ownership review updates only its mirror: never re-label measured/confirmed bowler facts.
+export function setOwnedMirror(owned, ownedVersion) { lsSet(LS.profile, { ...(profile() || {}), owned, ownedVersion }); emit('profile'); }
 export const setProfile = p => {
   lsSet(LS.profile, p);
   const f = {}; if (p.hand) f.hand = p.hand; if (p.style) f.style = p.style;
