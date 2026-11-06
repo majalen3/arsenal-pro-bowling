@@ -27,7 +27,7 @@ export async function render({ query }) {
   const file = h('input', { type: 'file', accept: 'image/*', id: 'dcFile', class: 'dc-file', 'aria-label': 'Take or pick a photo of the card' });
   const msg = h('p', { class: 'small muted', id: 'dcMsg', 'aria-live': 'polite', text: 'The photo stays on this phone and is not saved.' });
   const readBtn = h('button', { class: 'btn primary', id: 'dcRead', disabled: true, onclick: () => readIt() }, 'Read the card');
-  const hidePhoto = h('button', { class: 'btn sm ghost', id: 'dcHide', hidden: true, 'aria-label': 'Photo size', onclick: () => { const hid = img.classList.toggle('dc-min'); hidePhoto.textContent = hid ? 'Bigger photo' : 'Smaller photo'; } }, 'Smaller photo');
+  const hidePhoto = h('button', { class: 'btn sm ghost', id: 'dcHide', hidden: true, onclick: () => { const hid = img.classList.toggle('dc-min'); hidePhoto.textContent = hid ? 'Bigger photo' : 'Smaller photo'; } }, 'Smaller photo');
   // Only the photo is sticky (so it stays beside the fields while scrolling); the controls scroll away.
   const photoBar = h('div', { class: 'dc-photo', id: 'dcPhoto', hidden: true }, img, hidePhoto);
   const ctl = h('div', { class: 'card', id: 'dcCtl' }, own ? h('p', { class: 'small muted', id: 'dcFor', text: `For ${ballName(own)}` }) : null,
@@ -103,7 +103,7 @@ export async function render({ query }) {
       h('select', { id: 'dcBall', onchange: ev => { target = ev.target.value; } }, h('option', { value: '', text: forMe ? 'No ball, just my PAP' : 'Choose a ball' }), ...owned.map(o => h('option', { value: o.id, text: ballName(o) })))) : null;
     const papBox = rec.pap ? h('label', { class: 'row gap dc-check' }, h('input', { type: 'checkbox', id: 'dcSetPap', checked: alsoPap, onchange: ev => { alsoPap = ev.target.checked; } }),
       h('span', { text: `Set my profile PAP to ${rec.pap.text}` })) : null;
-    const list = h('ul', { class: 'dc-review', id: 'dcReview' }, ...D.FIELDS.filter(f => rec.fields[f.k]).map(f => h('li', {}, h('span', { text: `${GROUP_OF[f.k] ? GROUP_OF[f.k] + ', ' : ''}${GROUP_OF[f.k] ? f.label.toLowerCase() : f.label}: ` }), h('b', { text: rec.fields[f.k].v }), h('span', { class: 'muted small', text: ` (${D.provLabel(rec.fields[f.k].src)})` }))));
+    const list = h('ul', { class: 'dc-review', id: 'dcReview', tabindex:'0', 'aria-label':'Fields to save' }, ...D.FIELDS.filter(f => rec.fields[f.k]).map(f => h('li', {}, h('span', { text: `${GROUP_OF[f.k] ? GROUP_OF[f.k] + ', ' : ''}${GROUP_OF[f.k] ? f.label.toLowerCase() : f.label}: ` }), h('b', { text: rec.fields[f.k].v }), h('span', { class: 'muted small', text: ` (${D.provLabel(rec.fields[f.k].src)})` }))));
     const s = sheet({ title: 'Check and save', id: 'dcSheet', body: h('div', { class: 'stack' },
       h('p', { class: 'small', text: 'Check these against your card. Saved values keep where they came from.' }),
       bad.length ? h('p', { class: 'small dc-err', text: `Not saved (check the format): ${bad.join(', ')}.` }) : null,

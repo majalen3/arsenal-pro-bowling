@@ -47,7 +47,7 @@ export function render() {
   // Now item 4 (PRODUCT_EVAL_1 §8, 2026-11-02): every physics number carries where it comes from. The Lane's path numbers are the
   // 2-D model's (no measured path exists in the app); a release number from an accepted LaneTrax import is marked measured.
   // S1 (docs/SMOKE_TESTS.md): flag laneView 'summary' (default) = one plain path line on top + chips, the phase numbers behind
-  // a tap; 'baseline' = the screen as it was before (no summary, "(model)" text, phase numbers open).
+  // a tap; 'baseline' = no summary and phase numbers open. Both arms keep source chips as a safety floor.
   const V = UX.flag('laneView'), SUM = V !== 'baseline';
   const chip = (p, t) => h('span', { class:'prov', 'data-prov':p, text:t });
   const tile = (id, label, model) => h('div', { class:'tile', id }, h('div', { class:'tile-label' }, label, ...(model ? [chip('model', 'model')] : [])), h('div', { class:'tile-val num' }), h('div', { class:'tile-sub' }));
@@ -94,6 +94,7 @@ export function render() {
   function update({ animate = false } = {}) {
     const b = app.ball, mi = modelIn();   // the bowler's stand → aim (ctl.modelIn)
     ballBtn.innerHTML = `<span class="ball-orb sm" style="--c:${b.color}" aria-hidden="true"></span><span class="ball-btn-text"><span class="ball-btn-name">${b.name}</span><span class="ball-btn-sub">${b.brand} · ${coverKind(b)} · RG ${rgTxt(b)}</span></span>${icon('down', 'chev')}`;
+    ballBtn.querySelector('.ball-btn-sub').append(chip(b.rg != null ? 'manufacturer' : 'assumed', b.rg != null ? `maker${b.weight ? ' · ' + b.weight + ' lb' : ''}` : 'unverified'));
     ballBtn.title = 'Change ball';
     el.querySelector('#laneH1').textContent = `Lane: ${b.name}`;
     patChip.innerHTML = `<span class="chip-k">Pattern</span> ${PATTERN_LABEL[S.pattern]}`; patChip.setAttribute('aria-label', `Pattern ${PATTERN_LABEL[S.pattern]}. Change conditions`);
@@ -106,7 +107,7 @@ export function render() {
     const a = analyze(b, { release:mi.release, aim:mi.aim });
     const tone = CALL_TONE[a.call]; callBadge.textContent = CALL_LABEL[a.call]; 
     const cl = houseRule(coachLine(a));
-    coach.textContent = isLefty() ? mirrorWords(cl) : cl;
+    coach.textContent = isLefty() ? mirrorWords(cl) : cl; coach.append(chip('model','model'));
     setTile(tEntry, f1(a.entryBoard), 'pocket 17.5', a.entryBoard != null && Math.abs(a.entryBoard - 17.5) <= 0.7 ? 'good' : 'warn');
     setTile(tAngle, a.angle == null ? '\u2014' : aboutAngle(a.angle), 'drawn, not measured', a.angle != null && a.angle >= 4 && a.angle <= 6 ? 'good' : 'warn');
     const r31 = a.bpBoard == null ? null : ruleOf31(S.pattern, a.bpBoard);
@@ -115,8 +116,9 @@ export function render() {
     const sd = standOf(S.release); lineSum.dataset.release = S.release; lineSum.dataset.stand = sd.feet; lineSum.dataset.aim = half2(target());
     modelNote.hidden = !mi.clamped;
     if (mi.clamped) modelNote.textContent = `Model limit: the model launches at most 0.9 board off the laydown, so its ball starts ${Math.abs(mi.shift)} boards ${(mi.shift > 0) === !isLefty() ? 'left' : 'right'} of your laydown to cross the arrows at ${fmtHalf(target())}. Your stand is unchanged.`;
+    if (mi.clamped) modelNote.append(chip('model','model'));
     lineSum.innerHTML = `<span class="sr-only">Tune shot. </span><span><b class="num">${sd.feet}</b><small>Stand \u00b7 lay ${S.release}</small></span><span class="arrow" aria-hidden="true">→</span><span><b class="num">${fmtHalf(target())}</b><small>Aim</small></span><span><b class="num">${S.speed}</b><small>mph</small></span><span><b class="num">${S.rev}</b><small>rpm</small></span>${icon('tune', 'ls-ic')}`;
-    lineSum.querySelectorAll('span').forEach(n => { if (n.querySelector('small')?.textContent === 'mph') n.append(chip(...sp)); if (n.querySelector('small')?.textContent === 'rpm') n.append(chip(...rv)); });
+    lineSum.querySelectorAll('span').forEach(n => { if (n.querySelector('small')?.textContent === 'mph') n.append(chip(...sp)); if (n.querySelector('small')?.textContent === 'rpm') n.append(chip(...rv)); if (/^(Stand|Aim)/.test(n.querySelector('small')?.textContent || '')) n.append(chip('assumed','input')); });
     const sens = sensitivity(b), n = +sens.split(' ')[0];
     hold.innerHTML = `<span class="hold-bar" aria-hidden="true">${Array.from({ length:6 }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span><span>Margin: <b>${sens}</b> small misses still strike</span>`;
     hold.append(chip('model', 'model'));
@@ -142,6 +144,7 @@ export function render() {
     deckCv.setAttribute('aria-label', `Pin deck close-up, ${d.pocket} pocket. ${CALL_LABEL[a.call]}. ${d.text}`);
     const how = a.entryBoard != null && d.side;
     deckRead.innerHTML = how ? `<p class="deck-side-call">${d.side[0].toUpperCase() + d.side.slice(1)}.</p>` : `<p>${d.text}</p>`;
+    deckRead.append(chip('model','model'));
     el.querySelector('#deckHowBody').innerHTML = how ? `<p class="deck-contact">Angle ${d.ang}. ${d.contact}</p><p class="deck-five">${d.five}</p>` : '';
     if (how) el.querySelector('#deckHowBody').append(chip('model', 'model'));
     el.querySelector('#deckMirror').hidden = !lefty;

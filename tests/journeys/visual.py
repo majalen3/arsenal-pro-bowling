@@ -41,7 +41,10 @@ async def run(b, run, update=False, tol=0.02):
                 # Boot on a neutral screen, wait for the event log, then route in-app: a pixel diff must not depend on a
                 # cold-load race (that race is asserted by J08 'Insights cold load' instead).
                 await page.goto(run.base + '?v=' + name + '#/me'); await page.evaluate("async () => { const m = await import('./js/hub.js'); await m.ready(); }")
-                await page.evaluate("r => { location.hash = r; }", route); await page.wait_for_timeout(700); await page.evaluate(HIDE)
+                await page.wait_for_selector('#view .screen', state='attached')
+                await page.evaluate("r => { location.hash = r; }", route)
+                await page.wait_for_function("async path => { const c = (await import('./js/router.js')).current(); return c && c.path === path && c.scr?.el?.isConnected && document.querySelector('#view').contains(c.scr.el); }", arg=route.split('?')[0], timeout=10000)
+                await page.wait_for_timeout(700); await page.evaluate(HIDE)
                 await page.screenshot(path=cur, animations='disabled', caret='hide')
                 if update or not os.path.exists(base):
                     shutil.copy(cur, base); r.update(status='new' if not update else 'updated', ratio=0)

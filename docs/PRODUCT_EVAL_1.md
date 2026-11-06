@@ -1,7 +1,9 @@
 # Arsenal Pro product evaluation 1
 
 Run: 2026-11-02 (America/New_York). Prompt: `docs/TEAM_PROMPT_PRODUCT_EVAL.md` (owner prompt [pt91u] + tightening addendum).
-Page: "Arsenal Pro product evaluation". This run changed no app code.
+Page: "Arsenal Pro product evaluation". The original evaluation changed no app code; implementation status below was updated **2026-11-06 (SGT)**.
+
+**Current implementation:** all six Now items are complete on main or the review branch (Now 3/5 were already on main). The catalog is manufacturer-sourced, with explicit unknowns; S1/S2/S3 are runnable locally but have no participant outcomes yet. C8/C9 stay open. The dated licensing research in §2 is historical evidence, not the current catalog source inventory.
 
 **How to read the scores.** Impact (I), Effort (E) and Confidence in research (C) each run from 1 to 5. Effort: 1 = under half a day of agent work, 2 = 1–2 days, 3 = 3–5 days, 4 = one 2-week cycle, 5 = more than one cycle. **Value = I × C ÷ E.** Now = it fits this 2-week cycle (1 owner plus AI agents, no paid services) and has no unresolved owner conflict. Next = the next cycle. Later = bigger work or waiting on an owner decision.
 **Lift rule.** A lift figure is a sourced range from a comparable study, with its context named. Anything else says *directional, unmeasured*.
@@ -10,9 +12,9 @@ Page: "Arsenal Pro product evaluation". This run changed no app code.
 ## 0. Verdict in one screen
 
 - The app already has more of the "engagement" layer than the prompt assumes. The trophy room, earned milestones, share cards, Center Regulars, identity tags, Season Wrapped, the step ladder and source chips are all in the code. Most of the work is **clarity and honesty, not new mechanics**.
-- **Biggest risk is legal, not UX.** 145 of the 167 Add-ball entries (`js/data/spec_catalog.js`) come from bowlingballvideos.com. Its terms forbid scrapers and derivative works without written consent. That source is **High** risk.
+- **Catalog rebuild complete:** the former third-party discovery data was replaced with manufacturer facts; 143 verified discovery rows remain after removing two unverified identities. All 22 built-ins were re-reviewed, and unknown/unsupported specs do not produce model paths. No permission or accuracy claim is implied.
 - Badges, challenges and unlocks can be built in a values-safe way. They must be earned-only, process-based and opt-in, with no loss framing. Streak counters and leaderboards go on the do-not-build list.
-- The "step up/down" controls do exist (Tonight's Weaker/Stronger buttons). The problem is that each step is opaque: the bowler can't see what will change before tapping.
+- Weaker/Stronger now previews the next ball and suggests feet/eyes first in planning/between games; no new content is added during active scoring.
 
 ## 1. Feasibility map (what is really in the code)
 
@@ -21,7 +23,7 @@ Page: "Arsenal Pro product evaluation". This run changed no app code.
 | Trophy room / arsenal as a case | EXISTS | `js/cc/armory.js` `shelves()` (bag / bench / Old Friends hall), Bag › All my balls; DECISIONS #31 |
 | Milestones | EXISTS (earned-only) | `js/cc/armory.js` `milestones()`: 300 game, 200+ best, 1/10/25/50/100+ games |
 | Locked items with progress bars | NEW, and it **conflicts** with #31 | not in the code (no "locked", "unlock" or "progress" in `js/`) |
-| Badges beyond milestones | PARTIAL | Center Regular (4 nights in 90 days) in `js/cc/community.js`; identity tags in `js/screens/community.js` |
+| Badges beyond milestones | EXISTS | Four earned starter cards in `js/cc/armory.js`; Center Regular (4 nights in 90 days) in `js/cc/community.js`; identity tags in `js/screens/community.js` |
 | Challenges (time-bound) | NEW | none |
 | Streaks | NEW, **conflicts** with the playbook | none |
 | Leaderboards | NEW, **conflicts** with #28 and community rules | none (team members listed in join order, `js/screens/team.js`) |
@@ -29,12 +31,12 @@ Page: "Arsenal Pro product evaluation". This run changed no app code.
 | Small groups | EXISTS | My Team `#/team`: `js/screens/team.js`, `js/data/team.js`, API `lib/teams.js`; plain counts, rates only at 30+ chances (`MIN_SHOTS = 30`, `js/cc/card.js:15`) |
 | Step up / step down (ball) | EXISTS | Tonight's Weaker/Stronger buttons, `js/screens/tonight.js` (~l.162, ~l.189) → `js/cc/rank.js` (one-step alternatives, Plan B); `js/cc/status.js:48` (stronger/weaker than the lanes need); Bag ladder "Weaker ↔ stronger ›", L1–L5, `js/screens/bag.js:64,109`; roles `js/cc/advisor.js` |
 | Step controls (surface and release) | EXISTS | Surface segmented picker `js/screens/pickers.js:50` (FINISHES); steppers for oil ×, speed 12–22 by 0.5, rev 100–500 by 10, feet 1–39, target by 0.5 (hint: "The model reaches only about 0.8 board…"); Ball page "Log <finish> today", `js/screens/ball.js:55` |
-| Persistent Targeting shortcut | PARTIAL | the "Stand F · Aim T ›" chip `#tnAimChip` (`js/screens/tonight.js:527`) opens **Lane** (`#/lane`); Targeting is a second tap, via the icon `#targetBtn` (`js/screens/lane.js:31`). "Find my strike line ›" deep-links `#/target?find=1` (`tonight.js:177`) |
+| Persistent Targeting shortcut | EXISTS (Now 3 on main) | `#tnAimChip` opens `#/target?ball=…` in one tap; Find keeps its `find=1` deep link |
 | Bottom buttons that hide | PARTIAL | sticky docks sit above the tab bar with safe-area padding: `.tg-dock` (`css/app.css:522`), `.ql-pad` (591), `.bag-dock` (675), `.tray` (287). No hide-on-scroll. The clutter audit counted 22 actions on Bowl while scoring |
 | Physics model | EXISTS (frozen port) | `js/engine.js` `simulatePath` (equivalence 7,500/0); coach line `engine.js:116-117`; "° model" labels `js/screens/ball.js:43`, `js/screens/lane.js:46-108`; model disclaimer `js/screens/target.js:102`; limits: a near-straight line, 3 flat oil zones |
-| Measured vs model | PARTIAL | the Targeting disclaimer ("Import a LaneTrax session…"), `js/data/lanetrax.js`; the Ruby import is still being built |
-| Arsenal Builder search-and-add | EXISTS | `js/screens/addball.js`, `js/cc/addball.js`; 167 entries = 22 app balls (`js/data.js`) + 145 rows (`js/data/spec_catalog.js`, built by `tools/build_spec_catalog.py`); canonical then fuzzy match; `GET /api/spec-lookup` (`arsenal-pro-api/lib/specfetch.js`, `specparse.js`) on allowlisted maker hosts with robots.txt and crawl-delay; source chips, "spec TBD", maker value wins; engine card compare; drill card OCR (`js/cc/drillocr.js`, vendored Tesseract); pro shop kit QR `?cat=` prefill (`js/screens/kit.js`) |
-| Local event log for instrumentation | EXISTS | IndexedDB append-only log `js/data/events.js`, `js/data/idb.js`, `js/data/db.js` |
+| Measured vs model | EXISTS | `js/cc/provenance.js`, Lane/Ball/Compare/Targeting chips; measured release inputs stay distinct from the model path. Supported LaneTrax import remains the measured source; no new accuracy claim |
+| Arsenal Builder search-and-add | EXISTS | `js/screens/addball.js`, `js/cc/addball.js`; 22 stable app identities (`js/data.js`) + 143 maker discovery rows (`js/data/spec_catalog.js`, built by `tools/build_spec_catalog.mjs`); canonical then fuzzy match; `GET /api/spec-lookup` (`arsenal-pro-api/lib/specfetch.js`, `specparse.js`) on allowlisted maker hosts with robots.txt and crawl-delay; source chips, "spec TBD", maker value wins; engine card compare; drill card OCR (`js/cc/drillocr.js`, vendored Tesseract); pro shop kit QR `?cat=` prefill (`js/screens/kit.js`) |
+| Local instrumentation | EXISTS (Now 5 on main) | `js/cc/ux.js`, localStorage `ap_ux`; deliberately outside the synced/backed-up IndexedDB log |
 
 ## 2. Catalog data and licensing (checked live 2026-11-02)
 
@@ -134,7 +136,7 @@ Each area covers: 1 gaps and risks · 2 team discussion · 3 recommendation · 4
 9. **Open.** C5, engine v2 approval.
 
 ### 4.6 Arsenal Builder (search-and-add)
-1. **Gaps and risks.** It works well already (§1). Gaps: the **licensing** of the 145 rows (High); Motiv is unsupported; there is no USBC-list fallback for names; offline lookups can't queue.
+1. **Gaps and risks.** Manufacturer rebuild is complete (143 discovery rows, plus the 22 reviewed built-ins). MOTIV live lookup is added in the companion API PR, deployed only after merge. A USBC-list fallback and offline lookup queue remain future work; unavailable facts are never filled in by guesswork.
 2. **Teams.** *Product:* three result groups make the source obvious. *Technical:* `specfetch.js` already follows robots.txt and an allowlist; rebuild the catalog from on-request maker fetches plus the cached results. *Data:* keep the "maker value wins" rule and the chips. *Psychology:* adding a ball is an identity moment, so end on "Where it fits in your bag". *Community:* the pro shop kit QR prefill is the intermediary channel (playbook).
 3. **Recommendation.** See the spec in §9. Catalog rebuild **Now**; spec polish **Next**.
 4. **Rationale.** Lower effort to the first win (the first ball added); trust through sources.
@@ -194,9 +196,9 @@ All of these are earned-only, computed on the device from the event log, use des
 |---|---|---|---|---|---|---|---|---|
 | 1 | Rebuild or license the 145 catalog rows (bowlingballvideos) | 4.6 | 5 | 2 | 4 | 10.0 | **Now** | DONE in review branch: 143 maker discovery rows; 22 built-ins reviewed, explicit unknowns |
 | 2 | Earned-shelf polish and starter badge cards | 4.1/4.2 | 3 | 1 | 4 | 12.0 | **Now** | DONE in review branch |
-| 3 | Targeting in one tap from the chip | 4.7 | 3 | 1 | 3 | 9.0 | **Now** | DONE in review branch |
+| 3 | Targeting in one tap from the chip | 4.7 | 3 | 1 | 3 | 9.0 | **Now** | DONE on main (1fa4781), preserved |
 | 4 | Physics source chips and a one-line path summary | 4.5 | 4 | 2 | 4 | 8.0 | **Now** | DONE in review branch |
-| 5 | Local-first UX counters and feature flags | §10 | 4 | 2 | 4 | 8.0 | **Now** | DONE (Now 5 on main; localStorage, not synced event log) |
+| 5 | Local-first UX counters and feature flags | §10 | 4 | 2 | 4 | 8.0 | **Now** | DONE on main (0d456c4; localStorage, not synced event log) |
 | 6 | Step-ladder preview with a feet/eyes-first hint | 4.7 | 4 | 2 | 3 | 6.0 | **Now** | DONE in review branch |
 | 7 | Process badges from §5 | 4.1 | 4 | 2 | 3 | 6.0 | Next | NEW |
 | 8 | Builder: grouped results, USBC fallback, offline queue | 4.6 | 4 | 3 | 4 | 5.3 | Next | PARTIAL |
@@ -246,7 +248,7 @@ The Now list (items 1–6) adds up to about 10 agent-days of effort, which fits 
 - **Read-out:** Me › Tests and usage shows a counts-only JSON summary; the tester may use the native share sheet after the session. No automatic send. Exact procedures: [SMOKE_TESTS.md](SMOKE_TESTS.md).
 - **Design:** small N (owner plus a few league testers), so use pre-set pass thresholds, counts and short interviews. No significance claims.
 - **Guardrails:** Help opens, mid-game abandon, actions per frame on Bowl, offer dismissals.
-- **Licensing validation:** a coverage audit. What share of the 145 rows can be rebuilt from allowlisted maker pages plus the USBC list? This is a local script, about 1 day.
+- **Catalog validation complete:** 143 maker discovery rows; two unverified discovery identities removed. The 22 built-in reviews and explicit missing sources/specs are documented in DECISIONS and `builtin_sources.json`.
 
 ## 11. Top 3 smoke tests (≤ 2 weeks each)
 | # | Recommendation | Core assumption | Test | Pass if (set before the test) | Lift reference |
@@ -277,7 +279,7 @@ The Now list (items 1–6) adds up to about 10 agent-days of effort, which fits 
 - A pure social feed, real-time multiplayer simulation (non-goals), and "Arsenal" alone as merch.
 
 ## 14. Caveats
-- Hammer, Ebonite, Track and Columbia 300 terms weren't found at the tested URLs, so those rows are unverified. Motiv blocks fetches.
+- The 2026-11-02 terms-fetch limitations in §2 are historical; they are not current spec-status labels. MOTIV support and the 2026-11-06 maker review are described above; no general license or physical-accuracy claim is made.
 - Scores are planning judgments, not measurements.
 - The opening of the owner prompt was reconstructed (see the provenance note in the prompt doc).
 

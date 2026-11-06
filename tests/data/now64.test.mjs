@@ -6,7 +6,7 @@ import { releaseSource, pathSummary, aboutAngle } from '../../js/cc/provenance.j
 import { balls, modelOK, coverKind } from '../../js/data.js';
 import { SPEC_ROWS } from '../../js/data/spec_catalog.js';
 import { registerOwned, catOf, clearExtra } from '../../js/cc/cats.js';
-import { search, LOOKUP_BRANDS } from '../../js/cc/addball.js';
+import { search, LOOKUP_BRANDS, compare } from '../../js/cc/addball.js';
 const json = path => JSON.parse(readFileSync(new URL(path, import.meta.url)));
 test('N64 empty shelf has no starter cards, locks, progress or invented awards', () => {
   assert.deepEqual(starterBadges(), []); assert.match(nextUp().text, /if you want/);
@@ -71,4 +71,8 @@ test('N64 rewritten cover guidance has no BowlVersity citation', () => {
     const t=d.terms.find(x=>x.id===id);assert.ok(!t.sources.some(s=>s.key==='bv_cover'||s.url.includes('bowlversity')));
     assert.ok(t.sources.some(s=>s.key==='motiv_guide'));
   }
+});
+
+test('N64 direct comparison refuses NU and generic Reactive covers rather than substring matching urethane', () => {
+  for (const id of ['rattler-nu','green-scout','ice-storm','hy-road-pearl']) assert.equal(compare(balls.find(b=>b.id===id)).none,true,id);
 });

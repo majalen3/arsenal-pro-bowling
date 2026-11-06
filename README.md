@@ -13,7 +13,7 @@ Arsenal Pro is a free bowling companion for league and practice nights. It picks
 | **Tonight** | Say where you are bowling (league, tournament, practice, the center, the pattern). It shows the ball to start with from your bag, where to stand and aim, and the ball to switch to next. |
 | **Bowl** | Scoring with one thumb: strike in 1 tap, spare in 2. Leaves, splits, 10th frame, fouls, fix any frame, league and team scoring with USBC handicap. |
 | **Results** | The latest night first, then every night, your lines, lane notes and the Bowler Card (average, strikes, single-pin spares, the leave to work on). |
-| **Bag** | Tonight's bag and all your balls: status (in my bag, at home, at the pro shop, retired), the 3-step bag builder, compare, add a ball from a 145-row spec catalogue or by typing the specs. |
+| **Bag** | Tonight's bag and all your balls: status (in my bag, at home, at the pro shop, retired), the 3-step bag builder, compare, add a ball from a 143-row manufacturer spec catalogue or by typing the specs. |
 | **Learn** | 709 oil patterns (Kegel library), the bowling guide and a 119-term glossary. Help bubbles are off until you turn them on. |
 | **Me** (top right) | Bowler profile (hand, speed, revs), optional account, backup code, backup file, imports (CSV, LaneTrax session report PDF, read on the phone), text size, About. |
 

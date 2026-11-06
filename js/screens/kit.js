@@ -43,7 +43,7 @@ export async function render() {
   function draw() {
     chosen.innerHTML = ''; sheet.innerHTML = '';
     if (ids.length) chosen.append(h('ul', { class: 'plain kit-list' }, ...ids.map(id => { const e = A.entryById(id);
-      return h('li', { class: 'kit-row' }, h('span', { text: `${e.brand} ${e.name}` }), h('button', { class: 'btn ghost', 'aria-label': `Take ${e.name} off the sheet`, 'data-kit-del': id, onclick: () => { ids = ids.filter(x => x !== id); save(); draw(); } }, 'Remove')); })));
+      return h('li', { class: 'kit-row' }, h('span', { text: `${e.brand} ${e.name}` }), h('button', { class: 'btn ghost', 'aria-label': `Remove ${e.name} from the sheet`, 'data-kit-del': id, onclick: () => { ids = ids.filter(x => x !== id); save(); draw(); } }, 'Remove')); })));
     if (!ids.length) { sheet.append(h('p', { class: 'muted small no-print', id: 'kitEmpty', text: 'Add balls above and their codes appear here, ready to print.' })); return; }
     sheet.append(h('div', { class: 'kit-head' }, h('h2', { text: shop ? `${shop}: scan to add a ball` : 'Scan to add a ball' }),
         h('p', { text: 'Point a phone camera at a code. The ball opens filled in from the catalogue; check it and tap Add.' })),

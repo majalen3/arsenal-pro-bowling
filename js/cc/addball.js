@@ -1,7 +1,7 @@
 // Add a ball (docs/TEAM_PROMPT_ADD_BALL.md). Pure: search → maker lookup result → confirmed spec → engine card + grid.
 // Never invents a value: every field is {v, prov}; a field nobody printed stays absent and the UI says "spec TBD".
 // Engine = the unchanged 2-D simulatePath (via analyze / modelLine); cc3d stays off.
-import { balls, coverKind, specOK } from '../data.js';
+import { balls, coverKind, modelOK } from '../data.js';
 import { SPEC_ROWS, CATALOG_META } from '../data/spec_catalog.js';
 import { norm } from '../data/match.js';
 import { S, START, OIL_LEN, analyze } from '../engine.js';
@@ -174,7 +174,7 @@ function readAt(cat, preset, line, ov) {
 const r1 = x => (x == null || isNaN(x) ? null : Math.round(x * 10) / 10);
 export function compare(cat, { bench = balls.find(b => b.id === BENCH_ID), speed = START.speed, rev = START.rev, ft = 38, hand = 'right' } = {}) {
   const t0 = now(), preset = presetFor(ft), r31 = rule31(ft), ov = { speed, rev };
-  if (!cat || !specOK(cat) || !ENGINE_COVERS.some(c => (cat.cover || '').includes(c))) return { none: true, reason: 'spec TBD: no engine run', ms: 0 };
+  if (!cat || !modelOK(cat)) return { none: true, reason: 'spec TBD: no engine run', ms: 0 };
   const benchLine = modelLine(bench, { speed, rev, ft, target31: r31.target });
   const line = benchLine.none ? { feet: 15, aim: -3, assumed: true } : benchLine;
   const a = readAt(cat, preset, line, ov), b = readAt(bench, preset, line, ov), own = modelLine(cat, { speed, rev, ft, target31: r31.target });

@@ -14,6 +14,7 @@ Versions follow [Semantic Versioning](https://semver.org). The offline build id 
 ### Under the hood
 - Deliberately frozen v64 catalog-input baseline; unchanged engines pass 7,500/0. Per-ball old/new records: docs/DECISIONS.md.
 - Local S1/S2/S3 flag/counter smoke tests and run instructions; no participant lift claims, no outbound telemetry.
+- Full regression verification and small accessibility repairs exposed by the audit (null text, contrast, labels, review focus/targets). See docs/NOW64_VALIDATION.md for exact results.
 - CSP, offline-first/no-build approach and existing QR/owned data retained. No Engine v2 or product photos; C8/C9 remain owner decisions.
 
 ## 1.1.1 (2026-11-02)

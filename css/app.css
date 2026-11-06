@@ -88,7 +88,7 @@ body[data-tab=bowl] #tnLog .help-dot,body[data-tab=bowl] #tnNow .help-dot{displa
 .btn.primary[disabled]{opacity:.5;cursor:default}
 .btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
 .btn.ghost:hover{background:var(--surface-3)}
-.btn.danger{background:var(--bad);color:#fff}
+.btn.danger{background:var(--bad);color:var(--bg)}
 .btn.sm{min-height:36px;padding:0 var(--s3);font-size:var(--fs-sm)} .btn.sm .ic{width:18px;height:18px}
 @media (pointer:coarse){.btn.sm{min-height:var(--tap)}}
 .btn.lg{min-height:52px;padding:0 var(--s6);font-size:var(--fs-lg)}
@@ -767,7 +767,7 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .dc-foot{position:sticky;bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + 8px);padding:var(--s2) 0;z-index:3}
 .dc-review{margin:0;padding-left:18px;max-height:44vh;overflow:auto}
 .dc-check{min-height:44px;align-items:center}
-.dc-check input{width:24px;height:24px}
+.dc-check input{width:44px;height:44px;flex:0 0 44px}
 /* ---- Now item 5: Me > Tests and usage (counts on this phone only) */
 .ux-fold summary{min-height:var(--tap);display:flex;align-items:center;cursor:pointer;font-weight:700}
 .ux-pre{white-space:pre-wrap;word-break:break-word;background:var(--surface-2,rgba(127,127,127,.08));padding:var(--s2);border-radius:8px;max-height:50vh;overflow:auto}
@@ -788,3 +788,6 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 /* Source labels must wrap within the narrow one-handed Lane column. */
 .line-sum{flex-wrap:wrap;min-width:0;row-gap:6px}
 #tAngle .tile-val{font-size:var(--fs-lg);overflow-wrap:anywhere}
+
+/* A wrapped title is preferable to clipping the season name on a phone. */
+#wrapped .appbar .title{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}

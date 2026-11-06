@@ -532,7 +532,7 @@ export async function render(o = {}) {
   // Now item 3 (PRODUCT_EVAL_1 #3, 2026-11-02): the Stand \u00b7 Aim chip opens Targeting in one tap (it used to open the Lane, then
   // Targeting was a second tap). Lane is one tap back from Targeting's header. Without a model line Targeting still sets feet and eyes.
   function aimChip(st, ml, cid) {
-    return h('a', { class: 'chip aim-chip', id: 'tnAimChip', href: '#/target' + (cid ? '?ball=' + encodeURIComponent(cid) : ''), onclick: () => UX.count('aim.chip'), 'aria-label': st ? `Stand ${st.feet}, aim ${fmtHalf(ml.target)}: open Targeting` : 'Set stand and aim on Targeting' },
+    return h('a', { class: 'chip aim-chip', id: 'tnAimChip', href: '#/target' + (cid ? '?ball=' + encodeURIComponent(cid) : ''), onclick: () => UX.count('aim.chip'), 'aria-label': st ? `Stand ${st.feet}, aim ${fmtHalf(ml.target)}: open Targeting` : 'Stand · Aim › — set on Targeting' },
       st ? `Stand ${st.feet} \u00b7 Aim ${fmtHalf(ml.target)} \u203a` : 'Stand \u00b7 Aim \u203a');
   }
   function advisorCard(P, s, b, adv, start) {
