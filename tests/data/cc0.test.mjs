@@ -24,8 +24,8 @@ const golden = [
   ['G08 Bat on wood → demand 2 → Deadly Rattler', { pattern: pat('2026-pba-bat'), surface: 'wood' }, T6, null, 'deadly-rattler', null, 'ordnance-c4'],
   ['G09 Bear 38 ft high volume → Big Bite', { pattern: pat('2026-pba-bear') }, T6, null, 'rattler-big-bite', 'ordnance-c4', 'super-nova'],
   ['G10 new center overrides: benchmark first even on a short pattern', { pattern: pat('2026-pba-bat'), surface: 'wood' }, T6, 'new center', 'rattler-big-bite', 'ordnance-c4', 'super-nova'],
-  ['G11 League 3 on the assumed house shot → Big Bite (4 and 2 tie on distance; hybrid beats pearl)', { pattern: R.HOUSE_ASSUMED }, L3, null, 'rattler-big-bite', 'hy-road-pearl', null],
-  ['G12 League 3 on wood burn → Hy-Road Pearl', { pattern: pat('2026-pba-bat'), surface: 'wood', stage: 'burn' }, L3, null, 'hy-road-pearl', null, 'rattler-big-bite'],
+  ['G11 League 3 on the assumed house shot → Big Bite (4 and 2 tie on distance; hybrid beats pearl)', { pattern: R.HOUSE_ASSUMED }, L3, null, 'rattler-big-bite', null, null],
+  ['G12 unverified Hy-Road Pearl is not recommended even on burn', { pattern: pat('2026-pba-bat'), surface: 'wood', stage: 'burn' }, L3, null, 'rattler-big-bite', null, null],
 ];
 for (const [name, dctx, bag, bf, p, w, s] of golden) test(name, () => {
   const d = R.demandOf(Object.assign({ tert: TERT }, dctx)), r = R.rank(bag, { demand: d.demand, benchFirst: bf });
@@ -47,7 +47,7 @@ test('G15 read: too early → one step weaker; too weak → one step stronger', 
 });
 test('G16 read: too angular → smoother at a similar level; too smooth → more angular', () => {
   const r = R.rank(T6, { demand: 3 });
-  assert.equal(R.readMove(r, 'own-hy-road-pearl', 'angular').id, 'own-ordnance-c4');
+  assert.equal(R.readMove(r, 'own-hy-road-pearl', 'angular'), null, 'unverified specs do not drive a shape move');
   assert.equal(R.readMove(r, 'own-ordnance-c4', 'smooth').id, 'own-deadly-rattler');
 });
 test('G17 Rule of 31: 41 ft → board 10; 47 ft → 16 inside long band; 50 ft → 19 conflicts with 13-16, both shown', () => {

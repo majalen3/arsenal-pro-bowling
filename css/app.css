@@ -771,3 +771,20 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 /* ---- Now item 5: Me > Tests and usage (counts on this phone only) */
 .ux-fold summary{min-height:var(--tap);display:flex;align-items:center;cursor:pointer;font-weight:700}
 .ux-pre{white-space:pre-wrap;word-break:break-word;background:var(--surface-2,rgba(127,127,127,.08));padding:var(--s2);border-radius:8px;max-height:50vh;overflow:auto}
+/* ---- Now item 4: Lane path summary + provenance chips (S1 'summary' variant) */
+.path-sum{margin:0 0 var(--s2);font-size:var(--fs-sm);line-height:1.4}
+.tile-label .prov{display:block;width:fit-content;margin:2px 0 0;padding:0 6px;font-size:.625rem;text-transform:none;letter-spacing:0;font-weight:600}
+.more-fold summary{min-height:var(--tap);display:flex;align-items:center;cursor:pointer;font-size:var(--fs-sm);color:var(--text-2)}
+
+/* Now 2 / 6: quiet earned cards and next-ball preview, never on the scoring pad. */
+.badge-shelf{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:var(--s2)}
+.badge-card{display:flex;flex-direction:column;justify-content:center;gap:4px;min-height:64px;padding:12px;border:1px solid var(--line);border-radius:10px;color:var(--text);text-decoration:none}
+.badge-card b{font-size:var(--fs-sm)}
+.next-up{display:flex;align-items:center;min-height:44px;padding:8px 0;color:var(--text-2)}
+.step-ladder .alt{min-height:44px;white-space:normal;overflow-wrap:anywhere;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
+.step-name{font-size:var(--fs-sm);text-align:left}
+.step-hint{margin:4px 0 0}
+
+/* Source labels must wrap within the narrow one-handed Lane column. */
+.line-sum{flex-wrap:wrap;min-width:0;row-gap:6px}
+#tAngle .tile-val{font-size:var(--fs-lg);overflow-wrap:anywhere}

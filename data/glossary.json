@@ -422,17 +422,11 @@
    "tree": "Equipment — Balls",
    "term": "Plastic (polyester) ball",
    "level": "Beginner",
-   "bubble": "Plastic barely hooks, even on dry lanes. That's why it's the go-to spare ball.",
-   "glossary": "The hardest, least grippy cover type. It goes nearly straight, which makes it ideal for corner-pin spares. Most house balls are plastic.",
+   "bubble": "A polyester spare ball is an option when you want less hook. Check how it rolls on your line.",
+   "glossary": "Plastic is another name for a polyester cover. A straighter spare line can help you repeat a target, but the ball and release still matter.",
    "placement": "Bubble (Arsenal › ball detail and Add ball spec rows) + Glossary",
    "priority": "Medium",
    "sources": [
-    {
-     "key": "bv_cover",
-     "url": "https://www.bowlingball.com/BowlVersity/simple-differences-between-solid-pearl-and-hybrid-bowling-balls",
-     "label": "F",
-     "title": "bowlingball.com BowlVersity, Solid vs pearl vs hybrid (retailer)"
-    },
     {
      "key": "bcom_spare",
      "url": "https://www.bowling.com/knowledge-hub/questions/bowling-balls/choosing-a-spare-ball",
@@ -444,10 +438,16 @@
      "url": "https://www.reddit.com/r/Bowling/comments/u0l9ar/are_spare_balls_worth_the_money/",
      "label": "S",
      "title": "r/Bowling: are spare balls worth it"
+    },
+    {
+     "key": "motiv_guide",
+     "url": "https://www.motivbowling.com/resources/ball-guide.html",
+     "label": "F",
+     "title": "MOTIV Ball Guide: surface, friction and shape (read 2026-11-06)"
     }
    ],
    "level_why": "Most house balls are plastic, and beginners ask why they won't hook.",
-   "evidence": "BowlVersity cover article (F). Spare-ball threads and retailer FAQ (S).",
+   "evidence": "App-authored explanation. MOTIV Ball Guide discusses sanded/polished surfaces and lane friction; a cover-family name alone is not a measured motion prediction.",
    "weak_evidence": false,
    "v1_rank": null
   },
@@ -564,20 +564,20 @@
    "tree": "Equipment — Balls",
    "term": "Solid / pearl / hybrid",
    "level": "Intermediate",
-   "bubble": "Solid = earlier, smoother, made for more oil. Pearl = longer skid and a sharper reaction at the dry backend. Hybrid = in between.",
-   "glossary": "The three common reactive cover families. Surface prep changes all of them, so a sanded pearl can act like a hybrid.",
+   "bubble": "Solid, pearl and hybrid name reactive cover families. The name alone does not tell you when a ball will hook; check the surface and watch its read.",
+   "glossary": "Treat these as labels, not a stronger-to-weaker ladder. Two pearls can react differently, and changing the surface changes the read. Use the ball’s spec sheet and your lane notes rather than choosing by the cover label alone.",
    "placement": "Bubble (Add ball spec rows (cover)) + Glossary",
    "priority": "High",
    "sources": [
     {
-     "key": "bv_cover",
-     "url": "https://www.bowlingball.com/BowlVersity/simple-differences-between-solid-pearl-and-hybrid-bowling-balls",
+     "key": "motiv_guide",
+     "url": "https://www.motivbowling.com/resources/ball-guide.html",
      "label": "F",
-     "title": "bowlingball.com BowlVersity, Solid vs pearl vs hybrid (retailer)"
+     "title": "MOTIV Ball Guide: surface, friction and shape (read 2026-11-06)"
     }
    ],
    "level_why": "League bowlers buying a second or third ball get stuck here.",
-   "evidence": "BowlVersity (F): solids have more microscopic pores and are typically matte, for heavier oil. Pearl's mica gives longer skid and a quicker reaction at friction. Hybrid sits between them.",
+   "evidence": "App-authored explanation. MOTIV Ball Guide discusses sanded/polished surfaces and lane friction; a cover-family name alone is not a measured motion prediction.",
    "weak_evidence": false,
    "v1_rank": 8
   },
@@ -3396,26 +3396,26 @@
    "tree": "Equipment — Balls",
    "term": "Use when / Leave in the bag",
    "level": "Beginner",
-   "bubble": "Use when = the lane conditions this ball's cover and core usually fit. Leave in the bag = conditions where another ball usually fits better. It is general ball guidance, not your scores.",
-   "glossary": "Each ball page says when the ball tends to fit (for example dry or broken-down lanes for a polished pearl) and when it usually doesn't. The text follows the cover family (solid, pearl, hybrid) and the core. It isn't a rating; your own logged games on Insights show how you actually score with it.",
+   "bubble": "These are app planning notes, not measured results or rules. Keep the ball if its actual read fits your line; try another when it does not.",
+   "glossary": "Use when and Leave in the bag are general app-authored prompts. They do not rate the bowler or guarantee a reaction. Start with your own notes, check the ball’s specs and surface, and change one thing at a time.",
    "placement": "Bubble (Ball page › Use when / Leave in the bag) + Guide",
    "priority": "High",
    "sources": [
-    {
-     "key": "bv_cover",
-     "url": "https://www.bowlingball.com/BowlVersity/simple-differences-between-solid-pearl-and-hybrid-bowling-balls",
-     "label": "S",
-     "title": "BowlVersity, Solid vs pearl vs hybrid"
-    },
     {
      "key": "repo",
      "url": "js/data.js",
      "label": "repo",
      "title": "Ball notes in this app's catalog"
+    },
+    {
+     "key": "motiv_guide",
+     "url": "https://www.motivbowling.com/resources/ball-guide.html",
+     "label": "F",
+     "title": "MOTIV Ball Guide: surface, friction and shape (read 2026-11-06)"
     }
    ],
    "level_why": "Owner: the ball page words need explaining.",
-   "evidence": "Cover-family guidance from BowlVersity (S).",
+   "evidence": "App-authored explanation. MOTIV Ball Guide discusses sanded/polished surfaces and lane friction; a cover-family name alone is not a measured motion prediction.",
    "weak_evidence": false,
    "v1_rank": null,
    "added": "2026-10-24 (help bubbles pass; owner: '?' on the ball page)"

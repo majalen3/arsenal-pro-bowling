@@ -17,25 +17,26 @@ export const USBC = { 'rattler-big-bite': '2024-06-25', 'deadly-rattler': '2023-
   'super-nova': '2022-08-02', 'hy-road': '2008-10', 'hy-road-pearl': '2013-05', 'hy-road-x': '2018-09-11', 'hy-road-40': '2025-05-06',
   astrophysix: '2019-05-07', 'guru-supreme': '2015-09', innovator: '2022-09-20', 'bigfoot-hybrid': '2022-10-18', trailblazer: '2021-09-21',
   'counter-attack': '2019-05-21' };
-// Brands the server lookup can try (arsenal-pro-api lib/specfetch.js BRANDS). Motiv is not in that list yet.
-export const LOOKUP_BRANDS = ['Storm', 'Roto Grip', '900 Global', 'Brunswick', 'Radical', 'DV8', 'Hammer', 'Ebonite', 'Track', 'Columbia 300'];
-export const UNSUPPORTED = { Motiv: 'No live Motiv lookup yet; showing values read from motivbowling.com, or enter them from the box.' };
+// Brands the server lookup can try (arsenal-pro-api lib/specfetch.js BRANDS).
+export const LOOKUP_BRANDS = ['Storm', 'Roto Grip', '900 Global', 'Brunswick', 'Radical', 'DV8', 'Hammer', 'Ebonite', 'Track', 'Columbia 300', 'Motiv'];
+export const UNSUPPORTED = {};
 const BRAND_ALIAS = { rotogrip: 'Roto Grip', 'roto grip': 'Roto Grip', '900g': '900 Global', '900 global': '900 Global', columbia: 'Columbia 300',
   'columbia 300': 'Columbia 300', dv8: 'DV8', 'dv 8': 'DV8', strikeforce: 'KR Strikeforce', 'kr strikeforce': 'KR Strikeforce', 'kr': 'KR Strikeforce' };
 const COND_OIL = { Heavy: ['heavy'], 'Medium-Heavy': ['heavy', 'medium'], Medium: ['medium'], 'Medium-Light': ['medium', 'light'], Light: ['light'], Dry: ['light'] };
 const ENGINE_COVERS = ['Solid', 'Pearl', 'Hybrid', 'Urethane'];
 const slug = s => norm(s).replace(/ /g, '-');
 const APP_PROV = { kind: 'catalog', ref: 'app catalog (data.js)' };
-const coverTypeOf = c => { const m = /\b(solid|pearl|hybrid|urethane|plastic|polyester)\b/i.exec(c || ''); if (!m) return null; const k = m[1].toLowerCase(); return k === 'polyester' ? 'Plastic' : k[0].toUpperCase() + k.slice(1); };
+const coverTypeOf = c => { if (/not urethane/i.test(c || '')) return 'Not Urethane'; const m = /\b(solid|pearl|hybrid|urethane|plastic|polyester)\b/i.exec(c || ''); if (!m) return null; const k = m[1].toLowerCase(); return k === 'polyester' ? 'Plastic' : k[0].toUpperCase() + k.slice(1); };
 const F = (v, prov, note) => (v == null || v === '' ? undefined : Object.assign({ v, prov }, note ? { note } : {}));
 const pack = o => Object.fromEntries(Object.entries(o).filter(([, x]) => x !== undefined));
 
 // ---- Catalogue: app balls (data.js) first, then the maker-sourced catalogue rows; app wins on a name clash.
 function appEntry(b) {
-  const p = APP_PROV, ct = coverKind(b);
-  return { id: b.id, brand: b.brand, name: b.name, src: 'app', fields: pack({
-    rg: F(b.rg, p), diff: F(b.diff, p), coverstock: F(b.coverName, p), coverType: F(ct, p), finish: F(b.finish, p), core: F(b.coreName, p),
-    symmetry: F(b.core, p), year: F(b.year, p), usbc: F(USBC[b.id], USBC_SRC), oil: F(b.oil && b.oil.length ? b.oil.slice() : null, Object.assign({}, p, { ref: 'app oil tag' })) }) };
+  const p = b.source ? { kind:'manufacturer', ref:hostOf(b.source), url:b.source, date:b.checked } : APP_PROV, ct = b.specStatus === 'unverified' ? null : coverKind(b);
+  const pn = b.weight != null ? `${b.weight} lb` : 'weight not stated';
+  return { id: b.id, brand: b.brand, name: b.name, src: 'app', source:b.source, checked:b.checked, specStatus:b.specStatus, flag:b.specStatus === 'unverified' ? 'Specs unverified; enter them from the maker sheet or box.' : null, fields: pack({
+    rg: F(b.rg, p, pn), diff: F(b.diff, p, pn), coverstock: F(b.coverName, p), coverType: F(ct, p), finish: F(b.finish, p), core: F(b.coreName, p),
+    symmetry: F(b.core, p), year: F(b.year, p), usbc: F(USBC[b.id], USBC_SRC), oil: F(b.oil && b.oil.length ? b.oil.slice() : null, { kind:'catalog', ref:'app oil tag (heuristic)' }) }) };
 }
 // Catalogue rows are read from each maker's own page (tools/catalog/README.md): manufacturer provenance with that URL + read date.
 // Fields the row marks as derived (read from the maker's wording, not a labelled cell) carry a derived chip.
@@ -87,7 +88,7 @@ function index() {
   if (IDX) return IDX;
   const m = new Map(), put = (k, id) => { if (!k) return; const s = m.get(k) || new Set(); s.add(id); m.set(k, s); };
   for (const e of catalog()) { const n = canon(e.name), f = canon(e.brand + ' ' + e.name); put(n, e.id); put(f, e.id); put(squash(n), e.id); put(squash(f), e.id);
-    if (n.startsWith('original ')) put(n.slice(9) + ' original', e.id); }
+    if (n.startsWith('original ')) { put(n.slice(9) + ' original', e.id); put(n.slice(9), e.id); put(canon(e.brand) + ' ' + n.slice(9), e.id); } }
   return (IDX = m);
 }
 // → {query, brand, exact: entry|null, candidates:[{entry, score}]} (top 6, score ≥ 0.4).

@@ -1,4 +1,5 @@
-// Proves js/engine.js produces byte-identical results to the v1 engine in tests/legacy/app.v1.js.
+// Proves the unchanged v1 math on the independently frozen maker-corrected v64 inputs.
+// Data rebaseline approved with the catalog rebuild; see DECISIONS 2026-11-06.
 // Run: node tests/engine_equivalence.mjs
 import fs from 'node:fs'; import vm from 'node:vm'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -13,6 +14,11 @@ vm.createContext(ctx);
 vm.runInContext(L(1, 35) + '\n' + L(219, 255) + '\n' + L(281, 346) +
   '\nthis.API={balls,simulatePath,analyze,sensitivity,coachLine,phasesOf,ruleOf31,readMedian};', ctx);
 const O = ctx.API;
+const baseline = JSON.parse(fs.readFileSync(path.join(here, 'fixtures/engine-inputs.v64.json'), 'utf8'));
+const fields = b => Object.fromEntries(['id','rg','diff','cover','core'].filter(k => b[k] != null).map(k => [k,b[k]]));
+if (JSON.stringify(D.balls.map(fields)) !== JSON.stringify(baseline)) throw new Error('Catalog physics inputs changed: review and deliberately rebaseline; never auto-refresh this fixture.');
+// Replace only input data, not v1 code. The legacy engine and current engine see independent copies of the same reviewed facts.
+O.balls.splice(0, O.balls.length, ...baseline.map(b => ({...b})));
 const round = v => typeof v === 'number' ? +v.toFixed(9) : v;
 const ser = o => JSON.stringify(o, (k, v) => round(v));
 let n = 0, bad = 0, seed = 7;

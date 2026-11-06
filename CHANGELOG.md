@@ -2,6 +2,20 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## Unreleased (2026-11-06; offline build v64)
+
+### For bowlers
+- Earned starter cards in Armory; Old Friends retained. A single optional Next up idea is off by default.
+- Lane explains the model path in one sentence. Model, measured release, entered and input chips distinguish sources without new accuracy claims.
+- Weaker/Stronger previews the next ball and suggests trying feet/eyes first, only outside active scoring.
+- Manufacturer-only review of all 22 built-ins, with sources/dates; corrected specs and explicit unknowns. Eight identities have no supported model rather than guessed paths. Removed two unverified search rows, not saved equipment.
+- Cover guidance rewritten in our own words; MOTIV lookup supported when the companion API PR is deployed.
+
+### Under the hood
+- Deliberately frozen v64 catalog-input baseline; unchanged engines pass 7,500/0. Per-ball old/new records: docs/DECISIONS.md.
+- Local S1/S2/S3 flag/counter smoke tests and run instructions; no participant lift claims, no outbound telemetry.
+- CSP, offline-first/no-build approach and existing QR/owned data retained. No Engine v2 or product photos; C8/C9 remain owner decisions.
+
 ## 1.1.1 (2026-11-02)
 
 ### For bowlers

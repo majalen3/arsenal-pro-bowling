@@ -192,12 +192,12 @@ All of these are earned-only, computed on the device from the event log, use des
 
 | # | Item | Area | I | E | C | Value | Bucket | Status |
 |---|---|---|---|---|---|---|---|---|
-| 1 | Rebuild or license the 145 catalog rows (bowlingballvideos) | 4.6 | 5 | 2 | 4 | 10.0 | **Now** | PARTIAL (needs an owner choice: rebuild default) |
-| 2 | Earned-shelf polish and starter badge cards | 4.1/4.2 | 3 | 1 | 4 | 12.0 | **Now** | PARTIAL |
-| 3 | Targeting in one tap from the chip | 4.7 | 3 | 1 | 3 | 9.0 | **Now** | PARTIAL |
-| 4 | Physics source chips and a one-line path summary | 4.5 | 4 | 2 | 4 | 8.0 | **Now** | PARTIAL |
-| 5 | Local-first UX counters and feature flags | §10 | 4 | 2 | 4 | 8.0 | **Now** | PARTIAL (event log exists) |
-| 6 | Step-ladder preview with a feet/eyes-first hint | 4.7 | 4 | 2 | 3 | 6.0 | **Now** | PARTIAL |
+| 1 | Rebuild or license the 145 catalog rows (bowlingballvideos) | 4.6 | 5 | 2 | 4 | 10.0 | **Now** | DONE in review branch: 143 maker discovery rows; 22 built-ins reviewed, explicit unknowns |
+| 2 | Earned-shelf polish and starter badge cards | 4.1/4.2 | 3 | 1 | 4 | 12.0 | **Now** | DONE in review branch |
+| 3 | Targeting in one tap from the chip | 4.7 | 3 | 1 | 3 | 9.0 | **Now** | DONE in review branch |
+| 4 | Physics source chips and a one-line path summary | 4.5 | 4 | 2 | 4 | 8.0 | **Now** | DONE in review branch |
+| 5 | Local-first UX counters and feature flags | §10 | 4 | 2 | 4 | 8.0 | **Now** | DONE (Now 5 on main; localStorage, not synced event log) |
+| 6 | Step-ladder preview with a feet/eyes-first hint | 4.7 | 4 | 2 | 3 | 6.0 | **Now** | DONE in review branch |
 | 7 | Process badges from §5 | 4.1 | 4 | 2 | 3 | 6.0 | Next | NEW |
 | 8 | Builder: grouped results, USBC fallback, offline queue | 4.6 | 4 | 3 | 4 | 5.3 | Next | PARTIAL |
 | 9 | End-of-session share offer | 4.4 | 3 | 2 | 3 | 4.5 | Next | NEW |
@@ -237,13 +237,13 @@ The Now list (items 1–6) adds up to about 10 agent-days of effort, which fits 
 4. **Ball card:** an engine preview against the bag; "Where it fits: between X (weaker) and Y (stronger)" on the step ladder; a status picker (In my bag / At home / At the pro shop / Retired); Save.
 5. **Offline:** catalog matches work offline; a maker lookup queues until online and the chip shows "spec pending".
 6. **Catalog data:** remove the bowlingballvideos rows and rebuild from maker fetches plus USBC names, unless permission is granted (§2).
-7. **Unsupported makers** (Motiv and others): hand entry or drill card scan, with a "maker site blocks lookups" note.
+7. **Live lookup:** Motiv joins Storm/Brunswick-family makers in the companion API PR. Failed/unavailable pages still offer factual manual entry, never guessed specs. Deployment follows merge.
 
 ## 10. Instrumentation and experiment plan (local-first)
-- **Store:** new `ux.*` events appended to the existing IndexedDB event log (`js/data/events.js`): screen view, step-ladder tap, share offer shown or opened, badge viewed, Next-up tap. Counts and timestamps only, no content.
-- **No third-party trackers.** CSP stays `script-src 'self'`. Nothing goes to the network. Sync to arsenal-pro-api does **not** include `ux.*`.
+- **Implemented store (Now 5):** flags/counters in localStorage `ap_ux`, NOT `ux.*` events in the synced/backed-up IndexedDB log. Counts/timestamps plus a capped opaque local ball-key tap window for S2 follow-through; keys never enter the shareable summary.
+- **No third-party trackers.** CSP stays `script-src 'self'`. Nothing goes to the network. `ap_ux` is never queued to sync/backup. No telemetry endpoint exists.
 - **Flags:** feature flags in local settings. Testers get an A or B arm from install-ID parity.
-- **Read-out:** Me › "Share my usage summary" makes a JSON/PNG summary that the tester chooses to send (opt-in, native share).
+- **Read-out:** Me › Tests and usage shows a counts-only JSON summary; the tester may use the native share sheet after the session. No automatic send. Exact procedures: [SMOKE_TESTS.md](SMOKE_TESTS.md).
 - **Design:** small N (owner plus a few league testers), so use pre-set pass thresholds, counts and short interviews. No significance claims.
 - **Guardrails:** Help opens, mid-game abandon, actions per frame on Bowl, offer dismissals.
 - **Licensing validation:** a coverage audit. What share of the 145 rows can be rebuilt from allowlisted maker pages plus the USBC list? This is a local script, about 1 day.
@@ -256,20 +256,20 @@ The Now list (items 1–6) adds up to about 10 agent-days of effort, which fits 
 | **S3** | Earned badges plus an opt-in "Next up" line | Informational progress raises logging without pressure | A/B by install parity over 2 weeks: earned-only versus earned plus Next up; count nights and shots logged; ask "did this feel like pressure?" (1–5) | Logging is no worse, and the mean pressure score is ≤ 2 | Endowed progress: 34% vs 19% completion (Nunes & Drèze 2006, car-wash field study). That context doesn't transfer, so expect less |
 
 ## 12. Conflicts that need the owner
-- **C1** "Locked items with progress bars" (prompt) vs milestones only when earned (#31). Recommendation: stay earned-only, with an optional single "Next up" line behind a tap.
-- **C2** Streaks (prompt: "streaks with recovery") vs the streak stress finding. Recommendation: no streak; at most a season night count with no break state.
-- **C3** Leaderboards / small-group competition vs no ranking (#28, community rules). Recommendation: don't build. Center Regulars and join-order team lists stay.
-- **C4** An end-of-session share offer vs "nothing extra during scoring" and Help off by default. Recommendation: only after the session, once per moment.
-- **C5** Engine v2 needs owner approval before any physics claim grows.
+- **C1 resolved:** earned-only; no locks or progress bars; at most one optional Next up line, OFF by default.
+- **C2 resolved:** no streaks; non-breakable season night count is OK.
+- **C3 resolved:** no leaderboards or style rankings. Center Regulars and join-order lists stay.
+- **C4 resolved:** share offer only after a session, via native share sheet; no active-scoring addition.
+- **C5 resolved for this work:** no Engine v2 or new accuracy claims.
 - **C6** Catalog: rebuild versus asking bowlingballvideos.com for written permission (an outbound email, needs approval). **Done 2026-11-02: rebuilt from maker pages (DECISIONS, "Ball catalogue rebuilt from maker pages only").**
-- **C7** Product photos need written permission from makers (outbound requests need approval). The default is no photos.
+- **C7 resolved for this work:** no product photos or permission requests.
 - **C8** F06 total-only teammate mode is still open (FINDINGS_2).
 - **C9** Score milestones (300, 200+) are evaluative. Keep them private and earned, or drop them?
 
 ## 13. Do not build
 - Daily streaks, streak flames, "don't lose your streak" messages, and any guilt or "we miss you" notifications.
 - Global, center or score leaderboards, and any ranking of styles or of teammates.
-- A grid of locked badges with silhouettes and progress bars (unless the owner picks it in C1, and then only one line).
+- A grid of locked badges with silhouettes or progress bars. Only one optional informational Next up line is permitted.
 - Product photos scraped from makers or retailers; mirrored articles from bowlingball.com, BowlingThisMonth or bowwwl.
 - More scraping of bowlingballvideos.com.
 - Badges or offers shown during scoring; hide-on-scroll bottom docks.
@@ -280,3 +280,6 @@ The Now list (items 1–6) adds up to about 10 agent-days of effort, which fits 
 - Hammer, Ebonite, Track and Columbia 300 terms weren't found at the tested URLs, so those rows are unverified. Motiv blocks fetches.
 - Scores are planning judgments, not measurements.
 - The opening of the owner prompt was reconstructed (see the provenance note in the prompt doc).
+
+## 2026-11-06 implementation read-out
+Now 1/2/4/6 completed on the review branch; Now 3/5 already landed on main. S1/S2/S3 are runnable locally, not validated with participants yet. Both S1 arms keep provenance chips as a safety floor. The five unverified built-ins, polyester Ice Storm and unsupported Scout/NU covers have no model path. See DECISIONS for all 22 source reviews, the deliberate 7,500/0 input rebaseline, and the unchanged-engine caveat. C8/C9 remain open. Earlier feasibility/research limitations above are historical, not a current blanket inability to fetch MOTIV.

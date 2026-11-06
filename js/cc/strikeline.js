@@ -4,7 +4,7 @@
 // angle, decides strike vs. leave; 17–18 → strike or single pin 70–85%. No strike % is shown: no cited carry curve by board+angle.
 import { fmtHalf } from '../labels.js';
 import { S, analyze } from '../engine.js';
-import { specOK } from '../data.js';
+import { modelOK as specOK } from '../data.js';
 import { presetFor } from './model.js';
 import { arrowsBoard, aimFor, AIM_MAX } from './geom.js';
 export const WINDOW = [17, 18], ANGLE_WIN = [4, 6];   // angle: the engine's strike rule (USBC: more entry angle carries better)
@@ -41,7 +41,7 @@ const AIMS = []; for (let x = -AIM_MAX; x <= AIM_MAX; x += 0.5) AIMS.push(x);
 // it is scored the same way and leads the result; the search's best line becomes a labelled alternative only when its
 // model pocket % is more than 3 points higher.
 export function find(cat, { speed = 15, rev = 220, ft = 38, spread, n = 200, seed = 31, top = 10, start = null } = {}) {
-  if (!cat || !specOK(cat)) return { none: true, reason: 'spec TBD: no model line' };
+  if (!cat || !specOK(cat)) return { none: true, reason: 'Specs unverified or cover not supported: no model line' };
   const sd = spread || spreadFrom(null), keep = { pattern: S.pattern, finish: S.finish, oil: S.oil }, preset = presetFor(ft), t0 = Date.now();
   try {
     S.pattern = preset; S.finish = 'factory'; S.oil = 1;

@@ -6,7 +6,7 @@ import { go } from '../router.js';
 import { ready, proj } from '../hub.js';
 import { app, today, profile, prefs, setPrefs, saveLine, linesForBall, on } from '../store.js';
 import { S, START, RANGES } from '../engine.js';
-import { balls, specOK } from '../data.js';
+import { balls, modelOK as specOK } from '../data.js';
 import { catOf } from '../cc/cats.js';
 import { createLane } from '../lane.js';
 import { createDeck, describe } from '../deck.js';
@@ -18,6 +18,7 @@ import * as T from '../cc/target.js';
 import * as F from '../cc/strikeline.js';
 import { aimLayer as aimL, paintPill, overlaysBtn } from './overlays.js';
 import { helpDot } from './help.js';
+import { aboutAngle } from '../cc/provenance.js';
 import * as HAND from '../cc/hand.js';
 import { handAsk } from './hand.js';
 import { fmtHalf } from '../labels.js';
@@ -175,24 +176,26 @@ export async function render({ query } = {}) {
 
   function update(animate) {
     if (!box || (t.bpBoard != null && t.bpFt != null) !== (box.from === 'yours') || (box.from === 'yours' && (box.board !== t.bpBoard || box.ft !== t.bpFt))) box = T.boxFor(cat, ctx, t);
-    if (!specOK(cat)) { coach.textContent = `${cat.name}: spec TBD, so no model line. Pick another ball.`; return; }
+    const supported = specOK(cat);
+    for (const n of [el.querySelector('.tg-grid'), sum, sugBox, warnBox]) n.hidden = !supported;
+    if (!supported) { coach.textContent = `${cat.name}: spec TBD, so no model line. Pick another ball.`; return; }
     r = T.read(cat, t, ctx, box); sug = T.suggest(cat, t, ctx, box, r);
     const L = lefty();
     coach.textContent = T.coach(r, sug, L);
-    const [cl, tone] = CALL[r.call]; callPill.textContent = r.call === 'gutter' ? cl : `${cl} ${r.entry} \u00b7 ${r.angle}\u00b0 model`; callPill.dataset.tone = tone;
+    const [cl, tone] = CALL[r.call]; callPill.textContent = r.call === 'gutter' ? cl : `${cl} ${r.entry} \u00b7 ${aboutAngle(r.angle)}`; callPill.append(prov('model','model')); callPill.dataset.tone = tone;
     boxPill.textContent = r.box.ok ? 'In the box' : r.box.dB == null ? 'No breakpoint' : `Box missed ${Math.abs(r.box.dB) > T.BOX_HALF_BOARDS ? Math.abs(r.box.dB) + ' bd ' + (r.box.dB > 0 ? 'inside' : 'outside') : Math.abs(r.box.dF) + ' ft ' + (r.box.dF > 0 ? 'long' : 'short')}`;
     boxPill.dataset.tone = r.box.ok ? 'good' : 'warn';
     const dirB = n => n === 0 ? '' : ` ${Math.abs(n)} ${T.dirWord(n, L)}`;
     feetRow.paint(`${t.feet}`); eyesRow.paint(fmtHalf(t.eyes)); driftRow.paint(t.drift ? dirB(t.drift).trim() : 'none'); offRow.paint(`${t.offset}`);
     bpbRow.paint(`${box.board}`); el.querySelector('#tgBpFVal').textContent = `${box.ft} ft`;
     modeSeg.querySelectorAll('button').forEach(x => { const on = x.dataset.v === t.mode; x.setAttribute('aria-checked', String(on)); x.tabIndex = on ? 0 : -1; });
-    sum.replaceChildren(...[['Feet', t.feet], ['Laydown', r.lay], [t.mode === 'dots' ? 'Dots' : 'Arrows', fmtHalf(t.eyes)], ['Break', r.bpBoard == null ? '\u2014' : `${r.bpBoard} @ ${r.bpFt}`], ['Entry', r.entry == null ? '\u2014' : `${r.entry} \u00b7 ${r.angle}\u00b0`]]
-      .map(([k, v]) => h('li', {}, h('small', { text: k }), h('b', { class: 'num', text: String(v) }))));
+    sum.replaceChildren(...[['Feet', t.feet], ['Laydown', r.lay], [t.mode === 'dots' ? 'Dots' : 'Arrows', fmtHalf(t.eyes)], ['Break', r.bpBoard == null ? '\u2014' : `${r.bpBoard} @ ${r.bpFt}`], ['Entry', r.entry == null ? '\u2014' : `${r.entry} \u00b7 ${aboutAngle(r.angle)}`]]
+      .map(([k, v]) => h('li', {}, h('small', { text: k }), h('b', { class: 'num', text: String(v) }), ['Break','Entry'].includes(k) ? prov('model','model') : prov('user','your line'))));
     sugBox.replaceChildren();
     if (sug) {
       const m = sug.move, src = T.SRC[m.src];
       sugBox.append(h('div', { class: 'row between' },
-        h('div', {}, h('b', { text: `${m.rule}: ` }), T.moveWords(sug, L).replace(/^Move /, '').replace(/\.$/, ''), h('div', { class: 'muted small', text: `Model after the move: ${CALL[sug.r.call][0].toLowerCase()} ${sug.r.entry} \u00b7 ${sug.r.angle}\u00b0${sug.r.box.ok ? ', in the box' : ''}.` })),
+        h('div', {}, h('b', { text: `${m.rule}: ` }), T.moveWords(sug, L).replace(/^Move /, '').replace(/\.$/, ''), h('div', { class: 'muted small', text: `Model after the move: ${CALL[sug.r.call][0].toLowerCase()} ${sug.r.entry} \u00b7 ${aboutAngle(sug.r.angle)}${sug.r.box.ok ? ', in the box' : ''}.` })),
         h('button', { class: 'btn primary', id: 'tgApply', onclick: () => { t = Object.assign({}, sug.t); update(true); toast(`${m.rule} applied.`); } }, 'Apply move')),
         h('p', { class: 'muted small' }, 'Rule: ', h('a', { href: src.url, target: '_blank', rel: 'noopener', class: 'srclink' }, src.label), sug.cited
           ? `. House-shot rule: move toward the miss.${sug.modelAgrees ? '' : ' The model can\u2019t show this working: ' + T.LIMITS.oil.replace(/^The model\u2019s/, 'its')}` : '. No cited direction for this miss; picked by the model.'));
@@ -202,7 +205,7 @@ export async function render({ query } = {}) {
     el.querySelector('#tgCond').replaceChildren(`${speed} mph `, prov(sp[0], sp[1]), ` ${rev} rpm `, prov(rv[0], rv[1]), ` ${r.preset} preset (${ft} ft) `, prov(sess.ft != null ? 'usbc' : 'assumed', sess.ft != null ? 'tonight' : 'assumed'));
     el.querySelector('#tgAssume').textContent = `Ball offset ${t.offset} and drift ${t.drift || 0} are ${saved.t ? 'yours' : 'assumed (Breakdown Bowling example: 7)'}; set them from a few shots on video. Box: ${box.from === 'model' ? `tonight\u2019s model strike line, ${box.board} @ ${box.ft} ft` : box.from === 'yours' ? 'your target' : 'Rule of 31 (no model line)'}, 3 boards \u00d7 2 ft (Human Kinetics; NBA 8\u201310 at 39\u201341 ft). ${box.r31.text}.`;
     const d = describe(r.a, L);
-    el.querySelector('#tgDeckRead').textContent = d.text;
+    el.querySelector('#tgDeckRead').replaceChildren(d.text, prov('model','model'));
     paintPill(aimPill, () => ({ preset: r.preset, ft: sess.ft != null ? +sess.ft : null }), r.a, () => ({ cat, speed, rev, finish: 'factory', oil: 1 }));
     aimWhy.hidden = aimPill.dataset.state !== 'beyond'; aimWhy.textContent = aimPill.dataset.why || '';
     lane.draw({ ball: cat, result: r.a }, { animate });

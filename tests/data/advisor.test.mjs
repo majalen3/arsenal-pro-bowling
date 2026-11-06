@@ -42,14 +42,16 @@ test('evidence: pocket / strike % and n from logged shots (test data)', () => {
 });
 test('under the 21-game minimum results never re-order; at 21+ a better strike % moves ahead at equal fit', () => {
   const ev = 'tournament';
-  const before = A.advise(P0, { event: ev, pattern: { ft: 44, ml: null }, }).rows.map(r => r.ownedId);
+  // Synthetic equal-fit peer: do not depend on unverified Hy-Road Pearl facts.
+  const tieBase = () => base().concat(mkEvent('ownedBall.edited', 'own-hy-road-pearl', { fields:{ catalogId:'deadly-rattler', name:'Synthetic peer pearl' } }, { ts:4000 }));
+  const before = A.advise(project(tieBase()), { event: ev, pattern: { ft: 44, ml: null }, }).rows.map(r => r.ownedId);
   // Deadly Rattler and Hy-Road share a cell (same level & shape): only results can separate them.
   const i1 = before.indexOf('own-deadly-rattler'), i2 = before.indexOf('own-hy-road-pearl'); assert.ok(i1 >= 0 && i2 >= 0);
   const [first, second] = i1 < i2 ? ['own-deadly-rattler', 'own-hy-road-pearl'] : ['own-hy-road-pearl', 'own-deadly-rattler'];
-  const few = project(base().concat(games(second, 5, 9), games(first, 5, 1, 100)));
+  const few = project(tieBase().concat(games(second, 5, 9), games(first, 5, 1, 100)));
   const o1 = A.advise(few, { event: ev, pattern: { ft: 44, ml: null } }).rows.map(r => r.ownedId);
   assert.ok(o1.indexOf(first) < o1.indexOf(second), 'under 21 games: order unchanged');
-  const many = project(base().concat(games(second, 21, 9), games(first, 21, 1, 100)));
+  const many = project(tieBase().concat(games(second, 21, 9), games(first, 21, 1, 100)));
   const a2 = A.advise(many, { event: ev, pattern: { ft: 44, ml: null } }), o2 = a2.rows.map(r => r.ownedId);
   assert.ok(o2.indexOf(second) < o2.indexOf(first), '21+ games and a better strike %: moves ahead');
   assert.equal(a2.rows.find(r => r.ownedId === second).confidence.key, 'measured');

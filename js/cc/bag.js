@@ -1,6 +1,6 @@
 // Bag builder core (CC2, COMMAND_CENTER_PLAN §3). Pure: owned balls + catalog + projection in, grid/checks/fill out.
 // Strength = app oil tag (rank.js levelOf). Shape = cover + core + diff proxy (rank.js angularity), an ESTIMATE (A).
-import { balls, coverKind } from '../data.js';
+import { balls, coverKind, modelOK } from '../data.js';
 import { levelOf, angularity, demandOf, bandOf, SRC } from './rank.js';
 import { catOf } from './cats.js';
 export const SHAPES = ['smooth', 'medium', 'angular'];
@@ -8,6 +8,7 @@ export const LEVEL_NAME = { 5: 'Heavy', 4: 'Med-heavy', 3: 'Medium', 2: 'Med-lig
 export const SIZE = { league3: 2, league4: 3, tournament6: 5, custom: null };   // balls besides the spare
 export const cellOf = catalogId => cellOfCat(catOf(catalogId));
 export function cellOfCat(cat) {
+  if (!cat || !modelOK(cat)) return { cat, level:null, shape:null, tbd:true };
   const level = levelOf(cat), a = angularity(cat);
   return { cat, level, shape: a == null ? null : a <= 1 ? 'smooth' : a === 2 ? 'medium' : 'angular', tbd: level == null };
 }

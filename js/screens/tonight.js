@@ -159,8 +159,14 @@ export async function render(o = {}) {
         !whoHere && (s.mode || 'solo') !== 'solo' ? teamSetup(s) : null,
         goalField(s),
         h('button', { class: 'btn ghost block', id: 'tnBagLink', onclick: () => go('#/bag') }, 'Bag builder \u203a'));
-    const alt = (x, lbl) => x ? h('button', { class: 'alt btn', 'data-alt': lbl, onclick: () => save({ pickId: x.id, throwId: null }) }, h('small', { class: 'muted', text: lbl + ' ' }), h('b', { text: x.name })) : h('div', { class: 'alt muted', text: `No ${lbl.toLowerCase()} ball in this bag` });
-    const alts = cur ? h('div', { class: 'alts' }, alt(r.weaker && cur === r.pick ? r.weaker : R.readMove(r, cur.id, 'early'), 'Weaker'), alt(r.stronger && cur === r.pick ? r.stronger : R.readMove(r, cur.id, 'weak'), 'Stronger')) : null;
+    const preview = UX.flag('stepPreview') && !gameOpen;
+    const alt = (x, lbl) => x ? h('button', { class:'alt btn', 'data-alt':lbl, 'aria-label':preview ? `${lbl} ${x.name}` : lbl,
+      onclick:() => { UX.tap(x.id, lbl.toLowerCase()); return save({ pickId:x.id, throwId:null }); } },
+      h('small', { class:'muted', text:lbl + (preview ? ' ' : '') }), preview ? h('b', { class:'step-name', text:x.name }) : null)
+      : h('div', { class:'alt muted', text:`No ${lbl.toLowerCase()} ball in this bag` });
+    const alts = cur ? h('div', { class:'step-ladder' },
+      h('div', { class:'alts' }, alt(r.weaker && cur === r.pick ? r.weaker : R.readMove(r, cur.id, 'early'), 'Weaker'), alt(r.stronger && cur === r.pick ? r.stronger : R.readMove(r, cur.id, 'weak'), 'Stronger')),
+      preview ? h('p', { class:'small muted step-hint', id:'stepHint', text:'Try feet/eyes first. These switch to another ball in your bag.' }) : null) : null;
     const pl = cur ? R.plan(r, ml) : null;
     const thenLine = pl && (pl.B || pl.C) ? h('p', { class: 'small', id: 'tnThen' }, h('b', { text: 'Then: ' }), [pl.B ? `${pl.B.name} if it hooks early` : null, pl.C ? `${pl.C.name} later` : null].filter(Boolean).join(' \u2192 ')) : null;
     // ---- pick card: name + stand/eyes up front; the why, specs and model numbers behind one tap (GAP §2c).
@@ -170,8 +176,8 @@ export async function render(o = {}) {
         : h('dl', { class: 'kv', id: 'tnModel' }, h('dt', { text: 'Feet (stand)' }), h('dd', { id: 'tnFeet' }, String(stand.feet), provChip(stand.assumed ? 'assumed' : null, stand.assumed ? 'offset 7 assumed' : 'your offset')),
           h('dt', { text: 'Laydown' }), h('dd', {}, String(ml.feet), ml.kept ? provChip('user', 'your line (set on Lane or Targeting)') : provChip('model', '2-D model')),
           h('dt', { text: 'Eyes (arrows)' }), h('dd', { text: String(ml.target) }),
-          ...(ml.kept ? [] : [h('dt', { text: 'Breakpoint' }), h('dd', { text: `board ${ml.bp} at ${ml.bpFt} ft` }),
-          h('dt', { text: 'Holds' }), h('dd', { text: `${ml.holds} of ${ml.of} small misses (\u00b10.5 mph, \u00b120 rpm, \u00b11 board)` })]));
+          ...(ml.kept ? [] : [h('dt', { text: 'Breakpoint' }), h('dd', {}, `board ${ml.bp} at ${ml.bpFt} ft`, provChip('model','model')),
+          h('dt', { text: 'Holds' }), h('dd', {}, `${ml.holds} of ${ml.of} small misses (\u00b10.5 mph, \u00b120 rpm, \u00b11 board)`, provChip('model','model'))]));
       pick = h('div', { class: 'card pick', id: 'tnPick' },
         h('div', { class: 'row between' }, h('span', { class: 'ball-name', id: 'tnPickName', text: cur.name })),
         stand ? h('p', { class: 'tn-line', id: 'tnStand', text: `Feet ${stand.feet} \u00b7 eyes ${fmtHalf(ml.target)} at the arrows` }) : null,
@@ -220,7 +226,7 @@ export async function render(o = {}) {
       night || (s.game || 1) > 1 ? `Start bowling \u00b7 game ${s.game || 1}` : 'Start bowling'));
     if (bagCard) body.append(bagCard);
     body.append(h('details', { class: 'tn-more tn-extra', id: 'tnExtra', open: extraOpen, ontoggle: e => { extraOpen = e.target.open; } }, h('summary', { text: 'More details' }),
-      h('p', { class: 'coach', id: 'tnCoach', role: 'status', text: coach }), thenLine || '', whyBox || '', setup));
+      h('p', { class: 'coach', id: 'tnCoach', role: 'status', text: coach }), alts || '', thenLine || '', whyBox || '', setup));
     if (measNudge) body.append(measNudge);
   }
   // P1.5 "Who's bowling": just me, a league team (frames in lineup order) or Baker; Add a bowler one tap away.

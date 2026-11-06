@@ -146,12 +146,12 @@ export async function render() {
       else {
         const bar = (r, who) => { const tot = Math.max(1, (r.skid || 0) + (r.hook || 0) + (r.roll || 0)), seg = (cls, v, t) => h('i', { class: cls, style: { width: (100 * (v || 0) / tot) + '%' }, title: `${t} ${v} ft` });
           return h('div', { class: 'phbar', role: 'img', 'aria-label': `${who}: skid ${r.skid} ft, hook ${r.hook} ft, roll ${r.roll} ft` }, seg('sk', r.skid, 'Skid'), seg('hk', r.hook, 'Hook'), seg('rl', r.roll, 'Roll')); };
-        const tr = (lab, a2, b2, d) => h('tr', {}, h('th', { scope: 'row', text: lab }), h('td', { class: 'num', text: a2 }), h('td', { class: 'num', text: b2 }), h('td', { class: 'num muted', text: d == null ? '' : (d > 0 ? '+' : '') + d }));
+        const tr = (lab, a2, b2, d) => h('tr', {}, h('th', { scope:'row' }, lab, prov('model','model')), h('td', { class: 'num', text: a2 }), h('td', { class: 'num', text: b2 }), h('td', { class: 'num muted', text: d == null ? '' : (d > 0 ? '+' : '') + d }));
         const v = (x, u = '') => (x == null ? '\u2014' : x + u);
         eng.append(h('p', { class: 'small', id: 'abCoach', text: c.coach }),
           h('p', { class: 'muted small' }, `${patName} ${ft} ft \u2192 ${c.preset} preset (${c.presetLen} ft) \u00b7 ${speed} mph \u00b7 ${rev} rpm \u00b7 feet ${c.release.feet}, target ${v(c.release.target)}`,
             b.speed ? null : prov('assumed', 'speed/rev assumed'), s.ft != null ? null : prov('assumed', 'pattern assumed')),
-          h('div', { class: 'phrow' }, h('span', { class: 'small', text: e.name }), bar(c.ball, e.name)), h('div', { class: 'phrow' }, h('span', { class: 'small', text: c.benchName }), bar(c.bench, c.benchName)),
+          h('div', { class: 'phrow' }, h('span', { class: 'small' }, e.name, prov('model','model')), bar(c.ball, e.name)), h('div', { class: 'phrow' }, h('span', { class: 'small' }, c.benchName, prov('model','model')), bar(c.bench, c.benchName)),
           h('p', { class: 'muted small phkey' }, h('i', { class: 'sk' }), 'skid ', h('i', { class: 'hk' }), 'hook ', h('i', { class: 'rl' }), 'roll'),
           h('table', { class: 'abtable small', id: 'abTable' }, h('thead', {}, h('tr', {}, h('th', { scope: 'col', text: '' }), h('th', { scope: 'col', text: 'New' }), h('th', { scope: 'col', text: 'Bench' }), h('th', { scope: 'col', text: '\u0394' }))),
             h('tbody', {}, tr('Skid', v(c.ball.skid, ' ft'), v(c.bench.skid, ' ft'), c.delta.skid), tr('Hook', v(c.ball.hook, ' ft'), v(c.bench.hook, ' ft'), c.delta.hook), tr('Roll', v(c.ball.roll, ' ft'), v(c.bench.roll, ' ft'), null),

@@ -404,6 +404,10 @@ async def drag_line(j, feet, aim, lefty=False):
 
 async def j06_between_games(j):
     await boot(j, 'righty')
+    # The old League 3 fixture now has only one model-supported ball after the maker review.
+    # Exercise switching with VERIFIED peers, never invent specs for Hy-Road Pearl.
+    await j.ev("async () => { const h = await import('./js/hub.js'); await h.add('bag.saved', 'qa-switch-bag', {name:'Verified switch fixture', format:'tournament6', slots:['own-rattler-big-bite','own-super-nova','own-ordnance-c4','own-deadly-rattler','own-ice-storm'].map(owned=>({owned,locked:false})), spare:'own-ice-storm'}); }")
+    await j.settle(300)
     async with j.step('Tonight: tap Stronger after a read', task='adjust', target_taps=2, critical=True) as s:
         await j.wait('#advStart'); await j.tap('#tnStartBowl'); await j.wait('#tnLog'); s.taps = 0   # IA P1.5: reads + Weaker/Stronger sit on Bowl between games; getting to Bowl is navigation
         t0 = await tonight_line(j); j.state['t0'] = t0
@@ -701,7 +705,7 @@ async def j12_coach(j):
 # by visible bowler words (IA_PLAN §4 glossary) and the event store, not by ids that do not exist yet.
 STATUS_WORDS = ['In my bag', 'At home', 'At the pro shop', 'Retired']
 OLD_WORDS = re.compile(r'\b(Exclude[ds]?|Benched|Bench & pro shop|Bench and pro shop|Lock(ed)?|Hall of Fame)\b')
-ROLES = re.compile(r'Start ball|If it hooks early|If it stops hooking|For heavy oil|Spares?', re.I)
+ROLES = re.compile(r'Start ball|If it hooks early|If it stops hooking|For heavy oil|Spares?|Specs to check', re.I)
 
 def name_in(n, t):
     """Catalogue names carry the brand ("Radical Rattler Big Bite"); screens often drop it ("Rattler Big Bite")."""
