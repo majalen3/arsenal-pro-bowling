@@ -30,9 +30,10 @@ self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) =
 self.addEventListener('fetch', (e) => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET' || u.origin !== location.origin || /\/api(?:\/|$)/.test(u.pathname)) return;
-  const shell = e.request.mode === 'navigate' || SHELL.some(p => new URL(p, self.location.href).pathname === u.pathname);
+  const entry = [new URL('./', self.location.href).pathname, new URL('index.html', self.location.href).pathname].includes(u.pathname);
+  const shell = entry || SHELL.some(p => new URL(p, self.location.href).pathname === u.pathname);
   e.respondWith(caches.open(CACHE).then(async cache => {
-    if (shell) { const hit = await cache.match(e.request.mode === 'navigate' ? 'index.html' : e.request, { ignoreSearch:true }); if (hit) return hit; }
+    if (shell) { const hit = await cache.match(entry ? 'index.html' : e.request, { ignoreSearch:true }); if (hit) return hit; }
     try { const r = await fetch(e.request); if (r.ok) await cache.put(e.request, r.clone()); return r; }
     catch (_) { return (await cache.match(e.request, { ignoreSearch:true })) || Response.error(); }
   }));

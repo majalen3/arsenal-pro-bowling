@@ -28,7 +28,8 @@ async def main():
    after=await p.evaluate("import('./js/hub.js').then(h=>h.db.events().map(e=>e.id))");assert set(before)<=set(after);o=await p.evaluate("window.__apData.projection().owned['fictional-kept']");assert o['layout']=='Fictional confirmed layout';assert await p.evaluate("JSON.parse(localStorage.getItem('ap_profile')).pap")=='Fictional confirmed PAP';assert await p.evaluate("JSON.parse(localStorage.getItem('ap_profile')).hand")=='left'
    assert await p.evaluate("JSON.parse(localStorage.getItem('ap_prefs')).myLines['hy-road'].eyes")==10
    assert await p.evaluate('window.__apSync.run().then(r=>r.paused)')
+   asset=await c.new_page();response=await asset.goto(base+'tests/axe.min.js');assert response and 'html' not in response.headers.get('content-type','');assert await asset.locator('script[src]').count()==0;await asset.close()
    await c.set_offline(True);await p.reload();await p.wait_for_selector('#legacyReview');assert await p.evaluate("window.__apData.projection().owned['fictional-kept'].name")=='Fictional original copy';await p.screenshot(path=args.shots+'/11-v64-upgrade-offline.png',full_page=True)
-   await c.close();await b.close();print('PASS real waiting v64->v65 update + reload; original IDs/layout/PAP/aims kept, review explicit, sync paused, offline cold launch; all external requests blocked')
+   await c.close();await b.close();print('PASS real waiting v64->v65 update + reload; original IDs/layout/PAP/aims kept, review explicit, sync paused, offline cold launch; direct asset navigation stays an asset, all external requests blocked')
  finally:server.shutdown();server.server_close()
 asyncio.run(main())
