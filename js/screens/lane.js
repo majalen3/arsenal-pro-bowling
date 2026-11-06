@@ -1,6 +1,7 @@
+import { ballKey } from '../cc/cats.js';
 import { analyze, coachLine, sensitivity, ruleOf31, rollMph, S, C_SKID, C_HOOK, C_ROLL } from '../engine.js';
 import { rgTxt, coverKind, modelOK } from '../data.js';
-import { app, on, saveLine, renameLine, linesForBall, applyLine, status } from '../store.js';
+import { app, esc, on, saveLine, renameLine, linesForBall, applyLine, status } from '../store.js';
 import { h, icon, toast, sheet } from '../ui.js';
 import { createLane } from '../lane.js';
 import { go } from '../router.js';
@@ -18,7 +19,7 @@ import { houseRule } from '../cc/target.js';
 import { prefs, setPrefs } from '../store.js';
 import { ready, proj } from '../hub.js';
 import { lineFor, standOf, keepLine } from '../cc/line.js';
-import { releaseSource, pathSummary, aboutAngle } from '../cc/provenance.js';
+import { releaseSource, specSource, pathSummary, aboutAngle } from '../cc/provenance.js';
 import * as UX from '../cc/ux.js';   // Now items 4/5: S1 Lane variant flag + on-device counts
 import { openNight } from '../cc/night.js';
 import { presetFor } from '../cc/model.js';
@@ -93,10 +94,10 @@ export function render() {
   function paintSum(a) { if (pathSum) pathSum.replaceChildren(pathSummary(a), chip('model', 'model')); }
   function update({ animate = false } = {}) {
     const b = app.ball, mi = modelIn();   // the bowler's stand → aim (ctl.modelIn)
-    ballBtn.innerHTML = `<span class="ball-orb sm" style="--c:${b.color}" aria-hidden="true"></span><span class="ball-btn-text"><span class="ball-btn-name">${b.name}</span><span class="ball-btn-sub">${b.brand} · ${coverKind(b)} · RG ${rgTxt(b)}</span></span>${icon('down', 'chev')}`;
-    ballBtn.querySelector('.ball-btn-sub').append(chip(b.rg != null ? 'manufacturer' : 'assumed', b.rg != null ? `maker${b.weight ? ' · ' + b.weight + ' lb' : ''}` : 'unverified'));
+    ballBtn.innerHTML = `<span class="ball-orb sm" style="--c:${esc(b.color || "#777")}" aria-hidden="true"></span><span class="ball-btn-text"><span class="ball-btn-name">${esc(b.name)}</span><span class="ball-btn-sub">${esc(b.brand)} · ${esc(coverKind(b))} · RG ${rgTxt(b)}</span></span>${icon('down', 'chev')}`;
+    ballBtn.querySelector('.ball-btn-sub').append(chip(specSource(b, 'rg')[0], specSource(b, 'rg')[1] + (b.weight ? ' · ' + b.weight + ' lb' : '')));
     ballBtn.title = 'Change ball';
-    el.querySelector('#laneH1').textContent = `Lane: ${b.name}`;
+    el.querySelector('#laneH1').textContent = `Lane: ${esc(b.name)}`;
     patChip.innerHTML = `<span class="chip-k">Pattern</span> ${PATTERN_LABEL[S.pattern]}`; patChip.setAttribute('aria-label', `Pattern ${PATTERN_LABEL[S.pattern]}. Change conditions`);
     surfChip.innerHTML = `<span class="chip-k">Surface</span> ${FINISH_LABEL[S.finish]}`; surfChip.setAttribute('aria-label', `Surface ${FINISH_LABEL[S.finish]}. Change conditions`);
     oilChip.innerHTML = `<span class="chip-k">Oil</span> ×${(+S.oil).toFixed(1)}`; oilChip.setAttribute('aria-label', `Oil ×${(+S.oil).toFixed(1)}. Change oil volume`);
@@ -160,7 +161,7 @@ export function render() {
       h('button', { class:'qball all', id:'qballAll', 'aria-haspopup':'dialog', onclick:openBallSheet }, h('span', { html:icon('arsenal') }), h('span', { class:'qball-name', text:`All ${balls.length}` })));
   }
   // 'Back to saved line': the line most recently saved or loaded for this ball, else this ball's newest saved line
-  function backLine(mine) { const ll = app.lastLine; return (ll && ll.ballId === app.ball.id && mine.find(l => l.name === ll.name)) || mine[0] || null; }
+  function backLine(mine) { const ll = app.lastLine; return (ll && ll.ballId === ballKey(app.ball) && mine.find(l => l.name === ll.name)) || mine[0] || null; }
   function backToSaved() { const l = backLine(linesForBall()); if (!l) return; applyLine(l); toast(`Back on \u201c${l.name}\u201d`); }
   function drawSync() { syncDot.dataset.state = status.cls || 'idle'; syncDot.setAttribute('aria-label', status.text || 'Not synced yet'); syncDot.title = status.text || ''; }
   function quickSave() {

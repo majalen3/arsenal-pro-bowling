@@ -44,7 +44,8 @@ const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Co
 // Per-ball results from the log: quick-log throws (shot.logged with frame), scores (game.logged with ballId) and
 // LaneTrax aggregates tagged to a ball. Pocket = first balls that struck or were tagged "pocket" over first balls.
 export function evidenceOf(P, ownedId, catalogId) {
-  const mine = x => x.ballId === ownedId || (catalogId && x.ballId === catalogId);
+  const uniqueModel = Object.values(P.owned || {}).filter(o => o.catalogId === catalogId).length <= 1;
+  const mine = x => x.ballId === ownedId || (uniqueModel && catalogId && x.ballId === catalogId);
   const firsts = (P.shots || []).filter(x => mine(x) && x.frame != null && x.roll === 1);
   const strikes = firsts.filter(x => x.down === 10).length, tagged = firsts.filter(x => x.down === 10 || x.miss === 'pocket' || x.miss === 'high' || x.miss === 'light');
   const pocket = tagged.filter(x => x.down === 10 || x.miss === 'pocket').length, pocketNonStrike = tagged.filter(x => x.down !== 10 && x.miss === 'pocket').length;
@@ -74,7 +75,7 @@ export function evidenceText(name, ev) {
 export const confidenceOf = ev => ev.none ? { key: 'spec', label: 'specs only' } : ev.enough ? { key: 'measured', label: `your results (${ev.games} games)` } : { key: 'estimate', label: `app estimate (${ev.games} of ${MIN_GAMES} games)` };
 // One warning per ball at most: service due first, then overlap.
 function warningFor(item, all, health) {
-  const d = dueOf(item.cat, health && (health[item.ownedId] || health[item.catalogId]), 0);
+  const d = dueOf(item.cat, health && health[item.ownedId || item.catalogId], 0);
   if (d.length) return `${d[0].type} due (${d[0].atLeast ? '\u2265' : ''}${d[0].n}/${d[0].every} games)`;
   const ov = overlaps(all).find(o => o.a === item.ownedId || o.b === item.ownedId);
   if (ov) { const other = all.find(x => x.ownedId === (ov.a === item.ownedId ? ov.b : ov.a)); return `overlaps ${other ? short(other.name) : 'another ball'} (${ov.why})`; }
@@ -86,7 +87,7 @@ export function advise(P, opts = {}) {
   const itemOf = o => { const c = catOf(o.catalogId);
     return { ownedId: o.id, catalogId: o.catalogId || null, name: o.name || (c && c.name) || 'Unknown ball', benchmark: !!o.benchmark, status: ST.statusOf(o), note: o.note || '', finish: o.finish || 'factory', cat: c }; };
   const pool = Object.values(P.owned || {}).filter(ST.offered).map(itemOf), owned = pool.filter(AVAILABLE);
-  if (!owned.length) return { none: true, reason: 'No ball is In my bag yet. Set a ball\u2019s Status to In my bag on its page (At home, pro shop and retired balls are left out).' };
+  if (!owned.length && !(opts.fixed?.slots || []).some(id => pool.some(o => o.ownedId === id))) return { none: true, reason: 'No ball is In my bag yet. Set a ball\u2019s Status to In my bag on its page (At home, pro shop and retired balls are left out).' };
   const pat = opts.pattern || null, stage = 'fresh';
   const d = demandOf({ pattern: pat, tert: opts.tert, surface: opts.surface || 'unknown', stage });
   // spec/engine fit order (rank.js) + results: a ball with ≥ MIN_GAMES games and a higher strike % moves ahead of a

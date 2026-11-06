@@ -1,7 +1,7 @@
 // Me → Account (optional; DECISIONS 2026-10-31). Never shown during scoring and never required: everything works signed out.
 // Sign-in flow: credentials → (if this phone has data) a choice: add it to the account, or Not now (signs out again).
 import { h, toast, sheet } from '../ui.js';
-import { on } from '../store.js';
+import { on, objGet } from '../store.js';
 import * as hub from '../hub.js';
 import { account } from '../account.js';
 import { EMAIL_RE, passwordProblem } from '../data/account.js';
@@ -24,7 +24,7 @@ export function chooseMigration(after = () => {}) {
   const c = localCounts(), a = account.session(); if (!a) return;
   const s = sheet({ title: 'This phone\u2019s data', id: 'migSheet', body: h('div', { class: 'stack' },
     h('p', { text: `This phone has ${plural(c.balls, 'ball')} and ${plural(c.games, 'game')} saved. Add them to ${a.user.email}? They stay on this phone either way.` }),
-    h('button', { class: 'btn primary block', id: 'migAdd', onclick: () => { account.confirm(); s.close(); toast('Signed in. Adding this phone\u2019s data to your account\u2026'); after(); } }, 'Add this phone\u2019s data to my account'),
+    h('button', { class: 'btn primary block', id: 'migAdd', onclick: () => { if (!account.confirm() || account.session()?.pending) { toast('Sign in to the original account for this browser. Nothing was copied.', { kind:'bad' }); return; } s.close(); toast('Signed in. Adding this phone\u2019s data to your account\u2026'); after(); } }, 'Add this phone\u2019s data to my account'),
     h('button', { class: 'btn ghost block', id: 'migNot', onclick: async () => { s.close(); await account.logout(); toast('Not signed in. Nothing was shared.'); after(); } }, 'Not now (stay signed out)')) });
 }
 
@@ -49,7 +49,7 @@ function authSheet(mode0, after) {
     if (mode === 'create') form.append(h('p', { class: 'small muted', text: 'Your email is only your sign-in name: no newsletters, no sharing. Your password is stored scrambled (scrypt); nobody can read it.' }));
     const sw = (m, label, id) => h('button', { class: 'btn ghost block', type: 'button', id, onclick: () => { mode = m; paint(); } }, label);
     if (mode !== 'signin') form.append(sw('signin', 'I have an account: sign in', 'acctToSignin'));
-    if (mode !== 'create') form.append(sw('create', 'Create an account', 'acctToCreate'));
+    if (mode !== 'create' && !objGet('ap_sync_guard')?.account) form.append(sw('create', 'Create an account', 'acctToCreate'));
     if (mode === 'signin') form.append(sw('recover', 'Forgot password? Use your recovery key', 'acctToRecover'));
   }
   form.onsubmit = async e => {
@@ -59,7 +59,8 @@ function authSheet(mode0, after) {
     const pp = mode !== 'signin' && passwordProblem(pw); if (pp) { err.textContent = pp; pass.focus(); return; }
     if (mode === 'signin' && !pw) { err.textContent = 'Enter your password.'; pass.focus(); return; }
     if (mode === 'recover' && !key.value.trim()) { err.textContent = 'Enter your recovery key.'; key.focus(); return; }
-    const pending = hasData(localCounts());
+    await hub.ready();
+    const pending = localCounts().events > 0;
     submit.disabled = true; submit.textContent = 'Working\u2026';
     const r = mode === 'create' ? await account.signup(em, pw, { pending }) : mode === 'recover' ? await account.recover(em, key.value.trim(), pw, { pending }) : await account.login(em, pw, { pending });
     submit.disabled = false; submit.textContent = title[mode];
@@ -74,10 +75,9 @@ function authSheet(mode0, after) {
 function signOutSheet(after) {
   const c = localCounts();
   const s = sheet({ title: 'Sign out', id: 'soSheet', body: h('div', { class: 'stack' },
-    h('p', { text: 'Your data stays in your account. Choose what happens on this phone.' }),
-    h('button', { class: 'btn primary block', id: 'soKeep', onclick: async () => { s.close(); await account.logout(); toast('Signed out. Your data is still on this phone.'); after(); } }, 'Sign out, keep data on this phone'),
-    c.unsynced ? h('p', { class: 'small muted', id: 'soWait', text: `${plural(c.unsynced, 'change')} on this phone ${c.unsynced === 1 ? 'has' : 'have'} not reached your account yet. Connect to the internet, then you can also clear this phone.` })
-      : h('button', { class: 'btn ghost block', id: 'soClear', onclick: async () => { s.close(); await account.logout(); try { await hub.db.wipe(); ['ap_profile', 'ap_lines', 'ap_surface', 'ap_notes', 'ap_shots'].forEach(k => localStorage.removeItem(k)); } catch (e) {} toast('Signed out and this phone was cleared. Sign in again to get your data back.'); after(); } }, 'Sign out and clear this phone')) });
+    h('p', { text: 'The account keeps only changes its server acknowledged. This phone keeps all local history; export a backup before removing browser storage.' }),
+    h('button', { class: 'btn primary block', id: 'soKeep', onclick: async () => { s.close(); await account.logout(); toast('Signed out. Kept on this phone only; account sync paused.'); after(); } }, 'Sign out, keep data on this phone'),
+    h('p', { class:'small muted', id:'soWait', text:'Keeping this phone’s history pauses sync. It is not copied to a backup code or another account. Download a backup in Me before clearing browser storage.' })) });
 }
 
 function deleteSheet(after) {
@@ -107,13 +107,13 @@ export function accountCard() {
     const s = account.session(); card.innerHTML = '';
     if (!s) {
       card.append(h('h2', { class: 'card-title', text: 'Account (optional)' }),
-        h('p', { class: 'small', id: 'acctPitch', text: 'Sign in to keep your balls, profile and games private to you and on every phone you use. Everything works without an account.' }),
+        h('p', { class: 'small', id: 'acctPitch', text: 'Optional account sync. This browser keeps one private account history; switching to another account is blocked to avoid mixing data. Everything works locally without an account.' }),
         h('div', { class: 'btn-grid' }, h('button', { class: 'btn primary', id: 'acctSignIn', onclick: () => authSheet('signin', paint) }, 'Sign in'),
-          h('button', { class: 'btn ghost', id: 'acctCreate', onclick: () => authSheet('create', paint) }, 'Create account')));
+          !objGet('ap_sync_guard')?.account ? h('button', { class: 'btn ghost', id: 'acctCreate', onclick: () => authSheet('create', paint) }, 'Create account') : null));
       return;
     }
     card.append(h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: 'Account' }), h('span', { class: 'pill gold', id: 'acctPill', text: s.pending ? 'Waiting' : 'Signed in' })),
-      h('p', { class: 'small', id: 'acctWho', text: `Signed in as ${s.user.email}. Your data syncs privately to this account; only you can see it.` }));
+      h('p', { class: 'small', id: 'acctWho', text: `Signed in as ${s.user.email}. ${s.pending ? "Sync is paused until you choose whether to add this phone’s data." : "Sync target: this account. Server acknowledgement and backup status are shown under Your data."}` }));
     if (s.pending) card.append(h('button', { class: 'btn primary block', id: 'acctFinish', onclick: () => chooseMigration(paint) }, 'Finish signing in'));
     card.append(h('div', { class: 'btn-grid' },
       h('button', { class: 'btn ghost', id: 'acctExport', onclick: exportData }, 'Export my data'),

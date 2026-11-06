@@ -15,9 +15,9 @@ export function lastBackupText(at, now = Date.now()) {
   const d = Math.floor((now - at) / DAY);
   return 'Last backup file: ' + (d <= 0 ? 'today.' : d === 1 ? 'yesterday.' : d + ' days ago.');
 }
-// Pure: the label for the More chip. Protected = the browser promised to keep storage, or the app runs from the Home Screen.
+// Retention permission / installation is not a backup or a permanent-storage promise.
 export function protectLabel({ persisted = false, standalone = false } = {}) {
-  return persisted || standalone ? 'Protected' : 'Not protected';
+  return persisted || standalone ? 'Retention requested' : 'Local storage only';
 }
 // ---- browser glue (no-ops where unsupported)
 let deferred = null;
@@ -49,7 +49,7 @@ export function installHow() {
   if (isIOS()) return 'In Safari, tap Share, then Add to Home Screen.';
   return 'Use your browser menu: Install app or Add to Home screen.';
 }
-export function lastBackupAt(meta = {}) { return Math.max(meta.backupDownloadedAt || 0, meta.sync && meta.sync.lastPushAt && meta.codeCopiedAt ? meta.codeCopiedAt : 0); }
+export function lastBackupAt(meta = {}) { return meta.backupDownloadedAt || 0; }
 // Download the backup file and record when (shared by More and the recap nudge).
 export async function saveBackupFile(db, prefsObj) {
   const { buildBackup, BACKUP_NAME } = await import('../data/backup.js');

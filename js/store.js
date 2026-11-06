@@ -1,6 +1,6 @@
-// Persistence: Render API + localStorage mirror. Ported from v1 app.js: same ap_* keys, same record
-// shapes, same endpoints, same offline queue / retry schedule. DOM writes replaced by events.
+// LocalStorage hot mirrors plus the consent-gated event log in hub.js. Legacy private HTTP dual-writes are disabled.
 import { balls } from './data.js';
+import { ballFor, ballKey } from './cc/cats.js';
 import { S, RANGES, FINISHES, PATTERNS } from './engine.js';
 import { BOARDS } from './cc/geom.js';
 const eyesOf = v => { const x = v === '' || v == null ? NaN : +v; return Number.isFinite(x) && x >= BOARDS[0] && x <= BOARDS[1] ? Math.round(x * 2) / 2 : null; };
@@ -17,9 +17,16 @@ export const objGet = k => { try { const v = JSON.parse(rawGet(k)); return v && 
 
 // --- event-log sink (js/hub.js wires this to the v1 event log; ap_* keys stay as the hot mirror + API compat)
 let sink = null; const pending = [];
-export function setSink(f, { dropPending = false } = {}) { sink = f; if (dropPending) pending.length = 0; while (pending.length) { const a = pending.shift(); try { f(...a); } catch(e) { console.error(e); } } }
-export function record(type, entityId, data) { if (sink) { try { sink(type, entityId, data); } catch(e) { console.error(e); } } else pending.push([type, entityId, data]); }
-const lineData = l => ({ ballId:l.ballId, name:l.name, release:l.release, aim:l.aim, speed:l.speed, rev:l.rev, oil:l.oil, finish:l.finish, pattern:l.pattern, note:l.note||'' });
+export const pendingWrites = () => pending.length;
+export function setSink(f, { dropPending = 0 } = {}) {
+  sink = f;
+  while (pending.length) { const a = pending.shift(); if (dropPending > 0) { dropPending--; a.resolve(); } else Promise.resolve().then(() => f(a.type, a.entityId, a.data)).then(a.resolve, a.reject); }
+}
+export function record(type, entityId, data) {
+  const p = sink ? Promise.resolve().then(() => sink(type, entityId, data)) : new Promise((resolve, reject) => pending.push({ type, entityId, data, resolve, reject }));
+  p.catch(() => {}); return p;
+}
+const lineData = l => ({ ballId:l.ballId, ownedId:l.ownedId || null, catalogId:l.catalogId || null, eyes:l.eyes, name:l.name, release:l.release, aim:l.aim, speed:l.speed, rev:l.rev, oil:l.oil, finish:l.finish, pattern:l.pattern, note:l.note||'' });
 // --- tiny event bus
 const subs = {};
 export const on = (ev, fn) => { (subs[ev] = subs[ev] || []).push(fn); return () => subs[ev] = subs[ev].filter(f => f !== fn); };
@@ -29,8 +36,12 @@ function setStatus(text, cls) { status.text = text; status.cls = cls || ''; emit
 
 // --- app state (ball + controls), persisted to ap_state exactly like v1 (string values)
 export const app = { ball: balls[0], lastLine: null, eyes: null };   // eyes: the bowler's aim at the arrows (js/ctl.js)   // lastLine: {ballId,name} most recently saved/loaded (for 'Back to saved line')
-let stateT = null;
-export function saveState() { clearTimeout(stateT); stateT = setTimeout(() => { rawSet('ap_state', JSON.stringify({ ball:app.ball.id, speed:String(S.speed), rev:String(S.rev), release:String(S.release), aim:String(S.aim), eyes:app.eyes == null ? '' : String(app.eyes), oil:String(S.oil), finish:S.finish, pattern:S.pattern })); }, 300); }
+let stateT = null, stateRevision = 0;
+export function hydrateOwnedState() { if (!stateRevision) { restoreState(); emit('state'); } }
+function flushState() { rawSet('ap_state', JSON.stringify({ ball:ballKey(app.ball), catalogId:app.ball.id, speed:String(S.speed), rev:String(S.rev), release:String(S.release), aim:String(S.aim), eyes:app.eyes == null ? '' : String(app.eyes), oil:String(S.oil), finish:S.finish, pattern:S.pattern })); stateT = null; }
+export function saveState() { stateRevision++; clearTimeout(stateT); stateT = setTimeout(flushState, 300); }
+// A reload/navigation must not discard the last debounced physical-copy selection or aim.
+if (typeof window !== 'undefined') window.addEventListener('pagehide', () => { if (stateT) { clearTimeout(stateT); flushState(); } });
 export function restoreState() {
   let st = null; try { st = JSON.parse(rawGet('ap_state')); } catch(e) {}
   if (!st || typeof st !== 'object') {   // clutter audit #4: no saved lane tune yet, so start from the bowler's own profile (one source)
@@ -38,7 +49,7 @@ export function restoreState() {
     ['speed','rev'].forEach(id => { const v = +pr[id], [lo, hi] = RANGES[id]; if (pr[id] !== '' && pr[id] != null && Number.isFinite(v) && v >= lo && v <= hi) S[id] = v; });
     return false;
   }
-  const b = balls.find(x => x.id === st.ball); if (b) app.ball = b;
+  const b = ballFor(st.ball) || ballFor(st.catalogId); if (b) app.ball = b;
   ['speed','rev','release','aim','oil'].forEach(id => { const v = +st[id], [lo, hi] = id === 'release' ? BOARDS : RANGES[id]; if (Number.isFinite(v) && v >= lo && v <= hi) S[id] = v; });
   app.eyes = eyesOf(st.eyes);
   if (typeof st.finish === 'string' && FINISHES.includes(st.finish)) S.finish = st.finish;
@@ -56,136 +67,80 @@ export function deviceId() {
   }
   return _dev;
 }
-async function api(path, opts={}) {
-  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), opts.method && opts.method !== 'GET' ? API_WRITE_TIMEOUT : API_TIMEOUT);
-  try {
-    const r = await fetch(API_BASE + path, { ...opts, signal:ctl.signal, headers:Object.assign({'X-Device-Id':deviceId()}, opts.body ? {'Content-Type':'application/json'} : {}) });
-    if (!r.ok) { const er = new Error('HTTP ' + r.status); er.status = r.status; er.retryAfter = +r.headers.get('Retry-After') || 0; throw er; }
-    return await r.json();
-  } finally { clearTimeout(t); }
-}
-function failStatus(e) { return e && e.status === 429 ? 'Server busy. Saved on this phone, will retry.' : e && e.name === 'AbortError' ? 'Server waking up. Saved on this phone, will retry.' : navigator.onLine === false ? 'Offline (saved on this phone)' : 'Not backed up yet (saved on this phone, will retry)'; }   // sim2 #13: server unreachable is not "offline"
-let retryN = 0, retryT = null;
-function retryLater(e) { if (retryT || retryN >= 4) return; const d = Math.max([15000,45000,120000,300000][retryN++], e && e.retryAfter ? e.retryAfter*1000+500 : 0); retryT = setTimeout(async () => { retryT = null; await syncLines(); await syncAlley(); }, d); }
+function localStatus() { setStatus(memMode ? 'Only until this tab closes (browser storage unavailable)' : 'Saved on this phone', 'ok'); }
 export const esc = t => String(t==null?'':t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 // --- lines
-export function currentLine(name, note) { return { ballId:app.ball.id, name, release:+S.release, aim:+S.aim, eyes:app.eyes, speed:+S.speed, rev:+S.rev, oil:+S.oil, finish:S.finish, pattern:S.pattern, note:(note||'').trim() }; }
+export function currentLine(name, note) { return { ballId:ballKey(app.ball), ownedId:app.ball.ownedId || null, catalogId:app.ball.id, name, release:+S.release, aim:+S.aim, eyes:app.eyes, speed:+S.speed, rev:+S.rev, oil:+S.oil, finish:S.finish, pattern:S.pattern, note:(note||'').trim() }; }
 export const allLines = () => lsGet(LS.lines).sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
-export const linesForBall = id => allLines().filter(l => l.ballId === (id || app.ball.id));
+export const linesForBall = id => allLines().filter(l => l.ballId === (id || ballKey(app.ball)));
 export function applyLine(l) {
-  const b = balls.find(x => x.id === l.ballId); if (b) app.ball = b;
+  const b = ballFor(l.ownedId || l.ballId) || ballFor(l.catalogId); if (b) app.ball = b;
   ['release','aim','speed','rev','oil'].forEach(k => { const v = +l[k], [lo, hi] = k === 'release' ? BOARDS : RANGES[k]; if (Number.isFinite(v) && v >= lo && v <= hi) S[k] = v; });
   app.eyes = eyesOf(l.eyes);
   if (FINISHES.includes(l.finish)) S.finish = l.finish; if (PATTERNS.includes(l.pattern)) S.pattern = l.pattern;
   app.lastLine = { ballId:l.ballId, name:l.name };
   saveState(); emit('state');
 }
-async function pushLine(l) {
-  const body = { ballId:l.ballId, name:l.name, release:l.release, aim:l.aim, speed:l.speed, rev:l.rev, oil:l.oil, finish:l.finish, pattern:l.pattern, note:l.note||'' };
-  const r = await api('/api/lines', { method:'POST', body:JSON.stringify(body) });
-  const all = lsGet(LS.lines); const m = all.find(x => x.ballId === l.ballId && x.name === l.name);
-  if (m) { m.synced = true; m.id = r.id; lsSet(LS.lines, all); }
-}
 export async function saveLine(name, note) {
   name = String(name || '').trim(); if (!name) return null;
   const l = { ...currentLine(name, note), updatedAt:Date.now(), synced:false };
-  const all = lsGet(LS.lines).filter(x => !(x.ballId === l.ballId && x.name === l.name)); all.push(l); lsSet(LS.lines, all); app.lastLine = { ballId:l.ballId, name:l.name };
-  record('line.created', l.ballId + '|' + l.name, lineData(l));
-  emit('lines'); setStatus('Saving\u2026');
-  pushLine(l).then(() => { setStatus(memMode ? 'Saved (browser storage blocked: kept until this tab closes)' : 'Synced', 'ok'); retryN = 0; emit('lines'); })
-    .catch(e => { setStatus(failStatus(e), 'off'); retryLater(e); });
-  return l;
+  const all = lsGet(LS.lines).filter(x => !(x.ballId === l.ballId && x.name === l.name)); all.push(l); lsSet(LS.lines, all);
+  await record('line.created', l.ballId + '|' + l.name, lineData(l));
+  app.lastLine = { ballId:l.ballId, name:l.name }; emit('lines'); localStatus(); return l;
 }
 export async function renameLine(l, name, note) {
   name = String(name || '').trim(); if (!name) return;
-  const old = { ...l }; const nl = { ...l, name, note:(note||'').trim(), updatedAt:Date.now(), synced:false }; delete nl.id;
+  const nl = { ...l, name, note:(note||'').trim(), updatedAt:Date.now(), synced:false }; delete nl.id;
   const all = lsGet(LS.lines).filter(x => !(x.ballId === l.ballId && x.name === l.name) && !(x.ballId === nl.ballId && x.name === nl.name)); all.push(nl); lsSet(LS.lines, all);
-  if (old.name !== name) record('line.deleted', old.ballId + '|' + old.name, {}); record('line.created', nl.ballId + '|' + nl.name, lineData(nl));
-  emit('lines');
-  if (old.name !== name && old.id) queueDelete(old.id);
-  pushLine(nl).then(() => { setStatus('Synced', 'ok'); emit('lines'); }).catch(e => { setStatus(failStatus(e), 'off'); retryLater(e); });
+  if (l.name !== name) await record('line.deleted', l.ballId + '|' + l.name, {});
+  await record('line.created', nl.ballId + '|' + nl.name, lineData(nl)); emit('lines'); localStatus();
 }
-function queueDelete(id) { api('/api/lines/' + id, {method:'DELETE'}).catch(e => { if (!(e && e.status === 404)) { const q = lsGetIds(LS.dels); q.push(id); lsSet(LS.dels, q); retryLater(); } }); }
 export async function deleteLine(l) {
-  lsSet(LS.lines, lsGet(LS.lines).filter(x => !(x.ballId === l.ballId && x.name === l.name))); record('line.deleted', l.ballId + '|' + l.name, {}); emit('lines');
-  if (l.id) { try { await api('/api/lines/' + l.id, {method:'DELETE'}); setStatus('Deleted', 'ok'); } catch(e) { if (!(e && e.status === 404)) { const q = lsGetIds(LS.dels); q.push(l.id); lsSet(LS.dels, q); retryLater(); } setStatus('Deleted here; will remove from server when online', 'off'); } }
+  lsSet(LS.lines, lsGet(LS.lines).filter(x => !(x.ballId === l.ballId && x.name === l.name)));
+  await record('line.deleted', l.ballId + '|' + l.name, {}); emit('lines'); localStatus();
 }
-export function restoreLine(l) { const all = lsGet(LS.lines).filter(x => !(x.ballId === l.ballId && x.name === l.name)); const r = { ...l, synced:false, updatedAt:Date.now() }; delete r.id; all.push(r); lsSet(LS.lines, all); record('line.created', r.ballId + '|' + r.name, lineData(r)); emit('lines'); pushLine(r).catch(e => retryLater(e)); }
-async function flushDels() { const q = lsGetIds(LS.dels); if (!q.length) return; const keep = []; for (const id of q) { try { await api('/api/lines/' + id, {method:'DELETE'}); } catch(e) { if (!(e && e.status === 404)) keep.push(id); } } lsSet(LS.dels, keep); }
-export async function syncLines() {
-  const ballId = app.ball.id;
-  try {
-    await flushDels();
-    const server = await api('/api/lines?ballId=' + encodeURIComponent(ballId));
-    const all = lsGet(LS.lines);
-    server.forEach(s => {
-      const t = Date.parse(s.updatedAt) || 0; const i = all.findIndex(x => x.ballId === s.ballId && x.name === s.name);
-      const rec = { ballId:s.ballId, name:s.name, release:s.release, aim:s.aim, speed:s.speed, rev:s.rev, oil:s.oil, finish:s.finish, pattern:s.pattern, note:s.note||'', updatedAt:t, synced:true, id:s.id };
-      if (i < 0) all.push(rec); else if (all[i].synced || t >= (all[i].updatedAt||0)) all[i] = rec;
-    });
-    lsSet(LS.lines, all); emit('lines');
-    for (const l of all.filter(x => x.ballId === ballId && !x.synced)) { try { await pushLine(l); } catch(e) { break; } }
-    emit('lines'); setStatus('Synced', 'ok'); retryN = 0;
-  } catch(e) { setStatus(failStatus(e), 'off'); retryLater(e); }
+export async function restoreLine(l) {
+  const all = lsGet(LS.lines).filter(x => !(x.ballId === l.ballId && x.name === l.name)), r = { ...l, synced:false, updatedAt:Date.now() }; delete r.id; all.push(r); lsSet(LS.lines, all);
+  await record('line.created', r.ballId + '|' + r.name, lineData(r)); emit('lines'); localStatus();
 }
+// Private writes use only the consent-gated v2 outbox. Never dual-write to the legacy code stream.
+export async function syncLines() { localStatus(); emit('lines'); }
 let syncTimer = null;
-export function scheduleSync() { clearTimeout(syncTimer); syncTimer = setTimeout(() => { syncLines(); syncAlley(); }, 350); }
-
-// --- surface log + pattern notes (v1 semantics)
+export function scheduleSync() { clearTimeout(syncTimer); syncTimer = setTimeout(() => emit('sync-request'), 350); }
 export const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
 export async function logFinish(ballId, finish) {
-  const e = { ballId, date:today(), finish, synced:false };
-  const all = lsGet(LS.surface); all.push(e); lsSet(LS.surface, all); record('ball.surfaceLogged', ballId, { ballId, date:e.date, finish, type:'surfaceChange' }); emit('alley'); setStatus('Saving\u2026');
-  try { await api('/api/surface-log', {method:'POST', body:JSON.stringify({ballId:e.ballId, date:e.date, finish:e.finish})}); lsSet(LS.surface, lsGet(LS.surface).map(x => (x.ballId===e.ballId && x.date===e.date && x.finish===e.finish && x.synced===false) ? Object.assign(x, {synced:true}) : x)); setStatus('Synced', 'ok'); emit('alley'); } catch(err) { setStatus(failStatus(err), 'off'); retryLater(err); }
+  const e = { ballId, date:today(), finish, synced:false }, all = lsGet(LS.surface); all.push(e); lsSet(LS.surface, all);
+  await record('ball.surfaceLogged', ballId, { ballId, date:e.date, finish, type:'surfaceChange' }); emit('alley'); localStatus();
 }
 export async function saveNote(lane, oil, adjustment) {
   const e = { lane:String(lane).trim(), oil:String(oil).trim(), adjustment:String(adjustment).trim(), synced:false };
   if (!e.lane || !e.oil || !e.adjustment) return false;
-  const all = lsGet(LS.notes); all.push(e); lsSet(LS.notes, all); record('patternNote.created', null, { lane:e.lane, oil:e.oil, adjustment:e.adjustment, date:today() }); emit('alley'); setStatus('Saving\u2026');
-  api('/api/pattern-notes', {method:'POST', body:JSON.stringify({lane:e.lane, oil:e.oil, adjustment:e.adjustment})}).then(() => { lsSet(LS.notes, lsGet(LS.notes).map(x => (x.lane===e.lane && x.oil===e.oil && x.adjustment===e.adjustment && x.synced===false) ? Object.assign(x, {synced:true}) : x)); setStatus('Synced', 'ok'); emit('alley'); }).catch(err => { setStatus(failStatus(err), 'off'); retryLater(err); });
-  return true;
+  const all = lsGet(LS.notes); all.push(e); lsSet(LS.notes, all);
+  await record('patternNote.created', null, { lane:e.lane, oil:e.oil, adjustment:e.adjustment, date:today() }); emit('alley'); localStatus(); return true;
 }
-async function pushUnsyncedAlley() {
-  for (const x of lsGet(LS.surface).filter(x => x.synced === false)) { await api('/api/surface-log', {method:'POST', body:JSON.stringify({ballId:x.ballId, date:x.date, finish:x.finish})}); const a = lsGet(LS.surface); const m = a.find(y => y.synced===false && y.ballId===x.ballId && y.date===x.date && y.finish===x.finish); if (m) { m.synced = true; lsSet(LS.surface, a); } }
-  for (const x of lsGet(LS.notes).filter(x => x.synced === false)) { await api('/api/pattern-notes', {method:'POST', body:JSON.stringify({lane:x.lane, oil:x.oil, adjustment:x.adjustment})}); const a = lsGet(LS.notes); const m = a.find(y => y.synced===false && y.lane===x.lane && y.oil===x.oil && y.adjustment===x.adjustment); if (m) { m.synced = true; lsSet(LS.notes, a); } }
-}
-export async function syncAlley() {
-  try {
-    await pushUnsyncedAlley();
-    const sv = await api('/api/surface-log?ballId=' + encodeURIComponent(app.ball.id));
-    const all = lsGet(LS.surface);
-    sv.forEach(s => { if (!all.some(x => x.ballId===s.ballId && x.date===s.date && x.finish===s.finish)) all.push({ballId:s.ballId, date:s.date, finish:s.finish, synced:true}); });
-    all.sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0); lsSet(LS.surface, all);
-    const nv = await api('/api/pattern-notes'); const notes = lsGet(LS.notes);
-    nv.slice().reverse().forEach(n => { if (!notes.some(x => x.lane===n.lane && x.oil===n.oil && x.adjustment===n.adjustment)) notes.unshift({lane:n.lane, oil:n.oil, adjustment:n.adjustment, synced:true}); });
-    lsSet(LS.notes, notes); emit('alley');
-  } catch(e) { retryLater(); }
-}
+export async function syncAlley() { localStatus(); }
 
 // --- shots (new, local-only): one entry per miss-button tap
-export function logShot(miss, before, after) { const a = lsGet(LS.shots), x = { t:Date.now(), ballId:app.ball.id, pattern:S.pattern, miss, before, after }; a.push(x); lsSet(LS.shots, a); record('shot.logged', null, { sessionId:null, ballId:x.ballId, pattern:x.pattern, miss, before, after }); emit('shots'); }
+export function logShot(miss, before, after) { const a = lsGet(LS.shots), x = { t:Date.now(), ballId:ballKey(app.ball), catalogId:app.ball.id, pattern:S.pattern, miss, before, after }; a.push(x); lsSet(LS.shots, a); record('shot.logged', null, { sessionId:null, ballId:x.ballId, pattern:x.pattern, miss, before, after }); emit('shots'); }
 
 // --- backup / device code (v1 semantics)
 export function backupBlob() { const data = { app:'arsenal-pro', code:deviceId(), exportedAt:new Date().toISOString(), lines:lsGet(LS.lines), surfaceLog:lsGet(LS.surface), patternNotes:lsGet(LS.notes) }; return new Blob([JSON.stringify(data, null, 1)], {type:'application/json'}); }
 export function useCode(v) {
   v = String(v || '').trim(); if (!/^[A-Za-z0-9_-]{8,64}$/.test(v)) return false;
-  rawSet('ap_device', v); _dev = v;
-  lsSet(LS.lines, lsGet(LS.lines).map(x => Object.assign(x, {synced:false}))); setStatus('Code set. Syncing\u2026'); syncLines(); syncAlley(); emit('code', v); return true;
+  const guard = objGet('ap_sync_guard'); if (guard?.account || guard?.blocked) return false;
+  rawSet('ap_device', v); _dev = v; rawSet('ap_backup_sync', 'true');
+  lsSet(LS.lines, lsGet(LS.lines).map(x => Object.assign(x, {synced:false}))); setStatus('Backup-code sync enabled. Waiting for server acknowledgement.'); emit('code', v); return true;
 }
-export function startSync() {
-  syncLines(); syncAlley();
-  fetch(API_BASE + '/api/health', {cache:'no-store'}).catch(() => {});
-  window.addEventListener('online', () => { syncLines(); syncAlley(); });
-}
+export function startSync() { localStatus(); }
 export const profile = () => objGet(LS.profile);
 export const setProfile = p => {
   lsSet(LS.profile, p);
   const f = {}; if (p.hand) f.hand = p.hand; if (p.style) f.style = p.style;
   // Sim2 #11: a welcome default the bowler never touched is saved with prov.ref 'default', so it is labelled 'default (not entered)', not 'you reported'.
   const pv = k => p.entered && !p.entered[k] ? { kind:'user', ref:'default' } : { kind:'user' };
-  if (Number.isFinite(+p.speed) && p.speed !== '') f.speed = { v:+p.speed, unit:'mph', at:'unknown', prov:pv('speed') };
-  if (Number.isFinite(+p.rev) && p.rev !== '') f.rev = { v:+p.rev, unit:'rpm', prov:pv('rev') };
+  if (p.speed != null && Number.isFinite(+p.speed) && p.speed !== '') f.speed = { v:+p.speed, unit:'mph', at:'unknown', prov:pv('speed') };
+  if (p.rev != null && Number.isFinite(+p.rev) && p.rev !== '') f.rev = { v:+p.rev, unit:'rpm', prov:pv('rev') };
   if (p.pap) f.pap = { v:String(p.pap), unit:'in', prov:{ kind:'user' } }; if (p.tilt) f.tilt = { v:String(p.tilt), unit:null, prov:{ kind:'user' } };
   record('bowler.edited', 'me', { fields:f });
   emit('profile');

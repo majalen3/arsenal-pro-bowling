@@ -75,10 +75,10 @@ import('./hub.js').then(m => m.ready()).catch(e => console.error(e));
 // service worker with prompt-to-update
 if ('serviceWorker' in navigator && /^https:|^http:\/\/localhost/.test(location.protocol + '//' + location.host)) {
   navigator.serviceWorker.register('sw.js').then(reg => {
-    const prompt = w => toast('A new version is ready.', { ms:15000, action:{ label:'Refresh', run:() => w.postMessage('skip') } });
+    const prompt = w => { if (document.querySelector('#qlPad')) return; toast('A new version is ready.', { ms:15000, action:{ label:'Refresh', run:() => w.postMessage('skip') } }); };
     if (reg.waiting && navigator.serviceWorker.controller) prompt(reg.waiting);
     reg.addEventListener('updatefound', () => { const w = reg.installing; w && w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) prompt(w); }); });
   }).catch(() => {});
   const hadCtl = !!navigator.serviceWorker.controller; let reloaded = false; navigator.serviceWorker.addEventListener('controllerchange', () => { if (reloaded || !hadCtl) return; reloaded = true; location.reload(); });
 }
-window.addEventListener('offline', () => toast('Offline. Everything still works; changes sync later.'));
+window.addEventListener('offline', () => toast('Offline. Saved data and cached tools work; optional sync waits for a connection.'));

@@ -13,7 +13,7 @@ const ev = (type, id, data, ts, dev = 'A') => mkEvent(type, id, data, { ts, devi
 async function phone(api, name, code) {
   const storage = mem(), acct = createAccount({ base: BASE, storage, fetchFn: api.fetchFn });
   const db = createDB(memoryBackend(), { deviceId: name }); await db.open();
-  const s = createSync({ db, base: BASE, deviceId: code, fetchFn: api.fetchFn, timer: fakeTimer(), auth: () => acct.active(), onAuthLost: () => acct.end() });
+  const s = createSync({ db, base: BASE, deviceId: code, allowLegacy: () => true, fetchFn: api.fetchFn, timer: fakeTimer(), auth: () => acct.active(), onAuthLost: () => acct.end() });
   return { storage, acct, db, s };
 }
 
@@ -63,13 +63,13 @@ test('isolation: two accounts never see each other\u2019s events; a second phone
   // A device-code request can't name the account stream ('u:' is not a valid code) and the mock keeps it apart.
   assert.equal(api.count('code-aaaaaaaa'), 0, 'signed-in phone wrote nothing under its backup code');
 });
-test('expired or revoked token: 401 ends the session on this phone, data stays local and goes back to the backup code', async () => {
+test('expired or revoked token: 401 ends the session on this phone, data stays local and never falls back to the backup code', async () => {
   const api = mockApi(); const A = await phone(api, 'A', 'code-aaaaaaaa'); await A.acct.signup('r@example.com', 'password-1');
   await A.db.append([ev('ownedBall.created', 'b1', { catalogId: 'x' }, 10)]); await A.s.run();
   for (const t in api.tokens) delete api.tokens[t];
   await A.db.append([ev('ownedBall.created', 'b2', { catalogId: 'y' }, 11)]); const r = await A.s.run();
   assert.equal(r.ok, false); assert.equal(A.acct.session(), null, 'signed out'); assert.equal(A.db.events().length, 2);
-  await A.s.run(); assert.equal(api.count('code-aaaaaaaa'), 2, 'falls back to the backup code');
+  const paused = await A.s.run(); assert.equal(paused.paused, true); assert.equal(api.count('code-aaaaaaaa'), 0, 'no silent downgrade to the backup code');
   const s = createAccount({ base: BASE, storage: mem(), now: () => Date.parse('2100-01-01') }); const st = s; assert.equal(st.session(), null);
 });
 test('export returns only my events; delete needs the password and removes the server copy', async () => {

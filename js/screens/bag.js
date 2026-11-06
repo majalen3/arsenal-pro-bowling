@@ -75,7 +75,7 @@ export async function render() {
   function draw() {
     const P = proj(), bag = ST.currentBag(P);
     body.innerHTML = '';
-    if (!bag) { body.append(h('div', { class: 'card', id: 'bagNone' }, h('h2', { class: 'card-title', text: 'No bag yet' }), h('p', { class: 'muted', text: 'Add your balls, or load the example arsenal on Tonight, first.' }), h('button', { class: 'btn primary block', onclick: () => go('#/tonight') }, 'Go to Tonight'))); return; }
+    if (!bag) { const have = Object.keys(P.owned || {}).length; body.append(h('div', { class:'card', id:'bagNone' }, h('h2', { class:'card-title', text:have ? 'Your arsenal is saved' : 'No balls owned yet' }), h('p', { class:'muted', text:have ? 'Start an empty bag, then choose Bring for each physical ball you want tonight. Owning a ball does not pack it automatically.' : 'Search the shared catalog and save only the physical balls you own. You can skip and keep using the app.' }), have ? h('button', { class:'btn primary block', id:'bagStartEmpty', onclick:async () => { await add('bag.saved', ST.TONIGHT_BAG, { name:'Tonight', slots:[], spare:null, format:'league3', event:'league', bring:3 }); draw(); } }, 'Start an empty bag') : h('a', { class:'btn primary block', href:'#/welcome' }, 'Find my balls'))); return; }
     const ev = evOf(bag), E = A.EVENTS[ev], bring = bringOfBag(P, bag, ev), n0 = night(P);
     const all = ownedItems(P), packed = ST.packedIds(P, bag), locked = bag.slots.filter(s => s.locked).map(s => s.owned);
     const a = A.advise(P, Object.assign(opts(P, ev, bring), { fixed: { slots: packed, spare: bag.spare } }));
@@ -160,7 +160,7 @@ export async function render() {
       h('label', { class: 'fld', id: 'bagHead' }, h('span', {}, 'Event date ', bag.eventDate ? null : prov('assumed', 'not set')), dateIn)));
     careId = careId && P.owned[careId] ? careId : ((items[0] || all[0]) || {}).ownedId;
     if (!careId) return;
-    const cx = itemOf(P, careId), hl = P.health[careId] || (cx.catalogId && P.health[cx.catalogId]) || null, care = G.careOf(catOf(cx.catalogId));
+    const cx = itemOf(P, careId), hl = P.health[careId] || null, care = G.careOf(catOf(cx.catalogId));
     const sel = h('select', { id: 'bagCareBall', 'aria-label': 'Ball', onchange: e => { careId = e.target.value; draw(); } }, ...all.map(x => h('option', { value: x.ownedId, selected: x.ownedId === careId ? '' : null, text: x.name })));
     // Clutter audit C9: status and care (brand targets, USBC Rule 18) collapsed by default; one warning line when service is due.
     if (pack.service.length) body.append(h('p', { class: 'small warn-line', id: 'bagCareDue', text: `Service due: ${pack.service.map(x => `${x.name} (${x.type})`).join(', ')}. Open Ball status and care.` }));

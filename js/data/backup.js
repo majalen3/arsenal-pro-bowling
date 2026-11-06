@@ -9,6 +9,8 @@ export async function buildBackup(db, { prefs = null, legacy = null, now = Date.
   const imports = Object.values(db.projection().imports);
   const b = { app: 'arsenal-pro', format: 'backup', schemaV: SCHEMA_V, exportedAt: new Date(now).toISOString(), deviceId: db.deviceId, events, imports, prefs };
   if (legacy) b.legacy = legacy;
+  // Keep review/rollback evidence, never session tokens or a sync authorization.
+  if (db.meta.foundationSnapshot) b.foundation = { snapshot: db.meta.foundationSnapshot, review: db.meta.ownershipReview || null };
   b.sha256 = await sha256Hex(stable(events));
   return b;
 }

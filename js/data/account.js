@@ -5,15 +5,17 @@
 export const KEY = 'ap_account';
 export const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/;
 export function passwordProblem(p) { p = String(p || ''); return p.length < 8 ? 'Use at least 8 characters.' : p.length > 200 ? 'Use at most 200 characters.' : null; }
-export function createAccount({ base, storage, fetchFn = (...a) => fetch(...a), now = () => Date.now(), onChange = () => {}, timeoutMs = 20000 } = {}) {
+export function createAccount({ base, storage, fetchFn = (...a) => fetch(...a), now = () => Date.now(), onChange = () => {}, canUse = () => true, timeoutMs = 20000 } = {}) {
   const read = () => { try { const s = JSON.parse(storage.getItem(KEY) || 'null'); return s && s.token && s.user && s.user.id ? s : null; } catch (e) { return null; } };
-  function session() { const s = read(); if (s && s.expiresAt && Date.parse(s.expiresAt) <= now()) { storage.removeItem(KEY); return null; } return s; }
+  function session() { const s = read(); if (s && !canUse(s.user)) { end(); return null; } if (s && s.expiresAt && Date.parse(s.expiresAt) <= now()) { end(); return null; } return s; }
   // pending: signed in, but this phone's data is not yet added to the account (the owner chooses first); sync ignores it.
-  function save(j, pending = false) { const s = { token: j.token, expiresAt: j.expiresAt, user: { id: j.user.id, email: j.user.email }, pending: !!pending }; storage.setItem(KEY, JSON.stringify(s)); onChange(s); return s; }
+  async function save(j, pending = false) {
+    if (!canUse(j.user)) { await call('/api/auth/logout', { method: 'POST', body: { all: false }, authToken: j.token }); return { ok: false, status: 409, error: 'This browser holds another account’s private history. Sign in to its original account. Nothing was copied.' }; }
+    const s = { token: j.token, expiresAt: j.expiresAt, user: { id: j.user.id, email: j.user.email }, pending: !!pending }; storage.setItem(KEY, JSON.stringify(s)); onChange(s); return { ok: true, session: s }; }
   function end() { const had = !!read(); storage.removeItem(KEY); if (had) onChange(null); }
-  async function call(path, { method = 'GET', body, auth = false } = {}) {
+  async function call(path, { method = 'GET', body, auth = false, authToken = null } = {}) {
     const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, t = ctl ? setTimeout(() => ctl.abort(), timeoutMs) : null;
-    const headers = {}; if (body) headers['Content-Type'] = 'application/json';
+    const headers = {}; if (authToken) headers.Authorization = 'Bearer ' + authToken; if (body) headers['Content-Type'] = 'application/json';
     if (auth) { const s = session(); if (!s) return { status: 401, json: { error: 'Not signed in.' } }; headers.Authorization = 'Bearer ' + s.token; }
     try {
       const r = await fetchFn(base + path, { method, headers, body: body ? JSON.stringify(body) : undefined, signal: ctl && ctl.signal, credentials: 'omit', cache: 'no-store' });
@@ -27,11 +29,11 @@ export function createAccount({ base, storage, fetchFn = (...a) => fetch(...a), 
   return {
     session, end,
     active() { const s = session(); return s && !s.pending ? s : null; },
-    confirm() { const s = session(); if (s && s.pending) { s.pending = false; storage.setItem(KEY, JSON.stringify(s)); onChange(s); } return s; },
-    async signup(email, password, { pending = false } = {}) { const r = await call('/api/auth/signup', { method: 'POST', body: { email, password } }); if (r.status !== 201) return { ok: false, status: r.status, error: msg(r, 'Could not create the account.') }; return { ok: true, session: save(r.json, pending), recoveryKey: r.json.recoveryKey }; },
-    async login(email, password, { pending = false } = {}) { const r = await call('/api/auth/login', { method: 'POST', body: { email, password } }); if (r.status !== 200) return { ok: false, status: r.status, error: msg(r, 'Email or password is wrong.') }; return { ok: true, session: save(r.json, pending) }; },
-    async recover(email, recoveryKey, newPassword, { pending = false } = {}) { const r = await call('/api/auth/recover', { method: 'POST', body: { email, recoveryKey, newPassword } }); if (r.status !== 200) return { ok: false, status: r.status, error: msg(r, 'That email and recovery key do not match.') }; return { ok: true, session: save(r.json, pending), recoveryKey: r.json.recoveryKey }; },
-    async logout(all = false) { const r = session() ? await call('/api/auth/logout', { method: 'POST', body: { all: !!all }, auth: true }) : { status: 200 }; end(); return { ok: true, server: r.status === 200 }; },
+    confirm() { const s = session(); if (s && s.pending && canUse(s.user)) { s.pending = false; storage.setItem(KEY, JSON.stringify(s)); onChange(s); } return s; },
+    async signup(email, password, { pending = false } = {}) { const r = await call('/api/auth/signup', { method: 'POST', body: { email, password } }); if (r.status !== 201) return { ok: false, status: r.status, error: msg(r, 'Could not create the account.') }; const saved = await save(r.json, pending); return saved.ok ? { ...saved, recoveryKey: r.json.recoveryKey } : saved; },
+    async login(email, password, { pending = false } = {}) { const r = await call('/api/auth/login', { method: 'POST', body: { email, password } }); if (r.status !== 200) return { ok: false, status: r.status, error: msg(r, 'Email or password is wrong.') }; return save(r.json, pending); },
+    async recover(email, recoveryKey, newPassword, { pending = false } = {}) { const r = await call('/api/auth/recover', { method: 'POST', body: { email, recoveryKey, newPassword } }); if (r.status !== 200) return { ok: false, status: r.status, error: msg(r, 'That email and recovery key do not match.') }; const saved = await save(r.json, pending); return saved.ok ? { ...saved, recoveryKey: r.json.recoveryKey } : saved; },
+    async logout(all = false) { const s = session(); end(); const r = s ? await call('/api/auth/logout', { method:'POST', body:{ all:!!all }, authToken:s.token }) : { status:200 }; return { ok: true, server: r.status === 200 }; },
     // Generic authed call for feature clients (js/data/team.js). A 401 ends the session, as everywhere else.
     request(path, o = {}) { return call(path, { ...o, auth: true }); },
     msg,

@@ -32,10 +32,10 @@ export function tile(b, { onCompareToggle, picked }) {
 // Armory (owner brief 2026-10-24): owned balls on lit shelves with gold nameplates; retired balls on the Old Friends shelf (owner, 2026-10-31).
 // One takeaway: what is in your bag. At home / pro shop and Old Friends sit behind a tap; the full catalog stays below.
 function pedestal(it, why) {
-  const c = it.cat, inCatalog = c && balls.some(b => b.id === c.id), onLane = c && c.id === app.ball.id;
+  const c = it.cat, onLane = it.id === app.ball.ownedId;
   const specs = c && c.rg != null ? `RG ${rgTxt(c)} \u00b7 Diff ${diffTxt(c)}` : 'Specs not entered';
   return h('article', { class:'ped' + (onLane ? ' onlane' : ''), 'data-own':it.id },
-    h('a', { class:'ped-link', href:inCatalog ? `#/ball/${c.id}` : '#/bag' },
+    h('a', { class:'ped-link', href:`#/ball/${it.id}` },
       h('span', { class:'ped-lit', 'aria-hidden':'true' }, h('span', { class:'ball-orb', style:{ '--c':it.color || 'var(--text-3)' } })),
       h('span', { class:'plate' }, h('span', { class:'plate-name', text:(it.benchmark ? '\u2605 ' : '') + it.name }),
         it.status !== 'inBag' ? h('span', { class:'plate-role', 'data-status':it.status, text:ST.LABEL[it.status] || it.status }) : it.role ? h('span', { class:'plate-role', text:it.role }) : null, h('span', { class:'plate-spec num sr-only', text:specs }), why && it.status !== 'retired' ? h('span', { class:'plate-why', 'data-why-not':it.id, 'data-why':why.key, text:'Why not: ' + why.text }) : null, onLane ? h('span', { class:'sr-only', text:'on lane' }) : null)),
@@ -49,7 +49,7 @@ function armory(P) {
   const why = it => ST.whyNotFor(P, it.id);
   const shelf = (items, id, label, extra) => h('div', { class:'shelf', id, role:'list', 'aria-label':label }, ...items.map(it => h('div', { role:'listitem' }, pedestal(it, why(it)))), extra || null);
   const empty = h('div', { role:'listitem' }, h('a', { class:'ped ped-empty', id:'armEmpty', href:'#/add-ball' }, h('span', { class:'ped-lit', 'aria-hidden':'true' }, h('span', { class:'ped-slot' })), h('span', { class:'plate' }, h('span', { class:'plate-name', text:'Add ball' }), h('span', { class:'plate-role', text:'Empty pedestal' }))));
-  const fold = (id, label, n, body) => h('details', { class:'card arm-fold', id }, h('summary', {}, h('span', { text:label }), h('span', { class:'pill', text:String(n) })), body);
+  const fold = (id, label, n, body) => h('details', { class:'card arm-fold', id, open:id === 'armBench' && !sh.bag.length }, h('summary', {}, h('span', { text:label }), h('span', { class:'pill', text:String(n) })), body);
   return h('section', { class:'armory', id:'armory', 'aria-labelledby':'armBagH' },
     withHelp(h('h2', { class:'group-h', id:'armBagH', text:`In my bag \u00b7 ${sh.bag.length}` }), 'ap-status', 'Ball status'),
     shelf(sh.bag, 'armBag', 'In my bag', empty),
@@ -75,7 +75,7 @@ export async function render() {
   const drawChips = () => { chips.innerHTML = ''; opts.forEach(([v, l]) => chips.append(h('button', { class:'chip', 'data-f':v, 'aria-pressed':String(st.f === v), onclick:() => { st.f = v; drawChips(); draw(); } }, l))); };
   const match = b => { const own = owned(), q = st.q.trim().toLowerCase();
     return (!q || (b.name + ' ' + b.brand + ' ' + b.cover + ' ' + b.role + ' ' + (b.coverName || '') + ' ' + (b.coreName || '')).toLowerCase().includes(q))
-      && (st.f === 'all' || (st.f === 'bag' ? (!own || own.includes(b.id)) : ['heavy', 'medium', 'light'].includes(st.f) ? b.oil.includes(st.f) : coverKind(b) === st.f)); };
+      && (st.f === 'all' || (st.f === 'bag' ? own.includes(b.id) : ['heavy', 'medium', 'light'].includes(st.f) ? b.oil.includes(st.f) : coverKind(b) === st.f)); };
   const toggle = b => { const i = st.picked.indexOf(b.id); if (i >= 0) st.picked.splice(i, 1); else { if (st.picked.length >= 3) { toast('Compare up to 3 balls'); return; } st.picked.push(b.id); } draw(); };
   function draw() {
     const list = balls.filter(match); grid.innerHTML = ''; let lastCls = -1;
@@ -102,7 +102,8 @@ export async function render() {
     bagView('all'),
     P ? armory(P) : null,
     P ? h('div', { class:'arm-export' }, h('button', { class:'btn ghost', id:'arsExport', onclick:async () => (await import('./export.js')).openExport() }, 'Export my arsenal')) : null,   // item E: sheet, bag card, CSV, backup
-    withHelp(h('h2', { class:'group-h arm-cat', text:'Catalog' }), 'eq-cover-types', 'Ball types'),
+    h('a', { class:'btn ghost block', id:'arsFullCatalog', href:'#/welcome' }, 'Search the complete shared catalog'),
+    withHelp(h('h2', { class:'group-h arm-cat', text:'Catalog reference models · not owned' }), 'eq-cover-types', 'Ball types'),
     h('div', { class:'list-tools' }, search, chips, count), sugg, grid, tray);
   return { el, title:T.title };
 }
