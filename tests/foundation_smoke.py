@@ -52,6 +52,12 @@ async def main():
   await check_screen('05-owned-targeting')
   await p.goto(BASE+'#/lane');await p.wait_for_selector('#ballBtn');assert 'matte' in await p.text_content('#ballBtn')
   await p.reload();await p.wait_for_selector('#ballBtn');await p.wait_for_function("() => document.querySelector('#ballBtn').textContent.includes('matte')")
+  original_name=await p.evaluate("async () => {const s=await import('./js/store.js'),n=s.app.ball.name;s.app.ball.name='Fictional <copy> & test';s.emit('state');return n;}")
+  await p.wait_for_function("() => document.querySelector('#laneH1').textContent==='Lane: Fictional <copy> & test'")
+  assert await p.text_content('#laneH1')=='Lane: Fictional <copy> & test'
+  assert await p.text_content('#ballBtn .ball-btn-name')=='Fictional <copy> & test'
+  assert await p.locator('#ballBtn copy').count()==0
+  await p.evaluate("async n => {const s=await import('./js/store.js');s.app.ball.name=n;s.emit('state');}",original_name)
   await p.goto(BASE+'#/me');await p.wait_for_selector('#editProfile');assert 'phone only' in await p.text_content('#dataInfo')
   await check_screen('06-local-only-status')
   await p.click('#editProfile');await p.wait_for_selector('#pSpeedVal');assert 'Not set' in await p.text_content('#pSpeedVal');await p.click('#profSave')
@@ -60,7 +66,7 @@ async def main():
   manual=await p.evaluate("Object.values(window.__apData.projection().owned).find(o=>o.name==='Fictional mystery ball')");assert manual['spec']['cat']['rg'] is None
   await p.goto(BASE+'#/ball/'+manual['id']);await p.wait_for_selector('#ballRead');assert 'no model path' in await p.text_content('#ballRead');await check_screen('07-unmodeled-manual-ball')
   assert not requests,requests;assert not errors,errors
-  print('PASS fresh/strict-filter/multiselect/duplicate-edit/target-save/reload/neutral/local-only/manual/a11y/44px/360px; external requests=0',flush=True)
+  print('PASS fresh/strict-filter/multiselect/duplicate-edit/literal-safe-nickname/target-save/reload/neutral/local-only/manual/a11y/44px/360px; external requests=0',flush=True)
   await c.close()
   # Separate legacy fixture: all events/keys remain; review and its reversal are explicit, append-only.
   c=await b.new_context(viewport={'width':360,'height':800},is_mobile=True,has_touch=True,service_workers='block');await c.route('**/*',guard);p=await c.new_page();await p.goto(BASE+'#/lane');await p.wait_for_function('() => window.__apData')
