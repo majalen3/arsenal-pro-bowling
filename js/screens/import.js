@@ -1,10 +1,12 @@
-// Import: pick a file → preview (nothing persisted) → commit → undo. Handlers sniff the file and build the preview.
+// Import: file → preview → commit. Score imports offer Undo; backup restore retains a checkpoint, not automatic Undo.
 import { h, icon, toast } from '../ui.js';
 import { back } from '../router.js';
 import { ready, addMany, undoImport, proj, hydrateMirror } from '../hub.js';
 import { migrateV0 } from '../data/migrate.js';
-import { deviceId } from '../store.js';
-import { readBackup, restoreBackup } from '../data/backup.js';
+import { deviceId, prefs, rawGet } from '../store.js';
+import { LEGACY_KEYS } from '../data/migrate.js';
+import { saveBackupFile } from '../cc/protect.js';
+import { readBackup, restoreBackup, restoreIssues } from '../data/backup.js';
 import { planCsv, planLaneTrax } from '../data/importer.js';
 import { parseLaneTrax, BOARD_KEYS } from '../data/lanetrax.js';
 import { FIELDS, RUBY_PRESET, presetFor, savePreset } from '../data/csv.js';
@@ -18,20 +20,25 @@ handlers.push({
     if (!r.ok) return { error: r.error };
     if (r.v0) {
       const b = r.backup, legacy = { ap_lines: JSON.stringify(b.lines || []), ap_surface: JSON.stringify(b.surfaceLog || []), ap_notes: JSON.stringify(b.patternNotes || []) };
-      const evs = migrateV0(legacy, { deviceId: ctx.deviceId }).events.filter(e => !db.has(e.id));
-      return { title: 'Restore older backup', kind: 'backup-v0', summary: [`${r.counts.lines} saved lines, ${r.counts.surface} surface changes, ${r.counts.notes} pattern notes`, `${evs.length} new on this device`],
-        warnings: [], commitLabel: evs.length ? `Restore ${evs.length} records` : 'Nothing new to restore', canCommit: evs.length > 0,
-        async commit() { const a = await db.append(evs); hydrateMirror(); return `${a.length} records restored`; } };
+      const evs = migrateV0(legacy, { deviceId: ctx.deviceId }).events;
+      const converted = { ok:true, hashOk:true, backup:{events:evs} }, issues = restoreIssues(db, converted), fresh = evs.filter(e => !db.has(e.id)).length;
+      return { title: 'Restore older backup', kind: 'backup-v0', summary: [`${r.counts.lines} saved lines, ${r.counts.surface} surface changes, ${r.counts.notes} pattern notes`, `${fresh} new on this device`],
+        warnings: [{code:'LEGACY',detail:'Older files have no checksum. Only non-conflicting records can be added.'}, ...issues.map(detail=>({code:'BLOCKED',detail}))], commitLabel: fresh ? `Restore ${fresh} records` : 'Nothing new to restore', canCommit: fresh > 0 && !issues.length,
+        body:()=>restoreHelp(db), async commit() { const a = await restoreBackup(db, converted, restoreSnapshot()); hydrateMirror(); return `${a.added} records restored`; } };
     }
+    const issues = restoreIssues(db, r);
     return {
       title: 'Restore backup', kind: 'backup',
       summary: [`${r.counts.events} events in the file`, `${r.counts.new} new on this device`, `${r.counts.dup} already here`],
-      warnings: r.hashOk ? [] : [{ code: 'HASH_MISMATCH', detail: 'The file\u2019s checksum does not match its events. It may have been edited.' }],
-      commitLabel: r.counts.new ? `Restore ${r.counts.new} events` : 'Nothing new to restore', canCommit: r.counts.new > 0,
-      async commit() { const x = await restoreBackup(db, r); hydrateMirror(); return `${x.added} events restored`; },
+      warnings: issues.map(detail => ({code:r.hashOk ? 'BLOCKED' : 'HASH_MISMATCH',detail})),
+      body:()=>restoreHelp(db),
+      commitLabel: r.counts.new ? `Restore ${r.counts.new} events` : 'Nothing new to restore', canCommit: r.counts.new > 0 && !issues.length,
+      async commit() { const x = await restoreBackup(db, r, restoreSnapshot()); hydrateMirror(); return `${x.added} events restored`; },
     };
   },
 });
+function restoreSnapshot() { return { prefs:prefs(), legacy:Object.fromEntries(LEGACY_KEYS.map(k=>[k,rawGet(k)])) }; }
+function restoreHelp(db) { return h('div', {class:'stack'}, h('p',{class:'small',text:'Backup restore does not apply preferences or switch account/sync target. Use only your own authorized file. Added records follow your existing optional sync choice. Conflicting local facts are blocked, not merged. A pre-restore recovery copy is retained locally and in future backup files; automatic restore Undo is not available.'}), h('button',{class:'btn ghost block',id:'impBackupFirst',onclick:async()=>{await saveBackupFile(db,prefs());toast('Backup download requested. Keep the file private.');}},'Download this phone’s backup first')); }
 export async function sha256Hex(buf) {
   if (!(globalThis.crypto && crypto.subtle)) return null;
   const d = await crypto.subtle.digest('SHA-256', buf); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
@@ -174,7 +181,7 @@ export function render({ query }) {
     const go = h('button', { class: 'btn primary block', id: 'impCommit', disabled: !pv.canCommit, onclick: async () => {
       go.disabled = true; try { const msg = await pv.commit(); out.innerHTML = ''; const sids = pv.plan && pv.plan.events ? pv.plan.events.filter(e => e.type === 'session.created').map(e => e.entityId) : [];
       out.append(h('div', { class: 'card', id: 'impDone' }, h('p', { text: msg + '.' }), sids.length ? h('a', { class: 'btn primary', id: 'impResults', href: sids.length === 1 ? '#/session/' + encodeURIComponent(sids[0]) : '#/sessions' }, sids.length === 1 ? 'See results' : `See ${sids.length} sessions`) : null, pv.importId ? h('button', { class: 'btn ghost', id: 'impUndo', onclick: async () => { await undoImport(pv.importId); toast('Import undone'); out.innerHTML = ''; out.append(h('p', { id: 'impUndone', text: 'Import undone. Its records are hidden everywhere; the file can be imported again.' })); } }, 'Undo this import') : null)); toast(msg); }
-      catch (e) { console.error(e); go.disabled = false; toast('Import failed. Nothing was saved.', { kind: 'bad' }); }
+      catch (e) { console.error(e); go.disabled = false; toast('Import did not finish. Local data is kept; inspect the preview and recovery backup before retrying.', { kind: 'bad' }); }
     } }, pv.commitLabel || 'Import');
     card.append(go); out.append(card);
   }
@@ -185,7 +192,7 @@ export function render({ query }) {
     h('header', { class: 'appbar' }, h('button', { class: 'icon-btn', 'aria-label': 'Back', html: icon('back'), onclick: () => back('#/me') }), h('h1', { class: 'title', text: 'Import' })),
     h('div', { class: 'stack' },
       h('div', { class: 'card' },
-        h('p', { class: 'small', text: 'Files are read on this phone. Nothing is saved until you tap Import, and every import can be undone.' }),
+        h('p', { class: 'small', text: 'Files are read on this phone. Nothing is saved until you tap Import. Score imports offer Undo; backup restores are checked separately and have no automatic Undo.' }),
         h('label', { class: 'btn primary block', for: 'impFile', id: 'impPick', tabindex: '0', onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } } }, pickLbl), input,
         kindHint === 'lanetrax' ? null : h('button', { class: 'btn ghost block', id: 'impLT', onclick: () => { input.accept = '.pdf,application/pdf'; input.click(); } }, 'Import your LaneTrax session report (PDF)')),
       out, imports));

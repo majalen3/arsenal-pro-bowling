@@ -35,7 +35,7 @@ export function createSync({ db, base, deviceId, fetchFn = (...a) => fetch(...a)
       if (!sameTarget()) throw Object.assign(new Error('sync paused'), { status: 409 });
       const a = target.token, id = a ? { Authorization: 'Bearer ' + a } : { 'X-Device-Id': target.code };
       const r = await fetchFn(base + (a ? path.replace(/^\/api\/events/, '/api/account/events') : path), Object.assign({}, opts, { signal: ctl && ctl.signal, headers: Object.assign(id, opts.body ? { 'Content-Type': 'application/json' } : {}) }));
-      if (a && r.status === 401) onAuthLost();
+      if (a && r.status === 401 && sameTarget()) onAuthLost();
       if (!sameTarget()) throw Object.assign(new Error('sync paused'), { status: 409 });
       let j = null; try { j = await r.json(); } catch (e) {}
       if (!sameTarget()) throw Object.assign(new Error('sync paused'), { status:409 });

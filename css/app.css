@@ -74,6 +74,10 @@ body[data-tab=bowl] #tnLog .help-dot,body[data-tab=bowl] #tnNow .help-dot{displa
 @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .appbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:var(--s2);min-height:60px;padding:calc(var(--s2) + env(safe-area-inset-top)) var(--s4) var(--s2);background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 .appbar .title{font-size:var(--fs-xl);font-weight:800;letter-spacing:-.01em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Ball names identify a physical copy: never ellipsize the only full heading. Back stays a 44px target. */
+.screen.detail{overflow-wrap:break-word}
+.detail #ballCopies .btn{white-space:normal;overflow-wrap:anywhere}
+.detail .appbar .title{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.2}
 .list-screen .appbar .title{font-size:var(--fs-2xl)}
 #glossary .appbar .title{font-size:var(--fs-xl)}
 .appbar-actions{display:flex;align-items:center;gap:var(--s1);margin-left:auto}

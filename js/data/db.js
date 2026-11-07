@@ -4,7 +4,7 @@ import { isEnvelope, setSeq } from './events.js';
 import { migrateV0 } from './migrate.js';
 import { SCHEMA_V } from './schema.js';
 export function createDB(backend, { deviceId = null } = {}) {
-  const ev = new Map(); let meta = {}, P = null; const subs = new Set();
+  const ev = new Map(); let meta = {}, P = null; const subs = new Set(); let writes = Promise.resolve();
   const notify = () => { P = null; subs.forEach(f => { try { f(); } catch (e) { console.error(e); } }); };
   const api = {
     backend, deviceId,
@@ -14,13 +14,17 @@ export function createDB(backend, { deviceId = null } = {}) {
     get meta() { return meta; },
     async setMeta(k, v) { meta[k] = v; await backend.setMeta(k, v); },
     // Appends new events (dedupe by id); returns the ones actually added.
-    async append(list, { silent = false } = {}) {
-      const add = [];
-      for (const e of list) { if (!isEnvelope(e) || ev.has(e.id)) continue; if (!e.deviceId && api.deviceId) e.deviceId = api.deviceId; add.push(e); }
-      if (!add.length) return add;
-      await backend.put(add); add.forEach(e => ev.set(e.id, e));
-      if (!silent) notify(); else P = null;
-      return add;
+    append(list, { silent = false, guard = null, preserveDevice = false } = {}) {
+      const run = async () => {
+        if (guard) guard();
+        const add = [];
+        for (const e of list) { if (!isEnvelope(e) || ev.has(e.id)) continue; if (!preserveDevice && !e.deviceId && api.deviceId) e.deviceId = api.deviceId; add.push(e); }
+        if (!add.length) return add;
+        await backend.put(add); add.forEach(e => ev.set(e.id, e));
+        if (!silent) notify(); else P = null;
+        return add;
+      };
+      const result = writes.then(run); writes = result.catch(() => {}); return result;
     },
     async markSynced(ids) { const ch = []; for (const id of ids) { const e = ev.get(id); if (e && !e.synced) { e.synced = true; ch.push(e); } } if (ch.length) await backend.put(ch); },
     async markUnsynced() { const ch = []; for (const e of ev.values()) if (e.synced) { e.synced = false; ch.push(e); } if (ch.length) await backend.put(ch); return ch.length; },
