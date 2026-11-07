@@ -70,7 +70,7 @@ setDecorate((el, path) => {
 });
 // Do not preload Lane + Tonight + their model tools on every Me/Welcome visit.
 // These same-origin hints shorten the selected route's graph without fetching unrelated screens.
-const routePreloads = {
+const routePreloads = { __proto__:null,
   '/me':['screens/more','screens/account','screens/community','cc/community','cc/card'],
   '/welcome':['screens/welcome','cc/addball','data/spec_catalog','data/match','cc/ownership'],
   '/tonight':['screens/tonight','cc/quicklog','cc/rank','cc/model','cc/advisor','cc/bag','cc/target','patdata','cc/line','cc/status','cc/bagedit','cc/card','screens/gametotal'],
