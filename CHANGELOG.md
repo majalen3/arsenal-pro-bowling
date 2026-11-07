@@ -2,6 +2,14 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## Recovery validation + cold-start repair — unreleased (2026-11-07 Europe/Zurich; offline build v67)
+- Load only common/selected-route modules up front, defer profile-edit/catalog code until requested and start bulk offline caching after the actual first paint. Preserve unchanged Me privacy text/focus through hydration; no content hiding or Lighthouse budget changes.
+- Fail closed on unsupported backup/event schemas, unsafe object keys, stale previews and nonempty legacy mirrors needing reconciliation. Account exports/settings/pending recovery archives are explicitly not full-phone Import formats; automatic restore Undo remains unsupported.
+- Initial account recovery reads its bounded stream before any new upload. Conflicting facts/mirrors stage privately with original-data checkpoint and source archive; cursor/data/destination stay unchanged, no override/rebind/wipe. Signout remains authoritative through checkpoint waits. Normal established same-account sync remains event-based LWW, not a full conflict-review/workspace system.
+- Run cumulative stacked PR journey/Lighthouse checks rather than treating older red branch checks as current evidence. Companion API2 adds only explicit synthetic fixture tooling/CI and passes hosted PostgreSQL60/0; local PostgreSQL remains blocked and inherited dependency audit is a separate no-ship gate.
+- Keep backup scope notes visible as information, not false checksum/preservation warnings; real conflicts still block. Remove the transient unnamed account-export link from the accessibility tree.
+- Engine/catalog/equivalence fixture unchanged. No merge, deploy, live accounts/DB, paid changes or launch/legal/store approval.
+
 ## Launch recovery hardening — unreleased (2026-11-07 Europe/Zurich; offline build v66)
 - Full Ball titles wrap on narrow phones; long copy names stay contained. Existing clipping/44px probes retained, no scoring extras.
 - Backup restores block checksum/ID conflicts and replacement of existing facts, retain a before-data checkpoint and recheck at append. Preview includes current-backup download and honest Undo/preferences limits; ambiguous recovery is blocked, not silently merged.

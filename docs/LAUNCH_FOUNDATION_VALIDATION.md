@@ -1,5 +1,160 @@
 # Launch foundations — current technical validation
 
+## Current follow-up — 7 November 2026, Europe/Zurich (CET), SW v67, unreleased
+
+Isolated `/workspace/arsenal-recovery-validation`, branch `recovery-validation`, based on actual OPEN App5 head `8c4d648c76cbec82cf23be9eff804fbebca27372`. Existing worktrees/partial edits/pushed heads preserved. API test-only follow-up is [API2](https://github.com/majalen3/arsenal-pro-api/pull/2), based on API1. Each follow-up pushes once; no main push, history rewrite, merge, deploy, live account/DB access, outreach or spend. The original actionable brief remains [TEAM_PROMPT_CEO_LAUNCH.md](TEAM_PROMPT_CEO_LAUNCH.md); verified additional roots F27–F35 are in [LAUNCH_FOUNDATION_AUDIT.md](LAUNCH_FOUNDATION_AUDIT.md). [RELEASE_READINESS.md](RELEASE_READINESS.md) governs the NO PUBLIC SHIP decision.
+
+### Implemented versus explicitly unsupported
+
+| Area | Implemented / verified contract | Deferred / release limits |
+|---|---|---|
+| Cold Me + route performance | Remove unrelated global Lane/Tonight/model preloads and unnecessary API preconnect; native same-origin selected-route hints; profile editor lazy imports only on Edit; normalized hydration key preserves unchanged privacy DOM/focus; null-prototype preload lookup preserves cold unknown-hash fallback; SW atomic shell caching starts after actual first screen + two rAF, not arbitrary delay. | Same privacy content/budgets/categories retained. Lighthouse is simulated mobile, not real-device/human speed validation. No scoring tools/content removed or new build step. |
+| Backup schema / stale preview | Strict header/per-event schema, ordering/data shape/reserved keys; malformed modern files never fall back to v0. Checksum-valid future events reject. Preview captures event revision; harmless concurrent additions, checkpoint-time changes and obsolete late file parses cannot silently commit old review. Failed backup commit stays disabled until new file review. | Whole source-file checksum is events-only, not identity/authenticity or signed metadata. No automatic source preference/account/team application. |
+| Bounded event recovery | Compatible additive owned copies/layouts/surface/history preserve all existing facts/IDs. Before-data checkpoint persists first; failed meta persistence no longer falsely acknowledges in memory. Interrupted append/restart/idempotence + checkpoint extraction into separate clean fixture tested. Synthetic22-ball legacy fixture retains originals/aims/snapshots after additive restore and repeated foundation initialization. | Full preferences/aim settings, nonempty hot-mirror reconciliation, account/team export Import, automatic restore Undo and large-file/quota policy are **unsupported**. Nonempty mirrors needing reconciliation now BLOCK before writes, not invisible partial success. Keep original source files; unsigned auxiliary/staged archives are not applied/rebound. No actual owner-device preservation claim. |
+| Initial account recovery | Proven PR5 push-before-pull hole: remote conflicting hand overwrote local confirmed hand after one POST. Initial account recovery now reads complete bounded stream first (40×500), validates facts/mirrors, then either safe additive recovery or staged private before-checkpoint + incoming source, no incoming append/new POST. Conflict/incomplete/unsupported stream pauses; UI says keep this phone and separate review; phone backup includes staged source without token. Signout during checkpoint cannot append/upload. | No conflict override or full multi-account workspace. Existing established authorized same-account synchronization remains LWW. Staging is not a promise of complete preferences/account recovery or a one-click resolver. Already-sent authorized requests cannot be recalled; cross-tab/real-device behavior remains a gate. |
+| Account export / accessibility | Account UI + Import explicitly distinguish private server archive from app-restorable backup. Export's transient unnamed anchor hidden/removed immediately after click, delayed URL revocation retained; meaningful axe regression. Signout keep-data/local-only/no fallback/foreign-account rejection rerun with mocks. | No live account or production export; team/full-server recovery not implemented. New harness awaits finite route/sheet animations before contrast audit, not weaker audits or hidden content. |
+| Inherited foundations / engine | Fresh0 owned/165 searchable models, duplicate physical instances, neutral profile, legacy review/Undo, Old Friends/earned-only and S1/S2/S3 rerun. SW66→67 once; real64/65/66→67 upgrades check original IDs/layout/PAP/hand/aims and new recovery module offline. | No catalog numbers, `simulatePath`, engine or equivalence baseline changes; no regeneration. Model parity is not physical accuracy. Physical/custom QR expansion, owned-first shortcuts, AI chat/native packaging remain deferred. |
+| API test failures | Explicit public TEST-ONLY synthetic pepper + fixture signup/team quotas, login429 unchanged; dedicated empty loopback DB guard/consent, own-server readiness/shutdown. Production server/secrets/rate limits/render config/lockfile untouched. | Local full PG blocked by missing server binaries and failed signed package availability; inherited high body-parser advisory is a separate NO-SHIP production-dependency review gate. No live DB substitute or audit-fix. |
+
+### Red evidence, environment and harness corrections — not hidden
+
+- Live old App1 run42236497923, head `0f40a4a`: **Journeys step succeeded**, Lighthouse step failed Tonight77/Me79 vs80; the job name did not mean a journey assertion failed. New cumulative journeys/Lighthouse runs on stacked PR bases, not only main. Old red heads remain red until separately owner-approved forward integration and fresh CI; no old PR was rewritten.
+- PR5 negative fixture replays intentionally exit1: future-event/stale-preview guard absent (`pr5-recovery-repro.log`); initial account pull changed hand left→right after one POST (`pr5-account-recovery-repro.log`). Current regressions assert no such writes/overwrites. Historical full-title J02 probe from5 remains meaningful/unchanged here.
+- Earlier pre-restart baseline Me78/87/79 and editor-lazy intermediate84/80/81 showed noise; their raw `/tmp` artifacts were lost in an environment restart, not presented as retained reports. Reproduced retained archived-PR5 baseline79/79/79, LCP5058/5042/5034ms. Node/Chromium server state was rebuilt without touching old worktrees; current durable evidence lives under `/workspace/t101-evidence`, screenshots mirrored there.
+- Three retained intermediate **full** Lighthouse trials all exited1: Tonight77/Bag79 (Me80); Bowl78 (Me81); Bowl77 (Me86). This led to selected-route preload prioritization rather than cherry-picking Me-only results. First final performance-candidate trials all exited0: Me94/95/93, all8 routes89–97, a11y/best-practices100. Reports retained under `lighthouse/after-*` and `lighthouse/final-*`; exact current-post-export-fix trials are tabulated below. Original Lighthouse script/budgets unchanged.
+- New focused browser harness initially serialized JS `synced:undefined` to Python null while re-signing a synthetic file; fixed fixture checksum to use the backup's existing canonical omission. Later axe caught a **real** unnamed transient account-export link (fixed in app). Contrast reports were during normal closing-sheet/route opacity animations; harness now awaits sheet detachment/finite animations like existing journeys. All prior failed logs retained (`recovery-browser*.log`); no assertion, contrast ratio,44px target, title probe, visual tolerance or budget removed/lowered.
+
+
+- Initial serial full suite exited1 only for E2E762/1: valid-backup scope notes had been classified as warnings, violating the unchanged existing counts/checksum/no-writes assertion. Fixed actual UI severity: scope notes remain always visible in `#impScope`; checksum/schema/preservation blockers remain warnings and disable commit. Existing `tests/e2e.py` unchanged; new focused test asserts scope text AND no false warning. Every other initial suite exited0. Affected recovery/hardening/full E2E and final offline/Lighthouse are rerun separately, rather than indiscriminately repeating completed unaffected stages.
+
+### Actual local results and exit codes
+
+| Suite | Actual result / exit | Retained evidence under `/workspace/t101-evidence/` |
+|---|---|---|
+| Final unit/data | 360 passed/0 failed/1 skipped (361 total), exit0; one intentional private LaneTrax sample skip | `unit-proof.log`; initial full-suite unit preceded the two additional stream guards/new malformed-hash case |
+| Engine equivalence |7,500 comparisons /0 mismatches, exit0; engine/catalog/baseline byte-for-byte unchanged from5 | `equivalence.log` |
+| Full E2E | Initial762/1 exit1; actual warning-semantics root fixed with existing E2E unchanged. Rerun763/0, exit0 | `initial-regressions/e2e.log`, `e2e-final.log` |
+| Full20 journeys +visuals |121 step passes,0 failures,1 known C8,0 skips,0 failed probes,28 visual passes, exit0; original clipping probe and0.02 tolerance unchanged | `journeys/results.json`, `journeys.log` |
+| Release/accessibility |82 empty/seeded route/viewport checks,0 issues, exit0; Tonight cold55 requests/506,738 bytes in existing harness | `accessibility/audit.json`, `accessibility.log` |
+| Clutter |38 views at360/414, exit0, no new active-scoring UI | `clutter/summary.json`, `clutter.log` |
+| Foundation +Now S1/S2/S3 | Both exit0; fresh0/165 search/skip/duplicates/explicit packing/neutral profile/legacy review+Undo/offline; earned-only/Old Friends/default-OFF/local counters/no scoring extras retained | `foundation.log`, `now.log` |
+| Recovery +hardening | Initial and affected-UI reruns exit0;44px/axe/title probes, bad schema/checksum/conflict/stale review, additive copies/layout/surface/history/checkpoint, preferences unchanged, mocked export/signout/foreign account and initial recovery paused before upload. Final cold malformed-hash fallback also verified | `recovery-final.log`, `recovery-proof.log`, `hardening-final.log` |
+| Real waiting SW64/65/66→67 | Initial all three exit0, original IDs/layout/PAP/hand/aims/sync pause/offline cold launch and non-stale recovery module. Latest66→67 rerun after final route guard exit0 | `upgrade64.log`, `upgrade65.log`, `upgrade66.log`, `upgrade66-proof.log` |
+| Lighthouse | Final frozen-source three full8-route trials, unchanged80/95/90 budgets: see all scores below. No unmeasured categories | `lighthouse/current-2..4/summary.json`, raw HTML/JSON, per-run logs |
+| API pure /full PG | Local fixture/spec18/0 exit0. Both hosted PG16 integrations60/0,0skip, success (runs42417409406/42417405886). **Local full PG blocked**, explicit isolated attempt exit1 ECONNREFUSED; server binaries unavailable/package-index HTTP500/no signed candidate | `api-pure-final.log`, `api-hosted.log`, `api-pr2.json`, `api-local-attempt.log` |
+| Dependency security | `npm audit --json` exit1, one inherited HIGH body-parser DoS GHSA-27r3-jxmh-p828; no production dependency/lock/config change | `api-npm-audit.json`; separate owner review/no-ship gate |
+
+Full initial serial wrapper exit1 honestly reflects the one E2E failure; every other initial suite exited0 (`initial-regressions/suite-exits.json`). After the narrow Import severity fix, affected recovery/hardening and full E2E were rerun. Later one-line null-prototype preload guard fixes a reproduced cold `#constructor` crash; final unit/cold-browser/offline/current Lighthouse validate it without changing valid route behavior. The earlier full E2E/82-route/clutter/journey stages are not silently relabeled as a second local rerun. Hosted CI on the eventual exact PR head is reported in delivery, separately from immutable older branches. No old failures are waived.
+
+### Repeated current Lighthouse (all8 accessibility/best-practices100)
+
+| Route | Trial2 | Trial3 | Trial4 |
+|---|---:|---:|---:|
+| welcome | 94 | 92 | 91 |
+| tonight | 89 | 89 | 87 |
+| bowl | 89 | 81 | 90 |
+| lane | 89 | 89 | 90 |
+| results | 97 | 95 | 96 |
+| bag | 85 | 92 | 85 |
+| learn | 97 | 97 | 97 |
+| me | 94 | 93 | 89 |
+| Script exit |0|0|0|
+
+These three reports start after final app-source freeze; trial2's first fetch was9s after the final guard. Prior current-trial1 also passed (Me89, Bowl80, Bag85; all routes80–97, before that final malformed-hash guard); candidate/intermediate/baseline results above remain retained, including every failed full trial. No budget/script/expectation or privacy content was weakened.
+
+### Reproduce (no build)
+
+```sh
+python3 -m http.server 8372 --bind 127.0.0.1
+node --test tests/data/*.test.mjs
+node tests/engine_equivalence.mjs
+# Use Python with Playwright/Pillow installed; this box uses /workspace/pwenv/bin/python.
+python tests/e2e.py http://localhost:8372/
+python tests/journeys/run.py --base http://localhost:8372/ --out /tmp/t101-journeys --media /tmp/t101-media --no-video
+python tests/journeys/release_audit.py --base http://localhost:8372/ --out /tmp/t101-a11y
+python tests/clutter/run_audit.py --base http://localhost:8372/ --out /tmp/t101-clutter
+python tests/foundation_smoke.py http://localhost:8372/ --shots /tmp/shots-recovery-validation/foundation
+python tests/now_smoke.py http://localhost:8372/ --shots /tmp/shots-recovery-validation/now67
+python tests/hardening_smoke.py http://localhost:8372/ --shots /tmp/shots-recovery-validation/hardening
+python tests/recovery_validation.py http://localhost:8372/ --shots /tmp/shots-recovery-validation
+python tests/journeys/lighthouse.py --base http://localhost:8372/ --out /tmp/t101-lighthouse-1
+# Repeat with separate -2/-3 output dirs; retain/report all scores and exits.
+# Archive unchanged old heads into NEW empty directories before upgrading:
+# v64=0f40a4a, v65=ca65af4, v66=8c4d648; git archive <sha> | tar -x -C <new-dir>
+python tests/sw_foundation_upgrade.py --from-version 66 --legacy-root /tmp/t101-pr5-baseline --current-root "$PWD" --shots /tmp/shots-recovery-validation/upgrades
+# Repeat with --from-version64/65 and their own archived roots.
+# API2, local synthetic tests only (never a live URL):
+# node --test test/fixture.test.mjs test/specs.test.mjs
+# ALLOW_DISPOSABLE_TEST_DB=1 TEST_DATABASE_URL=postgres://u:p@127.0.0.1:5432/t npm run test:local
+```
+
+S1/S2/S3 manual procedure: `#/me/usage`, one local flag at a time, reset counters locally; S1 compare both Lane summary arms with provenance chips, S2 planning next-ball preview/feet-eyes hint outside scoring, S3 default-OFF one opt-in Next up/earned-only/Old Friends. Full flag/counter/reset steps remain [SMOKE_TESTS.md](SMOKE_TESTS.md). Counters are local, no participant outcomes/telemetry.
+
+### Acceptance, recovery and rollout — human validation NOT RUN
+
+- Casual/low-tech: fresh empty/skip; typo +brand search → review/save correct physical copy (≤60s target, record actual time/errors, NOT a measured claim); Bring/Pack, score without extras, reopen offline. Explain saved here vs private phone backup vs account archive. Restore phone backup into a separate clean fixture; corrupt/stale/nonempty-mirror conflict must not overwrite/write or imply complete settings recovery.
+- Competitive/multi-ball: three models/two copies, distinct names/layouts/surfaces/aims; resolve correct IDs in bag/details/Target/saved games. Compare all22 synthetic originals before upgrade/review/additive restore/checkpoint recovery. Signout during login/checkpoint, old401 after new session and foreign B must not resurrect identity/rebind/copy to code sync. Initial conflicting account history must stage private source/checkpoint before any new POST; keep this phone and both files.
+- Existing migration review/append-only Undo is distinct from restore Undo. Compatible restore checkpoints retain before-events/prefs/legacy/foundation evidence; extracted event-only checkpoint can recover the original hash in a **clean isolated** fixture. No destructive in-place rollback, full preferences/mirror/auxiliary application or automatic restore Undo. Never wipe/rebind to force success. Large/quota/eviction/OS kill/cross-tab/two-phone and physical iOS/Android/screen-reader tests remain gates.
+- SW67 keeps the full atomic cache-first shell and explicitly waits/refreshes; activation deletes versioned caches only, not IndexedDB/localStorage. New installation still needs initial download. Pause rollout on data/privacy mismatch; preserve originals/checkpoints/private exports; prefer a forward corrective SW release over pre-privacy64. No merges/deployments until separate owner approval.
+- NO PUBLIC SHIP: owner-approved forward integration +fresh main-target CI; API inherited dependency advisory/local PG validation; actual DB plan/expiry/durable preservation+rehearsal (old deadline UNVERIFIED); C8/C9, human/device/recovery, legal/privacy/source terms/support/moderation and native-store obligations. AI chat is not required for Phase1; full workspace/QR/owned-shortcut expansion stays deferred.
+
+### Safe360px screenshots — exact files
+
+46 PNGs, all actual width360 verified, dimensions/SHA256/fictional fixture label in `/tmp/shots-recovery-validation/manifest.json`; durable mirror `/workspace/t101-evidence/screenshots/`. Before captures use unchanged PR5; changed recovery screenshots were visually inspected for clear blocked/compatible/stale/account scope, with no secrets/recovery keys. Automated axe/targets are not human usability validation.
+
+- `/tmp/shots-recovery-validation/00-before-account-archive-scope.png`
+- `/tmp/shots-recovery-validation/00-before-me-privacy.png`
+- `/tmp/shots-recovery-validation/00-before-nonempty-mirror-allowed.png`
+- `/tmp/shots-recovery-validation/01-me-stable-privacy.png`
+- `/tmp/shots-recovery-validation/02-nonempty-mirror-blocked.png`
+- `/tmp/shots-recovery-validation/03-event-only-reviewed.png`
+- `/tmp/shots-recovery-validation/04-additive-restored-checkpoint.png`
+- `/tmp/shots-recovery-validation/05-stale-preview-stopped.png`
+- `/tmp/shots-recovery-validation/06-account-archive-scope.png`
+- `/tmp/shots-recovery-validation/07-account-archive-not-importable.png`
+- `/tmp/shots-recovery-validation/08-initial-account-recovery-staged.png`
+- `/tmp/shots-recovery-validation/foundation/01-empty-search.png`
+- `/tmp/shots-recovery-validation/foundation/02-two-copy-review.png`
+- `/tmp/shots-recovery-validation/foundation/03-distinct-owned-copies.png`
+- `/tmp/shots-recovery-validation/foundation/04-physical-copy-details.png`
+- `/tmp/shots-recovery-validation/foundation/05-owned-targeting.png`
+- `/tmp/shots-recovery-validation/foundation/06-local-only-status.png`
+- `/tmp/shots-recovery-validation/foundation/07-unmodeled-manual-ball.png`
+- `/tmp/shots-recovery-validation/foundation/08-legacy-preserved-review.png`
+- `/tmp/shots-recovery-validation/foundation/09-offline-owned-arsenal.png`
+- `/tmp/shots-recovery-validation/foundation/10-explicitly-packed-copies.png`
+- `/tmp/shots-recovery-validation/hardening/02-after-catalog-title.png`
+- `/tmp/shots-recovery-validation/hardening/03-after-long-copy-title.png`
+- `/tmp/shots-recovery-validation/hardening/04-after-unbroken-title.png`
+- `/tmp/shots-recovery-validation/hardening/05-checksum-blocked.png`
+- `/tmp/shots-recovery-validation/hardening/06-conflict-staged.png`
+- `/tmp/shots-recovery-validation/hardening/07-safe-additive-restore.png`
+- `/tmp/shots-recovery-validation/now67/active-scoring-no-extras.png`
+- `/tmp/shots-recovery-validation/now67/armory-earned.png`
+- `/tmp/shots-recovery-validation/now67/armory-milestones.png`
+- `/tmp/shots-recovery-validation/now67/armory-next-up-line.png`
+- `/tmp/shots-recovery-validation/now67/armory-next-up.png`
+- `/tmp/shots-recovery-validation/now67/armory-offline.png`
+- `/tmp/shots-recovery-validation/now67/ball-maker-model.png`
+- `/tmp/shots-recovery-validation/now67/ball-specs.png`
+- `/tmp/shots-recovery-validation/now67/compare-model.png`
+- `/tmp/shots-recovery-validation/now67/lane-baseline.png`
+- `/tmp/shots-recovery-validation/now67/lane-summary-full.png`
+- `/tmp/shots-recovery-validation/now67/lane-summary.png`
+- `/tmp/shots-recovery-validation/now67/lane-unverified.png`
+- `/tmp/shots-recovery-validation/now67/step-preview-planning.png`
+- `/tmp/shots-recovery-validation/now67/target-model.png`
+- `/tmp/shots-recovery-validation/now67/tests-usage.png`
+- `/tmp/shots-recovery-validation/upgrades/v64-to-v67-offline-upgrade.png`
+- `/tmp/shots-recovery-validation/upgrades/v65-to-v67-offline-upgrade.png`
+- `/tmp/shots-recovery-validation/upgrades/v66-to-v67-offline-upgrade.png`
+
+---
+## Historical v66 /v65 evidence (retained, not current instructions)
+
+The sections below are prior PR5/PR4 history. Their `/tmp/t100*` and older screenshot paths may no longer exist after the environment restart; current durable logs/screenshots are above. “Current” inside those retained historical sections means that earlier branch, not v67. They do not override the present no-ship disposition.
+
+
 ## Follow-up: 7 November2026, Europe/Zurich (CET), SW v66 — unreleased
 
 Isolated `/workspace/arsenal-launch-hardening`, branch `launch-recovery-hardening`, based on the inspected OPEN PR4 head `ca65af439f232d8eea7c8301d234b9b8e73f768f`. PR1/2/3/4 and API1 inspected before changes; old worktrees and pushed commits preserved. New branch pushes once, stacked on `launch-foundations-phase1`; no main push/merge/deploy/spend/live data access. [RELEASE_READINESS.md](RELEASE_READINESS.md) is the current no-ship/dependency checklist; [DATABASE_PRESERVATION_OPTIONS.md](DATABASE_PRESERVATION_OPTIONS.md) contains sourced, unapproved options. API repo stayed read-only.
@@ -244,7 +399,7 @@ Additional retained Now screens: `/tmp/shots-launch-now65/` (S1/S2/S3); journey 
 
 ## Remaining owner gates
 
-- Confirm Render workspace/deadline and a durable DB/backup plan; inherited owner context says15 November2026,9:08 PM ET, **not reverified** here. No upgrade/spend. Cross-device/service durability remains a release blocker.
+- Confirm Render workspace/deadline and a durable DB/backup plan; inherited owner context says16 November2026,03:08 Europe/Zurich (CET), converted from the old reported time, still unverified, **not reverified** here. No upgrade/spend. Cross-device/service durability remains a release blocker.
 - Accept or change Phase1's one-account-per-browser boundary; prioritize full namespaces and safe recovery/rebinding after deletion, not data wiping.
 - Complete preference/restore reconciliation and real iOS Safari/PWA/Android lifecycle, storage/quota, screen-reader/keyboard and offline/update rehearsals. Formative≤60s/comprehension/pressure tests remain unrun.
 - Address the inherited Ball title-ellipsis flow probe before claiming clean journey validation; no threshold/known-issue waiver was added.
