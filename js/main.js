@@ -68,13 +68,31 @@ setDecorate((el, path) => {
   // IA P2: "Me" (profile and settings) top-right on every screen; it replaces the More tab.
   if (path !== '/me') { const me = Object.assign(document.createElement('a'), { className:'icon-btn me-btn', id:'meBtn', href:'#/me', innerHTML:icon('me') }); me.setAttribute('aria-label', 'Me: profile and settings'); t.after(me); }
 });
-start($('#view'), setTab);
+// Do not preload Lane + Tonight + their model tools on every Me/Welcome visit.
+// These same-origin hints shorten the selected route's graph without fetching unrelated screens.
+const routePreloads = {
+  '/me':['screens/more','screens/account','screens/community','cc/community','cc/card'],
+  '/welcome':['screens/welcome','cc/addball','data/spec_catalog','data/match','cc/ownership'],
+  '/tonight':['screens/tonight','cc/quicklog','cc/rank','cc/model','cc/advisor','cc/bag','cc/target','patdata','cc/line','cc/status','cc/bagedit','cc/card','screens/gametotal'],
+  '/bag':['screens/bag','screens/arsenal','cc/rank','cc/model','cc/armory','cc/bag','cc/target','cc/status','cc/bagedit','cc/advisor'],
+  '/lane':['screens/lane','lane','deck','ctl','labels','screens/pickers'],
+  '/target':['screens/target','lane','ctl','cc/target'],
+  '/results':['screens/sessions','cc/card'], '/learn':['screens/learn']
+};
+const initialPath = location.hash.replace(/^#/, '').split('?')[0] || '/tonight';
+for (const name of routePreloads[initialPath === '/bowl' ? '/tonight' : initialPath] || []) {
+  const link = document.createElement('link'); link.rel = 'modulepreload'; link.href = 'js/' + name + '.js'; document.head.append(link);
+}
+const firstScreen = start($('#view'), setTab);
 startSync();
 // v1 event log opens after first paint (IndexedDB; never blocks the lane)
 import('./hub.js').then(m => m.ready()).catch(e => console.error(e));
 // service worker with prompt-to-update
 if ('serviceWorker' in navigator && /^https:|^http:\/\/localhost/.test(location.protocol + '//' + location.host)) {
-  navigator.serviceWorker.register('sw.js').then(reg => {
+  // Bulk offline caching starts after the actual first screen paints, not while
+  // route modules and privacy controls compete for a cold connection.
+  firstScreen.then(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+    .then(() => navigator.serviceWorker.register('sw.js')).then(reg => {
     const prompt = w => { if (document.querySelector('#qlPad')) return; toast('A new version is ready.', { ms:15000, action:{ label:'Refresh', run:() => w.postMessage('skip') } }); };
     if (reg.waiting && navigator.serviceWorker.controller) prompt(reg.waiting);
     reg.addEventListener('updatefound', () => { const w = reg.installing; w && w.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) prompt(w); }); });

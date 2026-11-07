@@ -7,7 +7,6 @@ import { h, icon, toast, segmented, sheet } from '../ui.js';
 import { adjust } from '../ctl.js';
 import { go } from '../router.js';
 import * as HAND from '../cc/hand.js';
-import { profileForm, ownedPicker } from './welcome.js';
 import { gameTotalButton } from './gametotal.js';
 import { applyTheme } from '../main.js';
 import { helpDot } from './help.js';
@@ -19,7 +18,8 @@ export const VERSION = '1.1.0';   // release version (CHANGELOG.md); the offline
 // IA P2: the Me screen (header button on every tab): profile, data, appearance, sync, about. Learn and the Help switch moved to the Learn tab.
 export function render() {
   const p = Object.assign({ hand:null, style:null, speed:null, rev:null, entered:{}, pap:'', tilt:'', owned:[] }, profile() || {});
-  const editProfile = () => {
+  const editProfile = async () => {
+    const { profileForm } = await import('./welcome.js');
     const current = profile() || p, q = { ...current, entered:current.entered ? { ...current.entered } : { speed:current.speed != null && current.speed !== '', rev:current.rev != null && current.rev !== '' } }, f = profileForm(q);
     const s = sheet({ title:'Your profile', id:'profSheet', body:h('div', { class:'stack' }, f.hand, f.style, f.speed, f.rev, f.pap, f.tilt,
       h('button', { class:'btn primary block', id:'profSave', onclick:() => { setProfile(q); adjust(Object.fromEntries(['speed','rev'].filter(k => q[k] != null && q[k] !== '').map(k => [k, +q[k]]))); s.close(); toast('Profile saved'); draw(); } }, 'Save profile')) });
@@ -59,13 +59,20 @@ export function render() {
   }
   // Server sync of the event log (D3). The quota message comes from the server; the phone keeps everything regardless.
   function syncLine(st, unsynced) {
+    if (st?.recoveryBlocked) return 'Account recovery is paused for separate review. Conflicting incoming records were not applied and this attempt uploaded no new local records. Keep this phone’s backup and your account export. Full settings/nonempty-mirror recovery is unsupported here; do not clear this phone.';
     if (!account.active() && (rawGet('ap_backup_sync') !== 'true' || hub.db?.meta.accountBinding)) return 'Saved on this phone only. Server sync is paused; no backup-code copy is made. Download a backup file below.';
     if (st && st.quota && st.quota.full) return `Server backup is full; your ${unsynced} newest ${unsynced === 1 ? 'change is' : 'changes are'} kept only on this phone. Download a backup file below.`;
     if (!unsynced) return st && st.lastPushAt ? 'Server acknowledged the latest sync to your chosen target.' : 'Saved on this phone. Nothing to back up yet.';
     return `Saved on this phone; ${unsynced} ${unsynced === 1 ? 'change' : 'changes'} waiting to back up${st && st.lastError ? (navigator.onLine === false ? ' (offline, will retry)' : ' (server not reached, will retry)') : ''}.`;
   }
-  ready().then(() => { paintData(); draw(); }); paintProtect();
+  // Hydration often changes only data counts. Do not tear down unchanged account/privacy
+  // text (or focused controls) a second time after the first paint.
+  const viewKey = () => JSON.stringify([profile(), hub.db ? Object.keys(hub.db.projection().owned).length : 0,
+    !!hub.db?.meta.ownershipReview?.needed, !!hub.db?.meta.ownershipReview?.confirmed, hub.db?.meta.accountBinding || null, !!hub.db?.meta.privacyConflict]);
+  let paintedKey;
+  ready().then(() => { paintData(); if (viewKey() !== paintedKey) draw(); }); paintProtect();
   function draw() {
+    paintedKey = viewKey();
     const pr = profile();
     body.innerHTML = '';
     const build = h('p', { class:'small muted', id:'aboutVersion', text:`Version ${VERSION}` });

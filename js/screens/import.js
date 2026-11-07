@@ -6,7 +6,7 @@ import { migrateV0 } from '../data/migrate.js';
 import { deviceId, prefs, rawGet } from '../store.js';
 import { LEGACY_KEYS } from '../data/migrate.js';
 import { saveBackupFile } from '../cc/protect.js';
-import { readBackup, restoreBackup, restoreIssues } from '../data/backup.js';
+import { readBackup, restoreBackup, restoreIssues, recoverySupport } from '../data/backup.js';
 import { planCsv, planLaneTrax } from '../data/importer.js';
 import { parseLaneTrax, BOARD_KEYS } from '../data/lanetrax.js';
 import { FIELDS, RUBY_PRESET, presetFor, savePreset } from '../data/csv.js';
@@ -21,16 +21,16 @@ handlers.push({
     if (r.v0) {
       const b = r.backup, legacy = { ap_lines: JSON.stringify(b.lines || []), ap_surface: JSON.stringify(b.surfaceLog || []), ap_notes: JSON.stringify(b.patternNotes || []) };
       const evs = migrateV0(legacy, { deviceId: ctx.deviceId }).events;
-      const converted = { ok:true, hashOk:true, backup:{events:evs} }, issues = restoreIssues(db, converted), fresh = evs.filter(e => !db.has(e.id)).length;
+      const converted = { ok:true, hashOk:true, backup:{events:evs} }, support = recoverySupport(db, converted, restoreSnapshot()), issues = [...restoreIssues(db, converted), ...support.blockers], fresh = evs.filter(e => !db.has(e.id)).length;
       return { title: 'Restore older backup', kind: 'backup-v0', summary: [`${r.counts.lines} saved lines, ${r.counts.surface} surface changes, ${r.counts.notes} pattern notes`, `${fresh} new on this device`],
         warnings: [{code:'LEGACY',detail:'Older files have no checksum. Only non-conflicting records can be added.'}, ...issues.map(detail=>({code:'BLOCKED',detail}))], commitLabel: fresh ? `Restore ${fresh} records` : 'Nothing new to restore', canCommit: fresh > 0 && !issues.length,
         body:()=>restoreHelp(db), async commit() { const a = await restoreBackup(db, converted, restoreSnapshot()); hydrateMirror(); return `${a.added} records restored`; } };
     }
-    const issues = restoreIssues(db, r);
+    const support = recoverySupport(db, r, restoreSnapshot()), issues = [...restoreIssues(db, r), ...support.blockers];
     return {
       title: 'Restore backup', kind: 'backup',
       summary: [`${r.counts.events} events in the file`, `${r.counts.new} new on this device`, `${r.counts.dup} already here`],
-      warnings: issues.map(detail => ({code:r.hashOk ? 'BLOCKED' : 'HASH_MISMATCH',detail})),
+      warnings: [...issues.map(detail => ({code:r.hashOk ? 'BLOCKED' : 'HASH_MISMATCH',detail})), ...support.notes.map(detail=>({code:'EVENT_ONLY',detail}))],
       body:()=>restoreHelp(db),
       commitLabel: r.counts.new ? `Restore ${r.counts.new} events` : 'Nothing new to restore', canCommit: r.counts.new > 0 && !issues.length,
       async commit() { const x = await restoreBackup(db, r, restoreSnapshot()); hydrateMirror(); return `${x.added} events restored`; },
@@ -38,7 +38,7 @@ handlers.push({
   },
 });
 function restoreSnapshot() { return { prefs:prefs(), legacy:Object.fromEntries(LEGACY_KEYS.map(k=>[k,rawGet(k)])) }; }
-function restoreHelp(db) { return h('div', {class:'stack'}, h('p',{class:'small',text:'Backup restore does not apply preferences or switch account/sync target. Use only your own authorized file. Added records follow your existing optional sync choice. Conflicting local facts are blocked, not merged. A pre-restore recovery copy is retained locally and in future backup files; automatic restore Undo is not available.'}), h('button',{class:'btn ghost block',id:'impBackupFirst',onclick:async()=>{await saveBackupFile(db,prefs());toast('Backup download requested. Keep the file private.');}},'Download this phone’s backup first')); }
+function restoreHelp(db) { return h('div', {class:'stack'}, h('p',{class:'small',text:'Event-only recovery: backup restore does not apply preferences, aiming settings, account/team archives or switch account/sync target. Nonempty legacy mirrors that need reconciliation are blocked. Use only your own authorized file. Added records follow your existing optional sync choice. Conflicting local facts are blocked, not merged. A pre-restore recovery copy is retained locally and in future backup files; automatic restore Undo is not available.'}), h('button',{class:'btn ghost block',id:'impBackupFirst',onclick:async()=>{await saveBackupFile(db,prefs());toast('Backup download requested. Keep the file private.');}},'Download this phone’s backup first')); }
 export async function sha256Hex(buf) {
   if (!(globalThis.crypto && crypto.subtle)) return null;
   const d = await crypto.subtle.digest('SHA-256', buf); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
@@ -156,8 +156,10 @@ export function render({ query }) {
   const kindHint = query.get('kind') || '';
   const out = h('div', { class: 'stack', id: 'impOut', 'aria-live': 'polite' });
   const input = h('input', { type: 'file', id: 'impFile', class: 'sr-only', accept: kindHint === 'lanetrax' ? '.pdf,application/pdf' : '.json,.csv,.txt,.pdf,application/json,text/csv,application/pdf', onchange: () => { const f = input.files[0]; input.value = ''; if (f) open(f); } });
+  let openGeneration = 0;
   const pickLbl = kindHint === 'lanetrax' ? 'Import your LaneTrax session report (PDF)' : 'Choose a file';
   async function open(f) {
+    const ticket = ++openGeneration;
     out.innerHTML = '';
     if (f.size > MAX) { out.append(h('p', { class: 'warn-box', role: 'alert', text: 'That file is over 10 MB. Nothing was imported.' })); return; }
     if (!f.size) { out.append(h('p', { class: 'warn-box', role: 'alert', text: 'That file is empty. Nothing was imported.' })); return; }
@@ -166,6 +168,7 @@ export function render({ query }) {
     if (!hd) { out.append(h('p', { class: 'warn-box', role: 'alert', text: 'Arsenal Pro can read its own backup (.json), CSV files and LaneTrax session report PDFs. Nothing was imported.' })); return; }
     out.append(h('p', { class: 'muted', text: 'Reading ' + f.name + '\u2026' }));
     let pv; try { pv = await hd.preview(f, { deviceId: deviceId() }); } catch (e) { console.error(e); pv = { error: 'Could not read that file. Nothing was imported.' }; }
+    if (ticket !== openGeneration) return;
     out.innerHTML = '';
     if (pv.error) { out.append(h('p', { class: 'warn-box', role: 'alert', id: 'impErr', text: pv.error })); return; }
     paint(pv, f);
@@ -181,7 +184,7 @@ export function render({ query }) {
     const go = h('button', { class: 'btn primary block', id: 'impCommit', disabled: !pv.canCommit, onclick: async () => {
       go.disabled = true; try { const msg = await pv.commit(); out.innerHTML = ''; const sids = pv.plan && pv.plan.events ? pv.plan.events.filter(e => e.type === 'session.created').map(e => e.entityId) : [];
       out.append(h('div', { class: 'card', id: 'impDone' }, h('p', { text: msg + '.' }), sids.length ? h('a', { class: 'btn primary', id: 'impResults', href: sids.length === 1 ? '#/session/' + encodeURIComponent(sids[0]) : '#/sessions' }, sids.length === 1 ? 'See results' : `See ${sids.length} sessions`) : null, pv.importId ? h('button', { class: 'btn ghost', id: 'impUndo', onclick: async () => { await undoImport(pv.importId); toast('Import undone'); out.innerHTML = ''; out.append(h('p', { id: 'impUndone', text: 'Import undone. Its records are hidden everywhere; the file can be imported again.' })); } }, 'Undo this import') : null)); toast(msg); }
-      catch (e) { console.error(e); go.disabled = false; toast('Import did not finish. Local data is kept; inspect the preview and recovery backup before retrying.', { kind: 'bad' }); }
+      catch (e) { console.error(e); if (pv.kind.startsWith('backup')) { go.disabled = true; card.append(h('p', {class:'warn-box',id:'impCommitError',role:'alert',text:'Restore did not complete. Existing records were not overwritten. Keep your backup and recovery copy; choose the file again to recheck current data. No automatic Undo is available.'})); } else go.disabled = false; toast('Import did not finish. Local data is kept; inspect the preview and recovery backup before retrying.', { kind: 'bad' }); }
     } }, pv.commitLabel || 'Import');
     card.append(go); out.append(card);
   }
@@ -192,7 +195,7 @@ export function render({ query }) {
     h('header', { class: 'appbar' }, h('button', { class: 'icon-btn', 'aria-label': 'Back', html: icon('back'), onclick: () => back('#/me') }), h('h1', { class: 'title', text: 'Import' })),
     h('div', { class: 'stack' },
       h('div', { class: 'card' },
-        h('p', { class: 'small', text: 'Files are read on this phone. Nothing is saved until you tap Import. Score imports offer Undo; backup restores are checked separately and have no automatic Undo.' }),
+        h('p', { class: 'small', text: 'Files are read on this phone. Nothing is saved until you tap Import. Score imports offer Undo; backup restores are event-only, do not recover settings/accounts/teams, and have no automatic Undo. Nonempty mirror conflicts are blocked.' }),
         h('label', { class: 'btn primary block', for: 'impFile', id: 'impPick', tabindex: '0', onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } } }, pickLbl), input,
         kindHint === 'lanetrax' ? null : h('button', { class: 'btn ghost block', id: 'impLT', onclick: () => { input.accept = '.pdf,application/pdf'; input.click(); } }, 'Import your LaneTrax session report (PDF)')),
       out, imports));

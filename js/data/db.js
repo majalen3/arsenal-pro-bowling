@@ -12,7 +12,7 @@ export function createDB(backend, { deviceId = null } = {}) {
     events: () => [...ev.values()],
     has: id => ev.has(id),
     get meta() { return meta; },
-    async setMeta(k, v) { meta[k] = v; await backend.setMeta(k, v); },
+    async setMeta(k, v) { await backend.setMeta(k, v); meta[k] = v; },
     // Appends new events (dedupe by id); returns the ones actually added.
     append(list, { silent = false, guard = null, preserveDevice = false } = {}) {
       const run = async () => {

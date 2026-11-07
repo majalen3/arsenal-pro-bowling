@@ -23,7 +23,7 @@ function showRecoveryKey(key, done) {
 export function chooseMigration(after = () => {}) {
   const c = localCounts(), a = account.session(); if (!a) return;
   const s = sheet({ title: 'This phone\u2019s data', id: 'migSheet', body: h('div', { class: 'stack' },
-    h('p', { text: `This phone has ${plural(c.balls, 'ball')} and ${plural(c.games, 'game')} saved. Add them to ${a.user.email}? They stay on this phone either way.` }),
+    h('p', { text: `This phone has ${plural(c.balls, 'ball')} and ${plural(c.games, 'game')} saved. Add them to ${a.user.email}? They stay on this phone either way. Account history is also received. Conflicting first-time recovery pauses for separate review; settings/nonempty mirrors are not fully recovered here.` }),
     h('button', { class: 'btn primary block', id: 'migAdd', onclick: () => { if (!account.confirm() || account.session()?.pending) { toast('Sign in to the original account for this browser. Nothing was copied.', { kind:'bad' }); return; } s.close(); toast('Signed in. Adding this phone\u2019s data to your account\u2026'); after(); } }, 'Add this phone\u2019s data to my account'),
     h('button', { class: 'btn ghost block', id: 'migNot', onclick: async () => { s.close(); await account.logout(); toast('Not signed in. Nothing was shared.'); after(); } }, 'Not now (stay signed out)')) });
 }
@@ -118,6 +118,7 @@ export function accountCard() {
     card.append(h('div', { class: 'btn-grid' },
       h('button', { class: 'btn ghost', id: 'acctExport', onclick: exportData }, 'Export my data'),
       h('button', { class: 'btn ghost', id: 'acctSignOut', onclick: () => signOutSheet(paint) }, 'Sign out')),
+      h('p', {class:'small muted',id:'acctExportScope',text:'Account export is a private archive of server-acknowledged events and your team footprint, not an app-restorable backup or full phone/settings recovery. Download this phone’s backup below as well.'}),
       h('details', { class: 'tn-more', id: 'acctMore' }, h('summary', { text: 'Delete account' }),
         h('button', { class: 'btn ghost block', id: 'acctDelete', onclick: () => deleteSheet(paint) }, 'Delete account and server data')));
   }

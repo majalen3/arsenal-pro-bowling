@@ -23,7 +23,7 @@ export function packBatches(events, maxBytes = BATCH_BYTES, maxCount = 500) {
   return { batches: out, tooBig };
 }
 const order = (a, b) => (a.ts - b.ts) || ((a.seq || 0) - (b.seq || 0)) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
-export function createSync({ db, base, deviceId, fetchFn = (...a) => fetch(...a), timer = { set: (f, ms) => setTimeout(f, ms), clear: id => clearTimeout(id) }, now = () => Date.now(), onState = () => {}, timeoutMs = 25000, auth = () => null, onAuthLost = () => {}, allowLegacy = () => false } = {}) {
+export function createSync({ db, base, deviceId, fetchFn = (...a) => fetch(...a), timer = { set: (f, ms) => setTimeout(f, ms), clear: id => clearTimeout(id) }, now = () => Date.now(), onState = () => {}, timeoutMs = 25000, auth = () => null, onAuthLost = () => {}, allowLegacy = () => false, recoverySnapshot = () => ({}) } = {}) {
   let target = null, busy = null, retryN = 0, retryT = null, stopped = false;
   const choose = () => db.meta.privacyConflict ? null : destination({ session: auth(), bound: db.meta.accountBinding || accountIdOf((db.meta.sync || {}).code), allowLegacy: allowLegacy(), code: typeof deviceId === 'function' ? deviceId() : deviceId });
   const sameTarget = () => { const c = choose(); return target && c && c.code === target.code && c.token === target.token; };
@@ -79,6 +79,37 @@ export function createSync({ db, base, deviceId, fetchFn = (...a) => fetch(...a)
     }
     return { pulled: got };
   }
+  // Initial account recovery is not ordinary ongoing same-account LWW sync.
+  // Read the complete bounded stream BEFORE uploading a nonempty phone's history.
+  async function firstAccountPull() {
+    let cursor = state().cursor || '0', incoming = [], more = false;
+    for (let page=0; page<40; page++) {
+      const r = await req('/api/events?limit=500&after='+encodeURIComponent(cursor));
+      if (r.status !== 200 || !Array.isArray(r.json?.events)) throw Object.assign(new Error('Account recovery read failed'),{status:r.status});
+      incoming.push(...r.json.events.map(e => { const o={...e,synced:true}; delete o.serverSeq; if(o.prov==null)delete o.prov; if(o.importId==null)delete o.importId; return o; }));
+      cursor=r.json.cursor||cursor; more=!!r.json.more; if(!more)break;
+    }
+    const {restoreIssues,recoverySupport,restoreBackup,buildBackup}=await import('./backup.js');
+    // These authenticated API records are not a file/checksum claim. Reuse the
+    // envelope/projection preservation guard, never treat an account export as a backup.
+    const parsed={ok:true,hashOk:true,backup:{schemaV:1,events:incoming}}, snapshot=recoverySnapshot();
+    const issues=[...(more?['Account history exceeds this version’s bounded recovery read.']:[]),...restoreIssues(db,parsed),...recoverySupport(db,parsed,snapshot).blockers];
+    async function stage(reason) {
+      const before=await buildBackup(db,{...recoverySnapshot(),includeCheckpoints:false});
+      await db.setMeta('restoreCheckpoints',[...(db.meta.restoreCheckpoints||[]),{v:1,at:now(),kind:'account-recovery',backup:before}]);
+      await db.setMeta('pendingAccountRecovery',{v:1,at:now(),target:target.code,cursor,events:incoming,reason});
+      await save({recoveryBlocked:{target:target.code,at:now(),count:incoming.length},lastError:'Account recovery needs review'});
+      throw Object.assign(new Error('Account recovery needs separate review; no incoming records applied or new local records uploaded.'),{status:409});
+    }
+    if(issues.length)await stage(issues);
+    if(!sameTarget())throw Object.assign(new Error('sync paused'),{status:409});
+    let result;
+    try { result=await restoreBackup(db,parsed,snapshot,{guard:()=>{if(!sameTarget())throw Object.assign(new Error('sync paused'),{status:409});}}); }
+    catch(e) { if(!sameTarget())throw Object.assign(new Error('sync paused'),{status:409}); await stage(['Local recovery changed or could not be committed safely. Keep both exports.']); }
+    if(!sameTarget())throw Object.assign(new Error('sync paused'),{status:409});
+    await db.markSynced(incoming.map(e=>e.id)); await save({cursor});
+    return {pulled:result.added};
+  }
   async function run() {
     if (busy) return busy;
     busy = (async () => {
@@ -88,8 +119,10 @@ export function createSync({ db, base, deviceId, fetchFn = (...a) => fetch(...a)
         const code = target.code, st = state(), bound = accountIdOf(code);
         if (bound && !db.meta.accountBinding) await db.setMeta('accountBinding', bound);
         // Re-target only after explicit account confirmation / backup-code consent. Foreign accounts fail closed above.
-        if (st.code !== code) { if (st.code) await db.markUnsynced(); await save({ code, cursor: '0', quota: null, rejected: [] }); }
-        const a = await push(); const b = await pull(); retryN = 0;
+        if (st.code !== code) { if (st.code) await db.markUnsynced(); await save({ code, cursor: '0', quota: null, rejected: [], lastPullAt:null }); }
+        if (state().recoveryBlocked?.target === code) return {ok:false,paused:true,review:true,state:state()};
+        const initialAccount=!!target.token && !state().lastPullAt;
+        let a,b; if(initialAccount){b=await firstAccountPull();a=await push();}else{a=await push();b=await pull();} retryN = 0;
         const s = await save({ paused: false, lastPushAt: now(), lastPullAt: now(), lastError: null });
         return Object.assign({ ok: true, state: s }, a, b); }
       catch (e) { await save({ lastError: e.status ? 'HTTP ' + e.status : (e.name === 'AbortError' ? 'timeout' : 'offline') }); if (e.status !== 409 && choose()) schedule(e.retryAfter); return { ok: false, error: e }; }

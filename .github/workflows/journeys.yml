@@ -8,8 +8,7 @@ name: journeys
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
+  pull_request:  # Validate cumulative stacked heads too; never waive an older red base.
   schedule:
     - cron: '17 9 * * *'          # nightly, 09:17 UTC
   deployment_status:
