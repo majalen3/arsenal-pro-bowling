@@ -27,7 +27,7 @@ async def main():
     await p.evaluate("window.__upgradeReg.waiting.postMessage('skip')")
    await p.wait_for_function('() => window.__apData')
    await p.evaluate("import('./js/hub.js').then(h=>h.ready())")
-   assert await p.evaluate("import('./js/data/backup.js').then(m=>typeof m.restoreIssues==='function')")
+   assert await p.evaluate("import('./js/data/backup.js').then(m=>typeof m.restoreIssues==='function' && typeof m.recoverySupport==='function')")
    assert await p.evaluate("import('./js/hub.js').then(h=>h.db.meta.foundationV===1)")
    assert await p.evaluate("v=>caches.keys().then(k=>k.includes('arsenal-pro-v67')&&!k.includes('arsenal-pro-v'+v))",args.from_version)
    if args.from_version>=65:assert await p.evaluate("import('./js/hub.js').then(h=>JSON.stringify(h.db.meta.foundationSnapshot))")==foundation

@@ -78,6 +78,7 @@ export function restoreIssues(db, parsed) {
 export function recoverySupport(db, parsed, snapshot = {}) {
   const blockers = [], notes = [];
   const hasData = raw => { if (!raw) return false; try { const v = JSON.parse(raw); return v && (Array.isArray(v) ? v.length > 0 : Object.keys(v).length > 0); } catch (_) { return true; } };
+  if (parsed.backup?.pendingAccountRecovery) notes.push('Staged account recovery is an archive only: Import does not apply that stream or rebind sync. Keep the original file to retain its staged records.');
   if (parsed.backup?.prefs) notes.push('File preferences and saved aiming settings are archived only, not applied. Your current settings stay unchanged; this is not a full phone recovery.');
   if (parsed.backup?.legacy || parsed.backup?.foundation) notes.push('Older mirror/review snapshots are retained in the source file, not applied to this browser.');
   try {

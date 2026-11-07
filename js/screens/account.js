@@ -97,7 +97,7 @@ async function exportData() {
   const r = await account.exportAll(); if (!r.ok) { toast(r.error, { kind: 'bad' }); return; }
   const blob = new Blob([JSON.stringify(r.data, null, 1)], { type: 'application/json' });
   const a = h('a', { href: URL.createObjectURL(blob), download: `arsenal-pro-account-${new Date().toISOString().slice(0, 10)}.json` });
-  document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  a.hidden = true; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   toast('Account export saved.');
 }
 

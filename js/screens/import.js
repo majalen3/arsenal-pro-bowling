@@ -30,15 +30,15 @@ handlers.push({
     return {
       title: 'Restore backup', kind: 'backup',
       summary: [`${r.counts.events} events in the file`, `${r.counts.new} new on this device`, `${r.counts.dup} already here`],
-      warnings: [...issues.map(detail => ({code:r.hashOk ? 'BLOCKED' : 'HASH_MISMATCH',detail})), ...support.notes.map(detail=>({code:'EVENT_ONLY',detail}))],
-      body:()=>restoreHelp(db),
+      warnings: issues.map(detail => ({code:r.hashOk ? 'BLOCKED' : 'HASH_MISMATCH',detail})),
+      body:()=>restoreHelp(db, support.notes),
       commitLabel: r.counts.new ? `Restore ${r.counts.new} events` : 'Nothing new to restore', canCommit: r.counts.new > 0 && !issues.length,
       async commit() { const x = await restoreBackup(db, r, restoreSnapshot()); hydrateMirror(); return `${x.added} events restored`; },
     };
   },
 });
 function restoreSnapshot() { return { prefs:prefs(), legacy:Object.fromEntries(LEGACY_KEYS.map(k=>[k,rawGet(k)])) }; }
-function restoreHelp(db) { return h('div', {class:'stack'}, h('p',{class:'small',text:'Event-only recovery: backup restore does not apply preferences, aiming settings, account/team archives or switch account/sync target. Nonempty legacy mirrors that need reconciliation are blocked. Use only your own authorized file. Added records follow your existing optional sync choice. Conflicting local facts are blocked, not merged. A pre-restore recovery copy is retained locally and in future backup files; automatic restore Undo is not available.'}), h('button',{class:'btn ghost block',id:'impBackupFirst',onclick:async()=>{await saveBackupFile(db,prefs());toast('Backup download requested. Keep the file private.');}},'Download this phone’s backup first')); }
+function restoreHelp(db, notes = []) { return h('div', {class:'stack'}, h('p',{class:'small',text:'Event-only recovery: backup restore does not apply preferences, aiming settings, account/team archives or switch account/sync target. Nonempty legacy mirrors that need reconciliation are blocked. Use only your own authorized file. Added records follow your existing optional sync choice. Conflicting local facts are blocked, not merged. A pre-restore recovery copy is retained locally and in future backup files; automatic restore Undo is not available.'}), notes.length ? h('p',{class:'small muted',id:'impScope',text:notes.join(' ')}) : null, h('button',{class:'btn ghost block',id:'impBackupFirst',onclick:async()=>{await saveBackupFile(db,prefs());toast('Backup download requested. Keep the file private.');}},'Download this phone’s backup first')); }
 export async function sha256Hex(buf) {
   if (!(globalThis.crypto && crypto.subtle)) return null;
   const d = await crypto.subtle.digest('SHA-256', buf); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');

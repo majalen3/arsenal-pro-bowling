@@ -12,24 +12,26 @@ async def main():
  OUT.mkdir(parents=True,exist_ok=True)
  async with async_playwright() as pw:
   b=await pw.chromium.launch()
-  async def context(account=False,delay=False):
+  async def context(account=False,delay=False,recovery=False):
    c=await b.new_context(viewport={'width':360,'height':780},is_mobile=True,has_touch=True,service_workers='block',accept_downloads=True)
    calls=[]
    async def guard(r):
     if r.request.url.startswith(BASE):await r.continue_();return
     if account and '/api/' in r.request.url:
      path=r.request.url.split('/api/',1)[1];calls.append(path)
-     data={'exportedAt':'2026-11-07','user':{'id':'A','email':'fictional@example.invalid'},'events':[],'teams':[]} if path=='account/export' else {'user':{'id':'B','email':'fictional-b@example.invalid'},'token':'public-synthetic-unused-B'} if path=='auth/login' else {}
+     data={'events':[{'id':'remote-conflicting-profile','seq':1,'ts':2090000000000,'deviceId':'fictional-remote','schemaV':1,'type':'bowler.edited','entity':'bowler','entityId':'me','data':{'fields':{'hand':'right'}}}],'cursor':'1','more':False} if path.startswith('account/events') else {'exportedAt':'2026-11-07','user':{'id':'A','email':'fictional@example.invalid'},'events':[],'teams':[]} if path=='account/export' else {'user':{'id':'B','email':'fictional-b@example.invalid'},'token':'public-synthetic-unused-B'} if path=='auth/login' else {}
      await r.fulfill(status=200,content_type='application/json',body=json.dumps(data));return
     await r.abort()
    await c.route('**/*',guard)
    if not delay:await c.add_init_script("localStorage.setItem('ap_prefs',JSON.stringify({onboarded:true,theme:'dark',myLines:{local:{lay:14,eyes:9}}}));")
-   if account:await c.add_init_script("localStorage.setItem('ap_sync_guard',JSON.stringify({v:1,account:'A'}));localStorage.setItem('ap_account',JSON.stringify({token:'public-synthetic-A',user:{id:'A',email:'fictional@example.invalid'},pending:true}));")
+   if account:await c.add_init_script(("localStorage.setItem('ap_sync_guard',JSON.stringify({v:1,account:'A'}));localStorage.setItem('ap_account',JSON.stringify({token:'public-synthetic-A',user:{id:'A',email:'fictional@example.invalid'},pending:true}));").replace('pending:true','pending:false' if recovery else 'pending:true'))
    if delay:await c.add_init_script("""const open=indexedDB.open.bind(indexedDB);indexedDB.open=(...a)=>{const r=open(...a);Object.defineProperty(r,'onsuccess',{set(fn){r.addEventListener('success',()=>setTimeout(()=>fn.call(r),500));}});return r;};new MutationObserver(()=>{const p=document.querySelector('#acctPitch');if(p&&!window.firstPitch)window.firstPitch=p;}).observe(document,{subtree:true,childList:true});""")
    p=await c.new_page();await p.goto(BASE+'#/me');await p.wait_for_selector('#accountCard');return c,p,calls
   async def check(p,name):
+   await p.evaluate("Promise.all(document.getAnimations().filter(a=>a.effect && a.effect.getTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>0)))")
    assert not await p.evaluate(SMALL),(name,await p.evaluate(SMALL));assert not await p.evaluate(TRUNC),(name,await p.evaluate(TRUNC))
-   await p.add_script_tag(url=BASE+'tests/axe.min.js');assert not await p.evaluate("axe.run(document).then(r=>r.violations.filter(v=>['serious','critical'].includes(v.impact)).map(v=>v.id))")
+   await p.add_script_tag(url=BASE+'tests/axe.min.js');issues=await p.evaluate("axe.run(document).then(r=>r.violations.filter(v=>['serious','critical'].includes(v.impact)).map(v=>({id:v.id,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))})))");assert not issues,(name,issues)
+   await p.evaluate('window.scrollTo(0,0)');await p.evaluate('new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))')
    await p.screenshot(path=str(OUT/name),full_page=True)
   async def upload(p,data):
    await p.locator('#impFile').set_input_files({'name':'fictional-recovery.json','mimeType':'application/json','buffer':json.dumps(data).encode()})
@@ -48,7 +50,7 @@ async def main():
   # Additive event recovery on a separate fixture; no local setting/identity application.
   c,p,_=await context();await p.evaluate("import('./js/hub.js').then(async h=>{await h.ready();await h.add('ownedBall.created','local',{catalogId:'hy-road',name:'Fictional original',layout:'Original layout'});})")
   before=await p.evaluate("({hash:window.__apData.hash(),prefs:localStorage.getItem('ap_prefs')})")
-  await p.goto(BASE+'#/import');await p.wait_for_selector('#impFile',state='attached');await upload(p,source);await p.wait_for_selector('#impPreview');assert await p.locator('#impCommit').is_enabled();assert 'not a full phone recovery' in await p.text_content('#impWarn');await check(p,'03-event-only-reviewed.png')
+  await p.goto(BASE+'#/import');await p.wait_for_selector('#impFile',state='attached');await upload(p,source);await p.wait_for_selector('#impPreview');assert await p.locator('#impCommit').is_enabled();assert 'not a full phone recovery' in await p.text_content('#impScope');assert await p.locator('#impWarn').count()==0;await check(p,'03-event-only-reviewed.png')
   async with p.expect_download() as d:await p.click('#impBackupFirst')
   assert (await d.value).suggested_filename.endswith('.json')
   await p.click('#impCommit');await p.wait_for_selector('#impDone')
@@ -62,19 +64,25 @@ async def main():
   assert restored==before['hash'];await check(p,'04-additive-restored-checkpoint.png')
   # Stale preview is explicit, disabled until a new file review, and writes nothing new.
   more={**source,'events':source['events'][:1]};more['events'][0]={**more['events'][0],'id':'new-preview-id','entityId':'later-copy'}
-  more=await p.evaluate("async b=>{const {stable,sha256Hex}=await import('./js/data/schema.js');b.sha256=await sha256Hex(stable(b.events));return b;}",more)
-  await upload(p,more);await p.wait_for_selector('#impPreview');assert await p.locator('#impCommit').is_enabled()
+  more=await p.evaluate("async b=>{const {stable,sha256Hex}=await import('./js/data/schema.js');b.sha256=await sha256Hex(stable(b.events.map(e=>({...e,synced:undefined}))));return b;}",more)
+  await upload(p,more);await p.wait_for_selector('#impPreview');assert await p.locator('#impCommit').is_enabled(),await p.text_content('#impPreview')
   await p.evaluate("import('./js/hub.js').then(h=>h.add('ownedBall.created','after-preview',{name:'Fictional local change'}))");old=await p.evaluate('window.__apData.hash()');await p.click('#impCommit');await p.wait_for_selector('#impCommitError');assert await p.locator('#impCommit').is_disabled();assert await p.evaluate('window.__apData.hash()')==old
   await check(p,'05-stale-preview-stopped.png');await c.close()
   # Account export is an archive; keep-data signout/foreign identity never copies/rebinds.
   c,p,calls=await context(account=True);await p.evaluate("import('./js/hub.js').then(h=>h.ready())");await check(p,'06-account-archive-scope.png')
   async with p.expect_download() as d:await p.click('#acctExport')
-  archive=json.loads(Path(await (await d.value).path()).read_text());assert archive['user']['id']=='A'
-  await p.click('#acctSignOut');await p.wait_for_selector('#soKeep');await p.click('#soKeep');await p.wait_for_selector('#acctSignIn')
+  archive=json.loads(Path(await (await d.value).path()).read_text());assert archive['user']['id']=='A';assert await p.locator('body > a[download]').count()==0
+  await p.click('#acctSignOut');await p.wait_for_selector('#soKeep');await p.click('#soKeep');await p.wait_for_selector('.sheet',state='detached');await p.wait_for_selector('#acctSignIn')
   assert await p.evaluate("import('./js/account.js').then(m=>m.account.login('fictional-b@example.invalid','public-synthetic-password')).then(r=>!r.ok)")
   assert await p.evaluate("JSON.parse(localStorage.getItem('ap_sync_guard')).account")=='A';assert await p.evaluate("localStorage.getItem('ap_account')")==None
   assert not any('events' in x or x in ['me','lines','surface','notes'] for x in calls),calls
   await p.goto(BASE+'#/import');await p.wait_for_selector('#impFile',state='attached');await upload(p,archive);await p.wait_for_selector('#impErr');assert 'not app-restorable' in await p.text_content('#impErr');assert await p.locator('#impCommit').count()==0
-  await check(p,'07-account-archive-not-importable.png');await c.close();await b.close()
+  await check(p,'07-account-archive-not-importable.png');await c.close()
+  c,p,calls=await context(account=True,recovery=True);await p.evaluate("import('./js/hub.js').then(async h=>{await h.ready();await h.add('bowler.edited','me',{fields:{hand:'left'}});})");before=await p.evaluate('window.__apData.hash()')
+  assert not (await p.evaluate('window.__apSync.run()'))['ok'];assert await p.evaluate('window.__apData.hash()')==before
+  assert 'Account recovery is paused for separate review' in await p.text_content('#dataInfo')
+  async with p.expect_download() as d:await p.click('#dlBackup')
+  recovery=json.loads(Path(await (await d.value).path()).read_text());assert len(recovery['pendingAccountRecovery']['events'])==1;assert 'public-synthetic-A' not in json.dumps(recovery)
+  await check(p,'08-initial-account-recovery-staged.png');await c.close();await b.close()
  print('PASS stable Me privacy/focus/lazy edit; 360px 44px/axe; nonempty mirror staged; additive copies/layouts/surface/history/checkpoint; settings unchanged; stale preview; mocked export/signout/foreign identity; no external data writes')
 asyncio.run(main())
