@@ -23,7 +23,12 @@ async def main():
    before=await p.evaluate("import('./js/hub.js').then(h=>h.db.events().map(e=>e.id))");foundation=await p.evaluate("import('./js/hub.js').then(h=>JSON.stringify(h.db.meta.foundationSnapshot))");root[0]=args.current_root
    await p.evaluate('navigator.serviceWorker.getRegistration().then(r=>{window.__upgradeReg=r;return r.update()})');await p.wait_for_function('() => !!window.__upgradeReg.waiting',timeout=30000)
    # Same explicit Refresh action as the app offers, never activation during scoring.
-   await p.evaluate("window.__upgradeReg.waiting.postMessage('skip')");await p.wait_for_function("async () => typeof (await import('./js/data/backup.js')).restoreIssues === 'function'",timeout=30000);assert await p.evaluate("import('./js/hub.js').then(h=>h.db.meta.foundationV===1)")
+   async with p.expect_navigation(wait_until='load',timeout=30000):
+    await p.evaluate("window.__upgradeReg.waiting.postMessage('skip')")
+   await p.wait_for_function('() => window.__apData')
+   await p.evaluate("import('./js/hub.js').then(h=>h.ready())")
+   assert await p.evaluate("import('./js/data/backup.js').then(m=>typeof m.restoreIssues==='function')")
+   assert await p.evaluate("import('./js/hub.js').then(h=>h.db.meta.foundationV===1)")
    assert await p.evaluate("v=>caches.keys().then(k=>k.includes('arsenal-pro-v66')&&!k.includes('arsenal-pro-v'+v))",args.from_version)
    if args.from_version==65:assert await p.evaluate("import('./js/hub.js').then(h=>JSON.stringify(h.db.meta.foundationSnapshot))")==foundation
    else:await p.wait_for_selector('#legacyReview')

@@ -33,6 +33,7 @@ test('distinct copies restore once, preserve original event/device identity and 
  assert.equal((await restoreBackup(target,await parsed(source,target))).added,0);assert.equal(target.meta.restoreCheckpoints.length,1);
  assert.equal(target.events().find(e=>e.entityId==='new-copy').deviceId,null);assert.notEqual(target.hash(),old);
  const b=await buildBackup(target);assert.equal(b.restoreCheckpoints.length,1);assert.equal(b.restoreCheckpoints[0].backup.prefs.hand,'left');
+ const recovery=await fresh();await restoreBackup(recovery,await readBackup(JSON.stringify(b.restoreCheckpoints[0].backup),recovery));assert.equal(recovery.hash(),old);
 });
 test('destructive event and import voids cannot hide existing saved history',async()=>{
  for (const mode of ['event','import']) {

@@ -2,6 +2,12 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## Launch recovery hardening — unreleased (2026-11-07 Europe/Zurich; offline build v66)
+- Full Ball titles wrap on narrow phones; long copy names stay contained. Existing clipping/44px probes retained, no scoring extras.
+- Backup restores block checksum/ID conflicts and replacement of existing facts, retain a before-data checkpoint and recheck at append. Preview includes current-backup download and honest Undo/preferences limits; ambiguous recovery is blocked, not silently merged.
+- Signout/cancellation supersedes pending authentication; stale account/sync401 cannot clear a newer session. Local synthetic regressions only; existing single-account privacy boundary retained.
+- Added current release gates, dependency order, sourced database preservation/cost options and precise inherited CI diagnosis. No verified DB deadline, merge/deploy/spend or live changes; engine/catalog/baseline untouched.
+
 ## Launch foundations Phase 1 — unreleased (2026-11-06; offline build v65)
 - New installations start with zero owned balls. Search the shared catalog locally, filter brands, review multiple physical copies and save; skip/manual unknown models remain available. Adding is not packing: start an empty bag and explicitly Bring chosen balls.
 - Distinct copy names, layouts/surface notes and saved lines resolve by physical ID; no arbitrary attribution of old model-only history to duplicate copies. Unsupported specs remain unmodeled.
