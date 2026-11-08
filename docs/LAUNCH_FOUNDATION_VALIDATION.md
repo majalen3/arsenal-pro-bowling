@@ -1,6 +1,109 @@
 # Launch foundations — current technical validation
 
-## Current follow-up — 7 November 2026, Europe/Zurich (CET), SW v67, unreleased
+## Current t102 candidate — 8 November2026, America/New_York EST, SW68 (unreleased)
+
+Isolated `/workspace/arsenal-restore-review`, `restore-review-undo`, based on actual OPEN App6 `7275ac4cc49feec9266f97361e7a6e5dd2a96731`; previous worktrees/heads preserved. Companion [API3](https://github.com/majalen3/arsenal-pro-api/pull/3) `7b59422ba10226bcfd3aee95c1b37543b67daec7`, base API2 `a4fe0b3`, already both hosted SUCCESS. Exact new app PR/head/hosted status is reported in delivery after its single push; this document does not pre-claim hosted results. Current [release gates](RELEASE_READINESS.md) supersede historical limits/status below; [CEO/dev brief](TEAM_PROMPT_CEO_LAUNCH.md) remains the actionable release brief.
+
+### Implemented / explicitly unsupported
+
+| Area | Tested candidate contract | Boundary |
+|---|---|---|
+| API dependency | Express4.22.3→body-parser1.20.8→raw-body2.5.3 before; minimal supported lock-only body-parser1.20.9 after. Authoritative GHSA-27r3-jxmh-p828 opened; no force/suppression. Audit exit1/HIGH1→exit0/0. Isolated parser survives malformed/trailing compressed data; valid gzip/deflate,20kB decompressed limit preserved. | Express/package.json/server/auth/rate limits/SESSION_PEPPER/render config unchanged. Not deployed. App has no npm manifest/tree; attempted audit correctly reports ENOLOCK, not a security pass for vendored assets. |
+| Reviewed settings / mirrors | Separate optional LOCAL-only modern-backup pure plan; scalar/line conflicts default keep-this-phone, explicit choices; supported prefs: theme,textSize,help,wakeLock,onboarded,handAsked,spareRule and per-ball myLines{lay,eyes,ts?}. Nonempty saved lines/surface/notes reconcile without dropping original rows/duplicate counts. Profile hand/style/PAP/tilt + unit-checked speed/rev provenance come from event facts only. | Existing projected factual conflicts and a new incoming fact conflicting with a confirmed raw profile absent from the log still block. Neutral/null/explicitly-not-entered fields may fill from supported facts. Unknown preferences, account/team/sync targets, raw legacy/foundation/auxiliary/lane-control snapshots and older miss-shot mirror additions are source-file-only/unsupported. Not full-phone/all-preference recovery. |
+| Preservation / Undo | Durable before-event backup + exact8-key raw mirror journal first; hold all outbox destinations before apply. Append-only event.voided Undo; device IDs journaled exactly. Strict writes never silently fall back to memory. Prepared/partial apply or Undo can resume after reload; ended checkpoints retained before next journal. Later events/queued writes/local key edits/synced recovered IDs block Undo rather than erase work. Explicit Keep ends completed Undo and preserves newer edits. | Requires signed out (even pending identity), backup-code sync OFF, durable storage, no unresolved privacy/older-bag review, authorized source and one tab. Cross-tab coordinated restore is unsupported. Prepared partial restore + subsequent edits remains paused/export-for-review; no force rollback/wipe. Same file cannot resurrect locally undone IDs; clean-profile review is explicit. |
+| Privacy / identity | Pure preview no writes or upload; apply/Undo do not select/rebind any account/code target. Hold checked before sync destination selection; sign-in binding cannot change while review held; code tools hidden until review ends. Initial account conflict staging/signout/foreign-account boundaries retained. Same-account LWW limitation/export-first text visible on Me. | No live API/account/server mutation; established same-account sync still LWW, no remote conflict review/Undo. Existing authorized already-sent requests cannot be recalled. Account export is still an archive, not Import-compatible. |
+| Inherited foundations | Original22 fixture, physical copies/layouts/game history/aims, neutral profile/empty0/165 search, earned-only/Old Friends/S1/S2/S3,44px/no active-scoring additions. SW67→68 once; new modules atomic precache. | No actual owner-device inventory check; no engine/catalog/baseline edits/regeneration, no model-accuracy claims. Full workspaces/physical QR/owned-first features/AI chat/native remain deferred. |
+
+### Current tests / exact retained evidence
+
+Evidence root `/workspace/t102-evidence`; safe360px screenshots `/tmp/shots-restore-review` mirrored under evidence. Development failures are retained below, not hidden.
+
+| Suite | Actual result / exit | Evidence under `/workspace/t102-evidence/` |
+|---|---|---|
+| Final unit/data |383 passed/0failed/1 intentional private LaneTrax sample skip (384 total), exit0 |`unit-final.log`|
+| Engine equivalence |7,500/0, exit0; engine/catalog/baseline unchanged |`equivalence.log`|
+| Full E2E |763/0, exit0 |`e2e.log`|
+|20 journeys +visuals |121/0,1known C8,0skips/failed probes;28 visual passes, exit0; title probe/tolerances unchanged |`journeys/results.json`, `journeys.log`|
+| Accessibility/release |82 checks/0issues, exit0 |`accessibility/audit.json`|
+| Clutter |38 views, exit0; no new scoring UI |`clutter/summary.json`|
+| Foundation/Now/hardening/retained recovery |Initial foundation exit1 solely expected old cache67; actual installed68. Correct exact version expectation; rerun foundation0. Now/hardening/retained recovery all0. Fresh0/165, neutral profile, original22 review, skip/duplicates/Old Friends/default-OFF/local counters retained |`foundation.log`, `foundation-final.log`, `now.log`, `hardening.log`, `recovery.log`|
+| New reviewed local recovery |Final actual-IDB mobile/a11y/44px/Undo/failure/identity/Me hold flows exit0; all external requests blocked |`recovery-final.log`, `local-recovery-browser-final-proof.log`, new committed smoke script|
+| Real offline waiting upgrades |64/65/66/67→68, all4 exit0; original IDs/layout/PAP/hand/aims and foundation snapshot retained, new review/Undo modules import offline |`upgrade64.log`…`upgrade67.log`|
+| Lighthouse frozen-source |Three full8-route trials all exit0, no unmeasured categories; unchanged80/95/90 budgets. All accessibility/best-practices100. Scores below |`lighthouse/current-1..3`, `final-check-exits.json`|
+| API local pure /hosted full PG |Local19/0, exit0. Both exact API3 hosted isolated PostgreSQL16 suites61/0,0skip SUCCESS (42531436884/42531432697). Local full PG unavailable: only17 client pg_dump/psql, no postgres/initdb/pg_ctl; no production substitute |`api-pure.log`, `api-hosted-patch.log`, `api-pr3-status.json`|
+| API audit |Before exit1/HIGH1 GHSA-27r3-jxmh-p828; after/final exit0/0 advisories. App has no manifest/lock tree (ENOLOCK), not an app-vendor audit pass |`api-audit-before.json`, `api-audit-after.json`, `api-audit-final.json`, `app-audit-no-manifest.json`|
+
+| Lighthouse performance | Trial1 | Trial2 | Trial3 |
+|---|---:|---:|---:|
+|welcome|91|94|94|
+|tonight|89|81|89|
+|bowl|89|87|90|
+|lane|89|89|89|
+|results|93|96|95|
+|bag|92|92|91|
+|learn|97|97|97|
+|me|95|89|94|
+
+The first serial wrapper exit1 is retained (`suite-exits.json`) and reflects the one stale **test build-number expectation**, not hidden suite failures. Corrected foundation and final focused recovery rerun0; final-check wrapper0. Broad local stages ran during development; later profile/Undo edge guards have final dedicated units/focused browser tests; exact pushed-head hosted UI/journeys/Lighthouse is an additional required check, not inferred from old green heads. No old tests, probes, budgets, visual baselines or tolerances were weakened.
+
+### Exact safe360px screenshots
+
+- `/tmp/shots-restore-review/00-me-local-only-360.png`
+- `/tmp/shots-restore-review/01-before-local-review-360.png`
+- `/tmp/shots-restore-review/02-after-local-recovery-360.png`
+- `/tmp/shots-restore-review/03-reloaded-guarded-undo-360.png`
+- `/tmp/shots-restore-review/04-later-edit-undo-blocked-360.png`
+- `/tmp/shots-restore-review/05-interrupted-restore-repaired-360.png`
+- `/tmp/shots-restore-review/06-commit-time-edit-preserved-360.png`
+- `/tmp/shots-restore-review/07-me-recovery-hold-360.png`
+
+All8 are fictional inventory; no recovery keys/account secrets visible. Exact retained copies and dimensions: `/workspace/t102-evidence/screenshot-manifest.json`, `/workspace/t102-evidence/screenshots/`. Additional regression/upgrade images remain under `/tmp/shots-restore-review/regression/`.
+
+### Recovery coverage / limitations
+
+`tests/data/local_recovery.test.mjs` covers preview purity/default keep, explicit choices, validated scalar preferences/aim pairs/known IDs, prototype/schema/checksum/units, nonempty mirrors/duplicate physical copies/layouts/surface/notes/games, every supported profile fact/provenance pair, every saved-line field, repeated surface rows and nonempty untouched lane/shot/delete keys, synthetic original22 and raw-key preservation, stale event/settings/authorization, queued append and actual storage-boundary guards, failed checkpoint persistence, partial mirror apply, interrupted Undo at mirror/final journal, reload/retry/deduped void IDs, later edit refusal, sync-hold/no rebind, Keep preserving later edits, local-void ID block and preceding checkpoint retention.
+
+`tests/local_recovery_smoke.py` uses actual browser IndexedDB, one360px context at a time, strict external-request aborts and fictional inventory only. Tests default/explicit choices (disclosure/focus stays open), nonempty mirrors/copies/layout/history/aims, exact original checkpoint IDs/download, interrupted Undo→reload→repair, later edit blocked/no rollback/Keep, stale preview, quota during apply→reload→Undo, pending account block, and local edit during an IDB request-success callback aborting the transaction. Meaningful44px/title/serious-critical axe checks unchanged; hosted ui workflow now runs this focused regression.
+
+Synthetic all22 is not a claim the owner's device was inspected. No full-phone/all-pref/account/team archive recovery, cross-tab atomicity, large/quota/OS eviction guarantee or universal account conflict resolver. Current same-account LWW remains visible with export protection. A blocked/unsupported path is not reported as recovered. Private before-copy can be downloaded while pending and is kept in subsequent backup archives; there is no server rollback authorization.
+
+### Development red evidence / actual fixes (retained)
+
+- First focused unit14/15: synthetic22 appended **after** its parsed preview, correctly rejected as stale. Reparse only after fixture setup; meaningful stale guard kept. Another deliberately newer fact needed an explicit future timestamp because independent synthetic DBs reset event sequences in the same millisecond; deterministic conflict fixture now proves preservation.
+- Browser probe found actual24px checkbox widths; fix actual controls to44px, not target threshold. Selecting a conflict recreated/closed disclosure; preserve real open/focus state rather than script around it.
+- Harness expected3 checkpoint records but migration added an original profile fact; compare **exact original event IDs** instead. Quota injector initially returned a function/illegal binding; correct test injection, not app behavior. Pending-account negative helper wrongly expected an Apply button; now asserts blocked plan/no button explicitly. All failed logs remain `local-recovery-browser*.log`.
+- Device-ID/restart review exposed a genuine interrupted-Undo journal mismatch; freeze void IDs/device IDs before persist and preserve at append. New tests fail on the unsafe behavior and validate mirror/journal interruption and restart. Never claim the original prototype was ready.
+
+### Reproduce / recovery smoke / rollback
+
+```sh
+python3 -m http.server 8374 --bind 127.0.0.1
+node --test tests/data/*.test.mjs
+node tests/engine_equivalence.mjs
+python tests/local_recovery_smoke.py http://localhost:8374/ --shots /tmp/shots-restore-review
+python tests/e2e.py http://localhost:8374/
+python tests/journeys/run.py --base http://localhost:8374/ --out /tmp/t102-journeys --media /tmp/t102-media --no-video
+python tests/journeys/release_audit.py --base http://localhost:8374/ --out /tmp/t102-a11y
+python tests/clutter/run_audit.py --base http://localhost:8374/ --out /tmp/t102-clutter
+python tests/foundation_smoke.py http://localhost:8374/ --shots /tmp/t102-foundation
+python tests/now_smoke.py http://localhost:8374/ --shots /tmp/t102-now
+python tests/hardening_smoke.py http://localhost:8374/ --shots /tmp/t102-hardening
+python tests/recovery_validation.py http://localhost:8374/ --shots /tmp/t102-inherited-recovery
+# Archive unchanged67 head into a NEW empty directory; never alter another worktree:
+# git archive 7275ac4 | tar -x -C /tmp/t102-sw67
+python tests/sw_foundation_upgrade.py --from-version 67 --legacy-root /tmp/t102-sw67 --current-root "$PWD" --shots /tmp/t102-upgrades
+# Also64=0f40a4a,65=ca65af4,66=8c4d648 with their own archives.
+python tests/journeys/lighthouse.py --base http://localhost:8374/ --out /tmp/t102-lighthouse-1
+# Repeat separately -2/-3; retain all runs, never weaken80/95/90 budgets.
+# API3 pure tests: node --test test/fixture.test.mjs test/specs.test.mjs test/parser-security.test.mjs
+# Full isolated PostgreSQL uses API2's explicit disposable loopback DB/fixture harness; never production URL.
+```
+
+Human both-segment scripts and owner gates: [RELEASE_READINESS.md](RELEASE_READINESS.md). After local review: download checkpoint, inspect private copies/aims, Undo before later edits or Keep current data. On interruption reload the same current app; if eligibility blocks, export current phone+checkpoint and preserve source for separate review, never wipe/rebind to force it. Rollout/recovery prefers a forward corrective worker, not a downgrade to pre-privacy code; all merges/deploy/live operations need owner approval. DB config-only inspection confirms desired Free services, **not** actual deadline/backups; no export taken. No approved legal policy/native-store readiness or measured human60s outcome.
+
+---
+
+## Historical t101 follow-up — 7 November 2026, Europe/Zurich (CET), SW v67, unreleased
 
 Isolated `/workspace/arsenal-recovery-validation`, branch `recovery-validation`, based on actual OPEN App5 head `8c4d648c76cbec82cf23be9eff804fbebca27372`. Existing worktrees/partial edits/pushed heads preserved. API test-only follow-up is [API2](https://github.com/majalen3/arsenal-pro-api/pull/2), based on API1. Each follow-up pushes once; no main push, history rewrite, merge, deploy, live account/DB access, outreach or spend. The original actionable brief remains [TEAM_PROMPT_CEO_LAUNCH.md](TEAM_PROMPT_CEO_LAUNCH.md); verified additional roots F27–F35 are in [LAUNCH_FOUNDATION_AUDIT.md](LAUNCH_FOUNDATION_AUDIT.md). [RELEASE_READINESS.md](RELEASE_READINESS.md) governs the NO PUBLIC SHIP decision.
 

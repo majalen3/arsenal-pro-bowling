@@ -2,6 +2,13 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## Reviewed local recovery — unreleased (2026-11-08 America/New_York EST; offline build v68)
+- Add a separate explicit local-only modern-backup review: validated supported preferences/saved aims and nonempty saved-line/surface/note mirrors, per-value conflicts defaulting to this phone. Non-conflicting physical copies/layouts/games remain additive; no specs or engine changes.
+- Persist a private before-state checkpoint and sync hold before applying. Offer guarded append-only Undo, including interrupted apply/Undo repair after reload. New events/queued writes/settings edits block Undo rather than roll them back; explicit Keep preserves current edits and ends Undo. Retain checkpoint history; locally undone event IDs are not silently resurrected.
+- Strict durable mirror writes, commit-boundary guards, honest unsupported-field/single-tab/full-phone limits, pending-account/review checks and visible same-account last-write-wins/export protection. Nothing stages/uploads/rebinds an account or backup-code destination. Review targets are 44px and disclosure/focus survives a choice.
+- Companion API3 patches only supported body-parser1.20.8→1.20.9 in the lockfile; audit HIGH1→0, isolated hosted PostgreSQL61/0. No production configuration/secrets change or deployment.
+- PWA beta candidate only, not public/native launch approval; see RELEASE_READINESS and LAUNCH_FOUNDATION_VALIDATION. No merge/deploy/spend/live DB/account operations.
+
 ## Recovery validation + cold-start repair — unreleased (2026-11-07 Europe/Zurich; offline build v67)
 - Load only common/selected-route modules up front, defer profile-edit/catalog code until requested and start bulk offline caching after the actual first paint. Preserve unchanged Me privacy text/focus through hydration; no content hiding or Lighthouse budget changes.
 - Fail closed on unsupported backup/event schemas, unsafe object keys, stale previews and nonempty legacy mirrors needing reconciliation. Account exports/settings/pending recovery archives are explicitly not full-phone Import formats; automatic restore Undo remains unsupported.

@@ -21,3 +21,11 @@ Before any approved DB cutover: verify exact deadline/zone from selected live da
 
 
 Release remains blocked on owner-confirmed live deadline, preservation authorization, durable hosting and a tested recovery rehearsal. No command in public documentation was executed against production.
+
+
+## t102 read-only configuration recheck (8 November2026, America/New_York EST)
+API3 `render.yaml` still declares Free Oregon PostgreSQL/web, DATABASE_URL fromDatabase, generated SESSION_PEPPER and existing allowed origin. No production dashboard/connection/records/secret was queried. Desired YAML is not live-plan/expiry/backup proof; **15 November remains unverified**. Price/source table above is the dated prior research, not a refreshed quote or approved purchase.
+
+Preservation order, only after separate approval: verify selected live DB identity/plan/deadline; authorize confidential full DB export/retention using the sanctioned credential channel; operator runs pg_dump custom-format to an access-controlled off-host file; record tool/server versions and non-secret checksum; restore into an empty isolated database and verify schema/constraints/indexes/sequences and account/device/team/event coverage. Retain the original and define cutover/write-freeze/rollback before any production change. No such export or rehearsal was performed. Never substitute a per-account archive or this phone's backup for a full DB dump. Do not put credentials/dumps in PRs/screenshots.
+
+Local user protection available now: Me→Download backup, keep it private; Import→modern file→optional local review of supported settings/lists→inspect conflicts (keep-phone default)→apply only while signed out/code sync off→download checkpoint→Undo before later edits or Keep current data. Existing account export remains an archive, not an app Import file. This does not guarantee remote durability or full-phone recovery.
