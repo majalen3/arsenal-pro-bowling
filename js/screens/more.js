@@ -59,6 +59,7 @@ export function render() {
   }
   // Server sync of the event log (D3). The quota message comes from the server; the phone keeps everything regardless.
   function syncLine(st, unsynced) {
+    if (hub.db?.meta.localRecovery && !['undone','closed'].includes(hub.db.meta.localRecovery.phase)) return 'Local recovery needs review. Sync is paused; no destination changed. Open Import to download the checkpoint, Undo before later edits, or keep completed recovery.';
     if (st?.recoveryBlocked) return 'Account recovery is paused for separate review. Conflicting incoming records were not applied and this attempt uploaded no new local records. Keep this phone’s backup and your account export. Full settings/nonempty-mirror recovery is unsupported here; do not clear this phone.';
     if (!account.active() && (rawGet('ap_backup_sync') !== 'true' || hub.db?.meta.accountBinding)) return 'Saved on this phone only. Server sync is paused; no backup-code copy is made. Download a backup file below.';
     if (st && st.quota && st.quota.full) return `Server backup is full; your ${unsynced} newest ${unsynced === 1 ? 'change is' : 'changes are'} kept only on this phone. Download a backup file below.`;
@@ -85,6 +86,8 @@ export function render() {
       ...(hub.db?.meta.ownershipReview?.confirmed ? [h('button', { class:'btn ghost block', id:'undoOwnershipReview', onclick:async () => { await hub.undoOwnershipReview(); draw(); } }, 'Undo older-bag review (keep all history)')] : []),
       accountCard(), communityCard(),
       h('div', { class:'card', id:'dataCard' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Your data' }), protChip), dataInfo, lastBk,
+        h('p',{class:'small muted',id:'syncConflictLimit',text:'Same-account sync uses last-write-wins, not conflict review or server Undo. Export this phone before signing in or changing devices.'}),
+        hub.db?.meta.localRecovery && !['undone','closed'].includes(hub.db.meta.localRecovery.phase) ? h('a',{class:'btn ghost block',href:'#/import',id:'reviewLocalRecovery'},'Review local recovery') : null,
         h('details', { class:'tn-more', id:'protMore' }, h('summary', { text:'Keep it safe' }), protBody),
         h('details', { class:'tn-more', id:'dataMore' }, h('summary', { text:'What\u2019s saved' }), dataCounts),
         h('div', { class:'btn-grid' }, h('a', { class:'btn ghost', href:'#/import', id:'goImport' }, 'Import a file'), h('a', { class:'btn ghost', href:'#/import?kind=lanetrax', id:'goLaneTrax' }, 'LaneTrax report'), h('a', { class:'btn ghost', href:'#/card', id:'goCardMore' }, 'My Bowler Card'), h('a', { class:'btn ghost', href:'#/results', id:'goNights' }, 'Results'), h('button', { class:'btn ghost', id:'moreExport', onclick:async () => (await import('./export.js')).openExport() }, 'Export my arsenal')),
@@ -96,7 +99,7 @@ export function render() {
       h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Sync & backup' }), stat),
         h('p', { class:'small', id:'codeNote', text: account.active() ? 'Chosen target: your account. Signing out pauses sync; it never switches to a backup code.' : hub.db?.meta.accountBinding ? 'Account sync paused. This private history stays local until you sign in to its original account. Backup-code copying and another account are blocked.' : rawGet('ap_backup_sync') === 'true' ? 'Chosen target: backup code. Anyone with that private code can access its copy. Download a file too.' : 'Local only. Backup-code sync is optional and is OFF until you enable it. Anyone with a code can access its copy.' }),
         h('button', { class:'btn ghost block', id:'dlBackup', onclick:downloadBackup }, 'Download backup'),
-        !account.session() && !hub.db?.meta.accountBinding ? h('details', { class:'tn-more', id:'backupCodeTools' }, h('summary', { text:'Optional private backup-code sync' }),
+        !account.session() && !hub.db?.meta.accountBinding && (!hub.db?.meta.localRecovery || ['undone','closed'].includes(hub.db.meta.localRecovery.phase)) ? h('details', { class:'tn-more', id:'backupCodeTools' }, h('summary', { text:'Optional private backup-code sync' }),
           h('p', { class:'small', text:'Enabling this copies this phone’s history to the chosen code and brings its remote history here. Use only a private code you are authorized to use. It is not account sign-in.' }),
           h('div', { class:'row gap wrap' }, code, h('button', { class:'btn sm ghost', id:'copyCode', onclick:async () => { try { await navigator.clipboard.writeText(deviceId()); toast('Private code copied'); } catch (_) { toast('Copy failed', { kind:'bad' }); } } }, 'Copy code')),
           h('button', { class:'btn ghost block', id:'enableCodeSync', onclick:() => { if (useCode(deviceId())) { draw(); paintData(); toast('Backup-code sync enabled. Check server acknowledgement.'); } } }, 'Enable backup-code sync'),

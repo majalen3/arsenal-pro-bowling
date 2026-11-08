@@ -25,7 +25,7 @@ export function packBatches(events, maxBytes = BATCH_BYTES, maxCount = 500) {
 const order = (a, b) => (a.ts - b.ts) || ((a.seq || 0) - (b.seq || 0)) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 export function createSync({ db, base, deviceId, fetchFn = (...a) => fetch(...a), timer = { set: (f, ms) => setTimeout(f, ms), clear: id => clearTimeout(id) }, now = () => Date.now(), onState = () => {}, timeoutMs = 25000, auth = () => null, onAuthLost = () => {}, allowLegacy = () => false, recoverySnapshot = () => ({}) } = {}) {
   let target = null, busy = null, retryN = 0, retryT = null, stopped = false;
-  const choose = () => db.meta.privacyConflict ? null : destination({ session: auth(), bound: db.meta.accountBinding || accountIdOf((db.meta.sync || {}).code), allowLegacy: allowLegacy(), code: typeof deviceId === 'function' ? deviceId() : deviceId });
+  const choose = () => (db.meta.privacyConflict || (db.meta.localRecovery && !['undone','closed'].includes(db.meta.localRecovery.phase))) ? null : destination({ session: auth(), bound: db.meta.accountBinding || accountIdOf((db.meta.sync || {}).code), allowLegacy: allowLegacy(), code: typeof deviceId === 'function' ? deviceId() : deviceId });
   const sameTarget = () => { const c = choose(); return target && c && c.code === target.code && c.token === target.token; };
   const state = () => Object.assign({ lastPushAt: null, lastPullAt: null, cursor: '0', quota: null, rejected: [], lastError: null }, db.meta.sync || {});
   const save = async patch => { const s = Object.assign(state(), patch); await db.setMeta('sync', s); onState(s); return s; };

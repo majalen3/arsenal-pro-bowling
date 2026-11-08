@@ -20,6 +20,8 @@ jobs:
       - run: python -m http.server 8099 &
       - name: End-to-end (phone + desktop, axe, offline, migration, pin deck)
         run: sleep 2 && python tests/e2e.py http://localhost:8099/ --shots e2e-shots
+      - name: Local-only recovery review (synthetic inventory, external requests blocked)
+        run: python tests/local_recovery_smoke.py http://localhost:8099/ --shots e2e-shots/local-recovery68
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: e2e-shots, path: e2e-shots }

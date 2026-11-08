@@ -805,3 +805,8 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 #welcomeSearch .wel-top .brand{font-size:1rem}
 
 @media(max-width:480px){.welcome .btn-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Local recovery conflicts: each labeled choice is a full 44px touch target. */
+.recovery-choice{display:flex;align-items:center;gap:12px;min-height:44px;overflow-wrap:anywhere;padding:8px 0}
+.recovery-choice input{flex:0 0 44px;width:44px;height:44px}
+.recovery-choice span{min-width:0}

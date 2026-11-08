@@ -1,0 +1,98 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createDB} from '../../js/data/db.js';
+import {memoryBackend} from '../../js/data/idb.js';
+import {mkEvent} from '../../js/data/events.js';
+import {buildBackup,readBackup} from '../../js/data/backup.js';
+import {planLocalRecovery,applyLocalRecovery,undoLocalRecovery,undoLocalIssues,finishLocalRecovery} from '../../js/data/local_recovery.js';
+import {createSync} from '../../js/data/sync.js';
+const fresh=async be=>{const d=createDB(be||memoryBackend());await d.open();return d;};
+const event=(t,id,d)=>mkEvent(t,id,d);
+function ioOf(data={}){let allowed=true;return {data:{...data},read(k){return this.data[k]??null;},write(k,v){if(v==null)delete this.data[k];else this.data[k]=v;},guard(){if(!allowed)throw Error('Local-only mode required');},allow(v){allowed=v;}};}
+async function setup(backend){
+ const d=await fresh(backend);await d.append([event('ownedBall.created','local',{catalogId:'hy-road',name:'Local original',layout:'Original layout'}),event('line.created','local-line',{ballId:'local',name:'Original line',eyes:9}),event('game.logged','local-game',{ballId:'local',total:123})]);
+ const io=ioOf({ap_prefs:JSON.stringify({theme:'dark',help:false,myLines:{local:{lay:14,eyes:9}}}),ap_profile:JSON.stringify({ownedVersion:1,owned:['local'],pap:'Fictional confirmed PAP'}),ap_lines:JSON.stringify([{ballId:'local',name:'Original line',eyes:9,custom:'preserve'}]),ap_surface:JSON.stringify([{ballId:'local',date:'2026-11-01',finish:1000}]),ap_notes:JSON.stringify([{lane:'1',oil:'house',adjustment:'Original note'}])});
+ const source=await fresh();await source.append([event('ownedBall.created','copy-a',{catalogId:'hy-road',name:'Fictional A',layout:'Layout A'}),event('ownedBall.created','copy-b',{catalogId:'hy-road',name:'Fictional B',layout:'Layout B'}),event('line.created','line-a',{ballId:'copy-a',ownedId:'copy-a',name:'A line',eyes:10}),event('ball.surfaceLogged','surface-a',{ballId:'copy-a',date:'2026-11-07',finish:2000}),event('patternNote.created','note-a',{lane:'2',oil:'sport',adjustment:'Fictional adjustment'}),event('game.logged','game-b',{ballId:'copy-b',total:145})]);
+ const b=await buildBackup(source,{prefs:{theme:'light',textSize:'large',help:true,myLines:{'copy-a':{lay:18,eyes:10}},teamShare:{never:'apply'},syncMode:'never-apply'}}),p=await readBackup(JSON.stringify(b),d);return {d,io,p,b};
+}
+test('preview is pure; conflicting preferences default to keep; supported nonempty lists and distinct copies are planned',async()=>{
+ const {d,io,p}=await setup(),before=JSON.stringify(io.data),hash=d.hash(),plan=planLocalRecovery(d,p,io);assert.equal(plan.ok,true);assert.equal(JSON.stringify(io.data),before);assert.equal(d.hash(),hash);assert.equal(d.meta.localRecovery,undefined);assert.ok(plan.conflicts.some(x=>x.id==='prefs.theme'&&!x.take));assert.ok(plan.unsupported.some(x=>x.includes('teamShare')));assert.equal(JSON.parse(plan.after.ap_prefs).theme,'dark');assert.equal(JSON.parse(plan.after.ap_prefs).help,false);assert.equal(JSON.parse(plan.after.ap_prefs).textSize,'large');assert.equal(JSON.parse(plan.after.ap_lines).length,2);
+});
+test('local restore keeps originals, merges validated nonempty mirrors, preserves layouts/history/aims and retains private checkpoint',async()=>{
+ const {d,io,p}=await setup(),before=JSON.stringify(io.data),hash=d.hash(),ids=d.events().map(e=>e.id);const plan=planLocalRecovery(d,p,io);await applyLocalRecovery(d,p,plan,io);assert.equal(d.meta.localRecovery.phase,'committed');assert.equal(Object.keys(d.projection().owned).length,3);assert.equal(d.projection().owned['copy-b'].layout,'Layout B');assert.equal(d.projection().scores.length,2);assert.ok(ids.every(id=>d.has(id)));assert.equal(JSON.parse(io.data.ap_lines)[0].custom,'preserve');assert.equal(JSON.parse(io.data.ap_surface).length,2);assert.equal(JSON.parse(io.data.ap_notes).length,2);assert.equal(JSON.parse(io.data.ap_profile).pap,'Fictional confirmed PAP');assert.equal(JSON.parse(io.data.ap_prefs).myLines['copy-a'].eyes,10);
+ const b=await buildBackup(d);assert.ok(b.localRecoveryArchive.beforeBackup.events.length);assert.equal(b.localRecoveryArchive.beforeBackup.localRecoveryArchive,undefined);await undoLocalRecovery(d,io);assert.equal(d.hash(),hash);assert.equal(JSON.stringify(io.data),before);assert.ok(ids.every(id=>d.has(id)));assert.ok(d.events().some(e=>e.type==='event.voided'));assert.equal(d.meta.localRecovery.phase,'undone');
+});
+test('conflicting theme/help/aim pair/line explicitly chosen, with exact guarded Undo after restart',async()=>{
+ const be=memoryBackend(),{d,io,p}=await setup(be);io.data.ap_prefs=JSON.stringify({theme:'dark',help:false,myLines:{'copy-a':{lay:12,eyes:7}}});io.data.ap_lines=JSON.stringify([{ballId:'copy-a',name:'A line',eyes:7,custom:'keep me'}]);const old=JSON.stringify(io.data),hash=d.hash();const plan=planLocalRecovery(d,p,io,{'prefs.theme':true,'prefs.help':true,'prefs.myLines.copy-a':true,'line.line-a':true});assert.equal(plan.ok,true);await applyLocalRecovery(d,p,plan,io);assert.equal(JSON.parse(io.data.ap_prefs).theme,'light');assert.equal(JSON.parse(io.data.ap_prefs).help,true);assert.equal(JSON.parse(io.data.ap_prefs).myLines['copy-a'].lay,18);assert.equal(JSON.parse(io.data.ap_lines)[0].eyes,10);assert.equal(JSON.parse(io.data.ap_lines)[0].custom,'keep me');const reopened=await fresh(be);await undoLocalRecovery(reopened,io);assert.equal(reopened.hash(),hash);assert.equal(JSON.stringify(io.data),old);
+});
+test('stale event/queued intent/settings or changed authorization cannot apply the preview',async()=>{
+ for(const mode of ['events','intent','prefs','auth']){const {d,io,p}=await setup(),plan=planLocalRecovery(d,p,io);if(mode==='events')await d.append([event('game.logged','later',{total:111})]);if(mode==='intent')await d.append([]);if(mode==='prefs')io.data.ap_prefs='{"theme":"system"}';if(mode==='auth')io.allow(false);await assert.rejects(applyLocalRecovery(d,p,plan,io));assert.equal(d.meta.localRecovery,undefined);assert.equal(d.has(p.backup.events[0].id),false);}
+});
+test('valid checksum does not allow malformed supported preference shapes, reserved keys or invalid mirror values',async()=>{
+ for(const prefs of [{theme:'bright'},{help:'yes'},{textSize:99},{myLines:{local:{lay:42,eyes:10}}},JSON.parse('{"__proto__":{"polluted":true}}')]){const {d,io,p}=await setup();p.backup.prefs=prefs;assert.equal(planLocalRecovery(d,p,io).ok,false);}assert.equal({}.polluted,undefined);
+ const {d,io,p}=await setup();io.data.ap_lines='[{"ballId":"local","eyes":"not a number"}]';assert.equal(planLocalRecovery(d,p,io).ok,false);
+});
+test('every supported scalar and saved aim validates; unsupported target/league/account flags never apply',async()=>{
+ const {d,io,p}=await setup();p.backup.prefs={theme:'system',textSize:'xl',help:true,wakeLock:false,onboarded:true,handAsked:false,spareRule:true,myLines:{'copy-a':{lay:18,eyes:10,ts:1}},target:{bad:'archive'},league:{myAvg:180},account:{id:'foreign'}};const plan=planLocalRecovery(d,p,io,{'prefs.theme':true,'prefs.help':true});assert.equal(plan.ok,true);await applyLocalRecovery(d,p,plan,io);const got=JSON.parse(io.data.ap_prefs);for(const k of ['theme','textSize','help','wakeLock','onboarded','handAsked','spareRule'])assert.equal(got[k],p.backup.prefs[k]);for(const k of ['target','league','account'])assert.equal(got[k],undefined);
+});
+test('journal persistence failure changes neither events nor mirrors',async()=>{
+ const be=memoryBackend();let fail=false;const {d,io,p}=await setup({...be,setMeta:async(k,v)=>{if(fail)throw Error('quota');return be.setMeta(k,v);}});const plan=planLocalRecovery(d,p,io),hash=d.hash(),old=JSON.stringify(io.data);fail=true;await assert.rejects(applyLocalRecovery(d,p,plan,io),/quota/);assert.equal(d.hash(),hash);assert.equal(JSON.stringify(io.data),old);assert.equal(d.meta.localRecovery,undefined);
+});
+test('partial mirror write keeps checkpoint/hold; restart and retry Undo restores originals without deleting events',async()=>{
+ const be=memoryBackend(),{d,io,p}=await setup(be),old=JSON.stringify(io.data),hash=d.hash(),write=io.write;let fail=true;io.write=function(k,v){if(fail&&k==='ap_lines')throw Error('synthetic quota');write.call(this,k,v);};await assert.rejects(applyLocalRecovery(d,p,planLocalRecovery(d,p,io),io),/quota/);assert.equal(d.meta.localRecovery.phase,'prepared');fail=false;const reopened=await fresh(be);await undoLocalRecovery(reopened,io);assert.equal(reopened.hash(),hash);assert.equal(JSON.stringify(io.data),old);
+});
+test('later game or local preference edit blocks Undo, preserving every intervening value/event',async()=>{
+ for(const mode of ['event','prefs']){const {d,io,p}=await setup();await applyLocalRecovery(d,p,planLocalRecovery(d,p,io),io);if(mode==='event')await d.append([event('game.logged','new-user-game',{ballId:'copy-a',total:177})]);else io.data.ap_prefs='{"theme":"system","help":false}';const hash=d.hash(),old=JSON.stringify(io.data);assert.ok(undoLocalIssues(d,io).length);await assert.rejects(undoLocalRecovery(d,io));assert.equal(d.hash(),hash);assert.equal(JSON.stringify(io.data),old);}
+});
+test('queued write during actual Undo storage transaction aborts voids before commit',async()=>{
+ const be=memoryBackend();let start,release;const begun=new Promise(r=>start=r);let pause=false;const guarded={...be,put:async(list,opts={})=>{if(pause&&list.some(e=>e.type==='event.voided')){start();await new Promise(r=>release=r);}if(opts.guard)opts.guard();return be.put(list);}};const {d,io,p}=await setup(guarded);await applyLocalRecovery(d,p,planLocalRecovery(d,p,io),io);pause=true;const undo=undoLocalRecovery(d,io);await begun;const later=d.append([event('game.logged','later',{ballId:'copy-a',total:177})]);release();await assert.rejects(undo,/New writes/);await later;assert.ok(d.projection().owned['copy-a']);assert.ok(d.projection().scores.some(s=>s.total===177));assert.equal(d.events().filter(e=>e.type==='event.voided').length,0);
+});
+test('queued write during restore storage transaction aborts incoming batch before commit',async()=>{
+ const be=memoryBackend();let start,release,pause=false;const begun=new Promise(r=>start=r);const guarded={...be,put:async(list,opts={})=>{if(pause&&list.some(e=>e.entityId==='copy-a')){start();await new Promise(r=>release=r);}if(opts.guard)opts.guard();return be.put(list);}};const {d,io,p}=await setup(guarded),old=JSON.stringify(io.data);pause=true;const restore=applyLocalRecovery(d,p,planLocalRecovery(d,p,io),io);await begun;const later=d.append([event('game.logged','later',{total:177})]);release();await assert.rejects(restore,/changed after preview/);await later;assert.equal(d.projection().owned['copy-a'],undefined);assert.equal(JSON.stringify(io.data),old);
+});
+test('hold prevents all outbox traffic and identity change; explicit keep ends Undo only while unchanged',async()=>{
+ const {d,io,p}=await setup();await d.setMeta('accountBinding','A');await d.setMeta('sync',{code:'acct:A',cursor:'123',lastPullAt:1});await applyLocalRecovery(d,p,planLocalRecovery(d,p,io),io);let calls=0;const sync=createSync({db:d,deviceId:'never-code',base:'https://invalid.test',auth:()=>({token:'public-synthetic',user:{id:'A'}}),fetchFn:async()=>{calls++;throw Error('forbidden');}});assert.equal((await sync.run()).paused,true);assert.equal(calls,0);assert.equal(d.meta.accountBinding,'A');assert.equal(d.meta.sync.code,'acct:A');assert.equal(d.meta.sync.cursor,'123');await finishLocalRecovery(d,io);assert.equal(d.meta.localRecovery.phase,'closed');assert.ok(undoLocalIssues(d,io).length);
+});
+test('existing fact conflict/checksum failure remains blocked, not silently filtered',async()=>{
+ const {d,io,p}=await setup();p.hashOk=false;assert.equal(planLocalRecovery(d,p,io).ok,false);p.hashOk=true;const conflict=event('ownedBall.edited','local',{fields:{layout:'Replace original'}});conflict.ts=Date.now()+10000;p.backup.events.push(conflict);const plan=planLocalRecovery(d,p,io);assert.equal(plan.ok,false);assert.equal(d.projection().owned.local.layout,'Original layout');
+});
+test('raw legacy snapshots/unknown aiming IDs and older miss mirrors do not pretend full-phone recovery',async()=>{
+ const {d,io,p}=await setup();p.backup.legacy={ap_profile:'{"owned":["foreign"]}'};p.backup.prefs={myLines:{'unknown-id':{lay:10,eyes:5}}};const plan=planLocalRecovery(d,p,io);assert.equal(plan.ok,true);assert.ok(plan.unsupported.some(x=>x.includes('unmatched')));assert.equal(JSON.parse(plan.after.ap_profile).owned[0],'local');p.backup.events.push(event('shot.logged','old-miss',{ballId:'copy-a',miss:'left'}));assert.equal(planLocalRecovery(d,p,io).ok,false);
+});
+test('synthetic22 originals and saved aims survive restore and append-only checkpoint Undo',async()=>{
+ const {balls}=await import('../../js/data.js');const {d,io,b}=await setup();await d.append(balls.map(b=>event('ownedBall.created','legacy-'+b.id,{catalogId:b.id,name:'Fictional '+b.name,layout:'Original layout'})));io.data.ap_profile=JSON.stringify({ownedVersion:1,owned:balls.map(b=>'legacy-'+b.id),pap:'Fictional confirmed PAP'});const old=JSON.stringify(io.data),hash=d.hash(),ids=d.events().map(e=>e.id),p=await readBackup(JSON.stringify(b),d);await applyLocalRecovery(d,p,planLocalRecovery(d,p,io),io);assert.equal(Object.keys(d.projection().owned).length,25);assert.equal(JSON.parse(io.data.ap_profile).owned.length,22);await undoLocalRecovery(d,io);assert.equal(d.hash(),hash);assert.equal(JSON.stringify(io.data),old);assert.ok(ids.every(id=>d.has(id)));
+});
+
+test('profile facts keep explicit conflicts and paired speed/rev provenance; unsupported units stay archived',async()=>{
+ const {d,io,b}=await setup(),src=await fresh();await src.append(b.events);await src.append([event('bowler.edited','me',{fields:{hand:'left',style:'two',speed:{v:16,unit:'mph',prov:{kind:'user',ref:'default'}},rev:{v:300,unit:'rpm',prov:{kind:'user'}},pap:{v:'Fictional confirmed PAP',unit:'in'},tilt:15}})]);const bb=await buildBackup(src),p=await readBackup(JSON.stringify(bb),d),old=JSON.stringify(io.data);await applyLocalRecovery(d,p,planLocalRecovery(d,p,io),io);const pr=JSON.parse(io.data.ap_profile);assert.equal(pr.hand,'left');assert.equal(pr.style,'two');assert.equal(pr.pap,'Fictional confirmed PAP');assert.equal(pr.speed,16);assert.equal(pr.entered.speed,false);assert.equal(pr.rev,300);assert.equal(pr.entered.rev,true);assert.equal(pr.tilt,15);await undoLocalRecovery(d,io);assert.equal(JSON.stringify(io.data),old);
+ const d2=await fresh(),src2=await fresh();await src2.append([event('bowler.edited','me',{fields:{speed:{v:25,unit:'kph'},rev:300}})]);const p2=await readBackup(JSON.stringify(await buildBackup(src2)),d2),io2=ioOf(),plan=planLocalRecovery(d2,p2,io2);assert.equal(plan.ok,true);assert.ok(plan.unsupported.some(s=>s.includes('speed')));assert.ok(plan.unsupported.some(s=>s.includes('rev')));assert.equal(plan.after.ap_profile,null);
+});
+test('explicit Keep after later edits never rolls them back or changes an identity/destination',async()=>{
+ const {d,io,p}=await setup();await applyLocalRecovery(d,p,planLocalRecovery(d,p,io),io);await d.append([event('game.logged','later-keep',{total:180})]);io.data.ap_prefs='{"theme":"system"}';const old=JSON.stringify(io.data),hash=d.hash();await finishLocalRecovery(d,io);assert.equal(JSON.stringify(io.data),old);assert.equal(d.hash(),hash);assert.equal(d.meta.localRecovery.phase,'closed');assert.ok(d.meta.localRecovery.beforeBackup.events.length);
+});
+
+test('malformed existing saved aims/provenance fail closed; overlapping restore is blocked',async()=>{
+ for(const bad of ['{"myLines":"not an object"}','{"myLines":{"local":{"eyes":9}}}']){const {d,io,p}=await setup();io.data.ap_prefs=bad;assert.equal(planLocalRecovery(d,p,io).ok,false);}
+ const {d,io,p}=await setup();await applyLocalRecovery(d,p,planLocalRecovery(d,p,io),io);assert.ok(planLocalRecovery(d,p,io).issues.some(s=>s.includes('earlier local recovery')));
+});
+
+test('interrupted Undo with a real device ID is restart-safe before mirrors or final journal write',async()=>{
+ for(const mode of ['mirror','journal']){
+  const be=memoryBackend();let fail=false;const backend={...be,setMeta:async(k,v)=>{if(fail&&mode==='journal'&&k==='localRecovery'&&v.phase==='undone')throw Error('undo journal quota');return be.setMeta(k,v);}};
+  const {d,io,p}=await setup(backend);d.deviceId='fictional-device';const old=JSON.stringify(io.data),hash=d.hash(),write=io.write;io.write=function(k,v){if(fail&&mode==='mirror'&&k==='ap_lines')throw Error('undo mirror quota');write.call(this,k,v);};await applyLocalRecovery(d,p,planLocalRecovery(d,p,io),io);fail=true;await assert.rejects(undoLocalRecovery(d,io),/quota/);fail=false;const reopened=createDB(backend,{deviceId:'fictional-device'});await reopened.open();assert.equal(undoLocalIssues(reopened,io).length,0);await undoLocalRecovery(reopened,io);assert.equal(reopened.hash(),hash);assert.equal(JSON.stringify(io.data),old);assert.equal(new Set(reopened.events().map(e=>e.id)).size,reopened.events().length);
+ }
+});
+
+test('locally undone IDs cannot masquerade as a new successful restore; ended checkpoints survive the next recovery',async()=>{
+ const {d,io,p,b}=await setup();await applyLocalRecovery(d,p,planLocalRecovery(d,p,io),io);await undoLocalRecovery(d,io);const re=await readBackup(JSON.stringify(b),d);assert.ok(planLocalRecovery(d,re,io).issues.some(s=>s.includes('locally undone')));const previous=d.meta.localRecovery.beforeBackup;
+ const src=await fresh();await src.append([event('ownedBall.created','new-unrelated-copy',{name:'Fictional new copy'})]);const second=await readBackup(JSON.stringify(await buildBackup(src)),d);await applyLocalRecovery(d,second,planLocalRecovery(d,second,io),io);assert.deepEqual(d.meta.restoreCheckpoints.at(-1).backup,previous);const download=await buildBackup(d);assert.deepEqual(download.restoreCheckpoints.at(-1).backup,previous);
+});
+
+test('neutral profile fields can recover facts; a confirmed mirror missing from its event log must not fork silently',async()=>{
+ const {d,io,p}=await setup();p.backup.events.push(event('bowler.edited','me',{fields:{pap:{v:'Different source PAP',unit:'in'}}}));assert.equal(planLocalRecovery(d,p,io).ok,false);assert.equal(JSON.parse(io.data.ap_profile).pap,'Fictional confirmed PAP');
+ const dst=await fresh(),src=await fresh(),local=ioOf({ap_profile:JSON.stringify({hand:null,style:'unknown',speed:null,rev:'',entered:{speed:false,rev:false},pap:''})});await src.append([event('bowler.edited','me',{fields:{hand:'left',style:'two',speed:{v:16,unit:'mph',prov:{kind:'user'}},rev:{v:300,unit:'rpm',prov:{kind:'user'}}}})]);const parsed=await readBackup(JSON.stringify(await buildBackup(src)),dst),plan=planLocalRecovery(dst,parsed,local);assert.equal(plan.ok,true);await applyLocalRecovery(dst,parsed,plan,local);const pr=JSON.parse(local.data.ap_profile);assert.equal(pr.hand,'left');assert.equal(pr.style,'two');assert.equal(pr.speed,16);assert.equal(pr.entered.speed,true);assert.equal(pr.rev,300);
+});
+
+test('model/example/unknown provenance never becomes confirmed entered profile physics',async()=>{
+ for(const prov of [{kind:'model'},{kind:'derived'},{kind:'user',ref:'example'},null]){const d=await fresh(),src=await fresh(),io=ioOf();await src.append([event('bowler.edited','me',{fields:{speed:{v:16,unit:'mph',prov}}})]);const p=await readBackup(JSON.stringify(await buildBackup(src)),d);await applyLocalRecovery(d,p,planLocalRecovery(d,p,io),io);assert.equal(JSON.parse(io.data.ap_profile).entered.speed,false);}
+});

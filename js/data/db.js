@@ -4,23 +4,25 @@ import { isEnvelope, setSeq } from './events.js';
 import { migrateV0 } from './migrate.js';
 import { SCHEMA_V } from './schema.js';
 export function createDB(backend, { deviceId = null } = {}) {
-  const ev = new Map(); let meta = {}, P = null; const subs = new Set(); let writes = Promise.resolve();
+  const ev = new Map(); let meta = {}, P = null; const subs = new Set(); let writes = Promise.resolve(), activity = 0;
   const notify = () => { P = null; subs.forEach(f => { try { f(); } catch (e) { console.error(e); } }); };
   const api = {
     backend, deviceId,
     async open() { const r = await backend.load(); ev.clear(); for (const e of r.events) if (isEnvelope(e)) ev.set(e.id, e); meta = r.meta || {}; let mx = 0; for (const e of ev.values()) if ((e.seq || 0) > mx) mx = e.seq; setSeq(mx); P = null; return api; },
     events: () => [...ev.values()],
+    activity: () => activity,
     has: id => ev.has(id),
     get meta() { return meta; },
     async setMeta(k, v) { await backend.setMeta(k, v); meta[k] = v; },
     // Appends new events (dedupe by id); returns the ones actually added.
     append(list, { silent = false, guard = null, preserveDevice = false } = {}) {
+      const ticket = ++activity;
       const run = async () => {
-        if (guard) guard();
+        if (guard) guard(ticket);
         const add = [];
         for (const e of list) { if (!isEnvelope(e) || ev.has(e.id)) continue; if (!preserveDevice && !e.deviceId && api.deviceId) e.deviceId = api.deviceId; add.push(e); }
         if (!add.length) return add;
-        await backend.put(add); add.forEach(e => ev.set(e.id, e));
+        await backend.put(add, {guard:guard ? () => guard(ticket) : null}); add.forEach(e => ev.set(e.id, e));
         if (!silent) notify(); else P = null;
         return add;
       };

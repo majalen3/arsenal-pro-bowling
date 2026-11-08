@@ -3,7 +3,7 @@ import { db } from './hub.js';
 import { API_BASE, emit, objGet, rawSet } from './store.js';
 import { createAccount } from './data/account.js';
 import { createTeamClient } from './data/team.js';
-export const account = createAccount({ base: API_BASE, storage: localStorage, canUse: user => { const guard = objGet('ap_sync_guard') || {}; const bound = guard.account || db?.meta.accountBinding; return !guard.blocked && !db?.meta.privacyConflict && (!bound || bound === user.id); }, onChange: s => { if (s && !s.pending) { rawSet('ap_sync_guard', JSON.stringify({ v:1, account:s.user.id })); if (db) db.setMeta('accountBinding', s.user.id).catch(() => {}); } if (!s) rawSet('ap_backup_sync', 'false'); if (!s && team) team.forget(); emit('account', s); } });
+export const account = createAccount({ base: API_BASE, storage: localStorage, canUse: user => { const guard = objGet('ap_sync_guard') || {}; const bound = guard.account || db?.meta.accountBinding; return (!db?.meta.localRecovery || ['undone','closed'].includes(db.meta.localRecovery.phase)) && !guard.blocked && !db?.meta.privacyConflict && (!bound || bound === user.id); }, onChange: s => { if (s && !s.pending) { rawSet('ap_sync_guard', JSON.stringify({ v:1, account:s.user.id })); if (db) db.setMeta('accountBinding', s.user.id).catch(() => {}); } if (!s) rawSet('ap_backup_sync', 'false'); if (!s && team) team.forget(); emit('account', s); } });
 // My Team (needs an account). Signing out clears the cached team view from this phone.
 export const team = createTeamClient({ account, storage: localStorage });
 

@@ -1,7 +1,7 @@
 // Backup v1 (DATA_SYSTEM §8): one JSON file with every event + a sha256 over the events. Restore goes through a preview.
 import { SCHEMA_V, stable, sha256Hex } from './schema.js';
 import { isEnvelope } from './events.js';
-import { order, project } from './project.js';
+import { order, project, voidedSet } from './project.js';
 export const BACKUP_NAME = 'arsenal-pro-backup-v1.json';
 const reserved = new Set(['__proto__', 'constructor', 'prototype']);
 function safeTree(v, depth = 0) {
@@ -14,13 +14,14 @@ function backupEventOK(e) {
     (e.data == null || !Array.isArray(e.data)) && (!e.data?.fields || (typeof e.data.fields === 'object' && !Array.isArray(e.data.fields)));
 }
 const canon = evs => evs.slice().sort(order).map(e => Object.assign({}, e, { synced: undefined }));
-export async function buildBackup(db, { prefs = null, legacy = null, now = Date.now(), includeCheckpoints = true } = {}) {
+export async function buildBackup(db, { prefs = null, legacy = null, now = Date.now(), includeCheckpoints = true, includeRecovery = true } = {}) {
   const events = canon(db.events());
   const imports = Object.values(db.projection().imports);
   const b = { app: 'arsenal-pro', format: 'backup', schemaV: SCHEMA_V, exportedAt: new Date(now).toISOString(), deviceId: db.deviceId, events, imports, prefs };
   if (legacy) b.legacy = legacy;
   // Keep review/rollback evidence, never session tokens or a sync authorization.
   if (db.meta.foundationSnapshot) b.foundation = { snapshot: db.meta.foundationSnapshot, review: db.meta.ownershipReview || null };
+  if (includeRecovery && db.meta.localRecovery) b.localRecoveryArchive = db.meta.localRecovery;
   if (db.meta.pendingAccountRecovery) b.pendingAccountRecovery = db.meta.pendingAccountRecovery;
   if (includeCheckpoints && db.meta.restoreCheckpoints) b.restoreCheckpoints = db.meta.restoreCheckpoints;
   b.sha256 = await sha256Hex(stable(events));
@@ -46,12 +47,15 @@ export async function readBackup(text, db) {
 // Existing facts must survive byte-for-byte. New records are allowed; conflicts stay in preview.
 export function restoreIssues(db, parsed) {
   const issues = [];
+  if (db.meta.localRecovery && !['undone','closed'].includes(db.meta.localRecovery.phase)) issues.push('An earlier local recovery needs review. Open Import to keep or Undo it before another restore.');
   if (!parsed?.ok || !parsed.backup || !Array.isArray(parsed.backup.events)) return ['Invalid backup.'];
   if (parsed.hashOk !== true) issues.push('Checksum mismatch: nothing can be restored. Keep the original file.');
   if (parsed.backup.schemaV != null && parsed.backup.schemaV !== SCHEMA_V) issues.push('Unsupported backup schema. Nothing can be restored.');
   const events = parsed.backup.events;
   if (parsed.localRevision && parsed.localRevision !== stable(canon(db.events()))) issues.push('Local data changed after this preview. Choose the file again; nothing was restored.');
   if (events.some(e => !backupEventOK(e))) issues.push('Invalid event records: nothing can be restored.');
+  const localVoids=voidedSet(db.events()).ids,fileVoids=voidedSet(events).ids;
+  if(events.some(e=>localVoids.has(e.id)&&!fileVoids.has(e.id)))issues.push('This file contains locally undone event IDs. They cannot be reinstated in this profile; keep the file for separate clean-profile recovery.');
   const local = new Map(db.events().map(e => [e.id, e])), seen = new Set();
   for (const e of events.filter(isEnvelope)) {
     if (seen.has(e.id)) issues.push('Repeated event IDs inside the file require separate review.');
@@ -78,6 +82,7 @@ export function restoreIssues(db, parsed) {
 export function recoverySupport(db, parsed, snapshot = {}) {
   const blockers = [], notes = [];
   const hasData = raw => { if (!raw) return false; try { const v = JSON.parse(raw); return v && (Array.isArray(v) ? v.length > 0 : Object.keys(v).length > 0); } catch (_) { return true; } };
+  if (parsed.backup?.localRecoveryArchive) notes.push('Local recovery checkpoint is an archive only; Import does not apply its journal or sync state.');
   if (parsed.backup?.pendingAccountRecovery) notes.push('Staged account recovery is an archive only: Import does not apply that stream or rebind sync. Keep the original file to retain its staged records.');
   if (parsed.backup?.prefs) notes.push('File preferences and saved aiming settings are archived only, not applied. Your current settings stay unchanged; this is not a full phone recovery.');
   if (parsed.backup?.legacy || parsed.backup?.foundation) notes.push('Older mirror/review snapshots are retained in the source file, not applied to this browser.');

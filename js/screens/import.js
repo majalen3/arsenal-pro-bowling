@@ -5,6 +5,7 @@ import { ready, addMany, undoImport, proj, hydrateMirror } from '../hub.js';
 import { migrateV0 } from '../data/migrate.js';
 import { deviceId, prefs, rawGet } from '../store.js';
 import { LEGACY_KEYS } from '../data/migrate.js';
+import { localRecoveryPanel } from './recovery.js';
 import { saveBackupFile } from '../cc/protect.js';
 import { readBackup, restoreBackup, restoreIssues, recoverySupport } from '../data/backup.js';
 import { planCsv, planLaneTrax } from '../data/importer.js';
@@ -31,14 +32,14 @@ handlers.push({
       title: 'Restore backup', kind: 'backup',
       summary: [`${r.counts.events} events in the file`, `${r.counts.new} new on this device`, `${r.counts.dup} already here`],
       warnings: issues.map(detail => ({code:r.hashOk ? 'BLOCKED' : 'HASH_MISMATCH',detail})),
-      body:()=>restoreHelp(db, support.notes),
+      body:()=>h('div',{class:'stack'},restoreHelp(db, support.notes),localRecoveryPanel(db,r)),
       commitLabel: r.counts.new ? `Restore ${r.counts.new} events` : 'Nothing new to restore', canCommit: r.counts.new > 0 && !issues.length,
       async commit() { const x = await restoreBackup(db, r, restoreSnapshot()); hydrateMirror(); return `${x.added} events restored`; },
     };
   },
 });
 function restoreSnapshot() { return { prefs:prefs(), legacy:Object.fromEntries(LEGACY_KEYS.map(k=>[k,rawGet(k)])) }; }
-function restoreHelp(db, notes = []) { return h('div', {class:'stack'}, h('p',{class:'small',text:'Event-only recovery: backup restore does not apply preferences, aiming settings, account/team archives or switch account/sync target. Nonempty legacy mirrors that need reconciliation are blocked. Use only your own authorized file. Added records follow your existing optional sync choice. Conflicting local facts are blocked, not merged. A pre-restore recovery copy is retained locally and in future backup files; automatic restore Undo is not available.'}), notes.length ? h('p',{class:'small muted',id:'impScope',text:notes.join(' ')}) : null, h('button',{class:'btn ghost block',id:'impBackupFirst',onclick:async()=>{await saveBackupFile(db,prefs());toast('Backup download requested. Keep the file private.');}},'Download this phone’s backup first')); }
+function restoreHelp(db, notes = []) { return h('div', {class:'stack'}, h('p',{class:'small',text:'Standard event-only recovery: backup restore does not apply preferences, aiming settings, account/team archives or switch account/sync target. Nonempty legacy mirrors that need reconciliation are blocked. Use only your own authorized file. Added records follow your existing optional sync choice. Conflicting local facts are blocked, not merged. A pre-restore recovery copy is retained locally and in future backup files; automatic restore Undo is not available.'}), notes.length ? h('p',{class:'small muted',id:'impScope',text:notes.join(' ')}) : null, h('button',{class:'btn ghost block',id:'impBackupFirst',onclick:async()=>{await saveBackupFile(db,prefs());toast('Backup download requested. Keep the file private.');}},'Download this phone’s backup first')); }
 export async function sha256Hex(buf) {
   if (!(globalThis.crypto && crypto.subtle)) return null;
   const d = await crypto.subtle.digest('SHA-256', buf); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
@@ -188,6 +189,7 @@ export function render({ query }) {
     } }, pv.commitLabel || 'Import');
     card.append(go); out.append(card);
   }
+  const recovery = h('div',{class:'stack'}); ready().then(db=>recovery.append(localRecoveryPanel(db)));
   const imports = h('div', { class: 'stack', id: 'impList' });
   ready().then(() => { const P = proj(); const list = Object.values(P.imports).filter(i => i.kind !== 'seed' || !i.undone).sort((a, b) => b.ts - a.ts);
     if (!list.length) return; imports.append(h('h2', { class: 'section-title', text: 'Past imports' }), ...list.map(i => h('div', { class: 'row between card tight' }, h('span', { class: 'small', text: `${i.label || i.fileName || i.kind}${i.undone ? ' \u00b7 undone' : ''}` }), i.undone ? null : h('button', { class: 'btn sm ghost', 'data-undo': i.id, onclick: async (ev) => { await undoImport(i.id); ev.target.closest('.card').querySelector('span').textContent += ' \u00b7 undone'; ev.target.remove(); toast('Import undone'); } }, 'Undo')))); });
@@ -195,9 +197,9 @@ export function render({ query }) {
     h('header', { class: 'appbar' }, h('button', { class: 'icon-btn', 'aria-label': 'Back', html: icon('back'), onclick: () => back('#/me') }), h('h1', { class: 'title', text: 'Import' })),
     h('div', { class: 'stack' },
       h('div', { class: 'card' },
-        h('p', { class: 'small', text: 'Files are read on this phone. Nothing is saved until you tap Import. Score imports offer Undo; backup restores are event-only, do not recover settings/accounts/teams, and have no automatic Undo. Nonempty mirror conflicts are blocked.' }),
+        h('p', { class: 'small', text: 'Files are read on this phone. Nothing is saved until you tap Import. Score imports offer Undo. Standard backup restore is event-only. Modern backups also offer a separate, local-only review for supported settings/nonempty lists with guarded checkpoint Undo. Account/team archives and full-phone recovery remain unsupported.' }),
         h('label', { class: 'btn primary block', for: 'impFile', id: 'impPick', tabindex: '0', onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } } }, pickLbl), input,
         kindHint === 'lanetrax' ? null : h('button', { class: 'btn ghost block', id: 'impLT', onclick: () => { input.accept = '.pdf,application/pdf'; input.click(); } }, 'Import your LaneTrax session report (PDF)')),
-      out, imports));
+      recovery, out, imports));
   return { el, title: 'Import', open };
 }

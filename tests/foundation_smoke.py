@@ -80,11 +80,11 @@ async def main():
   assert await p.evaluate('window.__apData.events()')>before
   await check_screen('08-legacy-preserved-review')
   print('PASS legacy snapshot/review/undo/preserved PAP/hand/aims, no deleted events',flush=True);await c.close()
-  # Cache-first v67 cold launch then offline add/reload, not impossible never-loaded first-install offline.
+  # Cache-first v68 cold launch then offline add/reload, not impossible never-loaded first-install offline.
   c=await b.new_context(viewport={'width':360,'height':800},is_mobile=True,has_touch=True,service_workers='allow');await c.route('**/*',guard);p=await c.new_page();await p.goto(BASE);await p.wait_for_selector('#welSearch');await p.evaluate('navigator.serviceWorker.ready');await p.reload();await p.wait_for_function('() => navigator.serviceWorker.controller')
-  assert await p.evaluate("caches.keys().then(k=>k.includes('arsenal-pro-v67'))")
+  assert await p.evaluate("caches.keys().then(k=>k.includes('arsenal-pro-v68'))")
   await c.set_offline(True);await p.reload();await p.wait_for_selector('#welSearch');await p.fill('#welSearch','hy-road');await p.locator('[data-select]').first.click();await p.click('#welNext');await p.click('#welNext');await p.wait_for_selector('#armory');await p.reload();await p.wait_for_selector('#armory');assert await p.evaluate('Object.keys(window.__apData.projection().owned).length')==1
   await p.screenshot(path=f'{OUT}/09-offline-owned-arsenal.png',full_page=True)
-  print('PASS atomic offline v67 catalog/add/durable-reload; screenshot inventory is fictional, no recovery keys',flush=True);await c.close();await b.close()
+  print('PASS atomic offline v68 catalog/add/durable-reload; screenshot inventory is fictional, no recovery keys',flush=True);await c.close();await b.close()
   Path(OUT+'/manifest.json').write_text(json.dumps({'viewport':'360x800','files':sorted(str(x) for x in Path(OUT).glob('*.png')),'data':'safe fictional inventory; no account/recovery screens'},indent=2))
 asyncio.run(main())
