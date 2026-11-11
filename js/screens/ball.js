@@ -1,4 +1,4 @@
-import { balls, rgTxt, diffTxt, coverKind, modelOK } from '../data.js';
+import { balls, rgTxt, diffTxt, coverKind, modelOK, specNote } from '../data.js';
 import { readInfo, analyze, S } from '../engine.js';
 import { app, linesForBall, lsGet, LS, applyLine, logFinish, esc } from '../store.js';
 import { h, icon, toast, emptyState } from '../ui.js';
@@ -43,6 +43,7 @@ export async function render({ params }) {
         h('div', { class:'row gap wrap' },
           onLane ? h('span', { class:'pill gold', text:'On lane' }) : h('button', { class:'btn primary', id:'putOnLane', onclick:() => { setBall(b); go('#/lane'); } }, 'Put on lane'),
           onLane ? null : h('a', { class:'btn ghost', id:'cmpOnLane', href:`#/compare?ids=${app.ball.id},${b.id}` }, h('span', { html:icon('compare') }), `Compare with ${app.ball.name}`), onLane ? null : helpDot('ap-compare', 'Compare')))),
+    specNote(b) ? h('p', { class:'small muted spec-note', id:'ballSpecNote', text:specNote(b) }) : null,
     ownCard,
     copies.length > 1 ? h('div', { class:'card', id:'ballCopies' }, h('h2', { class:'card-title', text:'Your physical copies' }), ...copies.map(o => h('a', { class:'btn ghost block', href:'#/ball/' + o.id }, o.name || b.name))) : null,
     own && (linesForBall(b.id).length || lsGet(LS.surface).some(x => x.ballId === b.id)) ? h('a', { class:'btn ghost block', id:'ballOlderLines', href:'#/ball/' + b.id + '?catalog=1' }, 'Older catalog lines (physical copy not recorded)') : null,

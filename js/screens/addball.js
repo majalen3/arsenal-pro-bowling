@@ -122,10 +122,12 @@ export async function render() {
     const dl = h('dl', { class: 'kv', id: 'abFields' });
     for (const k of ORDER) {
       const x = fields[k]; if (!x && (k === 'year' || k === 'condition' || k === 'intDiff' && !made)) continue;
-      dl.append(h('dt', { text: LABEL[k] }), h('dd', { 'data-f': k }, x ? fmt(k, x.v) : h('span', { class: 'muted', text: 'spec TBD' }),
+      dl.append(h('dt', { text: LABEL[k] }), h('dd', { 'data-f': k }, x ? fmt(k, x.v) : h('span', { class: 'muted', 'data-missing': '', title: 'not published', text: '\u2014' }),
         x && x.note ? h('span', { class: 'muted small', text: ' ' + x.note }) : null, x ? prov(x.prov && x.prov.kind, chip(x.prov)) : null,
         x && x.weightMismatch ? prov('assumed', 'other weight') : null));
     }
+    const gone = ORDER.filter(k => !fields[k] && !(k === 'year' || k === 'condition' || k === 'intDiff' && !made)).map(k => LABEL[k]);
+    if (gone.length) dl.append(h('p', { class: 'small muted', id: 'abSpecNote', text: `Not published: ${gone.join(', ')}. Type them from the box if you have them.` }));
     const lvl = G.cellOfCat(cat).level;
     const srcOf = made && made.source.url ? { url: made.source.url, ref: made.source.ref, date: made.source.date } : e.source ? { url: e.source, ref: e.specStatus === 'archive' && e.original ? `archived copy of ${new URL(e.original).host.replace(/^www\./, '')} (Wayback Machine)` : e.specStatus === 'secondary' && e.attribution ? e.attribution : new URL(e.source).host.replace(/^www\./, ''), date: e.checked } : null;
     const src = srcOf ? h('p', { class: 'small', id: 'abSource' }, 'Source: ', h('a', { class: 'srclink', href: srcOf.url, target: '_blank', rel: 'noopener noreferrer', text: srcOf.ref }), srcOf.date ? ` \u00b7 read ${srcOf.date}` : '') : null;
@@ -142,7 +144,7 @@ export async function render() {
     const s = (P.sessions || {})[openNight(P) || ''] || {}, ft = s.ft != null ? s.ft : HOUSE_ASSUMED.ft, patName = s.ft != null ? (s.patternName || s.patternSlug || 'Tonight') : 'House shot (assumed)';
     const speed = num(b.speed) || START.speed, rev = num(b.rev) || START.rev, eng = h('div', { class: 'card', id: 'abEngine' }, h('h2', { class: 'card-title', text: '3. Ball motion vs the benchmark' }));
     const miss = A.missing(fields);
-    if (miss.length) eng.append(h('p', { class: 'small', id: 'abNoEngine', text: `Spec TBD: no engine run. Missing ${miss.join(', ')}.` }));
+    if (miss.length) eng.append(h('p', { class: 'small', id: 'abNoEngine', text: `No engine run until ${miss.join(', ')} ${miss.length === 1 ? 'is' : 'are'} known.` }));
     else {
       const ownBench = Object.values(P.owned).find(o => o.benchmark), bench = ownBench && catOf(ownBench.catalogId);
       const c = bench ? A.compare(cat, { bench, speed, rev, ft }) : { none:true, reason:'No owned benchmark chosen. Add without a comparison; no benchmark or ownership is assumed.' };
@@ -198,7 +200,7 @@ export async function render() {
   function typeCard() {
     // Only the four the 2-D engine needs, and only where nothing is on file. Values come from the ball's box or the maker's card.
     const base = current().fields, need = k => !base[k] || st.manual[k] != null, card = h('div', { class: 'card ab-type', id: 'abType' },
-      h('h2', { class: 'card-title', text: 'Type the specs' }), h('p', { class: 'muted small', text: 'From the box, the hang tag or the maker\u2019s spec card. Leave any you don\u2019t have: they read spec TBD.' }));
+      h('h2', { class: 'card-title', text: 'Type the specs' }), h('p', { class: 'muted small', text: 'From the box, the hang tag or the maker\u2019s spec card. Leave any you don\u2019t have: they show as not published.' }));
     for (const k of ['rg', 'diff']) if (need(k)) {
       const t = TYPE[k], inp = h('input', { type: 'text', inputmode: 'decimal', id: 'abType-' + k, 'aria-label': t.lab, placeholder: t.ph, autocomplete: 'off', value: st.manual[k] != null ? String(st.manual[k]) : '' });
       inp.addEventListener('change', () => {

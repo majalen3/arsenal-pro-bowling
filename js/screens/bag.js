@@ -72,7 +72,7 @@ export async function render() {
     const from = itemOf(P, fromId), fc = G.cellOf(from.catalogId), packed = ST.packedIds(P, bag);
     const cands = ownedItems(P).filter(x => !packed.includes(x.ownedId) && ST.offered(x)).map(x => Object.assign({}, x, { c: G.cellOf(x.catalogId) }))
       .sort((a, b) => (Math.abs((a.c.level ?? 9) - (fc.level ?? 0)) - Math.abs((b.c.level ?? 9) - (fc.level ?? 0))) || (a.name < b.name ? -1 : 1));
-    const what = x => x.c.tbd || fc.tbd ? 'Spec TBD: the app can\u2019t say how it differs.' : x.c.level > fc.level ? `Stronger (level ${x.c.level} vs ${fc.level}): more hook on heavier oil.`
+    const what = x => x.c.tbd || fc.tbd ? 'Specs not published: the app can\u2019t say how it differs.' : x.c.level > fc.level ? `Stronger (level ${x.c.level} vs ${fc.level}): more hook on heavier oil.`
       : x.c.level < fc.level ? `Weaker (level ${x.c.level} vs ${fc.level}): less hook, for drier lanes.` : x.c.shape !== fc.shape ? `Same strength, ${x.c.shape} shape instead of ${fc.shape}.` : 'Same strength and shape: little changes.';
     const btn = x => h('button', { class: 'btn ghost block swap-cand', 'data-cand': x.ownedId, onclick: async () => { s.close(); await saveBag(bag, BE.swap(P, bag, fromId, x.ownedId), ev, bring); toast(`${x.name} in, ${from.name} out.`); } },
       h('b', { text: x.name + (x.status === 'benched' ? ` \u00b7 ${ST.HOME_TAG}` : '') }), h('span', { class: 'small muted', text: what(x) }));

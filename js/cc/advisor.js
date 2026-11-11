@@ -29,7 +29,7 @@ export function roleWords(rows) {
     else if (r.role === 'shape change') { const more = r.ang != null && A && A.ang != null && r.ang > A.ang;
       r.label = more ? 'If it stops hooking' : 'If it hooks early'; r.line = more ? 'Same strength, sharper turn at the end.' : 'Same strength, smoother arc.'; }
     else if (r.role === 'spare') { r.label = 'Spares'; r.line = r.plastic ? 'Plastic cover goes straight: aim at the pins left.' : 'Goes straighter: aim at the pins left.'; }
-    else { r.label = 'Specs to check'; r.line = 'No oil tag yet (spec TBD), so the app can\u2019t place it.'; }
+    else { r.label = 'Specs to check'; r.line = 'Specs not published, so the app can\u2019t place it yet.'; }
   }
   void lv; return rows;
 }
@@ -120,7 +120,7 @@ export function advise(P, opts = {}) {
   const all = strike.concat(spareId ? pool.filter(o => o.ownedId === spareId) : []);
   const roleOf = x => x === A ? 'benchmark' : x.level == null || lvA == null ? 'option' : x.level > lvA ? 'stronger' : x.level < lvA ? 'weaker-control' : 'shape change';
   const reasonOf = (x, role) => {
-    const lv = x.level != null ? `Level ${x.level} vs demand ${d.demand}` : 'No oil tag (spec TBD)';
+    const lv = x.level != null ? `Level ${x.level} vs demand ${d.demand}` : 'No oil tag (specs not published)';
     if (role === 'benchmark') return bf && x.benchmark ? `Your benchmark (${bf}): start here and read.` : `Closest fit: ${lv.toLowerCase()}.`;
     if (role === 'stronger') return `${lv}: if lanes won\u2019t hook.`;
     if (role === 'weaker-control') return `${lv}: if lanes hook early.`;

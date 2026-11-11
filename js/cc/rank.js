@@ -66,7 +66,7 @@ function whyOf(it, { demand, benchFirst, style }) {
   const w = [];
   if (it.level == null) w.push({ t: 'No oil tag for this ball \u2192 not placed on the 1-5 scale', src: SRC.tag });
   else w.push({ t: `Level ${it.level} (${it.cat.oil.join('/')} oil) vs demand ${demand}`, src: SRC.tag });
-  if (it.tbd) w.push({ t: 'spec TBD: ranked on tag only, no model line', src: SRC.spec });
+  if (it.tbd) w.push({ t: 'specs not published: ranked on tag only, no model line', src: SRC.spec });
   else w.push({ t: `${coverKind(it.cat)} \u00b7 ${it.cat.core.toLowerCase()} \u00b7 RG ${it.cat.rg} / diff ${it.cat.diff}`, src: SRC.spec });
   if (it.benchmark) w.push(benchFirst ? { t: `Benchmark first: ${benchFirst}`, src: SRC.motiv } : { t: 'Your benchmark', src: SRC.you });
   if (style !== 'tweener' && it.cat) w.push({ t: `${style === 'stroker' ? 'Stroker: asym preferred' : 'Cranker: sym preferred'} (${it.cat.core.toLowerCase()})`, src: SRC.br });

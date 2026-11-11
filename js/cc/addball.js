@@ -205,7 +205,7 @@ function readAt(cat, preset, line, ov) {
 const r1 = x => (x == null || isNaN(x) ? null : Math.round(x * 10) / 10);
 export function compare(cat, { bench = balls.find(b => b.id === BENCH_ID), speed = START.speed, rev = START.rev, ft = 38, hand = 'right' } = {}) {
   const t0 = now(), preset = presetFor(ft), r31 = rule31(ft), ov = { speed, rev };
-  if (!cat || !modelOK(cat)) return { none: true, reason: 'spec TBD: no engine run', ms: 0 };
+  if (!cat || !modelOK(cat)) return { none: true, reason: 'specs not published: no engine run', ms: 0 };
   const benchLine = modelLine(bench, { speed, rev, ft, target31: r31.target });
   const line = benchLine.none ? { feet: 15, aim: -3, assumed: true } : benchLine;
   const a = readAt(cat, preset, line, ov), b = readAt(bench, preset, line, ov), own = modelLine(cat, { speed, rev, ft, target31: r31.target });

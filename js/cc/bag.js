@@ -124,7 +124,7 @@ export function packList(items, spare, ctx = {}) {
   const xs = items.map(decorate), ok = xs.filter(x => !['proShop', 'retired'].includes(x.status)), bm = ok.find(x => x.benchmark);
   const role = x => x.benchmark ? 'Benchmark' : x.tbd || !bm || bm.tbd ? 'Ball' : x.level > bm.level ? 'Stronger' : x.level < bm.level ? 'Weaker / cleaner' : 'Shape change';
   const rows = ok.slice().sort((a, b) => (b.level ?? -1) - (a.level ?? -1)).map(x => ({ role: role(x), ownedId: x.ownedId, name: x.name,
-    why: x.tbd ? 'spec TBD: no level' : `level ${x.level} (${SRC.tag}), ${x.shape} shape (estimate)` }));
+    why: x.tbd ? 'specs not published: no level' : `level ${x.level} (${SRC.tag}), ${x.shape} shape (estimate)` }));
   if (spare) rows.push({ role: 'Spare', ownedId: spare.ownedId, name: spare.name, why: 'straight at spares' });
   const service = xs.flatMap(x => dueOf(x.cat, ctx.health && ctx.health[x.ownedId || x.catalogId], ctx.gamesAhead || 0).map(d => ({ name: x.name, ...d })));
   const blocked = xs.filter(x => !ok.includes(x)).map(x => ({ name: x.name, why: x.status === 'proShop' ? 'at the pro shop' : 'retired' }));

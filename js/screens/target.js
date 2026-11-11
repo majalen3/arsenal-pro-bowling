@@ -74,13 +74,13 @@ export async function render({ query } = {}) {
       h('a', { href: B.nba, target: '_blank', rel: 'noopener', class: 'srclink' }, 'National Bowling Academy'), '. Feet = laydown + your ball offset \u2212 drift.'));
   const warnBox = h('div', { class: 'muted small', id: 'tgWarn' });
   const tourBox = h('div', { id: 'tgTourHost' });
-  const ballSel = h('select', { id: 'tgBall', 'aria-label': 'Ball', class: 'tg-ball' }, ...list.map(c => h('option', { value: ballKey(c), text: c.name + (!c.ownedId ? ' · catalog reference' : '') + (specOK(c) ? '' : ' (spec TBD)') })));
+  const ballSel = h('select', { id: 'tgBall', 'aria-label': 'Ball', class: 'tg-ball' }, ...list.map(c => h('option', { value: ballKey(c), text: c.name + (!c.ownedId ? ' · catalog reference' : '') + (specOK(c) ? '' : ' (specs not published)') })));
   ballSel.value = ballKey(cat); ballSel.onchange = () => { cat = ballFor(ballSel.value) || cat; t = Object.assign({}, t, seed(t)); startSig = sigT(); box = null; findOut.replaceChildren(); update(true); };
   // ---- Find my strike line: grid + Monte Carlo on the unchanged engine (js/cc/strikeline.js)
   const findOut = h('div', { id: 'tgFindOut', 'aria-live': 'polite' });
   const findBtn = h('button', { class: 'btn primary block', id: 'tgFind', html: icon('target') + '<span>Find my strike line</span>', onclick: () => runFind() });
   function runFind() {
-    if (!specOK(cat)) { findOut.replaceChildren(h('p', { class: 'coach', text: `${cat.name}: spec TBD, so no model line to search.` })); return; }
+    if (!specOK(cat)) { findOut.replaceChildren(h('p', { class: 'coach', text: `${cat.name}: specs not published, so no model line to search.` })); return; }
     findBtn.disabled = true; findBtn.lastChild.textContent = 'Searching\u2026';
     setTimeout(() => {
       const t0 = performance.now(), sd = F.spreadFrom(P), st0 = startOf(), st = st0 && st0.kept ? st0.model : st0, res = F.find(cat, { speed, rev, ft, spread: sd, start: st ? { lay: st.feet, arr: st.target } : null }), ms = Math.round(performance.now() - t0);
@@ -180,7 +180,7 @@ export async function render({ query } = {}) {
     const supported = specOK(cat);
     for (const n of [el.querySelector('.tg-grid'), sum, sugBox, warnBox]) n.hidden = !supported;
     saveBtn.disabled = !supported; findBtn.disabled = !supported; dock.hidden = !supported; setup.hidden = !supported;
-    if (!supported) { r = null; coach.textContent = `${cat.name}: spec TBD, so no model line. Pick another ball.`; return; }
+    if (!supported) { r = null; coach.textContent = `${cat.name}: specs not published, so no model line. Pick another ball.`; return; }
     r = T.read(cat, t, ctx, box); sug = T.suggest(cat, t, ctx, box, r);
     const L = lefty();
     coach.textContent = T.coach(r, sug, L);

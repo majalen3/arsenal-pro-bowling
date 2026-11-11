@@ -193,7 +193,7 @@ export async function render(o = {}) {
     // ---- pick card: name + stand/eyes up front; the why, specs and model numbers behind one tap (GAP §2c).
     let pick = null;
     if (cur) {
-      const lineBox = !ml || ml.none ? h('p', { class: 'muted small', id: 'tnModel', text: (ml && ml.reason) || 'spec TBD: no model line' })
+      const lineBox = !ml || ml.none ? h('p', { class: 'muted small', id: 'tnModel', text: (ml && ml.reason) || 'Specs not published: no model line' })
         : h('dl', { class: 'kv', id: 'tnModel' }, h('dt', { text: 'Feet (stand)' }), h('dd', { id: 'tnFeet' }, String(stand.feet), provChip(stand.assumed ? 'assumed' : null, stand.assumed ? 'offset 7 assumed' : 'your offset')),
           h('dt', { text: 'Laydown' }), h('dd', {}, String(ml.feet), ml.kept ? provChip('user', 'your line (set on Lane or Targeting)') : provChip('model', '2-D model')),
           h('dt', { text: 'Eyes (arrows)' }), h('dd', { text: String(ml.target) }),
@@ -205,7 +205,7 @@ export async function render(o = {}) {
         stand ? h('button', { class: 'btn primary block', id: 'tnFind', onclick: () => go('#/target?find=1&ball=' + encodeURIComponent(cur.id || cur.catalogId || '')) }, 'Find my strike line \u203a') : null,
         gameOpen ? null : alts,
         h('details', { class: 'tn-more', id: 'tnPickMore' }, h('summary', { text: 'Why this ball, specs and model' }),
-          h('span', { class: 'pill gold', id: 'tnLevel', text: cur.level != null ? `Level ${cur.level} \u00b7 demand ${d.demand}` : `spec TBD \u00b7 demand ${d.demand}` }),
+          h('span', { class: 'pill gold', id: 'tnLevel', text: cur.level != null ? `Level ${cur.level} \u00b7 demand ${d.demand}` : `specs not published \u00b7 demand ${d.demand}` }),
           h('ul', { class: 'why', id: 'tnWhy' }, ...cur.why.concat(d.why.slice(0, 2)).map(w => h('li', {}, w.t, provChip(SRC_PROV[w.src] || null, w.src)))),
           lineBox,
           stand ? h('p', { class: 'muted small', text: `Model runs on the nearest preset (${ml.preset}, ${ml.presetLen} ft) with your ${num(b.speed) || START.speed} mph and ${num(b.rev) || START.rev} rpm. An estimate, not a promise.` }) : null));
@@ -571,7 +571,7 @@ export async function render(o = {}) {
   function startLine(S) {
     if (!S || !S.name) return '';
     const ml = S.ml, st = ml && !ml.none ? standOf(ml.feet) : null;
-    return h('p', { class: 'coach', id: 'advStart', role: 'status', text: st ? `Start with: ${S.name}, from feet ${st.feet}, aim ${fmtHalf(ml.target)} at the arrows.` : `Start with: ${S.name}. ${(ml && ml.reason) || 'spec TBD: no model line'}, so set feet and eyes on Targeting.` },
+    return h('p', { class: 'coach', id: 'advStart', role: 'status', text: st ? `Start with: ${S.name}, from feet ${st.feet}, aim ${fmtHalf(ml.target)} at the arrows.` : `Start with: ${S.name}. ${(ml && ml.reason) || 'Specs not published: no model line'}, so set feet and eyes on Targeting.` },
       st ? (ml && ml.kept ? provChip('user', 'your line (set on Lane or Targeting)') : provChip(st.assumed ? 'assumed' : 'model', '2-D model')) : null, ' ', aimChip(st, ml, S.catalogId || (S.cat && S.cat.id) || null));
   }
   // Now item 3 (PRODUCT_EVAL_1 #3, 2026-11-02): the Stand \u00b7 Aim chip opens Targeting in one tap (it used to open the Lane, then

@@ -6,7 +6,8 @@ import { setBall } from '../ctl.js';
 import { go } from '../router.js';
 import { owned } from './pickers.js';
 import { PATTERN_LABEL } from '../labels.js';
-import { ready, proj } from '../hub.js';
+import { ready, proj, add } from '../hub.js';
+import * as BE from '../cc/bagedit.js';
 import { catOf } from '../cc/cats.js';
 import * as A from '../cc/armory.js';
 import * as UX from '../cc/ux.js';
@@ -39,6 +40,33 @@ function pedestal(it, why) {
       h('span', { class:'plate' }, h('span', { class:'plate-name', text:(it.benchmark ? '\u2605 ' : '') + it.name }),
         it.status !== 'inBag' ? h('span', { class:'plate-role', 'data-status':it.status, text:ST.LABEL[it.status] || it.status }) : it.role ? h('span', { class:'plate-role', text:it.role }) : null, h('span', { class:'plate-spec num sr-only', text:specs }), why && it.status !== 'retired' ? h('span', { class:'plate-why', 'data-why-not':it.id, 'data-why':why.key, text:'Why not: ' + why.text }) : null, onLane ? h('span', { class:'sr-only', text:'on lane' }) : null)),
     it.earned.length || onLane ? h('div', { class:'ped-marks' }, onLane ? h('span', { class:'pill gold', text:'On lane' }) : null, ...it.earned.map(m => h('span', { class:'pill', 'data-m':m.id, text:m.text }))) : null);
+}
+// v73 30-second test (owner t125u): Arsenal's one job is find a ball and keep it in tonight's bag. Search + one compact row per
+// ball (small dot, name, status, Keep toggle) replace the lit shelves at the top; the shelves, milestones and catalog now sit
+// behind "Shelf view" / "More" (docs/CUTS_V73.md).
+function mine(P, rerender) {
+  const sh = A.shelves(P, catOf), list = sh.bag.concat(sh.bench), bag = ST.currentBag(P), packed = bag ? ST.packedIds(P, bag) : [];
+  const kept = new Set(bag ? bag.slots.filter(s => s.locked).map(s => s.owned) : []);
+  const find = h('input', { type:'search', class:'search', id:'armFind', placeholder:'Find a ball', 'aria-label':'Find one of your balls', autocomplete:'off', value:st.mq || '' });
+  const ul = h('ul', { class:'plain arm-list', id:'armList' });
+  const keep = async (it, on) => {
+    const P2 = proj(), b = ST.currentBag(P2); if (!b) { toast('Pack a bag on the Bag tab first.'); return; }
+    const nb = BE.pin(b, it.id, on);
+    if (on && !nb.slots.some(x => x.owned === it.id)) nb.slots.push(Object.assign({ owned:it.id, locked:true }, it.status === 'benched' ? { fromHome:true } : {}));
+    await add('bag.saved', b.id, nb); toast(on ? `${it.name}: kept in tonight’s bag.` : `${it.name}: no longer kept.`); rerender();
+  };
+  const fill = () => { const q = (st.mq || '').trim().toLowerCase(); ul.replaceChildren(...list.filter(it => !q || it.name.toLowerCase().includes(q)).map(it => {
+    const on = kept.has(it.id), inb = packed.includes(it.id);
+    return h('li', { class:'arm-row', 'data-own':it.id },
+      h('a', { class:'arm-row-link', href:`#/ball/${it.id}` }, h('span', { class:'ball-orb sm', style:{ '--c':it.color || 'var(--text-3)' }, 'aria-hidden':'true' }),
+        h('span', { class:'arm-row-name', text:(it.benchmark ? '\u2605 ' : '') + it.name }), h('span', { class:'pill' + (inb ? ' gold' : ''), text:inb ? 'In bag' : (ST.LABEL[it.status] || it.status) })),
+      h('button', { class:'btn sm ghost keep-btn', 'data-keep':it.id, 'aria-pressed':String(on), 'aria-label':`Keep ${it.name} in bag: ${on ? 'on' : 'off'}`, onclick:() => keep(it, !on) },
+        h('span', { html:icon('pin', on ? 'pin-on' : 'pin-off') }), on ? 'Kept' : 'Keep'));
+  })); };
+  find.oninput = () => { st.mq = find.value; fill(); };
+  fill();
+  return h('section', { class:'card', id:'armMine', 'aria-label':'My balls' }, find, ul,
+    list.length ? null : h('a', { class:'btn primary block', id:'armEmpty', href:'#/add-ball' }, 'Add your first ball'));
 }
 function armory(P) {
   const sh = A.shelves(P, catOf), badges = A.starterBadges(P), next = UX.flag('nextUp') ? A.nextUp(P) : null;
@@ -98,10 +126,12 @@ export async function render() {
   drawChips(); draw();
   const el = h('section', { class:'screen list-screen' },
     h('header', { class:'appbar arm-head' }, h('div', { class:'arm-titles' }, h('span', { class:'arm-team', text:T.team }), h('h1', { class:'title', text:T.title })), h('div', { class:'appbar-actions' }, h('a', { class:'btn primary sm', id:'arsAdd', href:'#/add-ball' }, 'Add ball'), h('a', { class:'btn ghost sm', href:'#/arsenal/insights' }, 'Insights'))),
-    P ? armory(P) : null,
+    P ? mine(P, () => go(location.hash, { replace:true })) : null,
+    P ? h('details', { class:'card tn-more', id:'armShelvesD' }, h('summary', { text:'Shelf view, milestones, Old Friends' }), armory(P)) : null,
+    h('details', { class:'card tn-more', id:'armMoreD' }, h('summary', { text:'More: export, catalog reference' }),
     P ? h('div', { class:'arm-export' }, h('button', { class:'btn ghost', id:'arsExport', onclick:async () => (await import('./export.js')).openExport() }, 'Export my arsenal')) : null,   // item E: sheet, bag card, CSV, backup
     h('a', { class:'btn ghost block', id:'arsFullCatalog', href:'#/welcome' }, 'Search the complete shared catalog'),
     withHelp(h('h2', { class:'group-h arm-cat', text:'Catalog reference models · not owned' }), 'eq-cover-types', 'Ball types'),
-    h('div', { class:'list-tools' }, search, chips, count), sugg, grid, tray);
+    h('div', { class:'list-tools' }, search, chips, count), sugg, grid), tray);
   return { el, title:T.title };
 }

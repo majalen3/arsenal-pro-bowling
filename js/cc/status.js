@@ -44,7 +44,7 @@ export function whyNot(x, ctx = {}) {
   const ov = overlaps(bag.concat([x])).find(o => o.a === x.ownedId || o.b === x.ownedId);
   if (ov) { const other = bag.find(b => b.ownedId === (ov.a === x.ownedId ? ov.b : ov.a));
     return { key: 'overlap', text: `Too close to ${other ? other.name : 'a ball you\u2019re bringing'}: ${ov.why}.`, canBring: true }; }
-  if (cell.tbd) return { key: 'tbd', text: 'No oil tag yet (spec TBD), so the app can\u2019t place it.', canBring: true };
+  if (cell.tbd) return { key: 'tbd', text: 'Specs not published, so the app can\u2019t place it yet.', canBring: true };
   if (ctx.demand != null && cell.level != null && cell.level !== ctx.demand) {
     const more = cell.level > ctx.demand;
     return { key: more ? 'stronger' : 'weaker', text: `${more ? 'Stronger' : 'Weaker'} than tonight\u2019s lanes need (level ${cell.level} vs demand ${ctx.demand}).`, canBring: true };
