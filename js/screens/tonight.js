@@ -52,6 +52,7 @@ export async function render(o = {}) {
   // IA P1.5: Tonight plans the night (bag, start line, who's bowling); the score pad lives on #/bowl ("Start bowling").
   // #/tonight with a night in progress goes straight to #/bowl (replaceState: no second render) unless the bowler tapped Leave.
   let BOWL = !!o.bowl, drawn = false, extraOpen = false;
+  const shareHere = new Set(), shareDone = new Set();   // nights whose one share offer this screen is showing / has closed
   await ready();
   let sid = openNight(proj()) || newNightId(proj());
   // The current night: stays put across midnight; a new one only after "End night" (or 4 h idle on the next open).
@@ -515,11 +516,17 @@ export async function render(o = {}) {
     const id = o.query && o.query.get('night'), ses = id && P.sessions[id]; if (!ses || !ses.ended) return null;
     const games = (P.games || []).filter(gm => gm.sessionId === id && gm.complete).sort((x, y) => x.game - y.game), tot = games.map(gm => gm.score).filter(x => x != null);
     const series = tot.reduce((a, x) => a + x, 0), line = tot.length ? `${tot.length} ${tot.length === 1 ? 'game' : 'games'} \u00b7 ${tot.join(', ')}${tot.length > 1 ? ` \u00b7 series ${series}` : ''}` : 'No complete games logged.';
-    const offered = (prefs().shareOffered || {})[id], canShare = !!navigator.share && tot.length && !offered;
+    // v70: the offer is made once per night. Showing it records it (so reopening this return page never brings it back); while this
+    // screen stays open it can be used or dismissed with Not now. Native share sheet only, never auto-posted.
     const markOffered = () => setPrefs({ shareOffered: Object.assign({}, prefs().shareOffered, { [id]: Date.now() }) });
+    if (!!navigator.share && tot.length && !(prefs().shareOffered || {})[id] && !shareHere.has(id)) { shareHere.add(id); markOffered(); }
+    const canShare = !!navigator.share && tot.length && shareHere.has(id) && !shareDone.has(id);
+    const shareRow = canShare ? h('div', { class: 'btn-grid share-row', id: 'tnShareOffer' },
+      h('button', { class: 'btn ghost', id: 'tnShareNight', onclick: async () => { shareDone.add(id); try { await navigator.share({ title: 'My bowling night', text: `Bowled ${line}.` }); } catch (e) {} draw(); } }, 'Share this night'),
+      h('button', { class: 'btn ghost', id: 'tnShareSkip', onclick: () => { shareDone.add(id); draw(); } }, 'Not now')) : null;
     return h('div', { class: 'card', id: 'tnNightDone', role: 'status' }, h('h2', { class: 'card-title', text: 'Night saved' }), h('p', { id: 'tnNightLine', text: line }),
       h('a', { class: 'btn block', id: 'tnNightResults', href: '#/session/' + encodeURIComponent(id) }, 'See the night on Results \u203a'),
-      canShare ? h('button', { class: 'btn ghost block', id: 'tnShareNight', onclick: async () => { markOffered(); try { await navigator.share({ title: 'My bowling night', text: `Bowled ${line}.` }); } catch (e) {} draw(); } }, 'Share this night') : null);
+      shareRow);
   }
   function protectNudge(P) {
     const pf = prefs(), db = hub.db; if (!db) return null;
@@ -571,7 +578,7 @@ export async function render(o = {}) {
   // Now item 3 (PRODUCT_EVAL_1 #3, 2026-11-02): the Stand \u00b7 Aim chip opens Targeting in one tap (it used to open the Lane, then
   // Targeting was a second tap). Lane is one tap back from Targeting's header. Without a model line Targeting still sets feet and eyes.
   function aimChip(st, ml, cid) {
-    return h('a', { class: 'chip aim-chip', id: 'tnAimChip', href: '#/target' + (cid ? '?ball=' + encodeURIComponent(cid) : ''), onclick: () => UX.count('aim.chip'), 'aria-label': st ? `Stand ${st.feet}, aim ${fmtHalf(ml.target)}: open Targeting` : 'Stand · Aim › — set on Targeting' },
+    return h('a', { class: 'chip aim-chip', id: 'tnAimChip', href: '#/target' + (cid || BOWL ? '?' + [cid ? 'ball=' + encodeURIComponent(cid) : '', BOWL ? 'game=1' : ''].filter(Boolean).join('&') : ''), onclick: () => UX.count('aim.chip'), 'aria-label': st ? `Stand ${st.feet}, aim ${fmtHalf(ml.target)}: open Targeting` : 'Stand · Aim › — set on Targeting' },
       st ? `Stand ${st.feet} \u00b7 Aim ${fmtHalf(ml.target)} \u203a` : 'Stand \u00b7 Aim \u203a');
   }
   function advisorCard(P, s, b, adv, start) {

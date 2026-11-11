@@ -1,4 +1,4 @@
-# Home = the Building, scoring = the game (2026-11-10, offline build v69)
+# Home = the Building, scoring = the game (2026-11-10, offline build v69; v70 follow-up 2026-11-11)
 
 Owner, 2026-11-10: "We should have like the building then the scoring page should be an in game page."
 Live eval the same day (360 px, fresh profile): search hid most of a ball family, packing tonight's bag was confusing, and the
@@ -28,7 +28,12 @@ arrive ──> Building (home) ──> Bag: pack tonight ──> Building: Start
 5. **Leave and come back.** ← Building keeps the night open. The Building then leads with **Back to the game · game N**.
    Re-opening the app during a night lands back in the game (unless you just left it in this tab).
 6. **Return.** End night saves the night and returns to the Building with a **Night saved** card (games, series), a link to
-   the full night on Results and, once per night and only where the phone has a native share sheet, **Share this night**.
+   the full night on Results and, once per night and only where the phone has a native share sheet, **Share this night** /
+   **Not now**. The offer is recorded the moment it is shown: Not now (or just leaving) closes it for good for that night.
+7. **Tools in the game (v70).** Stand · Aim on the game page opens Targeting (and from there Lane) *inside the game*: no tab
+   bar or rail, no Help or Me, one **← Game** button back to the pad; the night and the game in progress are untouched. The
+   game context starts on `#/bowl` (or a `?game=1` deep link to Lane/Target) and ends on any other screen. Opened from the
+   Building or Learn, Lane and Targeting keep the normal tab bar.
 
 ## What changed (this PR)
 
@@ -47,7 +52,7 @@ Saved data is untouched: no event, key or schema changes; the stored status key,
 ### Live-eval fixes bundled here
 - **Search lists every match** (`cc/addball.js` `browse`): each typed word must start a word of brand + name (case,
   hyphen and II = 2 ignored) or the squashed text must appear inside it; the exact alias stays first, fuzzy candidates follow.
-  "Hy-Road" now lists all 5, "Rattler" all 4, "Phaze" all 3. Used by Welcome, Add a ball and the QR kit.
+  "Hy-Road" now lists all 5, "Rattler" all 4, "Phaze" all 3 (all 5 after v70). Used by Welcome, Add a ball and the QR kit.
 - **Catalog:** 7 maker-sourced rows (Storm Phaze II, Phaze 4, Phaze AI; Roto Grip Attention Star; Hammer Black Widow 3.0,
   Purple Pearl Urethane; Motiv Venom Shock), each with its maker URL and the 2026-11-10 read date. Existing rows unchanged.
 - **Second physical copy** is inserted directly under the ball it copies and named "#2", so nicknames land on the right ball.
@@ -55,7 +60,14 @@ Saved data is untouched: no event, key or schema changes; the stored status key,
   Raising Bring N keeps every packed ball and adds Ready, then At-home balls (balls with specs first). Lowering it takes out
   balls without specs first and never the last ball with specs, the spare or a pinned ball. Suggest again tops up to Bring N.
 
+### v70 follow-up (2026-11-11, owner t110/t111)
+- **Lane and Targeting from the game** keep the game chrome (no tab bar/rail, Help, Me or first-visit tour); **← Game** returns to the pad.
+- **Share offer** after End night: offered once per night, recorded when shown; **Not now** removes it and it never comes back for that night (reload or reopen). Native share sheet only, nothing posted automatically.
+- **404 catalog gaps filled** (13 rows, read 2026-11-11). The 2026-11-10 maker URLs had moved, not vanished: 10 balls are on the
+  makers' own live pages under new URLs (Storm's bowling-balls archive, Brunswick's retired pages) and 3 come from Wayback Machine
+  copies of the maker's own page (`specStatus: "archive"`, `original` = the maker URL). No Wikipedia or forum row was needed.
+  See tools/catalog/README.md for each ball, source and field.
+
 ## Not in this version
-- Lane and Targeting opened from the game still show the tab bar (they are shared tools, also reached from the Building and Learn).
 - No new "building" artwork or brand photos: the house icon and the words do the work.
 - The Building and Bag remain two tabs rather than one long screen, to keep the League Building within its 1110 px budget.

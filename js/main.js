@@ -62,8 +62,34 @@ function setTab(t) { $$('.tab', nav).forEach(a => { if (a.dataset.tab === t) a.s
 // first run: skippable onboarding (existing v1 users with saved state skip it automatically)
 if (!profile() && !prefs().onboarded && !rawGet('ap_state') && !location.hash) history.replaceState(null, '', '#/welcome');
 // Owner bug 2026-10-24 ("the help feature does nothing, I can't find any '?'"): a "?" switch in every app bar (not Welcome).
+// HOME_GAME_FLOW v70: Lane and Target opened from the game page stay "in the game": no tab bar, no Help or Me, one "<- Game" button.
+// The game context starts on #/bowl (or a ?game=1 deep link to Lane/Target) and ends on any other screen. Opened from the Building
+// or Learn, Lane and Target keep the normal tab bar.
+const GAME_CTX = 'ap_game_ctx', GAME_TOOLS = new Set(['/lane', '/target']);
+let firstDecor = true;
+function gameContext(path) {
+  const q = new URLSearchParams(location.hash.split('?')[1] || '');
+  // A fresh visit straight to Lane/Target is out of the game; a reload of an in-game tool stays in it.
+  if (firstDecor) { firstDecor = false; const nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || {};
+    if (GAME_TOOLS.has(path) && q.get('game') !== '1' && nav.type !== 'reload') sessionStorage.removeItem(GAME_CTX); }
+  if (path === '/bowl' || (GAME_TOOLS.has(path) && q.get('game') === '1')) sessionStorage.setItem(GAME_CTX, '1');
+  else if (!GAME_TOOLS.has(path)) sessionStorage.removeItem(GAME_CTX);
+  return GAME_TOOLS.has(path) && sessionStorage.getItem(GAME_CTX) === '1';
+}
 setDecorate((el, path) => {
   UX.count('screen.' + (path.split('/')[1] || 'tonight'));
+  const inGame = gameContext(path);
+  document.body.toggleAttribute('data-ingame', inGame);
+  if (inGame) {   // in-game tool: its own bar keeps only the tool's controls plus the way back to the game
+    const bar = el.querySelector('.appbar');
+    if (bar && !bar.querySelector('#gameBack')) {
+      const gb = Object.assign(document.createElement('a'), { className:'btn ghost sm game-back', id:'gameBack', href:'#/bowl', textContent:'\u2190 Game' });
+      gb.setAttribute('aria-label', 'Back to the game');
+      const acts = path === '/lane' && bar.querySelector('.appbar-actions');   // Lane: beside its tools, so the ball header keeps its row
+      if (acts) acts.prepend(gb); else bar.prepend(gb);
+    }
+    return;
+  }
   if (path === '/welcome' || path === '/bowl' || location.hash.startsWith('#/bowl')) return;   // the game page keeps only its own Leave button (no Help, no Me)
   const bar = el.querySelector('.appbar'); if (!bar || bar.querySelector('#helpToggle')) return;
   const t = helpToggle(() => go(location.hash || '#/tonight', { replace:true })), acts = bar.querySelector('.appbar-actions');

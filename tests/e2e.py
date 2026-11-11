@@ -652,6 +652,9 @@ async def targeting_cycle(b):
     await seed(p); await p.goto(BASE + '?tg#/bowl'); await p.wait_for_selector('#noBag'); await load_sample(p); await bowl_more(p); await p.wait_for_selector('#tnFind')
     await p.click('#tnFind'); await p.wait_for_selector('#tgFindCard')
     check('#/target' in p.url and 'Big Bite' in await p.eval_on_selector('#tgBall', 'e => e.selectedOptions[0].textContent'), '[target] Tonight "Find my strike line" opens Targeting with tonight\'s ball and runs Find')
+    # v70: Targeting opened from the game page is part of the game (no tab bar, ← Game); leaving to another screen ends that.
+    check(not await p.is_visible('#tabs') and await p.is_visible('#gameBack'), '[target] opened from the game: no tab bar, a Back to the game button')
+    await p.evaluate("location.hash = '#/learn'"); await p.wait_for_function("() => location.hash === '#/learn' && !document.body.hasAttribute('data-ingame')")
     await p.goto(BASE + '?tg#/target'); await p.wait_for_selector('#tgTour')
     check(await p.query_selector('#tabs [aria-current=page]') is None and await p.is_visible('#tabs'), '[target] a tool: no tab of its own, tab bar still there (IA P2)')
     await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())"); await shot(p, 'phone-target-walkthrough')

@@ -43,16 +43,24 @@ function appEntry(b) {
 const hostOf = u => { try { return new URL(u).host.replace(/^www\./, ''); } catch (e) { return 'maker page'; } };
 function rowEntry(r) {
   const id = 'sc-' + slug(r.brand + ' ' + r.name), base = { id, brand: r.brand, name: r.name, src: 'catalog', source: r.source || null, checked: r.checked || null, specStatus: r.specStatus };
-  if (r.specStatus !== 'maker') return Object.assign(base, { fields: {}, flag: 'No maker page found for this ball; specs unverified. Enter them from the box or the maker page.' });
-  const p = { kind: 'manufacturer', ref: hostOf(r.source), url: r.source, date: r.checked }, der = new Set(r.derived || []);
+  // v70: "archive" = a web.archive.org copy of the maker's own page (still maker data, labelled archived); "secondary" = Wikipedia with
+  // attribution (catalog provenance, flagged); "community" / "unverified" = name only.
+  if (r.specStatus === 'community') return Object.assign(base, { fields: {}, flag: 'Community-reported name only (a public forum post); specs unverified. Enter them from the box or the maker page.' });
+  if (!['maker', 'archive', 'secondary'].includes(r.specStatus)) return Object.assign(base, { fields: {}, flag: 'No maker page found for this ball; specs unverified. Enter them from the box or the maker page.' });
+  const p = r.specStatus === 'archive' ? { kind: 'manufacturer', ref: 'archived ' + hostOf(r.original), url: r.source, original: r.original, date: r.checked, archived: true }
+    : r.specStatus === 'secondary' ? { kind: 'catalog', ref: r.attribution || hostOf(r.source), url: r.source, date: r.checked, secondary: true }
+    : { kind: 'manufacturer', ref: hostOf(r.source), url: r.source, date: r.checked }, der = new Set(r.derived || []);
+  if (r.specStatus === 'archive') Object.assign(base, { original: r.original, sourceAlso: r.sourceAlso || null });
+  if (r.specStatus === 'secondary') base.attribution = r.attribution;
   const d = Object.assign({}, p, { kind: 'derived', ref: 'read from the maker\u2019s wording' }), P = k => (der.has(k) ? d : p);
   const w = r.weight, wNote = w == null ? 'weight not stated' : w === 15 ? '15 lb' : `${w} lb value; 15 lb not printed`;
   const num = k => { const x = F(r[k], p, wNote); if (x && w != null && w !== 15) x.weightMismatch = true; return x; };
   const ct = r.coverType ? coverTypeOf(r.coverType) || r.coverType : null;
   return Object.assign(base, { fields: pack({
-    rg: num('rg'), diff: num('diff'), intDiff: num('intDiff'), coverstock: F(r.coverstock, p), coverType: F(ct, P('coverType'), ct !== r.coverType ? `maker says "${r.coverType}"` : null),
+    rg: num('rg'), diff: num('diff'), intDiff: num('intDiff'), coverstock: F(r.coverstock, P('coverstock')), coverType: F(ct, P('coverType'), ct !== r.coverType ? `maker says "${r.coverType}"` : null),
     finish: F(r.finish, P('finish')), core: F(r.core, p), symmetry: F(r.symmetry, P('symmetry')), releaseDate: F(r.release, p), condition: F(r.conditionText, P('condition')),
-    oil: F(COND_OIL[r.condition] ? COND_OIL[r.condition].slice() : null, Object.assign({}, d, { ref: 'maker condition' })) }), flag: null });
+    oil: F(COND_OIL[r.condition] ? COND_OIL[r.condition].slice() : null, Object.assign({}, d, { ref: 'maker condition' })) }),
+    flag: r.specStatus === 'secondary' ? `Specs from ${r.attribution || 'a public reference'}, not the maker; check them against the box.` : null });
 }
 export const CATALOG_NOTE = CATALOG_META.note;
 let LIST = null;

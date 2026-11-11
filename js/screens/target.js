@@ -246,6 +246,6 @@ export async function render({ query } = {}) {
   }
   let aimSig = JSON.stringify(prefs().aimBox || {});
   const offPrefs = on('prefs', () => { const sg = JSON.stringify(prefs().aimBox || {}); if (sg === aimSig || !r) return; aimSig = sg; update(false); });
-  return { el, title: 'Targeting', mounted() { if (!prefs().tgTour && !(query && query.get('find'))) { tour(0); setPrefs({ tgTour: 1 }); }   // C10: first visit only; "?" replays it
+  return { el, title: 'Targeting', mounted() { if (!prefs().tgTour && !(query && query.get('find')) && !(query && query.get('game') === '1') && sessionStorage.getItem('ap_game_ctx') !== '1') { tour(0); setPrefs({ tgTour: 1 }); }   // v70: no tour over an open game   // C10: first visit only; "?" replays it
     update(true); if (query && query.get('find')) runFind(); }, destroy() { offPrefs(); lane.destroy(); deck.destroy(); } };
 }

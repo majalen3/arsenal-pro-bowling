@@ -61,6 +61,11 @@ body[data-tab=none] .tabbar,body[data-tab=bowl] .tabbar{display:none}
 /* HOME_GAME_FLOW: the game page is its own place: no tab bar or rail, a Leave button in its bar, the pad gets the room. */
 body[data-tab=bowl] #view{padding-bottom:var(--s4)}
 @media (min-width:900px){body[data-tab=bowl] #app{padding-left:0}}
+/* v70: Lane/Target opened from the game: same focused chrome (no tab bar or rail); docks drop to the bottom edge. */
+body[data-ingame]{--tab-h:0px}
+body[data-ingame] .tabbar{display:none}
+@media (min-width:900px){body[data-ingame] #app{padding-left:0}}
+.game-back{min-height:44px;min-width:44px;flex:none;border-color:var(--accent)}
 .game-bar{border-bottom:2px solid var(--accent)}
 .game-pill{background:var(--accent-soft);color:var(--accent-ink);font-weight:700}
 .bld-line,#bagExplain{margin:0 var(--s4) var(--s2)}

@@ -127,7 +127,7 @@ export async function render() {
         x && x.weightMismatch ? prov('assumed', 'other weight') : null));
     }
     const lvl = G.cellOfCat(cat).level;
-    const srcOf = made && made.source.url ? { url: made.source.url, ref: made.source.ref, date: made.source.date } : e.source ? { url: e.source, ref: new URL(e.source).host.replace(/^www\./, ''), date: e.checked } : null;
+    const srcOf = made && made.source.url ? { url: made.source.url, ref: made.source.ref, date: made.source.date } : e.source ? { url: e.source, ref: e.specStatus === 'archive' && e.original ? `archived copy of ${new URL(e.original).host.replace(/^www\./, '')} (Wayback Machine)` : e.specStatus === 'secondary' && e.attribution ? e.attribution : new URL(e.source).host.replace(/^www\./, ''), date: e.checked } : null;
     const src = srcOf ? h('p', { class: 'small', id: 'abSource' }, 'Source: ', h('a', { class: 'srclink', href: srcOf.url, target: '_blank', rel: 'noopener noreferrer', text: srcOf.ref }), srcOf.date ? ` \u00b7 read ${srcOf.date}` : '') : null;
     detail.append(h('div', { class: 'card', id: 'abConfirm' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: `2. Check ${e.brand} ${e.name}` }), helpDot('eq-cover-types', 'Cover types')),
       h('div', { class: 'fld' }, h('span', {}, 'Ball weight ', st.weightSet ? null : prov('assumed', 'assumed 15 lb')),
