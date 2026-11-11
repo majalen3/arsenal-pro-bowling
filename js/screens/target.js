@@ -6,8 +6,8 @@ import { go } from '../router.js';
 import { ready, proj } from '../hub.js';
 import { app, today, profile, prefs, setPrefs, saveLine, linesForBall, on } from '../store.js';
 import { S, START, RANGES } from '../engine.js';
-import { balls, specOK } from '../data.js';
-import { catOf } from '../cc/cats.js';
+import { balls, modelOK as specOK } from '../data.js';
+import { catOf, ballFor, ballKey } from '../cc/cats.js';
 import { createLane } from '../lane.js';
 import { createDeck, describe } from '../deck.js';
 import { HOUSE_ASSUMED, rule31 } from '../cc/rank.js';
@@ -18,6 +18,7 @@ import * as T from '../cc/target.js';
 import * as F from '../cc/strikeline.js';
 import { aimLayer as aimL, paintPill, overlaysBtn } from './overlays.js';
 import { helpDot } from './help.js';
+import { aboutAngle } from '../cc/provenance.js';
 import * as HAND from '../cc/hand.js';
 import { handAsk } from './hand.js';
 import { fmtHalf } from '../labels.js';
@@ -35,11 +36,12 @@ export async function render({ query } = {}) {
   const sess = (P.sessions || {})[openNight(P) || ''] || {};   // the open night (sim bug 3), not the calendar day
   const ft = sess.ft != null ? +sess.ft : HOUSE_ASSUMED.ft;
   const speed = num(b.speed) || START.speed, rev = num(b.rev) || START.rev;   // sim2 #1: the same release as Tonight's line (js/cc/line.js defaults)
-  const relSrc = k => { const f = b[k]; return f && f.prov ? (f.prov.kind === 'device' ? ['device', f.prov.label || 'LaneTrax'] : f.prov.ref === 'default' ? ['assumed', 'default (not entered)'] : ['user', 'your profile']) : ['assumed', 'assumed']; };
+  const relSrc = k => { const f = b[k]; return f && f.prov ? (f.prov.kind === 'device' ? ['device', 'measured · ' + (f.prov.label || 'LaneTrax')] : f.prov.ref === 'default' ? ['assumed', 'default (not entered)'] : ['user', 'your profile']) : ['assumed', 'assumed']; };
   // balls: owned (not pro shop / retired) + the Lane ball; ?ball= picks one (Tonight link)
-  const owned = Object.values(P.owned || {}).filter(o => !['proShop', 'retired'].includes(o.status)).map(o => catOf(o.catalogId)).filter(Boolean);
-  const list = [...new Map([app.ball, ...owned].filter(Boolean).map(c => [c.id, c])).values()];
-  let cat = (query && query.get('ball') && catOf(query.get('ball'))) || app.ball;
+  const owned = Object.values(P.owned || {}).filter(o => !['proShop', 'retired'].includes(o.status)).map(o => ballFor(o.id)).filter(Boolean);
+  const requested = query?.get('ball') && ballFor(query.get('ball'));
+  const list = [...new Map([app.ball, ...owned, ...owned.map(c => catOf(c.id)), requested].filter(Boolean).map(c => [ballKey(c), c])).values()];
+  let cat = (query && query.get('ball') && ballFor(query.get('ball'))) || app.ball;
   // tv 2 = eyes in real arrows boards (DECISIONS #26). Older saved eyes used the v1 "1 board per aim unit" label, so they are dropped.
   const pt0 = prefs().target || {}, saved = pt0.tv === 2 ? pt0 : {};
   const ctx = { speed, rev, ft };
@@ -49,10 +51,10 @@ export async function render({ query } = {}) {
   const seed = base => { const ml = startOf(); if (!ml) return {};
     const off = +base.offset || T.DEFAULTS.offset, dr = +base.drift || 0, lay = ml.feet, arr = ml.target;
     return { feet: Math.round(lay + off - dr), eyes: base.mode === 'dots' ? Math.round((lay + (arr - lay) * T.DOTS_FT / T.ARROWS_FT) * 10) / 10 : arr, bpBoard: null, bpFt: null }; };
-  const same = saved.t && saved.ball === cat.id && saved.ft === ft;
-  let t = Object.assign({}, T.DEFAULTS, saved.t || {}); if (!same || keptLine(cat.id)) Object.assign(t, seed(t));   // F01: a kept line wins
+  const same = saved.t && saved.ball === ballKey(cat) && saved.ft === ft;
+  let t = Object.assign({}, T.DEFAULTS, saved.t || {}); if (!same || keptLine(ballKey(cat))) Object.assign(t, seed(t));   // F01: a kept line wins
   // F01: a feet/eyes move made here becomes the kept line for this ball (js/cc/line.js), so Lane and Tonight show it too.
-  const sigT = () => `${cat.id}|${t.feet}|${t.eyes}|${t.mode}`; let startSig = sigT();
+  const sigT = () => `${ballKey(cat)}|${t.feet}|${t.eyes}|${t.mode}`; let startSig = sigT();
   let box = null, r = null, sug = null;
 
   const canvas = h('canvas', { id: 'tgLane', class: 'lane-canvas tg-lane', tabindex: '0', role: 'img' });
@@ -72,8 +74,8 @@ export async function render({ query } = {}) {
       h('a', { href: B.nba, target: '_blank', rel: 'noopener', class: 'srclink' }, 'National Bowling Academy'), '. Feet = laydown + your ball offset \u2212 drift.'));
   const warnBox = h('div', { class: 'muted small', id: 'tgWarn' });
   const tourBox = h('div', { id: 'tgTourHost' });
-  const ballSel = h('select', { id: 'tgBall', 'aria-label': 'Ball', class: 'tg-ball' }, ...list.map(c => h('option', { value: c.id, text: c.name + (specOK(c) ? '' : ' (spec TBD)') })));
-  ballSel.value = cat.id; ballSel.onchange = () => { cat = catOf(ballSel.value) || cat; t = Object.assign({}, t, seed(t)); startSig = sigT(); box = null; findOut.replaceChildren(); update(true); };
+  const ballSel = h('select', { id: 'tgBall', 'aria-label': 'Ball', class: 'tg-ball' }, ...list.map(c => h('option', { value: ballKey(c), text: c.name + (!c.ownedId ? ' · catalog reference' : '') + (specOK(c) ? '' : ' (spec TBD)') })));
+  ballSel.value = ballKey(cat); ballSel.onchange = () => { cat = ballFor(ballSel.value) || cat; t = Object.assign({}, t, seed(t)); startSig = sigT(); box = null; findOut.replaceChildren(); update(true); };
   // ---- Find my strike line: grid + Monte Carlo on the unchanged engine (js/cc/strikeline.js)
   const findOut = h('div', { id: 'tgFindOut', 'aria-live': 'polite' });
   const findBtn = h('button', { class: 'btn primary block', id: 'tgFind', html: icon('target') + '<span>Find my strike line</span>', onclick: () => runFind() });
@@ -175,24 +177,27 @@ export async function render({ query } = {}) {
 
   function update(animate) {
     if (!box || (t.bpBoard != null && t.bpFt != null) !== (box.from === 'yours') || (box.from === 'yours' && (box.board !== t.bpBoard || box.ft !== t.bpFt))) box = T.boxFor(cat, ctx, t);
-    if (!specOK(cat)) { coach.textContent = `${cat.name}: spec TBD, so no model line. Pick another ball.`; return; }
+    const supported = specOK(cat);
+    for (const n of [el.querySelector('.tg-grid'), sum, sugBox, warnBox]) n.hidden = !supported;
+    saveBtn.disabled = !supported; findBtn.disabled = !supported; dock.hidden = !supported; setup.hidden = !supported;
+    if (!supported) { r = null; coach.textContent = `${cat.name}: spec TBD, so no model line. Pick another ball.`; return; }
     r = T.read(cat, t, ctx, box); sug = T.suggest(cat, t, ctx, box, r);
     const L = lefty();
     coach.textContent = T.coach(r, sug, L);
-    const [cl, tone] = CALL[r.call]; callPill.textContent = r.call === 'gutter' ? cl : `${cl} ${r.entry} \u00b7 ${r.angle}\u00b0 model`; callPill.dataset.tone = tone;
+    const [cl, tone] = CALL[r.call]; callPill.textContent = r.call === 'gutter' ? cl : `${cl} ${r.entry} \u00b7 ${aboutAngle(r.angle)}`; callPill.append(prov('model','model')); callPill.dataset.tone = tone;
     boxPill.textContent = r.box.ok ? 'In the box' : r.box.dB == null ? 'No breakpoint' : `Box missed ${Math.abs(r.box.dB) > T.BOX_HALF_BOARDS ? Math.abs(r.box.dB) + ' bd ' + (r.box.dB > 0 ? 'inside' : 'outside') : Math.abs(r.box.dF) + ' ft ' + (r.box.dF > 0 ? 'long' : 'short')}`;
     boxPill.dataset.tone = r.box.ok ? 'good' : 'warn';
     const dirB = n => n === 0 ? '' : ` ${Math.abs(n)} ${T.dirWord(n, L)}`;
     feetRow.paint(`${t.feet}`); eyesRow.paint(fmtHalf(t.eyes)); driftRow.paint(t.drift ? dirB(t.drift).trim() : 'none'); offRow.paint(`${t.offset}`);
     bpbRow.paint(`${box.board}`); el.querySelector('#tgBpFVal').textContent = `${box.ft} ft`;
     modeSeg.querySelectorAll('button').forEach(x => { const on = x.dataset.v === t.mode; x.setAttribute('aria-checked', String(on)); x.tabIndex = on ? 0 : -1; });
-    sum.replaceChildren(...[['Feet', t.feet], ['Laydown', r.lay], [t.mode === 'dots' ? 'Dots' : 'Arrows', fmtHalf(t.eyes)], ['Break', r.bpBoard == null ? '\u2014' : `${r.bpBoard} @ ${r.bpFt}`], ['Entry', r.entry == null ? '\u2014' : `${r.entry} \u00b7 ${r.angle}\u00b0`]]
-      .map(([k, v]) => h('li', {}, h('small', { text: k }), h('b', { class: 'num', text: String(v) }))));
+    sum.replaceChildren(...[['Feet', t.feet], ['Laydown', r.lay], [t.mode === 'dots' ? 'Dots' : 'Arrows', fmtHalf(t.eyes)], ['Break', r.bpBoard == null ? '\u2014' : `${r.bpBoard} @ ${r.bpFt}`], ['Entry', r.entry == null ? '\u2014' : `${r.entry} \u00b7 ${aboutAngle(r.angle)}`]]
+      .map(([k, v]) => h('li', {}, h('small', { text: k }), h('b', { class: 'num', text: String(v) }), ['Break','Entry'].includes(k) ? prov('model','model') : prov('user','your line'))));
     sugBox.replaceChildren();
     if (sug) {
       const m = sug.move, src = T.SRC[m.src];
       sugBox.append(h('div', { class: 'row between' },
-        h('div', {}, h('b', { text: `${m.rule}: ` }), T.moveWords(sug, L).replace(/^Move /, '').replace(/\.$/, ''), h('div', { class: 'muted small', text: `Model after the move: ${CALL[sug.r.call][0].toLowerCase()} ${sug.r.entry} \u00b7 ${sug.r.angle}\u00b0${sug.r.box.ok ? ', in the box' : ''}.` })),
+        h('div', {}, h('b', { text: `${m.rule}: ` }), T.moveWords(sug, L).replace(/^Move /, '').replace(/\.$/, ''), h('div', { class: 'muted small', text: `Model after the move: ${CALL[sug.r.call][0].toLowerCase()} ${sug.r.entry} \u00b7 ${aboutAngle(sug.r.angle)}${sug.r.box.ok ? ', in the box' : ''}.` })),
         h('button', { class: 'btn primary', id: 'tgApply', onclick: () => { t = Object.assign({}, sug.t); update(true); toast(`${m.rule} applied.`); } }, 'Apply move')),
         h('p', { class: 'muted small' }, 'Rule: ', h('a', { href: src.url, target: '_blank', rel: 'noopener', class: 'srclink' }, src.label), sug.cited
           ? `. House-shot rule: move toward the miss.${sug.modelAgrees ? '' : ' The model can\u2019t show this working: ' + T.LIMITS.oil.replace(/^The model\u2019s/, 'its')}` : '. No cited direction for this miss; picked by the model.'));
@@ -202,31 +207,31 @@ export async function render({ query } = {}) {
     el.querySelector('#tgCond').replaceChildren(`${speed} mph `, prov(sp[0], sp[1]), ` ${rev} rpm `, prov(rv[0], rv[1]), ` ${r.preset} preset (${ft} ft) `, prov(sess.ft != null ? 'usbc' : 'assumed', sess.ft != null ? 'tonight' : 'assumed'));
     el.querySelector('#tgAssume').textContent = `Ball offset ${t.offset} and drift ${t.drift || 0} are ${saved.t ? 'yours' : 'assumed (Breakdown Bowling example: 7)'}; set them from a few shots on video. Box: ${box.from === 'model' ? `tonight\u2019s model strike line, ${box.board} @ ${box.ft} ft` : box.from === 'yours' ? 'your target' : 'Rule of 31 (no model line)'}, 3 boards \u00d7 2 ft (Human Kinetics; NBA 8\u201310 at 39\u201341 ft). ${box.r31.text}.`;
     const d = describe(r.a, L);
-    el.querySelector('#tgDeckRead').textContent = d.text;
+    el.querySelector('#tgDeckRead').replaceChildren(d.text, prov('model','model'));
     paintPill(aimPill, () => ({ preset: r.preset, ft: sess.ft != null ? +sess.ft : null }), r.a, () => ({ cat, speed, rev, finish: 'factory', oil: 1 }));
     aimWhy.hidden = aimPill.dataset.state !== 'beyond'; aimWhy.textContent = aimPill.dataset.why || '';
     lane.draw({ ball: cat, result: r.a }, { animate });
     deck.draw({ res: r.a, lefty: L, tone: CALL[r.call][1], color: cat.color }, { animate });
     canvas.setAttribute('aria-label', `Lane: feet ${t.feet}, laydown ${r.lay}, eyes ${fmtHalf(t.eyes)} at the ${t.mode}. ${coach.textContent}`);
     deckCv.setAttribute('aria-label', d.text);
-    setPrefs({ target: Object.assign({}, prefs().target, { t, ball: cat.id, ft, tv: 2 }) });
-    if (sigT() !== startSig && r.lay != null && r.arrows != null) { startSig = sigT(); keepLine(cat.id, { lay: r.lay, eyes: r.arrows }); }
+    setPrefs({ target: Object.assign({}, prefs().target, { t, ball: ballKey(cat), ft, tv: 2 }) });
+    if (sigT() !== startSig && r.lay != null && r.arrows != null) { startSig = sigT(); keepLine(ballKey(cat), { lay: r.lay, eyes: r.arrows }); }
   }
   async function saveMine() {
     if (!r) return;
-    const inCat = balls.find(x => x.id === cat.id); if (inCat) app.ball = inCat;
+    app.ball = cat;
     const keep = { release: S.release, aim: S.aim, pattern: S.pattern, speed: S.speed, rev: S.rev };
     S.release = Math.max(RANGES.release[0], Math.min(RANGES.release[1], r.lay)); S.aim = Math.max(RANGES.aim[0], Math.min(RANGES.aim[1], Math.round(r.aim / RANGES.aim[2]) * RANGES.aim[2])); S.pattern = r.preset; S.speed = speed; S.rev = rev;
     const name = `Target ${t.feet}\u2192${t.eyes}${t.mode === 'dots' ? ' dots' : ''}`;
     const l = await saveLine(name, `feet ${t.feet}, drift ${t.drift}, offset ${t.offset}, eyes ${t.eyes} (${t.mode})`);
-    if (!inCat) Object.assign(S, keep);
-    setPrefs({ target: Object.assign({}, prefs().target, { t, savedT: t, savedName: name, ball: cat.id, tv: 2 }) });
+    // Custom and owned balls remain the selected ball; no built-in fallback is saved.
+    setPrefs({ target: Object.assign({}, prefs().target, { t, savedT: t, savedName: name, ball: ballKey(cat), tv: 2 }) });
     toast(l ? `${name} saved for ${cat.name}.` : 'Not saved');
   }
   function backToSaved() {
     const pt = prefs().target || {};
     if (pt.savedT && pt.tv === 2) { t = Object.assign({}, T.DEFAULTS, pt.savedT); update(true); toast(`Back to ${pt.savedName}.`); return; }
-    const l = linesForBall(cat.id)[0]; if (!l) { toast('No saved line for this ball yet', { kind: 'bad' }); return; }
+    const l = linesForBall(ballKey(cat))[0]; if (!l) { toast('No saved line for this ball yet', { kind: 'bad' }); return; }
     t = T.fromLine(l, t); update(true); toast(`Back to ${l.name}.`);
   }
   function tour(i) {

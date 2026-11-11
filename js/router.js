@@ -29,7 +29,7 @@ export function start(el, tabCb) {
   window.addEventListener('scroll', () => { clearTimeout(scrollT); scrollT = setTimeout(() => {
     try { history.replaceState(Object.assign({}, history.state, { y: Math.round(scrollY) }), ''); } catch (e) {} }, 120); }, { passive: true });
   window.addEventListener('hashchange', () => { clearTimeout(scrollT); sessionStorage.setItem('ap_nav', '1'); if (topSheet()) closeAllSheets(true); render(); });
-  render();
+  return render();
 }
 async function render() {
   const raw = location.hash.replace(/^#/, '') || '/tonight';   // Tonight is the home screen (GAP §2c: don't open on Lane)

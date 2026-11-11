@@ -12,7 +12,7 @@ export function migrateV0(snap, { deviceId = null, now = Date.now() } = {}) {
   const ev = (key, i, type, entityId, data, ts, extra) => out.push(mkEvent(type, entityId, data, Object.assign({ id: 'm0-' + fnv(key + '#' + i + '#' + stable(data)), seq: ++seq, ts: Number.isFinite(ts) ? ts : now, deviceId, prov: { kind: 'user', method: 'migrated-v0' } }, extra || {})));
   arr(snap.ap_lines).forEach((l, i) => {
     if (!l.ballId || !l.name) { report.skipped.push('ap_lines[' + i + ']'); return; }
-    const d = {}; ['ballId', 'name', 'release', 'aim', 'speed', 'rev', 'oil', 'finish', 'pattern', 'note', 'id'].forEach(k => { if (l[k] !== undefined) d[k === 'id' ? 'serverId' : k] = l[k]; });
+    const d = {}; ['ballId', 'ownedId', 'catalogId', 'eyes', 'name', 'release', 'aim', 'speed', 'rev', 'oil', 'finish', 'pattern', 'note', 'id'].forEach(k => { if (l[k] !== undefined) d[k === 'id' ? 'serverId' : k] = l[k]; });
     ev('ap_lines', i, 'line.created', l.ballId + '|' + l.name, d, l.updatedAt); report.lines++;
   });
   arr(snap.ap_surface).forEach((s, i) => { if (!s.ballId) { report.skipped.push('ap_surface[' + i + ']'); return; } ev('ap_surface', i, 'ball.surfaceLogged', s.ballId, { ballId: s.ballId, date: s.date || null, finish: s.finish || null, type: 'surfaceChange' }, s.date ? Date.parse(s.date) : now); report.surface++; });
@@ -30,8 +30,8 @@ export function migrateV0(snap, { deviceId = null, now = Date.now() } = {}) {
     const f = {};
     if (p.hand === 'left' || p.hand === 'right') f.hand = p.hand;
     if (p.style) f.style = p.style;
-    if (Number.isFinite(+p.speed) && p.speed !== '') f.speed = { v: +p.speed, unit: 'mph', at: 'unknown', prov: { kind: 'user' } };
-    if (Number.isFinite(+p.rev) && p.rev !== '') f.rev = { v: +p.rev, unit: 'rpm', prov: { kind: 'user' } };
+    if (p.speed != null && Number.isFinite(+p.speed) && p.speed !== '') f.speed = { v: +p.speed, unit: 'mph', at: 'unknown', prov: { kind: 'user' } };
+    if (p.rev != null && Number.isFinite(+p.rev) && p.rev !== '') f.rev = { v: +p.rev, unit: 'rpm', prov: { kind: 'user' } };
     if (p.pap) f.pap = { v: String(p.pap), unit: 'in', prov: { kind: 'user' } };
     if (p.tilt) f.tilt = { v: String(p.tilt), unit: null, prov: { kind: 'user' } };
     ev('ap_profile', 0, 'bowler.edited', 'me', { fields: f }, now - 2e6); report.profile++;

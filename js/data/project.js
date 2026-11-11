@@ -68,7 +68,7 @@ export function healthOf(P) {
   // Clutter audit #4: a game can name a ball by its owned id or its catalog id. Count both under one key (the owned
   // ball), so Tonight and Bag read the same games; the record is also reachable by the catalog id.
   const owned = P.owned || {}, byCat = {};
-  for (const [id, o] of Object.entries(owned)) if (o && o.catalogId && !(o.catalogId in byCat)) byCat[o.catalogId] = id;
+  for (const [id, o] of Object.entries(owned)) if (o && o.catalogId) byCat[o.catalogId] = o.catalogId in byCat ? null : id;
   const canon = b => (owned[b] ? b : byCat[b] || b);
   const used = {};   // canonical ballId → [ts of each game]
   const use = (b, ts) => { const k = canon(b); (used[k] = used[k] || []).push(ts); };
@@ -82,7 +82,7 @@ export function healthOf(P) {
     const since = {}; for (const t of ['refresh', 'resurface', 'detox']) since[t] = last[t] ? ts.filter(x => x > last[t]).length : null;
     out[b] = { games: ts.length, since };
   }
-  for (const [cat, id] of Object.entries(byCat)) if (out[id] && !(cat in out)) out[cat] = out[id];
+  for (const [cat, id] of Object.entries(byCat)) if (id && out[id] && !(cat in out)) out[cat] = out[id];
   return out;
 }
 export const projectionHash = P => fnv(stable(P));

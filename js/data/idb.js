@@ -2,7 +2,7 @@
 // Same tiny interface: load() → {events, meta}; put(events); setMeta(k, v); clear().
 export function memoryBackend() {
   let ev = new Map(), meta = {};
-  return { kind: 'memory', async load() { return { events: [...ev.values()], meta: { ...meta } }; }, async put(list) { for (const e of list) ev.set(e.id, e); }, async setMeta(k, v) { meta[k] = v; }, async clear() { ev = new Map(); meta = {}; } };
+  return { kind: 'memory', async load() { return { events: [...ev.values()], meta: { ...meta } }; }, async put(list, {guard=null}={}) { if(guard)guard(); for (const e of list) ev.set(e.id, e); }, async setMeta(k, v) { meta[k] = v; }, async clear() { ev = new Map(); meta = {}; } };
 }
 export function localStorageBackend(ls = globalThis.localStorage, prefix = 'ap_v1_') {
   const get = k => { try { return JSON.parse(ls.getItem(prefix + k)); } catch (e) { return null; } };
@@ -10,7 +10,7 @@ export function localStorageBackend(ls = globalThis.localStorage, prefix = 'ap_v
   return {
     kind: 'localStorage',
     async load() { return { events: get('events') || [], meta: get('meta') || {} }; },
-    async put(list) { const m = new Map((get('events') || []).map(e => [e.id, e])); for (const e of list) m.set(e.id, e); set('events', [...m.values()]); },
+    async put(list, {guard=null}={}) { if(guard)guard(); const m = new Map((get('events') || []).map(e => [e.id, e])); for (const e of list) m.set(e.id, e); set('events', [...m.values()]); },
     async setMeta(k, v) { const m = get('meta') || {}; m[k] = v; set('meta', m); },
     async clear() { ls.removeItem(prefix + 'events'); ls.removeItem(prefix + 'meta'); },
   };
@@ -37,7 +37,12 @@ export async function idbBackend(name = 'arsenal-pro', idb = globalThis.indexedD
       const meta = {}; keys.forEach((k, i) => { meta[k] = vals[i]; });
       return { events, meta };
     },
-    async put(list) { const tx = db.transaction('events', 'readwrite'); const s = tx.objectStore('events'); for (const e of list) s.put(e); await done(tx); },
+    async put(list, {guard=null}={}) {
+      if(guard)guard();const tx=db.transaction('events','readwrite'),s=tx.objectStore('events');let last,failed;
+      for(const e of list)last=s.put(e);
+      if(last&&guard)last.onsuccess=()=>{try{guard();}catch(e){failed=e;tx.abort();}};
+      try{await done(tx);}catch(e){throw failed||e;}
+    },
     async setMeta(k, v) { const tx = db.transaction('meta', 'readwrite'); tx.objectStore('meta').put(v, k); await done(tx); },
     async clear() { const tx = db.transaction(['events', 'meta', 'imports', 'snap'], 'readwrite'); ['events', 'meta', 'imports', 'snap'].forEach(n => tx.objectStore(n).clear()); await done(tx); },
   };

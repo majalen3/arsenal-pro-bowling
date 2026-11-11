@@ -15,7 +15,7 @@ import * as Q from '../cc/quicklog.js';
 import * as FX from '../cc/fix.js';
 import * as R from '../cc/rank.js';
 import { loadIndex } from '../patdata.js';
-import { catOf } from '../cc/cats.js';
+import { catOf, ballFor, ballKey } from '../cc/cats.js';
 import * as A from '../cc/advisor.js';
 import { packList } from '../cc/bag.js';
 import { standOf, lineFor } from '../cc/line.js';
@@ -38,7 +38,7 @@ import * as UX from '../cc/ux.js';   // Now item 5: on-device counts + local fla
 export { standOf };
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
 // F03: the Lane screen's ball follows Tonight's pick (or the ball in hand on Bowl). Quiet: no events, Lane reads app.ball on open.
-const laneBall = x => { const c = x && x.cat, e = c && (balls.find(y => y.id === c.id) || (specOK(c) ? c : null)); if (e && app.ball && app.ball.id !== e.id) { app.ball = e; saveState(); } };
+const laneBall = x => { const c = x && (ballFor(x.id) || x.cat); if (c && ballKey(app.ball) !== ballKey(c)) { app.ball = c; saveState(); } };
 const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
 const provChip = (prov, label) => h('span', { class: 'prov', 'data-prov': prov || null, text: label });
 const SRC_PROV = { [R.SRC.assumed]: 'assumed', [R.SRC.model]: 'model', [R.SRC.spec]: 'manufacturer', [R.SRC.usbc]: 'usbc', [R.SRC.bowl]: 'usbc', [R.SRC.tag]: 'catalog' };
@@ -76,7 +76,7 @@ export async function render(o = {}) {
   function inHand(P, s, cur) {
     if (!s.throwId || (cur && s.throwId === cur.id)) return cur;
     const o = (P.owned || {})[s.throwId]; if (!o) return cur;
-    const x = bagOf(P, s).list.find(y => y.ownedId === s.throwId), cat = catOf(o.catalogId);
+    const x = bagOf(P, s).list.find(y => y.ownedId === s.throwId), cat = ballFor(o.id);
     return { id: s.throwId, catalogId: o.catalogId || null, cat, name: x ? x.name : short(o.name || (cat || {}).name || 'Spare ball') };
   }
   function bagOf(P, s) {
@@ -112,13 +112,14 @@ export async function render(o = {}) {
     // One first ball (P1.5): the advisor's start ball unless the bowler picked another on the pad or a read moved it.
     const adv = adviceOf(P, s, b), advA = adv && adv.a && !adv.a.none ? adv.a.A : null;
     const cur = r.order.find(x => x.id === s.pickId) || (advA && r.order.find(x => x.id === advA.ownedId)) || r.pick;
-    const L = cur ? lineFor(cur.cat, { speed: num(b.speed), rev: num(b.rev), ft: pat ? pat.ft : null }) : null;
+    const L = cur ? lineFor(ballFor(cur.id) || cur.cat, { speed: num(b.speed), rev: num(b.rev), ft: pat ? pat.ft : null }) : null;
     const ml = L ? L.ml : null, stand = L ? L.stand : null;
     // F02: the ball in hand (a mid-game change on the pad) drives the Bowl top line; the pick stays the advice.
-    const hb = inHand(P, s, cur), HL = hb === cur ? L : (hb ? lineFor(hb.cat, { speed: num(b.speed), rev: num(b.rev), ft: pat ? pat.ft : null }) : null);
+    const hb = inHand(P, s, cur), HL = hb === cur ? L : (hb ? lineFor(ballFor(hb.id) || hb.cat, { speed: num(b.speed), rev: num(b.rev), ft: pat ? pat.ft : null }) : null);
     // Scoring fix 4: league team (frames in lineup order) or Baker (one team game). One pad; the pill says who is up.
     const team = teamOf(P, s), g = team ? team.g : gameOf(P, s);
     const gameOpen = (team ? team.started : g.mine.length > 0) && !g.st.done;
+    if (!gameOpen && !list.length) body.append(h('div', { class:'card', id:'noPackedBalls' }, h('h2', { class:'card-title', text:'Your arsenal is saved' }), h('p', { class:'small', text:'Choose which physical balls to bring tonight. Adding a ball does not pack it automatically.' }), h('a', { class:'btn primary block', href:'#/bag' }, 'Pack a bag for tonight')));
     if (!BOWL && !drawn && (gameOpen || (g0(P) && g.st.done && !s.ended))) { BOWL = true; history.replaceState(null, '', '#/bowl'); retab('bowl'); el.querySelector('#tnTitle').textContent = 'Bowl'; }
     laneBall((gameOpen || BOWL) ? hb : cur);   // F03: Lane opens with the ball Tonight / Bowl names
     drawn = true;
@@ -159,8 +160,14 @@ export async function render(o = {}) {
         !whoHere && (s.mode || 'solo') !== 'solo' ? teamSetup(s) : null,
         goalField(s),
         h('button', { class: 'btn ghost block', id: 'tnBagLink', onclick: () => go('#/bag') }, 'Bag builder \u203a'));
-    const alt = (x, lbl) => x ? h('button', { class: 'alt btn', 'data-alt': lbl, onclick: () => save({ pickId: x.id, throwId: null }) }, h('small', { class: 'muted', text: lbl + ' ' }), h('b', { text: x.name })) : h('div', { class: 'alt muted', text: `No ${lbl.toLowerCase()} ball in this bag` });
-    const alts = cur ? h('div', { class: 'alts' }, alt(r.weaker && cur === r.pick ? r.weaker : R.readMove(r, cur.id, 'early'), 'Weaker'), alt(r.stronger && cur === r.pick ? r.stronger : R.readMove(r, cur.id, 'weak'), 'Stronger')) : null;
+    const preview = UX.flag('stepPreview') && !gameOpen;
+    const alt = (x, lbl) => x ? h('button', { class:'alt btn', 'data-alt':lbl, 'aria-label':preview ? `${lbl} ${x.name}` : lbl,
+      onclick:() => { UX.tap(x.id, lbl.toLowerCase()); return save({ pickId:x.id, throwId:null }); } },
+      h('small', { class:'muted', text:lbl + (preview ? ' ' : '') }), preview ? h('b', { class:'step-name', text:x.name }) : null)
+      : h('div', { class:'alt muted', text:`No ${lbl.toLowerCase()} ball in this bag` });
+    const alts = cur ? h('div', { class:'step-ladder' },
+      h('div', { class:'alts' }, alt(r.weaker && cur === r.pick ? r.weaker : R.readMove(r, cur.id, 'early'), 'Weaker'), alt(r.stronger && cur === r.pick ? r.stronger : R.readMove(r, cur.id, 'weak'), 'Stronger')),
+      preview ? h('p', { class:'small muted step-hint', id:'stepHint', text:'Try feet/eyes first. These switch to another ball in your bag.' }) : null) : null;
     const pl = cur ? R.plan(r, ml) : null;
     const thenLine = pl && (pl.B || pl.C) ? h('p', { class: 'small', id: 'tnThen' }, h('b', { text: 'Then: ' }), [pl.B ? `${pl.B.name} if it hooks early` : null, pl.C ? `${pl.C.name} later` : null].filter(Boolean).join(' \u2192 ')) : null;
     // ---- pick card: name + stand/eyes up front; the why, specs and model numbers behind one tap (GAP §2c).
@@ -170,12 +177,12 @@ export async function render(o = {}) {
         : h('dl', { class: 'kv', id: 'tnModel' }, h('dt', { text: 'Feet (stand)' }), h('dd', { id: 'tnFeet' }, String(stand.feet), provChip(stand.assumed ? 'assumed' : null, stand.assumed ? 'offset 7 assumed' : 'your offset')),
           h('dt', { text: 'Laydown' }), h('dd', {}, String(ml.feet), ml.kept ? provChip('user', 'your line (set on Lane or Targeting)') : provChip('model', '2-D model')),
           h('dt', { text: 'Eyes (arrows)' }), h('dd', { text: String(ml.target) }),
-          ...(ml.kept ? [] : [h('dt', { text: 'Breakpoint' }), h('dd', { text: `board ${ml.bp} at ${ml.bpFt} ft` }),
-          h('dt', { text: 'Holds' }), h('dd', { text: `${ml.holds} of ${ml.of} small misses (\u00b10.5 mph, \u00b120 rpm, \u00b11 board)` })]));
+          ...(ml.kept ? [] : [h('dt', { text: 'Breakpoint' }), h('dd', {}, `board ${ml.bp} at ${ml.bpFt} ft`, provChip('model','model')),
+          h('dt', { text: 'Holds' }), h('dd', {}, `${ml.holds} of ${ml.of} small misses (\u00b10.5 mph, \u00b120 rpm, \u00b11 board)`, provChip('model','model'))]));
       pick = h('div', { class: 'card pick', id: 'tnPick' },
         h('div', { class: 'row between' }, h('span', { class: 'ball-name', id: 'tnPickName', text: cur.name })),
         stand ? h('p', { class: 'tn-line', id: 'tnStand', text: `Feet ${stand.feet} \u00b7 eyes ${fmtHalf(ml.target)} at the arrows` }) : null,
-        stand ? h('button', { class: 'btn primary block', id: 'tnFind', onclick: () => go('#/target?find=1&ball=' + encodeURIComponent(cur.catalogId || '')) }, 'Find my strike line \u203a') : null,
+        stand ? h('button', { class: 'btn primary block', id: 'tnFind', onclick: () => go('#/target?find=1&ball=' + encodeURIComponent(cur.id || cur.catalogId || '')) }, 'Find my strike line \u203a') : null,
         gameOpen ? null : alts,
         h('details', { class: 'tn-more', id: 'tnPickMore' }, h('summary', { text: 'Why this ball, specs and model' }),
           h('span', { class: 'pill gold', id: 'tnLevel', text: cur.level != null ? `Level ${cur.level} \u00b7 demand ${d.demand}` : `spec TBD \u00b7 demand ${d.demand}` }),
@@ -194,7 +201,7 @@ export async function render(o = {}) {
     if (gameOpen || BOWL) {
       // ---- Bowl (#/bowl), and game open (sim bug 4): ball \u00b7 feet \u00b7 aim, the ball-change line, the scoring card, Weaker/Stronger. The rest behind one tap.
       body.append(h('div', { class: 'card tn-now', id: 'tnNow' },
-        h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: hb ? hb.name : 'No ball' }), ' ', aimChip(HL && HL.stand, HL && HL.ml, hb && hb.catalogId)),
+        h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: hb ? hb.name : 'No ball' }), ' ', aimChip(HL && HL.stand, HL && HL.ml, hb && (hb.id || hb.catalogId))),
         gameOpen ? null : thenLine),   // C3: during a game the ball-change plan sits under details
         quickLog(P, s, cur, b, hand, stand, g, team), alts || '', !gameOpen && reads ? reads : '',   // between games: the read and Weaker/Stronger in reach (J06)
         h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: 'Bag, lanes and line details' }),
@@ -220,7 +227,7 @@ export async function render(o = {}) {
       night || (s.game || 1) > 1 ? `Start bowling \u00b7 game ${s.game || 1}` : 'Start bowling'));
     if (bagCard) body.append(bagCard);
     body.append(h('details', { class: 'tn-more tn-extra', id: 'tnExtra', open: extraOpen, ontoggle: e => { extraOpen = e.target.open; } }, h('summary', { text: 'More details' }),
-      h('p', { class: 'coach', id: 'tnCoach', role: 'status', text: coach }), thenLine || '', whyBox || '', setup));
+      h('p', { class: 'coach', id: 'tnCoach', role: 'status', text: coach }), alts || '', thenLine || '', whyBox || '', setup));
     if (measNudge) body.append(measNudge);
   }
   // P1.5 "Who's bowling": just me, a league team (frames in lineup order) or Baker; Add a bowler one tap away.
@@ -482,14 +489,14 @@ export async function render(o = {}) {
       const done = async inst => { setPrefs({ installAsked: true }); PR.askPersist(); if (inst && await PR.promptInstall()) toast('Installed.'); draw(); };
       const how = PR.installHow();
       return h('div', { class: 'tn-recap', id: 'tnProtect', role: 'note' },
-        h('p', { class: 'small', text: 'Your games are stored in this browser. Safari can clear website data after 7 days without a visit; apps on the Home Screen are exempt.' }),
+        h('p', { class: 'small', text: 'Your games are stored in this browser. Browsers can clear website data, including after 7 days in some Safari cases. Home Screen installation may help retention; keep a separate backup.' }),
         how ? h('p', { class: 'small', id: 'tnInstallHow', text: how }) : h('button', { class: 'btn ghost block', id: 'tnInstall', onclick: () => done(true) }, 'Install the app'),
         h('button', { class: 'btn ghost block', id: 'tnInstallLater', onclick: () => done(false) }, how ? 'Got it' : 'Not now'));
     }
     const at = PR.lastBackupAt(db.meta);
     if (!PR.needsBackup({ games: P.games.length, lastBackupAt: at, snoozeUntil: pf.backupSnooze || 0 })) return null;
     return h('div', { class: 'tn-recap', id: 'tnBackup', role: 'note' },
-      h('p', { class: 'small', text: `${PR.lastBackupText(at)} ${P.games.length} ${P.games.length === 1 ? 'game' : 'games'} saved; a backup file restores them on any phone.` }),
+      h('p', { class: 'small', text: `${PR.lastBackupText(at)} ${P.games.length} ${P.games.length === 1 ? 'game' : 'games'} saved; keep a private backup file and test restoring it on a compatible version.` }),
       h('button', { class: 'btn ghost block', id: 'tnBackupNow', onclick: async () => { await PR.saveBackupFile(db, prefs()); toast('Backup file saved.'); draw(); } }, 'Download backup'),
       h('button', { class: 'btn ghost block', id: 'tnBackupLater', onclick: () => { setPrefs({ backupSnooze: Date.now() + PR.NUDGE_DAYS * PR.DAY }); draw(); } }, 'Remind me in 14 days'));
   }
@@ -526,7 +533,7 @@ export async function render(o = {}) {
   // Now item 3 (PRODUCT_EVAL_1 #3, 2026-11-02): the Stand \u00b7 Aim chip opens Targeting in one tap (it used to open the Lane, then
   // Targeting was a second tap). Lane is one tap back from Targeting's header. Without a model line Targeting still sets feet and eyes.
   function aimChip(st, ml, cid) {
-    return h('a', { class: 'chip aim-chip', id: 'tnAimChip', href: '#/target' + (cid ? '?ball=' + encodeURIComponent(cid) : ''), onclick: () => UX.count('aim.chip'), 'aria-label': st ? `Stand ${st.feet}, aim ${fmtHalf(ml.target)}: open Targeting` : 'Set stand and aim on Targeting' },
+    return h('a', { class: 'chip aim-chip', id: 'tnAimChip', href: '#/target' + (cid ? '?ball=' + encodeURIComponent(cid) : ''), onclick: () => UX.count('aim.chip'), 'aria-label': st ? `Stand ${st.feet}, aim ${fmtHalf(ml.target)}: open Targeting` : 'Stand · Aim › — set on Targeting' },
       st ? `Stand ${st.feet} \u00b7 Aim ${fmtHalf(ml.target)} \u203a` : 'Stand \u00b7 Aim \u203a');
   }
   function advisorCard(P, s, b, adv, start) {

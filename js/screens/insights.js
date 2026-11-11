@@ -3,7 +3,7 @@ import { h } from '../ui.js';
 import { setBall } from '../ctl.js';
 import { go } from '../router.js';
 import { backBar } from './ball.js';
-import { proj } from '../hub.js';
+import { proj, ready } from '../hub.js';
 import { lastGames, sessionsOf } from '../cc/card.js';
 import * as CO from '../cc/corner.js';
 import { cornerBlock } from './corner.js';
@@ -19,7 +19,8 @@ function gapsText() {
 }
 // GAP (f): the v1 static "Assessment" (fixed profile text and uncited x/10 ratings) is removed. In its place, one computed
 // line from the Bowler Card (js/cc/card.js) with a link; it says what to do when there is no data yet.
-export function render() {
+export async function render() {
+  await ready();
   const g = gapsText();
   const cv = h('canvas', { class:'chart', id:'rgChart', role:'img', 'aria-label':`Chart of core RG (across) against differential (up) for ${balls.filter(specOK).length} balls. Tap a dot to open the ball. The Arsenal list has every ball with its specs.` });
   const maxc = Math.max(g.cnt.heavy, g.cnt.medium, g.cnt.light);
@@ -37,9 +38,9 @@ export function render() {
     // Clutter audit C6: the "Your game" card repeated the Bowler Card headline; Insights keeps only the link to it.
     h('a', { class:'btn ghost block', id:'insGame', href:'#/card' }, 'My Bowler Card \u203a'),
     h('details', { class:'card tn-more', id:'insArsenal' }, h('summary', { text:'Arsenal charts: oil coverage, core map, bag builder' }),
-    h('div', { class:'card' }, withHelp(h('h2', { class:'card-title', text:'Coverage by oil' }), 'ln-oil', 'Coverage by oil'), bars, h('p', { class:'muted small', text:`Thinnest is ${g.thin}. ${g.tbd ? g.tbd + ' ball' + (g.tbd === 1 ? '' : 's') + ' still spec TBD.' : 'All 22 balls have specs.'}` })),
+    h('div', { class:'card' }, withHelp(h('h2', { class:'card-title', text:'Catalog reference coverage (not your bag)' }), 'ln-oil', 'Coverage by oil'), bars, h('p', { class:'muted small', text:`Thinnest is ${g.thin}. ${g.tbd ? g.tbd + ' ball' + (g.tbd === 1 ? '' : 's') + ' still spec TBD.' : 'All 22 balls have specs.'}` })),
     h('div', { class:'card' }, withHelp(h('h2', { class:'card-title', text:'Core map: RG vs differential' }), 'eq-rg', 'Core map'), h('div', { class:'chart-wrap' }, cv), h('p', { class:'muted small', text:'Low RG = revs up earlier. High differential = more flare / hook potential.' })),
-    h('div', { class:'card' }, withHelp(h('h2', { class:'card-title', text:'Bag builder' }), 'bm-matchup', 'Bag builder'), ...BAGS.map(([t, l]) => h('div', { class:'bagset' }, h('h3', { text:t }), h('div', { class:'bag-row' }, ...l.map(([id, r]) => { const b = balls.find(x => x.id === id); return h('button', { class:'sugg-ball', 'data-ball':id, onclick:() => { setBall(b); go('#/lane'); } }, h('span', { class:'swatch', style:{ background:b.color } }), h('span', {}, b.name, h('small', { text:r }))); })))))));
+    h('div', { class:'card' }, withHelp(h('h2', { class:'card-title', text:'Example model sets · not owned or packed' }), 'bm-matchup', 'Bag builder'), ...BAGS.map(([t, l]) => h('div', { class:'bagset' }, h('h3', { text:t }), h('div', { class:'bag-row' }, ...l.map(([id, r]) => { const b = balls.find(x => x.id === id); return h('button', { class:'sugg-ball', 'data-ball':id, onclick:() => { setBall(b); go('#/lane'); } }, h('span', { class:'swatch', style:{ background:b.color } }), h('span', {}, b.name, h('small', { text:r }))); })))))));
   let pts = [];
   function draw() {
     const r = cv.getBoundingClientRect(); if (!r.width) return; const dpr = Math.min(3, devicePixelRatio || 1);

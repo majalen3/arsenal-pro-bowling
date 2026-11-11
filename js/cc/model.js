@@ -2,7 +2,7 @@
 // user's speed/rev/finish on the nearest of the six preset patterns by length; the same approximation the Pattern screen
 // discloses. Spec-TBD balls never get a model line. The engine's global state is restored after every call.
 import { S, OIL_LEN, PATTERNS, analyze } from '../engine.js';
-import { specOK } from '../data.js';
+import { modelOK as specOK } from '../data.js';
 import { arrowsBoard } from './geom.js';
 export function presetFor(ft) {
   let best = PATTERNS[0];
@@ -10,7 +10,7 @@ export function presetFor(ft) {
   return best;
 }
 export function modelLine(cat, { speed = 15, rev = 220, ft = 38, finish = 'factory', target31 = null } = {}) {
-  if (!cat || !specOK(cat)) return { none: true, reason: 'spec TBD: no model line' };
+  if (!cat || !specOK(cat)) return { none: true, reason: 'Specs unverified or cover not supported: no model line' };
   const keep = { pattern: S.pattern, finish: S.finish, oil: S.oil }, preset = presetFor(ft);
   try {
     S.pattern = preset; S.finish = finish; S.oil = 1;

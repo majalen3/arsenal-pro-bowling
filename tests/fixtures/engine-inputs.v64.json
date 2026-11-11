@@ -1,0 +1,144 @@
+[
+  {
+    "id": "rattler-big-bite",
+    "rg": 2.48,
+    "diff": 0.035,
+    "cover": "Hybrid Reactive",
+    "core": "Symmetric"
+  },
+  {
+    "id": "deadly-rattler",
+    "rg": 2.48,
+    "diff": 0.035,
+    "cover": "Pearl Reactive",
+    "core": "Symmetric"
+  },
+  {
+    "id": "super-nova",
+    "rg": 2.49,
+    "diff": 0.052,
+    "cover": "Solid Reactive",
+    "core": "Asymmetric"
+  },
+  {
+    "id": "hy-road",
+    "rg": 2.57,
+    "diff": 0.046,
+    "cover": "Hybrid Reactive",
+    "core": "Symmetric"
+  },
+  {
+    "id": "hy-road-pearl",
+    "cover": "",
+    "core": ""
+  },
+  {
+    "id": "hy-road-solid",
+    "cover": "",
+    "core": ""
+  },
+  {
+    "id": "astrophysix",
+    "rg": 2.48,
+    "diff": 0.053,
+    "cover": "Pearl Reactive",
+    "core": "Asymmetric"
+  },
+  {
+    "id": "ice-storm",
+    "cover": "Polyester",
+    "core": ""
+  },
+  {
+    "id": "innovator",
+    "rg": 2.477,
+    "diff": 0.053,
+    "cover": "Pearl Reactive",
+    "core": "Asymmetric"
+  },
+  {
+    "id": "bigfoot-hybrid",
+    "rg": 2.468,
+    "diff": 0.053,
+    "cover": "Hybrid Reactive",
+    "core": "Symmetric"
+  },
+  {
+    "id": "rattler",
+    "rg": 2.48,
+    "diff": 0.035,
+    "cover": "Solid Reactive",
+    "core": "Symmetric"
+  },
+  {
+    "id": "ordnance-c4",
+    "rg": 2.48,
+    "diff": 0.042,
+    "cover": "Hybrid Reactive",
+    "core": "Symmetric"
+  },
+  {
+    "id": "raw-hammer",
+    "rg": 2.537,
+    "diff": 0.038,
+    "cover": "Solid Reactive",
+    "core": "Symmetric"
+  },
+  {
+    "id": "rack-attack",
+    "cover": "",
+    "core": ""
+  },
+  {
+    "id": "conspiracy-pearl",
+    "rg": 2.487,
+    "diff": 0.056,
+    "cover": "Pearl Reactive",
+    "core": "Asymmetric"
+  },
+  {
+    "id": "guru-supreme",
+    "rg": 2.501,
+    "diff": 0.044,
+    "cover": "Solid Reactive",
+    "core": "Asymmetric"
+  },
+  {
+    "id": "counter-attack",
+    "rg": 2.575,
+    "diff": 0.023,
+    "cover": "Solid Reactive",
+    "core": "Symmetric"
+  },
+  {
+    "id": "trailblazer",
+    "rg": 2.484,
+    "diff": 0.052,
+    "cover": "Hybrid Reactive",
+    "core": "Asymmetric"
+  },
+  {
+    "id": "hy-road-40",
+    "cover": "",
+    "core": ""
+  },
+  {
+    "id": "hy-road-x",
+    "cover": "",
+    "core": ""
+  },
+  {
+    "id": "rattler-nu",
+    "rg": 2.48,
+    "diff": 0.035,
+    "cover": "Not Urethane",
+    "core": "Symmetric"
+  },
+  {
+    "id": "green-scout",
+    "rg": 2.65,
+    "diff": 0.02,
+    "cover": "Reactive",
+    "core": ""
+  }
+]

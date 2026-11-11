@@ -1,6 +1,6 @@
 // Bag builder core (CC2, COMMAND_CENTER_PLAN §3). Pure: owned balls + catalog + projection in, grid/checks/fill out.
 // Strength = app oil tag (rank.js levelOf). Shape = cover + core + diff proxy (rank.js angularity), an ESTIMATE (A).
-import { balls, coverKind } from '../data.js';
+import { balls, coverKind, modelOK } from '../data.js';
 import { levelOf, angularity, demandOf, bandOf, SRC } from './rank.js';
 import { catOf } from './cats.js';
 export const SHAPES = ['smooth', 'medium', 'angular'];
@@ -8,6 +8,7 @@ export const LEVEL_NAME = { 5: 'Heavy', 4: 'Med-heavy', 3: 'Medium', 2: 'Med-lig
 export const SIZE = { league3: 2, league4: 3, tournament6: 5, custom: null };   // balls besides the spare
 export const cellOf = catalogId => cellOfCat(catOf(catalogId));
 export function cellOfCat(cat) {
+  if (!cat || !modelOK(cat)) return { cat, level:null, shape:null, tbd:true };
   const level = levelOf(cat), a = angularity(cat);
   return { cat, level, shape: a == null ? null : a <= 1 ? 'smooth' : a === 2 ? 'medium' : 'angular', tbd: level == null };
 }
@@ -85,7 +86,7 @@ export function checks(items, spare, ctx = {}) {
     add(7, ctrl, ctrl ? 'Control option packed for a short or flat pattern.' : 'Short or flat pattern: pack a control ball (urethane or level 1–2).', SRC.br);
   } else add(7, true, 'Control option: not needed for this pattern.', SRC.br, false);
   // 8 health before the event
-  const due = xs.map(x => ({ x, d: dueOf(x.cat, ctx.health && (ctx.health[x.ownedId] || ctx.health[x.catalogId]), ctx.gamesAhead || 0) })).filter(y => y.d.length);
+  const due = xs.map(x => ({ x, d: dueOf(x.cat, ctx.health && ctx.health[x.ownedId || x.catalogId], ctx.gamesAhead || 0) })).filter(y => y.d.length);
   add(8, !due.length, due.length ? `Service${ctx.eventDate ? ' before ' + ctx.eventDate : ''}: ` + due.map(y => `${y.x.name} (${y.d.map(d => `${d.type} ${d.atLeast ? '\u2265' : ''}${d.n}/${d.every}`).join(', ')})`).join('; ') + '.' : 'No service due.', due.length ? due[0].d[0].src : SRC.team);
   // 9 status
   const blocked = xs.filter(x => x.status === 'proShop' || x.status === 'retired');
@@ -125,7 +126,7 @@ export function packList(items, spare, ctx = {}) {
   const rows = ok.slice().sort((a, b) => (b.level ?? -1) - (a.level ?? -1)).map(x => ({ role: role(x), ownedId: x.ownedId, name: x.name,
     why: x.tbd ? 'spec TBD: no level' : `level ${x.level} (${SRC.tag}), ${x.shape} shape (estimate)` }));
   if (spare) rows.push({ role: 'Spare', ownedId: spare.ownedId, name: spare.name, why: 'straight at spares' });
-  const service = xs.flatMap(x => dueOf(x.cat, ctx.health && (ctx.health[x.ownedId] || ctx.health[x.catalogId]), ctx.gamesAhead || 0).map(d => ({ name: x.name, ...d })));
+  const service = xs.flatMap(x => dueOf(x.cat, ctx.health && ctx.health[x.ownedId || x.catalogId], ctx.gamesAhead || 0).map(d => ({ name: x.name, ...d })));
   const blocked = xs.filter(x => !ok.includes(x)).map(x => ({ name: x.name, why: x.status === 'proShop' ? 'at the pro shop' : 'retired' }));
   return { rows, service, blocked };
 }

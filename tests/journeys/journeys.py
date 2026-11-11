@@ -120,20 +120,13 @@ async def j01_onboarding(j):
         await j.page.goto(j.run.base + '?qa=first'); await j.settle(600)
         s.check('#/welcome' in j.page.url, f'first run opens #/welcome ({j.page.url.split("#")[-1]})')
         await j.audit('welcome')
-    async with j.step('Choose Left hand explicitly (step 1)', task='onboard', critical=True) as s:
-        await j.tap('[aria-label="Bowling hand"] [data-v="left"]')
-        s.check(await j.page.get_attribute('[aria-label="Bowling hand"] [data-v="left"]', 'aria-checked') == 'true', 'Left is selected')
-        await j.tap('[aria-label="Style"] [data-v="stroker"]'); await j.tap('#welNext')
-    async with j.step('Speed and revs (step 2)', task='onboard') as s:
-        await j.wait('#pSpeed'); await j.tap('#welNext')
-    async with j.step('Pick owned balls (step 3) and start', task='onboard', target_taps=12, carry='hand=left') as s:
-        await j.wait('.own-grid')
-        await j.tap('.own-grid .own >> nth=0')   # one tap = "Clear all" is the faster way to pick 2; this is the scripted user
-        await j.tap('#welNext'); await j.settle(500)
-        s.check('#/tonight' in j.page.url, f'lands on Tonight ({j.page.url.split("#")[-1]})')
-    tot = sum(x.taps for x in j.steps if x.task == 'onboard')
-    async with j.step('Onboarding total taps', target_taps=10) as s:
-        s.taps = 0; s.check(tot <= 10, f'onboarding took {tot} taps (target <= 10)')
+    async with j.step('Search-first empty arsenal, review, save a physical ball', task='onboard', critical=True) as s:
+        await j.wait('#welSearch'); s.check(await j.data("() => Object.keys(window.__apData.projection().owned).length") == 0, 'fresh arsenal empty, catalog is separate')
+        await j.type('#welSearch', 'hy-road'); await j.tap('#welResults [data-select] >> nth=0'); await j.tap('#welNext'); await j.wait('#welChosen'); await j.tap('#welNext'); await j.wait('#armory')
+        s.check(await j.data("() => Object.keys(window.__apData.projection().owned).length") == 1, 'only selected physical ball saved')
+    async with j.step('Optional profile: explicitly choose Left hand after first value', task='profile') as s:
+        await j.nav('/me'); await j.tap('#editProfile'); await j.tap('[aria-label="Bowling hand"] [data-v="left"]'); await j.tap('[aria-label="Style"] [data-v="stroker"]'); await j.tap('#profSave')
+        s.check(await j.data("() => window.__apData.projection().bowler.speed == null"), 'untouched speed stays unknown')
     async with j.step('Hand carries to Me profile', carry='hand=left') as s:
         await j.nav('/me'); await j.audit('me')
         txt = await j.page.inner_text('body')
@@ -149,7 +142,7 @@ async def j01_onboarding(j):
         prof = await j.ev("() => JSON.parse(localStorage.getItem('ap_profile') || 'null')"); s.check(prof and prof.get('hand') == 'left', 'hand still left')
     async with j.step('Tonight with no bag offers the next step', critical=True) as s:
         await j.nav('/tonight'); await j.audit('tonight-empty')
-        s.check(await j.visible('#noBag') or await j.visible('#advStart'), 'Tonight shows either a start line or how to add balls')
+        s.check(await j.visible('#noBag') or await j.visible('#noPackedBalls') or await j.visible('#advStart'), 'Tonight shows either a start line or how to add balls')
     async with j.step('Add a ball from the catalogue', task='add-ball', target_taps=6) as s:
         await j.nav('/bag'); await j.tap('#bagView [data-v="all"]'); await j.settle(); await j.audit('arsenal-empty')
         if await j.visible('#arsAdd'): await j.tap('#arsAdd')
@@ -172,9 +165,9 @@ async def j01_onboarding(j):
             await j.page.fill('#abQ', ex); await j.settle(700)
             s.check(not await j.visible('#abNoMatch'), f'the search box example "{ex}" is in the catalogue')
         else: s.check(True, 'no example in the search box')
-    async with j.step('Tonight now picks a ball for a lefty') as s:
+    async with j.step('Tonight offers an owned-ball packing step or start line for a lefty') as s:
         await j.nav('/tonight'); await j.settle(400)
-        s.check(await j.visible('#advStart'), 'Tonight shows a start line'); j.state['tonight'] = await tonight_line(j)
+        s.check(await j.visible('#advStart') or await j.visible('#noPackedBalls'), 'Tonight shows a start line or an explicit packing step (ownership is not packing)'); j.state['tonight'] = await tonight_line(j)
 
 
 # ---------- J02 home prep: bag builder, Status, export ----------
@@ -376,7 +369,7 @@ async def j05_league(j):
     async with j.step('Cross midnight: the same night continues', carry='night id') as s:
         sid0 = await j.ev("async () => { const m = await import('./js/hub.js'); const nw = await import('./js/cc/night.js'); return nw.openNight(m.proj()); }")
         w0 = await where(j)
-        await j.page.clock.fast_forward('30:00'); await j.page.reload(); await j.settle(800)
+        await j.page.clock.fast_forward('30:00'); await j.page.reload(); await j.wait(WHERE); await j.data('() => window.__apData.events()')
         sid1 = await j.ev("async () => { const m = await import('./js/hub.js'); const nw = await import('./js/cc/night.js'); return nw.openNight(m.proj()); }")
         w1 = await where(j) if await j.page.locator(WHERE).count() else '(no pad)'
         s.check(sid0 and sid0 == sid1, f'night id kept across 00:00 ({sid0} -> {sid1})'); s.check(w0 == w1, f'pad resumes where it was ("{w0}" -> "{w1}")')
@@ -404,6 +397,10 @@ async def drag_line(j, feet, aim, lefty=False):
 
 async def j06_between_games(j):
     await boot(j, 'righty')
+    # The old League 3 fixture now has only one model-supported ball after the maker review.
+    # Exercise switching with VERIFIED peers, never invent specs for Hy-Road Pearl.
+    await j.ev("async () => { const h = await import('./js/hub.js'); await h.add('bag.saved', 'qa-switch-bag', {name:'Verified switch fixture', format:'tournament6', slots:['own-rattler-big-bite','own-super-nova','own-ordnance-c4','own-deadly-rattler','own-ice-storm'].map(owned=>({owned,locked:false})), spare:'own-ice-storm'}); }")
+    await j.settle(300)
     async with j.step('Tonight: tap Stronger after a read', task='adjust', target_taps=2, critical=True) as s:
         await j.wait('#advStart'); await j.tap('#tnStartBowl'); await j.wait('#tnLog'); s.taps = 0   # IA P1.5: reads + Weaker/Stronger sit on Bowl between games; getting to Bowl is navigation
         t0 = await tonight_line(j); j.state['t0'] = t0
@@ -638,9 +635,10 @@ async def j11_data_trust(j):
             m1 = [await mark(j, i) for i in range(1, 6)]; s.check(m0 == m1, f'{m0} == {m1}'); s.check(await where(j) == w0, f'"{w0}"')
             vis = await j.ev("() => { const r = document.querySelector('#qlPad, #tnLog').getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0; }")
             s.check(vis, 'the pad is on screen after reload (no hunting)')
-    async with j.step('Back online: everything syncs') as s:
+    async with j.step('Back online: local-only stays paused until backup consent') as s:
         await j.ctx.set_offline(False); j.api.online = True; await j.page.evaluate("() => window.dispatchEvent(new Event('online'))")
-        await j.page.wait_for_function("() => window.__apSync", timeout=10000); await j.ev("() => window.__apSync.run()")
+        await j.page.wait_for_function("() => window.__apSync", timeout=10000); paused = await j.ev("() => window.__apSync.run().then(r=>r.paused)"); s.check(paused, 'reconnecting does not silently upload local data')
+        await j.nav('/me'); await j.tap('#backupCodeTools summary'); await j.tap('#enableCodeSync'); await j.ev("() => window.__apSync.run()")
         try:
             await j.page.wait_for_function("() => window.__apSync.outbox() === 0", timeout=15000); ok = True
         except Exception:
@@ -701,7 +699,7 @@ async def j12_coach(j):
 # by visible bowler words (IA_PLAN §4 glossary) and the event store, not by ids that do not exist yet.
 STATUS_WORDS = ['In my bag', 'At home', 'At the pro shop', 'Retired']
 OLD_WORDS = re.compile(r'\b(Exclude[ds]?|Benched|Bench & pro shop|Bench and pro shop|Lock(ed)?|Hall of Fame)\b')
-ROLES = re.compile(r'Start ball|If it hooks early|If it stops hooking|For heavy oil|Spares?', re.I)
+ROLES = re.compile(r'Start ball|If it hooks early|If it stops hooking|For heavy oil|Spares?|Specs to check', re.I)
 
 def name_in(n, t):
     """Catalogue names carry the brand ("Radical Rattler Big Bite"); screens often drop it ("Rattler Big Bite")."""

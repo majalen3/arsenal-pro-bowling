@@ -1,10 +1,13 @@
-// Import: pick a file → preview (nothing persisted) → commit → undo. Handlers sniff the file and build the preview.
+// Import: file → preview → commit. Score imports offer Undo; backup restore retains a checkpoint, not automatic Undo.
 import { h, icon, toast } from '../ui.js';
 import { back } from '../router.js';
 import { ready, addMany, undoImport, proj, hydrateMirror } from '../hub.js';
 import { migrateV0 } from '../data/migrate.js';
-import { deviceId } from '../store.js';
-import { readBackup, restoreBackup } from '../data/backup.js';
+import { deviceId, prefs, rawGet } from '../store.js';
+import { LEGACY_KEYS } from '../data/migrate.js';
+import { localRecoveryPanel } from './recovery.js';
+import { saveBackupFile } from '../cc/protect.js';
+import { readBackup, restoreBackup, restoreIssues, recoverySupport } from '../data/backup.js';
 import { planCsv, planLaneTrax } from '../data/importer.js';
 import { parseLaneTrax, BOARD_KEYS } from '../data/lanetrax.js';
 import { FIELDS, RUBY_PRESET, presetFor, savePreset } from '../data/csv.js';
@@ -18,20 +21,25 @@ handlers.push({
     if (!r.ok) return { error: r.error };
     if (r.v0) {
       const b = r.backup, legacy = { ap_lines: JSON.stringify(b.lines || []), ap_surface: JSON.stringify(b.surfaceLog || []), ap_notes: JSON.stringify(b.patternNotes || []) };
-      const evs = migrateV0(legacy, { deviceId: ctx.deviceId }).events.filter(e => !db.has(e.id));
-      return { title: 'Restore older backup', kind: 'backup-v0', summary: [`${r.counts.lines} saved lines, ${r.counts.surface} surface changes, ${r.counts.notes} pattern notes`, `${evs.length} new on this device`],
-        warnings: [], commitLabel: evs.length ? `Restore ${evs.length} records` : 'Nothing new to restore', canCommit: evs.length > 0,
-        async commit() { const a = await db.append(evs); hydrateMirror(); return `${a.length} records restored`; } };
+      const evs = migrateV0(legacy, { deviceId: ctx.deviceId }).events;
+      const converted = { ok:true, hashOk:true, backup:{events:evs} }, support = recoverySupport(db, converted, restoreSnapshot()), issues = [...restoreIssues(db, converted), ...support.blockers], fresh = evs.filter(e => !db.has(e.id)).length;
+      return { title: 'Restore older backup', kind: 'backup-v0', summary: [`${r.counts.lines} saved lines, ${r.counts.surface} surface changes, ${r.counts.notes} pattern notes`, `${fresh} new on this device`],
+        warnings: [{code:'LEGACY',detail:'Older files have no checksum. Only non-conflicting records can be added.'}, ...issues.map(detail=>({code:'BLOCKED',detail}))], commitLabel: fresh ? `Restore ${fresh} records` : 'Nothing new to restore', canCommit: fresh > 0 && !issues.length,
+        body:()=>restoreHelp(db), async commit() { const a = await restoreBackup(db, converted, restoreSnapshot()); hydrateMirror(); return `${a.added} records restored`; } };
     }
+    const support = recoverySupport(db, r, restoreSnapshot()), issues = [...restoreIssues(db, r), ...support.blockers];
     return {
       title: 'Restore backup', kind: 'backup',
       summary: [`${r.counts.events} events in the file`, `${r.counts.new} new on this device`, `${r.counts.dup} already here`],
-      warnings: r.hashOk ? [] : [{ code: 'HASH_MISMATCH', detail: 'The file\u2019s checksum does not match its events. It may have been edited.' }],
-      commitLabel: r.counts.new ? `Restore ${r.counts.new} events` : 'Nothing new to restore', canCommit: r.counts.new > 0,
-      async commit() { const x = await restoreBackup(db, r); hydrateMirror(); return `${x.added} events restored`; },
+      warnings: issues.map(detail => ({code:r.hashOk ? 'BLOCKED' : 'HASH_MISMATCH',detail})),
+      body:()=>h('div',{class:'stack'},restoreHelp(db, support.notes),localRecoveryPanel(db,r)),
+      commitLabel: r.counts.new ? `Restore ${r.counts.new} events` : 'Nothing new to restore', canCommit: r.counts.new > 0 && !issues.length,
+      async commit() { const x = await restoreBackup(db, r, restoreSnapshot()); hydrateMirror(); return `${x.added} events restored`; },
     };
   },
 });
+function restoreSnapshot() { return { prefs:prefs(), legacy:Object.fromEntries(LEGACY_KEYS.map(k=>[k,rawGet(k)])) }; }
+function restoreHelp(db, notes = []) { return h('div', {class:'stack'}, h('p',{class:'small',text:'Standard event-only recovery: backup restore does not apply preferences, aiming settings, account/team archives or switch account/sync target. Nonempty legacy mirrors that need reconciliation are blocked. Use only your own authorized file. Added records follow your existing optional sync choice. Conflicting local facts are blocked, not merged. A pre-restore recovery copy is retained locally and in future backup files; automatic restore Undo is not available.'}), notes.length ? h('p',{class:'small muted',id:'impScope',text:notes.join(' ')}) : null, h('button',{class:'btn ghost block',id:'impBackupFirst',onclick:async()=>{await saveBackupFile(db,prefs());toast('Backup download requested. Keep the file private.');}},'Download this phone’s backup first')); }
 export async function sha256Hex(buf) {
   if (!(globalThis.crypto && crypto.subtle)) return null;
   const d = await crypto.subtle.digest('SHA-256', buf); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
@@ -149,8 +157,10 @@ export function render({ query }) {
   const kindHint = query.get('kind') || '';
   const out = h('div', { class: 'stack', id: 'impOut', 'aria-live': 'polite' });
   const input = h('input', { type: 'file', id: 'impFile', class: 'sr-only', accept: kindHint === 'lanetrax' ? '.pdf,application/pdf' : '.json,.csv,.txt,.pdf,application/json,text/csv,application/pdf', onchange: () => { const f = input.files[0]; input.value = ''; if (f) open(f); } });
+  let openGeneration = 0;
   const pickLbl = kindHint === 'lanetrax' ? 'Import your LaneTrax session report (PDF)' : 'Choose a file';
   async function open(f) {
+    const ticket = ++openGeneration;
     out.innerHTML = '';
     if (f.size > MAX) { out.append(h('p', { class: 'warn-box', role: 'alert', text: 'That file is over 10 MB. Nothing was imported.' })); return; }
     if (!f.size) { out.append(h('p', { class: 'warn-box', role: 'alert', text: 'That file is empty. Nothing was imported.' })); return; }
@@ -159,6 +169,7 @@ export function render({ query }) {
     if (!hd) { out.append(h('p', { class: 'warn-box', role: 'alert', text: 'Arsenal Pro can read its own backup (.json), CSV files and LaneTrax session report PDFs. Nothing was imported.' })); return; }
     out.append(h('p', { class: 'muted', text: 'Reading ' + f.name + '\u2026' }));
     let pv; try { pv = await hd.preview(f, { deviceId: deviceId() }); } catch (e) { console.error(e); pv = { error: 'Could not read that file. Nothing was imported.' }; }
+    if (ticket !== openGeneration) return;
     out.innerHTML = '';
     if (pv.error) { out.append(h('p', { class: 'warn-box', role: 'alert', id: 'impErr', text: pv.error })); return; }
     paint(pv, f);
@@ -174,10 +185,11 @@ export function render({ query }) {
     const go = h('button', { class: 'btn primary block', id: 'impCommit', disabled: !pv.canCommit, onclick: async () => {
       go.disabled = true; try { const msg = await pv.commit(); out.innerHTML = ''; const sids = pv.plan && pv.plan.events ? pv.plan.events.filter(e => e.type === 'session.created').map(e => e.entityId) : [];
       out.append(h('div', { class: 'card', id: 'impDone' }, h('p', { text: msg + '.' }), sids.length ? h('a', { class: 'btn primary', id: 'impResults', href: sids.length === 1 ? '#/session/' + encodeURIComponent(sids[0]) : '#/sessions' }, sids.length === 1 ? 'See results' : `See ${sids.length} sessions`) : null, pv.importId ? h('button', { class: 'btn ghost', id: 'impUndo', onclick: async () => { await undoImport(pv.importId); toast('Import undone'); out.innerHTML = ''; out.append(h('p', { id: 'impUndone', text: 'Import undone. Its records are hidden everywhere; the file can be imported again.' })); } }, 'Undo this import') : null)); toast(msg); }
-      catch (e) { console.error(e); go.disabled = false; toast('Import failed. Nothing was saved.', { kind: 'bad' }); }
+      catch (e) { console.error(e); if (pv.kind.startsWith('backup')) { go.disabled = true; card.append(h('p', {class:'warn-box',id:'impCommitError',role:'alert',text:'Restore did not complete. Existing records were not overwritten. Keep your backup and recovery copy; choose the file again to recheck current data. No automatic Undo is available.'})); } else go.disabled = false; toast('Import did not finish. Local data is kept; inspect the preview and recovery backup before retrying.', { kind: 'bad' }); }
     } }, pv.commitLabel || 'Import');
     card.append(go); out.append(card);
   }
+  const recovery = h('div',{class:'stack'}); ready().then(db=>recovery.append(localRecoveryPanel(db)));
   const imports = h('div', { class: 'stack', id: 'impList' });
   ready().then(() => { const P = proj(); const list = Object.values(P.imports).filter(i => i.kind !== 'seed' || !i.undone).sort((a, b) => b.ts - a.ts);
     if (!list.length) return; imports.append(h('h2', { class: 'section-title', text: 'Past imports' }), ...list.map(i => h('div', { class: 'row between card tight' }, h('span', { class: 'small', text: `${i.label || i.fileName || i.kind}${i.undone ? ' \u00b7 undone' : ''}` }), i.undone ? null : h('button', { class: 'btn sm ghost', 'data-undo': i.id, onclick: async (ev) => { await undoImport(i.id); ev.target.closest('.card').querySelector('span').textContent += ' \u00b7 undone'; ev.target.remove(); toast('Import undone'); } }, 'Undo')))); });
@@ -185,9 +197,9 @@ export function render({ query }) {
     h('header', { class: 'appbar' }, h('button', { class: 'icon-btn', 'aria-label': 'Back', html: icon('back'), onclick: () => back('#/me') }), h('h1', { class: 'title', text: 'Import' })),
     h('div', { class: 'stack' },
       h('div', { class: 'card' },
-        h('p', { class: 'small', text: 'Files are read on this phone. Nothing is saved until you tap Import, and every import can be undone.' }),
+        h('p', { class: 'small', text: 'Files are read on this phone. Nothing is saved until you tap Import. Score imports offer Undo. Standard backup restore is event-only. Modern backups also offer a separate, local-only review for supported settings/nonempty lists with guarded checkpoint Undo. Account/team archives and full-phone recovery remain unsupported.' }),
         h('label', { class: 'btn primary block', for: 'impFile', id: 'impPick', tabindex: '0', onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } } }, pickLbl), input,
         kindHint === 'lanetrax' ? null : h('button', { class: 'btn ghost block', id: 'impLT', onclick: () => { input.accept = '.pdf,application/pdf'; input.click(); } }, 'Import your LaneTrax session report (PDF)')),
-      out, imports));
+      recovery, out, imports));
   return { el, title: 'Import', open };
 }

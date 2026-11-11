@@ -74,6 +74,10 @@ body[data-tab=bowl] #tnLog .help-dot,body[data-tab=bowl] #tnNow .help-dot{displa
 @keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .appbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:var(--s2);min-height:60px;padding:calc(var(--s2) + env(safe-area-inset-top)) var(--s4) var(--s2);background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 .appbar .title{font-size:var(--fs-xl);font-weight:800;letter-spacing:-.01em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Ball names identify a physical copy: never ellipsize the only full heading. Back stays a 44px target. */
+.screen.detail{overflow-wrap:break-word}
+.detail #ballCopies .btn{white-space:normal;overflow-wrap:anywhere}
+.detail .appbar .title{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.2}
 .list-screen .appbar .title{font-size:var(--fs-2xl)}
 #glossary .appbar .title{font-size:var(--fs-xl)}
 .appbar-actions{display:flex;align-items:center;gap:var(--s1);margin-left:auto}
@@ -88,7 +92,7 @@ body[data-tab=bowl] #tnLog .help-dot,body[data-tab=bowl] #tnNow .help-dot{displa
 .btn.primary[disabled]{opacity:.5;cursor:default}
 .btn.ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
 .btn.ghost:hover{background:var(--surface-3)}
-.btn.danger{background:var(--bad);color:#fff}
+.btn.danger{background:var(--bad);color:var(--bg)}
 .btn.sm{min-height:36px;padding:0 var(--s3);font-size:var(--fs-sm)} .btn.sm .ic{width:18px;height:18px}
 @media (pointer:coarse){.btn.sm{min-height:var(--tap)}}
 .btn.lg{min-height:52px;padding:0 var(--s6);font-size:var(--fs-lg)}
@@ -767,7 +771,42 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .dc-foot{position:sticky;bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + 8px);padding:var(--s2) 0;z-index:3}
 .dc-review{margin:0;padding-left:18px;max-height:44vh;overflow:auto}
 .dc-check{min-height:44px;align-items:center}
-.dc-check input{width:24px;height:24px}
+.dc-check input{width:44px;height:44px;flex:0 0 44px}
 /* ---- Now item 5: Me > Tests and usage (counts on this phone only) */
 .ux-fold summary{min-height:var(--tap);display:flex;align-items:center;cursor:pointer;font-weight:700}
 .ux-pre{white-space:pre-wrap;word-break:break-word;background:var(--surface-2,rgba(127,127,127,.08));padding:var(--s2);border-radius:8px;max-height:50vh;overflow:auto}
+/* ---- Now item 4: Lane path summary + provenance chips (S1 'summary' variant) */
+.path-sum{margin:0 0 var(--s2);font-size:var(--fs-sm);line-height:1.4}
+.tile-label .prov{display:block;width:fit-content;margin:2px 0 0;padding:0 6px;font-size:.625rem;text-transform:none;letter-spacing:0;font-weight:600}
+.more-fold summary{min-height:var(--tap);display:flex;align-items:center;cursor:pointer;font-size:var(--fs-sm);color:var(--text-2)}
+
+/* Now 2 / 6: quiet earned cards and next-ball preview, never on the scoring pad. */
+.badge-shelf{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:var(--s2)}
+.badge-card{display:flex;flex-direction:column;justify-content:center;gap:4px;min-height:64px;padding:12px;border:1px solid var(--line);border-radius:10px;color:var(--text);text-decoration:none}
+.badge-card b{font-size:var(--fs-sm)}
+.next-up{display:flex;align-items:center;min-height:44px;padding:8px 0;color:var(--text-2)}
+.step-ladder .alt{min-height:44px;white-space:normal;overflow-wrap:anywhere;display:flex;flex-direction:column;align-items:flex-start;justify-content:center}
+.step-name{font-size:var(--fs-sm);text-align:left}
+.step-hint{margin:4px 0 0}
+
+/* Source labels must wrap within the narrow one-handed Lane column. */
+.line-sum{flex-wrap:wrap;min-width:0;row-gap:6px}
+#tAngle .tile-val{font-size:var(--fs-lg);overflow-wrap:anywhere}
+
+/* A wrapped title is preferable to clipping the season name on a phone. */
+#wrapped .appbar .title{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+
+/* Phase1 search-first onboarding: reachable confirmation, no overflow at360px/large text. */
+#welcomeSearch .wel-foot{position:sticky;bottom:0;z-index:3;background:var(--bg);display:flex;flex-direction:column;align-items:stretch;padding:12px 0 calc(12px + env(safe-area-inset-bottom));margin-top:16px}
+#welcomeSearch .wel-foot p{margin:0}
+#welcomeSearch .brow-main{width:100%;flex:none;min-height:60px}
+#welcomeSearch .brow-text{overflow-wrap:anywhere}
+#welcomeSearch input,#welcomeSearch select{max-width:100%;min-height:44px}
+#welcomeSearch .wel-top .brand{font-size:1rem}
+
+@media(max-width:480px){.welcome .btn-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Local recovery conflicts: each labeled choice is a full 44px touch target. */
+.recovery-choice{display:flex;align-items:center;gap:12px;min-height:44px;overflow-wrap:anywhere;padding:8px 0}
+.recovery-choice input{flex:0 0 44px;width:44px;height:44px}
+.recovery-choice span{min-width:0}

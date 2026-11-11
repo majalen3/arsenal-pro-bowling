@@ -2,6 +2,51 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## Reviewed local recovery — unreleased (2026-11-08 America/New_York EST; offline build v68)
+- Add a separate explicit local-only modern-backup review: validated supported preferences/saved aims and nonempty saved-line/surface/note mirrors, per-value conflicts defaulting to this phone. Non-conflicting physical copies/layouts/games remain additive; no specs or engine changes.
+- Persist a private before-state checkpoint and sync hold before applying. Offer guarded append-only Undo, including interrupted apply/Undo repair after reload. New events/queued writes/settings edits block Undo rather than roll them back; explicit Keep preserves current edits and ends Undo. Retain checkpoint history; locally undone event IDs are not silently resurrected.
+- Strict durable mirror writes, commit-boundary guards, honest unsupported-field/single-tab/full-phone limits, pending-account/review checks and visible same-account last-write-wins/export protection. Nothing stages/uploads/rebinds an account or backup-code destination. Review targets are 44px and disclosure/focus survives a choice.
+- Companion API3 patches only supported body-parser1.20.8→1.20.9 in the lockfile; audit HIGH1→0, isolated hosted PostgreSQL61/0. No production configuration/secrets change or deployment.
+- PWA beta candidate only, not public/native launch approval; see RELEASE_READINESS and LAUNCH_FOUNDATION_VALIDATION. No merge/deploy/spend/live DB/account operations.
+
+## Recovery validation + cold-start repair — unreleased (2026-11-07 Europe/Zurich; offline build v67)
+- Load only common/selected-route modules up front, defer profile-edit/catalog code until requested and start bulk offline caching after the actual first paint. Preserve unchanged Me privacy text/focus through hydration; no content hiding or Lighthouse budget changes.
+- Fail closed on unsupported backup/event schemas, unsafe object keys, stale previews and nonempty legacy mirrors needing reconciliation. Account exports/settings/pending recovery archives are explicitly not full-phone Import formats; automatic restore Undo remains unsupported.
+- Initial account recovery reads its bounded stream before any new upload. Conflicting facts/mirrors stage privately with original-data checkpoint and source archive; cursor/data/destination stay unchanged, no override/rebind/wipe. Signout remains authoritative through checkpoint waits. Normal established same-account sync remains event-based LWW, not a full conflict-review/workspace system.
+- Run cumulative stacked PR journey/Lighthouse checks rather than treating older red branch checks as current evidence. Companion API2 adds only explicit synthetic fixture tooling/CI and passes hosted PostgreSQL60/0; local PostgreSQL remains blocked and inherited dependency audit is a separate no-ship gate.
+- Keep backup scope notes visible as information, not false checksum/preservation warnings; real conflicts still block. Remove the transient unnamed account-export link from the accessibility tree.
+- Engine/catalog/equivalence fixture unchanged. No merge, deploy, live accounts/DB, paid changes or launch/legal/store approval.
+
+## Launch recovery hardening — unreleased (2026-11-07 Europe/Zurich; offline build v66)
+- Full Ball titles wrap on narrow phones; long copy names stay contained. Existing clipping/44px probes retained, no scoring extras.
+- Backup restores block checksum/ID conflicts and replacement of existing facts, retain a before-data checkpoint and recheck at append. Preview includes current-backup download and honest Undo/preferences limits; ambiguous recovery is blocked, not silently merged.
+- Signout/cancellation supersedes pending authentication; stale account/sync401 cannot clear a newer session. Local synthetic regressions only; existing single-account privacy boundary retained.
+- Added current release gates, dependency order, sourced database preservation/cost options and precise inherited CI diagnosis. No verified DB deadline, merge/deploy/spend or live changes; engine/catalog/baseline untouched.
+
+## Launch foundations Phase 1 — unreleased (2026-11-06; offline build v65)
+- New installations start with zero owned balls. Search the shared catalog locally, filter brands, review multiple physical copies and save; skip/manual unknown models remain available. Adding is not packing: start an empty bag and explicitly Bring chosen balls.
+- Distinct copy names, layouts/surface notes and saved lines resolve by physical ID; no arbitrary attribution of old model-only history to duplicate copies. Unsupported specs remain unmodeled.
+- Backed-up versioned legacy review is append-only, retryable and undoable; explicit older bags and all histories remain. Personal profile fields default unknown, not the owner's values.
+- Local-only sync by default; keep-data signout/expiry never falls back to a backup code. Legacy private dual-writes removed. One private account history per browser; foreign account switching is safely blocked, not yet a complete multi-account feature.
+- Honest local/retention/server acknowledgement and file recovery wording; no permanent-safety promise. Cold-load Insights and quick-reload physical selection repairs. Atomic offline shell v65; engine/catalog/equivalence fixture unchanged.
+- Validation explicitly retains one inherited Ball-title ellipsis flow-probe failure and unrun human/device gates; no blanket all-green/launch-ready claim.
+- Reusable CEO/team brief, fresh source audit and technical validation in `docs/TEAM_PROMPT_CEO_LAUNCH.md`, `docs/LAUNCH_FOUNDATION_AUDIT.md`, `docs/LAUNCH_FOUNDATION_VALIDATION.md`. PWA beta foundations only, not a launch/store readiness claim.
+
+## Prior unmerged Now-list work (2026-11-06; offline build v64)
+
+### For bowlers
+- Earned starter cards in Armory; Old Friends retained. A single optional Next up idea is off by default.
+- Lane explains the model path in one sentence. Model, measured release, entered and input chips distinguish sources without new accuracy claims.
+- Weaker/Stronger previews the next ball and suggests trying feet/eyes first, only outside active scoring.
+- Manufacturer-only review of all 22 built-ins, with sources/dates; corrected specs and explicit unknowns. Eight identities have no supported model rather than guessed paths. Removed two unverified search rows, not saved equipment.
+- Cover guidance rewritten in our own words; MOTIV lookup supported when the companion API PR is deployed.
+
+### Under the hood
+- Deliberately frozen v64 catalog-input baseline; unchanged engines pass 7,500/0. Per-ball old/new records: docs/DECISIONS.md.
+- Local S1/S2/S3 flag/counter smoke tests and run instructions; no participant lift claims, no outbound telemetry.
+- Full regression verification and small accessibility repairs exposed by the audit (null text, contrast, labels, review focus/targets). See docs/NOW64_VALIDATION.md for exact results.
+- CSP, offline-first/no-build approach and existing QR/owned data retained. No Engine v2 or product photos; C8/C9 remain owner decisions.
+
 ## 1.1.1 (2026-11-02)
 
 ### For bowlers

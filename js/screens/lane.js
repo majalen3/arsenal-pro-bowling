@@ -1,6 +1,7 @@
+import { ballKey } from '../cc/cats.js';
 import { analyze, coachLine, sensitivity, ruleOf31, rollMph, S, C_SKID, C_HOOK, C_ROLL } from '../engine.js';
-import { rgTxt, coverKind } from '../data.js';
-import { app, on, saveLine, renameLine, linesForBall, applyLine, status } from '../store.js';
+import { rgTxt, coverKind, modelOK } from '../data.js';
+import { app, esc, on, saveLine, renameLine, linesForBall, applyLine, status } from '../store.js';
 import { h, icon, toast, sheet } from '../ui.js';
 import { createLane } from '../lane.js';
 import { go } from '../router.js';
@@ -18,6 +19,8 @@ import { houseRule } from '../cc/target.js';
 import { prefs, setPrefs } from '../store.js';
 import { ready, proj } from '../hub.js';
 import { lineFor, standOf, keepLine } from '../cc/line.js';
+import { releaseSource, specSource, pathSummary, aboutAngle } from '../cc/provenance.js';
+import * as UX from '../cc/ux.js';   // Now items 4/5: S1 Lane variant flag + on-device counts
 import { openNight } from '../cc/night.js';
 import { presetFor } from '../cc/model.js';
 import { aimLayer, paintPill, overlaysBtn } from './overlays.js';
@@ -42,11 +45,20 @@ export function render() {
   const coach = h('p', { class:'coach', id:'coach', 'aria-live':'polite' });
   const deckCv = h('canvas', { class:'deck', id:'deck', role:'img' });
   const deckRead = h('div', { class:'deck-read', id:'deckRead' });
-  const tile = (id, label, model) => h('div', { class:'tile', id }, h('div', { class:'tile-label' }, label, ...(model ? [h('span', { class:'tile-model', text:' (model)' })] : [])), h('div', { class:'tile-val num' }), h('div', { class:'tile-sub' }));
+  // Now item 4 (PRODUCT_EVAL_1 §8, 2026-11-02): every physics number carries where it comes from. The Lane's path numbers are the
+  // 2-D model's (no measured path exists in the app); a release number from an accepted LaneTrax import is marked measured.
+  // S1 (docs/SMOKE_TESTS.md): flag laneView 'summary' (default) = one plain path line on top + chips, the phase numbers behind
+  // a tap; 'baseline' = no summary and phase numbers open. Both arms keep source chips as a safety floor.
+  const V = UX.flag('laneView'), SUM = V !== 'baseline';
+  const chip = (p, t) => h('span', { class:'prov', 'data-prov':p, text:t });
+  const tile = (id, label, model) => h('div', { class:'tile', id }, h('div', { class:'tile-label' }, label, ...(model ? [chip('model', 'model')] : [])), h('div', { class:'tile-val num' }), h('div', { class:'tile-sub' }));
   const tEntry = tile('tEntry', 'Entry', 1), tAngle = tile('tAngle', 'Angle', 1), tBp = tile('tBp', 'Break', 1);
   const lineSum = h('button', { class:'line-sum', id:'lineSum', onclick:() => { tune = openTune(); } });
   const hold = h('div', { class:'hold', id:'hold' });
   const more = h('div', { class:'more-read', id:'moreRead' });
+  const pathSum = SUM ? h('p', { class:'path-sum', id:'laneSum', role:'status' }) : null;
+  const moreBox = SUM ? h('details', { class:'more-fold', id:'laneNums', ontoggle:e => { if (e.target.open) UX.count('lane.numbers.open'); } }, h('summary', { text:'Skid, hook, roll and roll speed' }), more) : more;
+  UX.count('lane.view.' + (SUM ? 'summary' : 'baseline'));
   const inlineTune = tunePanel(); inlineTune.classList.add('tune-inline');
   const missRow = h('div', { class:'miss-row', role:'group', 'aria-labelledby':'missLbl' },
     h('div', { class:'miss-lbl', id:'missLbl', text:'Your ball went' }),
@@ -57,11 +69,12 @@ export function render() {
   const patNow = () => { const P = proj(), sess = P ? ((P.sessions || {})[openNight(P) || ''] || {}) : {}, ft = sess.ft != null ? +sess.ft : null;
     return { preset: S.pattern, ft: ft != null && presetFor(ft) === S.pattern ? ft : null }; };
   const aimCtx = () => ({ cat: app.ball, speed: +S.speed, rev: +S.rev, finish: S.finish, oil: +S.oil });
+  const missing = h('p', { class:'card', id:'laneMissing', hidden:true, text:'Specs unverified or cover not supported. No model path: choose another ball, or check your specs in Bag.' });
   const el = h('section', { class:'screen lane-screen' },
     h('header', { class:'appbar' }, h('h1', { class:'sr-only', id:'laneH1' }), ballBtn, h('div', { class:'appbar-actions' }, syncDot, tgBtn, linesBtn, saveBtn)),
     h('div', { class:'ctl-bar' }, qRow,
     h('div', { class:'cond-row' }, backBtn, h('div', { class:'cond-grp', role:'group', 'aria-label':'Lane conditions' }, patChip, surfChip, oilChip, tuneChip))),
-    h('div', { class:'lane-grid' },
+    missing, h('div', { class:'lane-grid' },
       h('div', { class:'lane-col' }, canvas,
         h('div', { class:'legend', 'aria-hidden':'true' }, h('span', { html:`<i style="background:${C_SKID}"></i>Skid` }), h('span', { html:`<i style="background:${C_HOOK}"></i>Hook` }), h('span', { html:`<i style="background:${C_ROLL}"></i>Roll` }), h('span', { html:'<i class="bp"></i>Breakpoint' })),
         h('div', { class:'row lane-tools' }, overlaysBtn(patNow), aimPill, helpDot('bm-shr', 'Skid, hook, roll')), aimWhy),
@@ -70,41 +83,52 @@ export function render() {
         h('details', { class:'deck-how', id:'deckHow' }, h('summary', { text:'How it works' }), h('div', { id:'deckHowBody' }), h('p', { class:'deck-cap', id:'deckCap' })),
         h('p', { class:'deck-cap', id:'deckMirror', hidden:true, text:'Mirrored for left hand.' }))),
       h('div', { class:'read-col' },
-        h('div', { class:'tiles' }, tEntry, tAngle, tBp),
-        handAsk(), lineSum, modelNote, hold, missRow, more, inlineTune)));
+        pathSum, h('div', { class:'tiles' }, tEntry, tAngle, tBp),
+        handAsk(), lineSum, modelNote, hold, missRow, moreBox, inlineTune)));
   let tune = null;
   const lane = createLane(canvas, { onAdjust:ch => adjust(ch), lefty:isLefty, aimBox:aimLayer(patNow), eyes:target });
   const half2 = v => Math.round(v * 2) / 2;
   const deck = createDeck(deckCv);
   function setTile(t, val, sub, tone) { t.querySelector('.tile-val').textContent = val; t.querySelector('.tile-sub').textContent = sub; t.dataset.tone = tone; }
   let lastKey = '';
+  function paintSum(a) { if (pathSum) pathSum.replaceChildren(pathSummary(a), chip('model', 'model')); }
   function update({ animate = false } = {}) {
-    const b = app.ball, mi = modelIn(), a = analyze(b, { release: mi.release, aim: mi.aim });   // the bowler's stand → aim (ctl.modelIn)
-    ballBtn.innerHTML = `<span class="ball-orb sm" style="--c:${b.color}" aria-hidden="true"></span><span class="ball-btn-text"><span class="ball-btn-name">${b.name}</span><span class="ball-btn-sub">${b.brand} · ${coverKind(b)} · RG ${rgTxt(b)}</span></span>${icon('down', 'chev')}`;
+    const b = app.ball, mi = modelIn();   // the bowler's stand → aim (ctl.modelIn)
+    ballBtn.innerHTML = `<span class="ball-orb sm" style="--c:${esc(b.color || "#777")}" aria-hidden="true"></span><span class="ball-btn-text"><span class="ball-btn-name">${esc(b.name)}</span><span class="ball-btn-sub">${esc(b.brand)} · ${esc(coverKind(b))} · RG ${rgTxt(b)}</span></span>${icon('down', 'chev')}`;
+    ballBtn.querySelector('.ball-btn-sub').append(chip(specSource(b, 'rg')[0], specSource(b, 'rg')[1] + (b.weight ? ' · ' + b.weight + ' lb' : '')));
     ballBtn.title = 'Change ball';
     el.querySelector('#laneH1').textContent = `Lane: ${b.name}`;
     patChip.innerHTML = `<span class="chip-k">Pattern</span> ${PATTERN_LABEL[S.pattern]}`; patChip.setAttribute('aria-label', `Pattern ${PATTERN_LABEL[S.pattern]}. Change conditions`);
     surfChip.innerHTML = `<span class="chip-k">Surface</span> ${FINISH_LABEL[S.finish]}`; surfChip.setAttribute('aria-label', `Surface ${FINISH_LABEL[S.finish]}. Change conditions`);
     oilChip.innerHTML = `<span class="chip-k">Oil</span> ×${(+S.oil).toFixed(1)}`; oilChip.setAttribute('aria-label', `Oil ×${(+S.oil).toFixed(1)}. Change oil volume`);
-    tuneChip.innerHTML = `${icon('tune')} ${S.speed} mph · ${S.rev} rpm`; tuneChip.setAttribute('aria-label', `${S.speed} mph · ${S.rev} rpm. Tune shot`);
+    const bw = (proj() || {}).bowler || {}, sp = releaseSource(bw.speed, S.speed), rv = releaseSource(bw.rev, S.rev);
+    tuneChip.replaceChildren(h('span', { html:icon('tune') }), `${S.speed} mph `, chip(...sp), ` · ${S.rev} rpm `, chip(...rv)); tuneChip.setAttribute('aria-label', `${S.speed} mph ${sp[1]} · ${S.rev} rpm ${rv[1]}. Tune shot`);
+    const supported = modelOK(b); missing.hidden = supported; el.querySelector('.lane-grid').hidden = !supported;
+    if (!supported) { if (qKey !== b.id) { qKey = b.id; drawQuick(); } return; }
+    const a = analyze(b, { release:mi.release, aim:mi.aim });
     const tone = CALL_TONE[a.call]; callBadge.textContent = CALL_LABEL[a.call]; 
     const cl = houseRule(coachLine(a));
-    coach.textContent = isLefty() ? mirrorWords(cl) : cl;
+    coach.textContent = isLefty() ? mirrorWords(cl) : cl; coach.append(chip('model','model'));
     setTile(tEntry, f1(a.entryBoard), 'pocket 17.5', a.entryBoard != null && Math.abs(a.entryBoard - 17.5) <= 0.7 ? 'good' : 'warn');
-    setTile(tAngle, a.angle == null ? '\u2014' : f1(a.angle) + '\u00b0', 'need 4\u20136\u00b0 drawn', a.angle != null && a.angle >= 4 && a.angle <= 6 ? 'good' : 'warn');
+    setTile(tAngle, a.angle == null ? '\u2014' : aboutAngle(a.angle), 'drawn, not measured', a.angle != null && a.angle >= 4 && a.angle <= 6 ? 'good' : 'warn');
     const r31 = a.bpBoard == null ? null : ruleOf31(S.pattern, a.bpBoard);
     setTile(tBp, a.bpBoard == null ? '\u2014' : f1(a.bpBoard), a.bpFeet == null ? 'no hook' : `@ ${Math.round(a.bpFeet)} ft`, r31 && Math.abs(r31.d) <= 2 ? 'good' : 'warn');
     // One stand/aim source (sim bug 5): Stand = laydown + offset − drift, the same number Tonight and Targeting show.
     const sd = standOf(S.release); lineSum.dataset.release = S.release; lineSum.dataset.stand = sd.feet; lineSum.dataset.aim = half2(target());
     modelNote.hidden = !mi.clamped;
     if (mi.clamped) modelNote.textContent = `Model limit: the model launches at most 0.9 board off the laydown, so its ball starts ${Math.abs(mi.shift)} boards ${(mi.shift > 0) === !isLefty() ? 'left' : 'right'} of your laydown to cross the arrows at ${fmtHalf(target())}. Your stand is unchanged.`;
+    if (mi.clamped) modelNote.append(chip('model','model'));
     lineSum.innerHTML = `<span class="sr-only">Tune shot. </span><span><b class="num">${sd.feet}</b><small>Stand \u00b7 lay ${S.release}</small></span><span class="arrow" aria-hidden="true">→</span><span><b class="num">${fmtHalf(target())}</b><small>Aim</small></span><span><b class="num">${S.speed}</b><small>mph</small></span><span><b class="num">${S.rev}</b><small>rpm</small></span>${icon('tune', 'ls-ic')}`;
+    lineSum.querySelectorAll('span').forEach(n => { if (n.querySelector('small')?.textContent === 'mph') n.append(chip(...sp)); if (n.querySelector('small')?.textContent === 'rpm') n.append(chip(...rv)); if (/^(Stand|Aim)/.test(n.querySelector('small')?.textContent || '')) n.append(chip('assumed','input')); });
     const sens = sensitivity(b), n = +sens.split(' ')[0];
     hold.innerHTML = `<span class="hold-bar" aria-hidden="true">${Array.from({ length:6 }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span><span>Margin: <b>${sens}</b> small misses still strike</span>`;
+    hold.append(chip('model', 'model'));
     hold.dataset.tone = !a.strike ? 'off' : n >= 4 ? 'good' : 'warn';
     const ph = a.phases, n0 = v => Math.round(v);
     more.innerHTML = (ph ? `<div><span class="dot" style="background:${C_SKID}"></span>Skid <b>0\u2013${n0(ph.skid)} ft</b> · <span class="dot" style="background:${C_HOOK}"></span>Hook <b>${n0(ph.skid)}\u2013${n0(ph.roll)} ft</b> · <span class="dot" style="background:${C_ROLL}"></span>Roll <b>${n0(ph.roll)}\u2013${n0(ph.end)} ft</b></div>` : '') +
       `<div>Rolls at ~<b>${rollMph(+S.speed).toFixed(1)} mph</b> (est.)${r31 ? ' · ' + r31.text : ''}</div>`;
+    for (const row of more.children) row.append(chip('model', 'model'));
+    paintSum(a);
     canvas.setAttribute('aria-label', `Lane preview (model). ${CALL_LABEL[a.call]}. Entry board ${f1(a.entryBoard)}, angle ${f1(a.angle)} degrees, breakpoint board ${f1(a.bpBoard)} at ${a.bpFeet == null ? 'none' : Math.round(a.bpFeet) + ' feet'}. ${isLefty() ? 'Mirrored for left hand. ' : ''}Arrow keys move feet and target.${paintPill(aimPill, patNow, a, aimCtx)}`);
     aimWhy.hidden = aimPill.dataset.state !== 'beyond'; aimWhy.textContent = aimPill.dataset.why || '';
     const same = l => l.release === +S.release && l.aim === +S.aim && (l.eyes ?? null) === app.eyes && l.speed === +S.speed && l.rev === +S.rev && l.pattern === S.pattern && l.finish === S.finish && +l.oil === +S.oil;
@@ -121,7 +145,9 @@ export function render() {
     deckCv.setAttribute('aria-label', `Pin deck close-up, ${d.pocket} pocket. ${CALL_LABEL[a.call]}. ${d.text}`);
     const how = a.entryBoard != null && d.side;
     deckRead.innerHTML = how ? `<p class="deck-side-call">${d.side[0].toUpperCase() + d.side.slice(1)}.</p>` : `<p>${d.text}</p>`;
+    deckRead.append(chip('model','model'));
     el.querySelector('#deckHowBody').innerHTML = how ? `<p class="deck-contact">Angle ${d.ang}. ${d.contact}</p><p class="deck-five">${d.five}</p>` : '';
+    if (how) el.querySelector('#deckHowBody').append(chip('model', 'model'));
     el.querySelector('#deckMirror').hidden = !lefty;
     el.querySelector('#deckCard').dataset.tone = tone;
     el.querySelector('#deckCap').innerHTML = `Pin action: approximate 2-D model, assumed 15 lb ball, no spin. <a href="${DEFL_DOC}" target="_blank" rel="noopener">Full write-up</a>`;
@@ -135,7 +161,7 @@ export function render() {
       h('button', { class:'qball all', id:'qballAll', 'aria-haspopup':'dialog', onclick:openBallSheet }, h('span', { html:icon('arsenal') }), h('span', { class:'qball-name', text:`All ${balls.length}` })));
   }
   // 'Back to saved line': the line most recently saved or loaded for this ball, else this ball's newest saved line
-  function backLine(mine) { const ll = app.lastLine; return (ll && ll.ballId === app.ball.id && mine.find(l => l.name === ll.name)) || mine[0] || null; }
+  function backLine(mine) { const ll = app.lastLine; return (ll && ll.ballId === ballKey(app.ball) && mine.find(l => l.name === ll.name)) || mine[0] || null; }
   function backToSaved() { const l = backLine(linesForBall()); if (!l) return; applyLine(l); toast(`Back on \u201c${l.name}\u201d`); }
   function drawSync() { syncDot.dataset.state = status.cls || 'idle'; syncDot.setAttribute('aria-label', status.text || 'Not synced yet'); syncDot.title = status.text || ''; }
   function quickSave() {

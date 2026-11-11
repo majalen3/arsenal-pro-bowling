@@ -17,3 +17,8 @@ Refresh (from a scratch dir with the API repo checked out next to this one):
 2. `node fetch.cjs` (guardedFetch: allowlist, robots.txt, Crawl-delay, honest UA).
 3. `node extract.cjs` then `node overrides.cjs` → `final.json`. Review the diff by hand, copy into `maker_rows.json`.
 4. `node tools/build_spec_catalog.mjs`, bump the service worker version, run the tests.
+
+## 2026-11-06 review
+- Discovery output: **143 maker rows, zero unverified rows**. Mix Black White and Tropical Surge Purple were removed from discovery, not from saved equipment; owned confirmed specs still resolve.
+- `builtin_sources.json` separately records the review of all **22 stable built-in identities** in `js/data.js`, checked 2026-11-06. Five have unverified specs; Ice Storm, generic Reactive Scout and Not Urethane NU also lack a supported model family/complete inputs. No source or field is invented for these entries.
+- Physics input changes require a deliberate review of `tests/fixtures/engine-inputs.v64.json`, never an automatic refresh to make tests pass. Full per-ball old/new table and caveats: `docs/DECISIONS.md`. The engine code is unchanged.

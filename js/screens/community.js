@@ -18,7 +18,7 @@ export function communityCard() {
     const shop = h('input', { id: 'proShopIn', maxlength: '60', placeholder: 'e.g. the pro shop at your center', value: pf.proShop || '', autocomplete: 'off',
       onchange: e => { setPrefs({ proShop: e.target.value.trim() || null }); toast(e.target.value.trim() ? 'Pro shop saved on this phone.' : 'Pro shop cleared.'); } });
     card.innerHTML = '';
-    card.append(h('div', { class: 'card-h' }, h('h2', { class: 'card-title' }, 'Me in the community', helpDot('tags', 'Identity tags'))),
+    card.append(...[h('div', { class: 'card-h' }, h('h2', { class: 'card-title' }, 'Me in the community', helpDot('tags', 'Identity tags'))),
       h('p', { class: 'small muted', text: 'Optional. Tags are how you describe yourself; nothing here is ranked or scored. They stay on this phone unless you share them with your team.' }),
       h('div', { class: 'chips me-tags', id: 'tagPicker', role: 'group', 'aria-label': 'Identity tags' }, ...C.TAGS.map(t => h('button', { class: 'chip', type: 'button', 'data-tag': t,
         'aria-pressed': String(on.includes(t)), onclick: () => { setPrefs({ tags: C.toggleTag(pr, prefs().tags || {}, t) }); paint(); } }, C.TAG_LABEL[t]))),
@@ -31,7 +31,7 @@ export function communityCard() {
         h('label', { class: 'fld' }, h('span', { text: 'Pro shop name (optional)' }), shop),
         h('p', { class: 'small muted', text: 'Shown at the top of your pro shop kit. Kept on this phone; the app never contacts the shop.' })),
       h('div', { class: 'btn-grid' }, h('a', { class: 'btn ghost', href: '#/team', id: 'goTeam' }, 'My Team'), h('a', { class: 'btn ghost', href: '#/wrapped', id: 'goWrapped' }, 'Season Wrapped'),
-        h('a', { class: 'btn ghost', href: '#/kit', id: 'goKit' }, 'Pro shop kit')));
+        h('a', { class: 'btn ghost', href: '#/kit', id: 'goKit' }, 'Pro shop kit'))].filter(x => x != null));
   }
   paint();
   return card;

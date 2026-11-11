@@ -45,3 +45,19 @@ export function shelves(P, catOf) {
   for (const k of Object.keys(out)) out[k].sort((a, b) => (b.benchmark - a.benchmark) || a.name.localeCompare(b.name));
   return out;
 }
+
+// Starter cards describe actions already taken, never a skill rating. Recomputed after undo/import removal.
+const STARTERS = [
+  { id:'first-ball', title:'First ball added', note:'Your equipment, kept together.', href:'#/bag', has:P => Object.keys(P.owned || {}).length > 0 },
+  { id:'first-night', title:'First night logged', note:'A night to look back on.', href:'#/results', has:P => Object.values(P.sessions || {}).some(s => s.ended && ((P.shots || []).some(x => x.sessionId === s.id) || (P.scores || []).some(x => x.sessionId === s.id))) },
+  { id:'first-line', title:'First line saved', note:'A starting point for next time.', href:'#/lane', has:P => Object.keys(P.lines || {}).length > 0 },
+  { id:'first-surface', title:'First surface note', note:'A record of what changed.', href:'#/bag', has:P => (P.surface || []).length > 0 },
+];
+export function starterBadges(P = {}) { return STARTERS.filter(x => x.has(P)).map(({ id, title, note, href }) => ({ id, title, note, href })); }
+// At most ONE optional idea. No countdown, completion fraction, deadline or loss state.
+export function nextUp(P = {}) {
+  if (!Object.keys(P.owned || {}).length) return { text:'Next up: add a ball you own, if you want to keep it here.', href:'#/add-ball' };
+  if (!Object.keys(P.lines || {}).length) return { text:'Next up: save a line if it would help next time.', href:'#/lane' };
+  if (!(P.surface || []).length) return { text:'Next up: note a surface change when you make one.', href:'#/bag' };
+  return null;
+}
