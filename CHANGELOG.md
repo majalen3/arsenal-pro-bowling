@@ -2,6 +2,19 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## Bag first, 30-second test — 2026-11-11 America/Chicago; offline build v73
+- **Bag** opens with tonight's bag and the oil/lane (Oil & lanes ›, a Lane condition switch), then compact rows (name, role, Swap, **Keep**), Bring, **Shake it up** / Suggest again and Pack. Pack is visible without scrolling. The Tonight/All switch is gone; `#/bag?view=all` opens Arsenal.
+- **Keep in bag**: a one-tap on/off toggle (pin icon, aria-pressed, 44 px). Kept balls stay through Bring changes, Suggest again and Shake it up ("Kept: stays when you repack, change Bring or shake it up.").
+- **Shake it up**: a random but sensible bag of the same size from balls that are ready or at home. It keeps kept balls, the spare and at least one ball with modeled specs, differs from the current bag when it can, shows In/Out, and has **Undo**.
+- **Find my strike line** is its own screen (`#/strike`): a lane picture from stand to target to breakpoint to the 1-3 pocket (1-2 for left-handers), four tiles (stand, target, breakpoint, ball), an "estimate" tag, **Use this line**, and one Details.
+- **Compare** draws each ball's line fitted to the pocket (labelled estimate). The table still compares the same line.
+- **Arsenal** starts with a search box and one row per ball with Keep. Shelves, milestones, Old Friends, the catalogue and Export are one tap away. **Log book** starts with stat tiles; Bowler Card, Wrapped and CSV are under More.
+- **Score page** fits one screen at 360x780 and 390x844 (the step ladder and read are under "Ball change, read and details").
+- **Page top**: every route opens at the top (manual scroll restoration). The safe area goes through `--sat`/`--sab`. The ball hero is 44 px (was 96). The title and first content are never under the header (tested).
+- **Specs**: "TBD" is now a quiet "not published". 13 Epic rows have RG/diff from the maker. 900 Global Sublime was added from bowlinglife.eu (flagged secondary, not the maker). RG/diff gaps on non-plastic balls went from 23 to 10.
+- **Add a ball** lookup: a miss is a card with Retry, the maker page or maker search, and typed specs. An API companion (arsenal-pro-api PR #4) adds a maker-site search fallback.
+- Clutter audit: 1105 → 337 words across the six spine screens. See docs/CUTS_V73.md. simulatePath unchanged; equivalence 7500/0; routes and saved data unchanged.
+
 ## Strike finder before scoring — 2026-11-11 America/Chicago; offline build v72 (first live build of the product spine; v71 never deployed)
 - Strike line (`#/tonight`): **Find my strike line ›** is now the primary button, right under the start line, with **Lane view ›** beside it. **Start bowling** follows as a plain button after Stand · Aim and Who's bowling. The one-time hand question sits under Start bowling.
 - Tonight's bag on Strike line folds its rows under one line of ball names (tap to open; Swap is inside). Pack these N and Bag builder stay visible, and the Bag tab is the full builder. League Strike line is back under the 1110 px budget (930), so the 1150 px exception from v71 is reverted.
