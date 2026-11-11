@@ -19,6 +19,7 @@ listenInstall(); if (isStandalone()) askPersist();
 // Lane and Target are tools (no tab of their own): they open from the Stand · Aim chip in the Building and the game, and from Learn.
 route(/^\/lane$/, 'tonight', () => import('./screens/lane.js'));
 route(/^\/target$/, 'tonight', () => import('./screens/target.js'));
+route(/^\/strike$/, 'tonight', () => import('./screens/strike.js'));   // v73: Find my strike line, picture + tiles
 route(/^\/arsenal\/insights$/, 'arsenal', () => import('./screens/insights.js'));
 route(/^\/arsenal\/sheet$/, 'arsenal', () => import('./screens/export.js'));
 route(/^\/ball\/([\w-]+)$/, 'arsenal', () => import('./screens/ball.js'));
@@ -113,6 +114,7 @@ const routePreloads = { __proto__:null,
   '/bag':['screens/bag','screens/arsenal','cc/rank','cc/model','cc/armory','cc/bag','cc/target','cc/status','cc/bagedit','cc/advisor'],
   '/lane':['screens/lane','lane','deck','ctl','labels','screens/pickers'],
   '/target':['screens/target','lane','ctl','cc/target'],
+  '/strike':['screens/strike','cc/strikeline','cc/target','cc/line'],
   '/results':['screens/sessions','cc/card'], '/learn':['screens/learn']
 };
 const initialPath = location.hash.replace(/^#/, '').split('?')[0] || '/bag';

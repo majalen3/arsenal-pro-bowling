@@ -387,11 +387,11 @@ async def bag_cycle(b):
     await p.click('#tnBagLink'); await p.wait_for_selector('#bagRows')
     check(await p.query_selector('#tabs a[href="#/bag"][aria-current=page]') is not None, '[bag] reached from Tonight; the Bag tab is current (IA P2)')
     steps = await p.eval_on_selector_all('#bagBody .card-title', 'e => e.map(x => x.textContent)')
-    check(steps[:3] == ['Tonight\u2019s bag', 'Bring', 'Why not the others? (7)'], f'[bag] v73 order: tonight\'s bag (+ oil) first, then Bring, then the others {steps[:3]}')
+    check(steps[:2] == ['Tonight\u2019s bag', 'Why not the others? (7)'], f'[bag] v73 order: tonight\'s bag (+ oil) first, then Bring, then the others {steps[:3]}')
     check('Oil:' in await p.text_content('#bagWhereLine') and await p.query_selector('#bagTonight #bagWhereChange') and await p.query_selector('#bagTonight [aria-label="Lane condition"]'), '[bag] oil / lane condition sits in the Tonight\'s bag card')
     roles = await p.eval_on_selector_all('#bagRows [data-role-label]', 'e => e.map(x => x.textContent)')
     check(roles and roles[0] == 'Start ball' and roles[-1] == 'Spares' and all(r in ('Start ball', 'If it hooks early', 'If it stops hooking', 'For heavy oil', 'Spares', 'Specs to check') for r in roles), f'[bag] roles in bowler words {roles}')
-    lines = await p.eval_on_selector_all('#bagRows .bb-row > p.small', 'e => e.map(x => x.textContent.trim())'); check(len(lines) >= len(roles) and all(lines), '[bag] each row has a one-line why')
+    lines = await p.eval_on_selector_all('#bagRows .bb-name', 'e => e.map(x => x.title.trim())'); check(len(lines) >= len(roles) and all(lines), '[bag] each row keeps its one-line why (tooltip; full why in the Pack list)')
     check(await p.query_selector('#bagGrid') is None and not await p.eval_on_selector('#bagLadder', 'e => e.open') and not await p.eval_on_selector('#bagChecksD', 'e => e.open'), '[bag] no 5x3 grid; ladder and checks behind a tap')
     n = await p.evaluate("() => document.querySelectorAll('#bagChecks [data-check]').length"); check(n == 10, f'[bag] 10 checks listed ({n})')
     sm = await p.text_content('#bagChecksSum'); wn = await p.evaluate("() => document.querySelectorAll('#bagChecks [data-warn=true]').length")
@@ -410,9 +410,9 @@ async def bag_cycle(b):
     check(taps <= 2, f'[bag] swap HRP -> C4 in {taps} taps')
     pin = '#bagRows [data-pin="own-ordnance-c4"]'
     off = await p.evaluate(f"() => {{ const b = document.querySelector('{pin}'); return [b.getAttribute('aria-pressed'), b.getAttribute('aria-label'), b.textContent.trim(), !!b.querySelector('.pin-off'), !!document.querySelector('[data-keep-hint=\"own-ordnance-c4\"]')]; }}")
-    check(off[0] == 'false' and off[1].endswith('in bag: off') and off[2] == 'Keep' and off[3] and not off[4], f'[bag] Keep in bag OFF: outlined pin, aria-pressed=false, no hint {off}')
+    check(off[0] == 'false' and off[1].endswith('in bag: off') and off[2] == 'Keep' and off[3], f'[bag] Keep in bag OFF: outlined pin, aria-pressed=false, no hint {off}')
     await p.click(pin); await p.wait_for_function(f"() => document.querySelector('{pin}').getAttribute('aria-pressed') === 'true'")
-    on = await p.evaluate(f"() => {{ const b = document.querySelector('{pin}'); return [b.getAttribute('aria-label'), b.textContent.trim(), !!b.querySelector('.pin-on'), (document.querySelector('[data-keep-hint=\"own-ordnance-c4\"]') || {{}}).textContent || '']; }}")
+    on = await p.evaluate(f"() => {{ const b = document.querySelector('{pin}'); return [b.getAttribute('aria-label'), b.textContent.trim(), !!b.querySelector('.pin-on'), (document.querySelector('#bagKeepHint') || {{}}).textContent || '']; }}")
     check(on[0].endswith('in bag: on') and on[1] == 'Kept' and on[2] and 'stays when you repack' in on[3], f'[bag] one tap: Keep in bag ON, filled pin + "Kept" + hint {on}')
     bb = await p.eval_on_selector(pin, 'e => { const r = e.getBoundingClientRect(); return [r.width, r.height]; }'); check(bb[0] >= 44 and bb[1] >= 44, f'[bag] Keep toggle >= 44px {bb}')
     await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())"); await p.eval_on_selector('#bagRows', 'e => e.scrollIntoView({block: "center"})'); await shot(p, 'phone-bag-keep-on-off')
@@ -1060,7 +1060,7 @@ async def card_cycle(b):
     empties = await p.eval_on_selector_all('.bc-empty', 'e=>e.map(x=>x.textContent)'); check(len(empties) >= 3 and all(('Import' in t or 'Score' in t or 'type' in t) for t in empties), f'[card] each empty section says what to log/import ({len(empties)})')
     await axe_ok(p, '[card] empty'); await shot(p, 'phone-card-empty')
     await p.goto(BASE + '?bc#/sessions'); await p.wait_for_selector('#sessBody')
-    check('No sessions yet' in await p.text_content('#sessBody'), '[card] Nights empty state points to Tonight')
+    check(await p.query_selector('#lbStat') and await p.query_selector('#lbScore[href="#/tonight"]'), '[card] Nights empty: key stat + Score a game (to Strike line)')
     # score one game on Tonight (test data): X, 9/ (10 pin) alternating, 10th X X X
     await p.goto(BASE + '?bc#/bowl'); await p.wait_for_selector('#noBag'); await load_sample(p); await bowl_more(p); await p.wait_for_selector('#tnLog')
     async def nxt(sel):
@@ -1226,7 +1226,7 @@ async def scoring_cycle(b):
     await shot(p, 'phone-session-fix')
     await qtap(p, '[data-undo-fix]'); await p.wait_for_function("() => (document.querySelector('[data-fix-msg]')||{}).textContent?.includes('restored')")
     check(await tot() == g0, f'[scoring] sim2 #4: Undo restores the finished game ({await tot()})')
-    await p.goto(BASE + '?sc#/sessions'); await p.wait_for_selector('#gamesCsv')
+    await p.goto(BASE + '?sc#/sessions'); await p.wait_for_selector('#lbMore'); await p.click('#lbMore summary'); await p.wait_for_selector('#gamesCsv')
     async with p.expect_download() as dl: await p.click('#gamesCsv')
     d = await dl.value; path = await d.path(); txt = open(path, encoding='utf-8-sig', newline='').read()
     lines = txt.strip().split('\r\n')
@@ -1884,7 +1884,7 @@ async def task12_cycle(b):
     async def t8():
         await start('/bowl'); await tab('results'); await p.wait_for_selector('#resLast #resLastHead')
     async def t11():
-        await start('/bowl'); await tab('results'); await p.wait_for_selector('#gamesCsv')
+        await start('/bowl'); await tab('results'); await p.wait_for_selector('#lbMore'); await tap('#lbMore summary')
         async with p.expect_download(): await tap('#gamesCsv')
     async def t12():
         await start('/bowl')

@@ -29,15 +29,15 @@ CORE = [
     ('Where & lanes', 'bag', ['#bagWhereChange'], "() => !!document.querySelector('#advEvent')"),
     ('Add a ball (search)', 'arsenal', ['#arsAdd'], "() => !!document.querySelector('#abQ')"),
     ('Open a ball\u2019s specs', 'arsenal', ['#view a[href^="#/ball/"] >> nth=0'], "() => location.hash.startsWith('#/ball/')"),
-    ('Start a compare (pick a ball)', 'arsenal', ['#view .cmp-btn >> nth=0'], "() => !!document.querySelector('#tray:not([hidden])')"),
+    ('Start a compare (pick a ball)', 'arsenal', ['#armMoreD summary', '#view .cmp-btn >> nth=0'], "() => !!document.querySelector('#tray:not([hidden])')"),
     ('Arsenal insights', 'arsenal', ['#view a[href="#/arsenal/insights"]'], "() => location.hash === '#/arsenal/insights'"),
-    ('Find my strike line', 'tonight', ['#tnFindLine'], "() => location.hash.startsWith('#/target') && !!document.querySelector('#tgFindOut')"),
+    ('Find my strike line', 'tonight', ['#tnFindLine'], "() => location.hash.startsWith('#/strike') && !!document.querySelector('#slOut')"),
     ('Lane', 'tonight', ['#tnLaneLink'], "() => location.hash.startsWith('#/lane') && !!document.querySelector('#ballBtn')"),
     ('Targeting (Stand \u00b7 Aim)', 'tonight', ['#tnAimChip'], "() => location.hash.startsWith('#/target') && !!document.querySelector('#tgBall')"),
     ('Open last night', 'results', ['#resRecap'], "() => location.hash.startsWith('#/session/')"),
     ('Fix a frame', 'results', ['#resFix'], "() => location.hash.includes('fix=1')"),
-    ('Bowler Card', 'results', ['#goCard'], "() => location.hash.startsWith('#/card')"),
-    ('Season Wrapped', 'results', ['#goWrapped2'], "() => location.hash.startsWith('#/wrapped')"),
+    ('Bowler Card', 'results', ['#lbMore summary', '#goCard'], "() => location.hash.startsWith('#/card')"),
+    ('Season Wrapped', 'results', ['#lbMore summary', '#goWrapped2'], "() => location.hash.startsWith('#/wrapped')"),
 ]
 # Secondary (documented, off the tab bar): reached from the top bar on every spine screen.
 SECONDARY = [

@@ -66,26 +66,32 @@ export async function render({ query } = {}) {
   // Nights (BC): every scored or imported session, newest first. One line each: what you'd check first (average or strikes).
   function nights() {
     const P = proj(), list = P ? C.sessionsOf(P) : [];
-    if (!list.length) return [emptyState('No sessions yet', 'Score a game from Strike line, or import a LaneTrax report. Each night shows up here with what changed.', { label:'Go to Strike line', run:() => go('#/tonight') })];
+    // v73 30-second test: one key stat first (big number), the rest one tap down (docs/CUTS_V73.md).
+    const statTile = (k, v, sub) => h('div', { class:'lb-tile', 'data-stat':k }, h('b', { class:'num', text:v }), h('span', { class:'small muted', text:sub }));
+    if (!list.length) return [h('div', { class:'lb-stat', id:'lbStat' }, statTile('games', '0', 'games logged'), statTile('avg', '\u2014', 'average')),
+      h('a', { class:'btn primary block', id:'lbScore', href:'#/tonight' }, 'Score a game')];
     const fmt = d => { if (!d) return 'Undated'; const t = new Date(d + 'T12:00:00'); return isNaN(t) ? d : t.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' }); };
     const line = x => { const s = x.stats; if (s.avg != null) return `${s.games} game${s.games === 1 ? '' : 's'} \u00b7 ${s.avg} avg${s.games > 1 ? ' \u00b7 ' + s.series + ' series' : ''}`;
       if (s.ltx) return `${s.ltx.shots} shots \u00b7 ${s.ltx.strikes} strikes \u00b7 ${s.ltx.spareMade}/${s.ltx.spare} spares`;
       const t = s.throws; return t ? `In progress \u00b7 ${t.strikes} strikes on ${t.first} first balls` : 'Saved'; };
     // IA P2: Results opens on the last night's recap (same headline as the night view), with Fix a frame one tap away.
-    const last = list[0], r = C.recapOf(list, last.id, { myAvg: (P.sessions[last.id] || {}).event === 'league' ? (prefs().league || {}).myAvg : null });
+    const last = list[0], ls = last.stats || {}, tn = new Date().toISOString().slice(0, 10), isTonight = last.date === tn;
+    const stat = h('div', { class:'lb-stat', id:'lbStat' }, statTile('games', String(ls.games || (ls.ltx ? 1 : 0)), isTonight ? 'games tonight' : 'games last night'),
+      ls.avg != null ? statTile('avg', String(ls.avg), 'average') : ls.ltx ? statTile('strikes', String(ls.ltx.strikes), 'strikes') : statTile('avg', '\u2014', 'average'));
+    const r = C.recapOf(list, last.id, { myAvg: (P.sessions[last.id] || {}).event === 'league' ? (prefs().league || {}).myAvg : null });
     const fixable = last.games.some(g => g.throws && g.throws.length);
     const lastCard = h('div', { class:'card', id:'resLast' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Latest night' }), h('span', { class:'muted small', id:'resLastWhen', text:fmt(last.date) })),
       h('p', { class:'bc-headline', id:'resLastHead', text:r ? r.head : line(last) }),
       h('div', { class:'btn-grid' }, h('a', { class:'btn primary', id:'resRecap', href:'#/session/' + encodeURIComponent(last.id) }, 'Full recap \u203a'),
         fixable ? h('a', { class:'btn ghost', id:'resFix', href:'#/session/' + encodeURIComponent(last.id) + '?fix=1' }, 'Fix a frame') : null));
-    return [lastCard, h('div', { class:'btn-grid' }, h('a', { class:'btn ghost', href:'#/card', id:'goCard' }, 'My Bowler Card'), h('a', { class:'btn ghost', href:'#/wrapped', id:'goWrapped2' }, 'Season Wrapped')),
+    return [stat, lastCard,
       h('ul', { class:'plain night-list', id:'nightList' }, ...list.map(x => h('li', {}, h('a', { class:'night-row', href:'#/session/' + encodeURIComponent(x.id), 'data-sid':x.id },
         h('span', { class:'line-text' }, h('span', { class:'line-name', text:fmt(x.date) }), h('span', { class:'line-meta', text:line(x) })),
         h('span', { class:'pill', text:x.source === 'Scored on Tonight' ? 'Scored' : x.source }))))),
       // GAP (c): every game as a spreadsheet file, made on the phone (toCSV quotes per RFC 4180 and guards formulas).
       h('button', { class:'btn ghost block', id:'gamesCsv', onclick:() => { const rows = C.gamesRows(P, id => ballName(P, id) || id);
         const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + toCSV(rows)], { type:'text/csv' })); a.download = `arsenal-pro-games-${today()}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-        toast(`Saved ${rows.length - 1} game${rows.length === 2 ? '' : 's'} as CSV`); } }, 'Export games (CSV)') ];
+        toast(`Saved ${rows.length - 1} game${rows.length === 2 ? '' : 's'} as CSV`); } }, 'Export games (CSV)')].reduce((acc, x, i, arr) => i === arr.length - 1 ? acc.concat([h('details', { class:'card tn-more', id:'lbMore' }, h('summary', { text:'More: Bowler Card, Season Wrapped, CSV' }), h('div', { class:'btn-grid' }, h('a', { class:'btn ghost', href:'#/card', id:'goCard' }, 'My Bowler Card'), h('a', { class:'btn ghost', href:'#/wrapped', id:'goWrapped2' }, 'Season Wrapped')), x)]) : acc.concat([x]), []);
   }
   const nightId = query && query.get('night');
   if (nightId) st.tab = 'nights';   // End night lands here (PRODUCT_SPINE: the night goes into the Log book)

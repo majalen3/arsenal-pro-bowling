@@ -657,7 +657,7 @@ async def j11_data_trust(j):
         d = await dl.value; backup = os.path.join(j.run.media, f'{j.id}-{d.suggested_filename}'); await d.save_as(backup)
         j.state['backup'] = backup; body = json.load(open(backup)); s.check(isinstance(body, dict), f'{d.suggested_filename} parses')
     async with j.step('Export games CSV from Sessions', task='export', target_taps=2) as s:
-        await j.nav('/results'); await j.wait('#gamesCsv')
+        await j.nav('/results'); await j.wait('#lbMore'); await j.tap('#lbMore summary'); await j.wait('#gamesCsv')
         async with j.page.expect_download(timeout=8000) as dl:
             await j.tap('#gamesCsv')
         d = await dl.value; f = os.path.join(j.run.media, f'{j.id}-{d.suggested_filename}'); await d.save_as(f)

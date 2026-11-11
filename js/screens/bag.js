@@ -99,7 +99,7 @@ export async function render() {
     const lane = `${E.short} \u00b7 ${n0.pat ? n0.pat.name : `House shot (assumed ${R.HOUSE_ASSUMED.ft} ft)`}`;
     const stage = (n0.s && n0.s.stage) || 'fresh';
     const top = h('div', { class: 'card', id: 'bagTonight' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: 'Tonight\u2019s bag' }), h('span', { class: 'pill gold', id: 'bagCount', text: `${rows.length} packed` })),
-      h('div', { class: 'row between bag-lane' }, h('p', { id: 'bagWhereLine' }, h('b', { text: 'Oil: ' }), `${lane} \u00b7 ${STAGE[stage] || 'fresh'}`),
+      h('div', { class: 'row between bag-lane' }, h('p', { id: 'bagWhereLine' }, h('b', { text: 'Oil: ' }), lane),
         h('a', { class: 'btn ghost sm', id: 'bagWhereChange', href: '#/tonight?lanes=1' }, 'Oil & lanes \u203a')),
       h('div', { class: 'fld' }, segmented('Lane condition', [['fresh', 'Fresh'], ['transition', 'Transition'], ['burn', 'Burned']], stage, v => setStage(v), 'wide')));
     top.querySelector('[role=radiogroup], .seg') && (top.querySelector('[role=radiogroup], .seg').id = 'bagStage');
@@ -109,11 +109,11 @@ export async function render() {
       return h('button', { class: 'btn sm ghost keep-btn', 'data-pin': r.ownedId, 'data-keep': on ? 'on' : 'off', 'aria-pressed': String(on), 'aria-label': `Keep ${r.name} in bag: ${on ? 'on' : 'off'}`,
         onclick: () => saveBag(bag, BE.pin(bag, r.ownedId, !on), ev, bring) }, h('span', { html: icon('pin', on ? 'pin-on' : 'pin-off') }), on ? 'Kept' : 'Keep'); };
     top.append(h('ul', { class: 'plain stack', id: 'bagRows' }, ...rows.map(r => h('li', { class: 'bb-row', 'data-own': r.ownedId, 'data-ball': r.ownedId, 'data-role': r.role },
-      h('div', { class: 'adv-head' }, h('b', { text: r.name }), h('span', { class: 'pill' + (r.role === 'benchmark' ? ' gold' : ''), 'data-role-label': '', text: r.label }), r.home ? h('span', { class: 'pill', text: ST.HOME_TAG }) : null),
-      h('p', { class: 'small muted', text: r.line }),
-      r.warning ? h('p', { class: 'small adv-warn', 'data-warn': '' }, '\u26a0 ' + r.warning) : null,
-      h('div', { class: 'row' }, h('button', { class: 'btn sm ghost', 'data-swap': r.ownedId, 'aria-haspopup': 'dialog', 'aria-label': `Swap ${r.name}`, onclick: () => swapSheet(proj(), ST.currentBag(proj()), ev, bring, r.ownedId) }, 'Swap'), keepBtn(r)),
-      locked.includes(r.ownedId) ? h('p', { class: 'small keep-hint', 'data-keep-hint': r.ownedId, text: ST.KEEP_HINT }) : null))));
+      h('div', { class: 'bb-main' }, h('b', { class: 'bb-name', text: r.name, title: r.line }), h('span', { class: 'bb-role small' }, h('span', { 'data-role-label': '', text: r.label }), r.home ? ` \u00b7 ${ST.HOME_TAG}` : '')),
+      h('button', { class: 'btn sm ghost', 'data-swap': r.ownedId, 'aria-haspopup': 'dialog', 'aria-label': `Swap ${r.name}`, onclick: () => swapSheet(proj(), ST.currentBag(proj()), ev, bring, r.ownedId) }, 'Swap'), keepBtn(r),
+      r.warning ? h('p', { class: 'small adv-warn', 'data-warn': '' }, '\u26a0 ' + r.warning) : null))));
+    // one short line for what Keep means (owner t121u), shown once when any ball is kept
+    if (rows.some(r => locked.includes(r.ownedId))) top.append(h('p', { class: 'small keep-hint', id: 'bagKeepHint', text: ST.KEEP_HINT }));
     // Shake it up (owner t120): a different random-but-sensible bag of the same size from your own balls; Kept balls stay; Undo.
     const shakeBtn = h('button', { class: 'btn ghost', id: 'bagShake', 'aria-label': 'Shake it up: pack a different random bag', onclick: async () => {
       const P2 = proj(), b2 = ST.currentBag(P2), r = BE.shakeUp(P2, b2, Math.max(bring, ST.packedIds(P2, b2).length));
@@ -147,14 +147,14 @@ export async function render() {
     seg.setAttribute('data-size-control', ''); seg.id = 'bagBring';
     const nIn = pick === 'other' ? h('label', { class: 'fld' }, h('span', { text: 'How many balls (with the spare)' }), h('input', { id: 'bagBringN', type: 'number', inputmode: 'numeric', min: '1', max: '20', step: '1', value: String(bring),
       onchange: e => { const v = A.bringOf(e.target.value); if (!v) return toast('Type a number of balls, e.g. 7', { kind: 'bad' }); setBring(proj(), ST.currentBag(proj()), ev, v); } })) : null;
-    body.append(h('div', { class: 'card', id: 'bagWhere' }, h('div', { class: 'fld' }, h('span', { class: 'card-title', text: 'Bring' }), seg), nIn,
-      h('p', { class: 'muted small', text: 'How many balls tonight, counting the spare. Raising it adds balls; lowering it takes out balls without specs first. Kept balls stay in.' })));
+    // Bring sits in the bag card (v73 no-scroll rule, owner t127u); its explainer moved to the "?" bubble.
+    top.querySelector('#bagShuffleRow').before(h('div', { class: 'fld bag-bring', id: 'bagWhere' }, h('span', { class: 'small', text: 'Bring (with the spare)' }), seg, nIn));
     // ladder + checks behind a tap
     const items = rows.filter(r => r.role !== 'spare').map(r => itemOf(P, r.ownedId)), spare = rows.find(r => r.role === 'spare') ? itemOf(P, rows.find(r => r.role === 'spare').ownedId) : null;
     const ctx = { format: BE.formatOfBring(bring), style: (P.bowler || {}).style || 'tweener', health: P.health, eventDate: bag.eventDate || null };
     const ch = G.checks(items, spare, ctx), warnN = ch.filter(c => c.warn).length;
     const lad = items.map(x => Object.assign({}, x, G.cellOf(x.catalogId))).sort((x, y) => (x.tbd ? 9 : x.level) - (y.tbd ? 9 : y.level) || (x.name < y.name ? -1 : 1));
-    body.append(h('div', { class: 'card', id: 'bagDetailsCard' }, h('details', { class: 'tn-more', id: 'bagLadder' }, h('summary', { text: 'Weaker \u2194 stronger \u203a' }),
+    body.append(h('details', { class: 'card tn-more', id: 'bagDetailsCard' }, h('summary', { text: warnN ? `Strength and checks \u00b7 \u26a0 ${warnN}` : 'Strength and checks' }), h('details', { class: 'tn-more', id: 'bagLadder' }, h('summary', { text: 'Weaker \u2194 stronger \u203a' }),
       h('ol', { class: 'ladder small', 'aria-label': 'Weaker to stronger' }, ...lad.map(x => h('li', { 'data-ladder': x.ownedId }, h('b', { text: x.tbd ? '\u2013' : `L${x.level}` }), ` ${x.name}`, x.tbd ? ' \u00b7 specs not published' : ` \u00b7 ${x.shape}`))),
       h('p', { class: 'muted small' }, 'Strength 5 (heavy oil) to 1 (dry) from the app oil tag; shape is an estimate. ', prov('catalog', 'app tag'), prov('assumed', 'shape (estimate)'))),
       h('details', { class: 'tn-more', id: 'bagChecksD' }, h('summary', { id: 'bagChecksSum', text: warnN ? `\u26a0 ${warnN} thing${warnN === 1 ? '' : 's'} to check \u203a` : '\u2713 Nothing to check \u203a' }),

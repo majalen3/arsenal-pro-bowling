@@ -202,7 +202,7 @@ export async function render(o = {}) {
       pick = h('div', { class: 'card pick', id: 'tnPick' },
         h('div', { class: 'row between' }, h('span', { class: 'ball-name', id: 'tnPickName', text: cur.name })),
         stand ? h('p', { class: 'tn-line', id: 'tnStand', text: `Feet ${stand.feet} \u00b7 eyes ${fmtHalf(ml.target)} at the arrows` }) : null,
-        stand ? h('button', { class: 'btn primary block', id: 'tnFind', onclick: () => go('#/target?find=1&ball=' + encodeURIComponent(cur.id || cur.catalogId || '')) }, 'Find my strike line \u203a') : null,
+        stand ? h('button', { class: 'btn primary block', id: 'tnFind', onclick: () => go('#/strike?find=1&ball=' + encodeURIComponent(cur.id || cur.catalogId || '')) }, 'Find my strike line \u203a') : null,
         gameOpen ? null : alts,
         h('details', { class: 'tn-more', id: 'tnPickMore' }, h('summary', { text: 'Why this ball, specs and model' }),
           h('span', { class: 'pill gold', id: 'tnLevel', text: cur.level != null ? `Level ${cur.level} \u00b7 demand ${d.demand}` : `specs not published \u00b7 demand ${d.demand}` }),
@@ -223,10 +223,10 @@ export async function render(o = {}) {
       body.append(h('div', { class: 'card tn-now', id: 'tnNow' },
         h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: hb ? hb.name : 'No ball' }), ' ', aimChip(HL && HL.stand, HL && HL.ml, hb && (hb.id || hb.catalogId))),
         gameOpen ? null : thenLine),   // C3: during a game the ball-change plan sits under details
-        quickLog(P, s, cur, b, hand, stand, g, team), alts || '', !gameOpen && reads ? reads : '',   // between games: the read and Weaker/Stronger in reach (J06)
+        quickLog(P, s, cur, b, hand, stand, g, team),   // v73 no-scroll Score page (owner t127u): Weaker/Stronger and the read moved into the one details below (docs/CUTS_V73.md)
         // HOME_GAME_FLOW: mid-game this holds ball, line and lane/scoring details only (no bag advisor or Bag builder link); between games the advisor returns.
-        h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: gameOpen ? 'Ball, lanes and line details' : 'Bag, lanes and line details' }),
-          ...(gameOpen ? [] : advisorCard(P, s, b, adv, cur && { name: cur.name, ml, catalogId: cur.catalogId })), h('p', { class: 'coach', id: 'tnCoach', text: coach }), gameOpen && thenLine ? thenLine : '', pick || '', gameOpen && reads ? reads : '', !gameOpen && s.event === 'practice' ? drillCard(P, s) : '', setup));
+        h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: 'Ball change, read and details' }), alts || '', reads || '',
+          ...(gameOpen ? [] : advisorCard(P, s, b, adv, cur && { name: cur.name, ml, catalogId: cur.catalogId })), h('p', { class: 'coach', id: 'tnCoach', text: coach }), gameOpen && thenLine ? thenLine : '', pick || '', '', !gameOpen && s.event === 'practice' ? drillCard(P, s) : '', setup));
       if (gameOpen) requestAnimationFrame(padToThumb);
       return;
     }
@@ -476,8 +476,8 @@ export async function render(o = {}) {
       // the ball picker (or the frame picker) takes the pad's place while open, so the sticky pad never covers it
       card.append(pickBall || (pickFix && tools.picker ? h('div', { class: 'ql-pad', id: 'qlPad' }, tools.picker)
         : h('div', { class: 'ql-pad', id: 'qlPad' }, hintEl, pins, btns)));
-      if (!facingLeave && !edit && meUp) card.append(h('div', { class: 'fld' }, h('span', { text: 'First ball hit (optional, for triggers)' }),
-        segmented('First ball hit', [['pocket', 'Pocket'], ['high', 'High'], ['light', 'Light']], ql.tag, v => { ql.tag = ql.tag === v ? null : v; draw(); }, 'wide')));
+      if (!facingLeave && !edit && meUp) card.append(h('div', { class: 'fld ql-hit' },
+        segmented('First ball hit (optional)', [['pocket', 'Hit: Pocket'], ['high', 'High'], ['light', 'Light']], ql.tag, v => { ql.tag = ql.tag === v ? null : v; draw(); }, 'wide')));
     }
     // triggers: first balls + reads this session, newest last
     const seq = P.shots.filter(x => x.sessionId === sid && x.roll === 1 && x.frame != null).map(x => ({ ts: x.ts, miss: x.miss || (x.down === 10 ? 'strike' : null) }))
@@ -516,7 +516,7 @@ export async function render(o = {}) {
   function strikeStrip(c) {
     const id = c && (c.id || c.catalogId);
     // One row, no card around it: Find my strike line (primary, the wide cell) and Lane view.
-    return h('div', { class: 'btn-grid tn-strike', id: 'tnStrike' }, h('a', { class: 'btn primary', id: 'tnFindLine', href: '#/target?find=1' + (id ? '&ball=' + encodeURIComponent(id) : '') }, 'Find my strike line \u203a'),
+    return h('div', { class: 'btn-grid tn-strike', id: 'tnStrike' }, h('a', { class: 'btn primary', id: 'tnFindLine', href: '#/strike?find=1' + (id ? '&ball=' + encodeURIComponent(id) : '') }, 'Find my strike line \u203a'),
       h('a', { class: 'btn ghost', id: 'tnLaneLink', href: '#/lane' }, 'Lane view \u203a'));
   }
   function arsenalStrip(P, packedN) {

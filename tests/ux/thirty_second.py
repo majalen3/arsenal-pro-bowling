@@ -18,8 +18,8 @@ SCRIPTS = '--no-scripts' not in sys.argv
 WIPE = "() => { localStorage.clear(); return new Promise(r => { const q = indexedDB.deleteDatabase('arsenal-pro'); q.onsuccess = q.onerror = q.onblocked = () => r(true); setTimeout(() => r(false), 2000); }); }"
 LOAD = """async () => { const [m, f] = await Promise.all([import('./js/hub.js'), import('./tests/data/fixtures/sample_arsenal.mjs')]);
   await m.ready(); await m.loadStarter(f.sampleEvents, f.SAMPLE_ID); }"""
-ROUTES = [('bag', '#/bag'), ('arsenal', '#/arsenal'), ('strike-line', '#/tonight'), ('strike-finder', '#/target?find=1'), ('log-book', '#/results'), ('add-ball', '#/add-ball')]
-SAFE = ".appbar{padding-top:calc(8px + 47px) !important} .tabbar{height:calc(var(--tab-h) + 34px) !important;padding-bottom:34px !important} #view{padding-bottom:calc(var(--tab-h) + 34px + 16px) !important}"
+ROUTES = [('bag', '#/bag'), ('arsenal', '#/arsenal'), ('strike-line', '#/tonight'), ('strike-finder', '#/strike'), ('log-book', '#/results'), ('add-ball', '#/add-ball')]
+SAFE = ":root{--sat:47px !important;--sab:34px !important}"   # css/app.css reads the iOS insets through --sat/--sab
 MEASURE = """() => {
   const view = document.querySelector('#view .screen') || document.querySelector('#view');
   const vis = e => { const r = e.getBoundingClientRect(), s = getComputedStyle(e); return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && !e.closest('details:not([open]) > :not(summary)'); };
@@ -27,13 +27,20 @@ MEASURE = """() => {
   const ctl = [...view.querySelectorAll('button, a[href], select, input:not([type=hidden]), summary, [role=radio]')].filter(vis);
   const bar = document.querySelector('#view .appbar'), barB = bar ? bar.getBoundingClientRect().bottom : 0;
   const h1 = view.querySelector('h1'), h1r = h1 ? h1.getBoundingClientRect() : null;
-  const first = [...view.querySelectorAll('h2, .card-title, summary, .card')].find(e => !e.closest('.appbar') && vis(e));
+  const first = [...view.children].find(e => !e.matches('.appbar, header') && vis(e));
   const fr = first ? first.getBoundingClientRect() : null;
   const small = ctl.filter(e => { const r = e.getBoundingClientRect(); return (r.height < 43.5 || r.width < 43.5) && !e.closest('.prose, p, li.small') && e.tagName !== 'INPUT'; }).map(e => (e.id || e.textContent.trim()).slice(0, 24));
   return { words, controls: ctl.length, scroll: document.documentElement.scrollHeight, viewport: innerHeight,
     h1: h1r ? [Math.round(h1r.top), Math.round(h1r.bottom)] : null, header: Math.round(barB), first: fr ? [first.id || first.tagName, Math.round(fr.top)] : null, small };
 }"""
 
+# owner t127u: high-use pages fit one viewport. Bag: the bag card (tonight's bag, oil, Bring, Shake it up) and Pack sit above the
+# tab bar; anything below is a closed <details>. Strike finder: the whole page fits. The in-game Score page is checked in scripts().
+TAB = "(document.querySelector('#tabs') && getComputedStyle(document.querySelector('#tabs')).display !== 'none' ? document.querySelector('#tabs').getBoundingClientRect().top : innerHeight)"
+FIT = {
+  'bag': "() => { const t = document.querySelector('#bagTonight').getBoundingClientRect(), d = document.querySelector('#bagPackGo').getBoundingClientRect(), lim = " + TAB + ", d2 = document.querySelector('#bagDock').getBoundingClientRect(); const open = [...document.querySelectorAll('#bagBody > :not(#bagTonight):not(#bagDock):not(details):not(.warn-line)')].filter(e => e.getBoundingClientRect().height > 0).map(e => e.id || e.className); return [t.bottom <= d2.top + 1 && d.bottom <= lim + 1 && !open.length, {bagBottom: Math.round(t.bottom), packBottom: Math.round(d.bottom), tabTop: Math.round(lim), openBlocks: open}]; }",
+  'strike-finder': "() => { const lim = " + TAB + ", last = document.querySelector('#slDetails'); const b = last ? last.getBoundingClientRect().bottom : 1e9; return [!!last && b <= lim + 1, {detailsBottom: Math.round(b), tabTop: Math.round(lim), scroll: document.documentElement.scrollHeight}]; }",
+}
 fails = []
 def check(ok, msg):
     print(('PASS ' if ok else 'FAIL ') + msg)
@@ -52,13 +59,23 @@ async def measure(b, vp, tag, safe=False):
     c, p = await fresh(b, vp, safe); out = {}
     for name, hsh in ROUTES:
         await p.goto(BASE + f'?m{name}{tag}' + hsh); await p.wait_for_timeout(900)
+        if name == 'strike-finder': await p.wait_for_selector('#slTiles', timeout=20000)
         if safe: await p.add_style_tag(content=SAFE)
         await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())")
         m = await p.evaluate(MEASURE); out[name] = m
         if SHOTS: await p.screenshot(path=f'{SHOTS}/{tag}-{name}.png')
         ok_h1 = m['h1'] and m['h1'][0] >= 0 and m['h1'][1] <= m['header'] + 2
         ok_first = m['first'] and m['header'] - 2 <= m['first'][1] < m['viewport'] - 120
+        if name in FIT:
+            fit = await p.evaluate(FIT[name]); check(fit[0], f'[{tag}] {name}: core + primary action fit one screen, no scroll needed {fit[1]}')
         check(ok_h1 and ok_first, f'[{tag}] {name}: title and first content visible on load, not under the header (h1 {m["h1"]}, header {m["header"]}, first {m["first"]})')
+    # in-game Score page: start a game from Strike line, nothing to scroll
+    await p.goto(BASE + f'?g{tag}#/tonight'); await p.wait_for_selector('#tnStartBowl'); await p.click('#tnStartBowl'); await p.wait_for_timeout(1200)
+    if safe: await p.add_style_tag(content=SAFE)
+    g = await p.evaluate("() => [document.documentElement.scrollHeight, innerHeight, location.hash, (document.querySelector('#qlStrike') || {getBoundingClientRect:()=>({bottom:1e9})}).getBoundingClientRect().bottom]")
+    out['score'] = {'scroll': g[0], 'viewport': g[1]}
+    if SHOTS: await p.screenshot(path=f'{SHOTS}/{tag}-score.png')
+    check(g[0] <= g[1] + 1 and g[3] <= g[1], f'[{tag}] score page ({g[2]}): no vertical scroll, strike key on screen (scrollHeight {g[0]} vs viewport {g[1]})')
     await c.close(); return out
 
 async def scripts(b):
@@ -72,8 +89,8 @@ async def scripts(b):
     res['bag'] = {'taps': taps, 'seconds': round(dt, 1), 'bag_and_oil_visible': see}
     check(see and taps <= 2 and dt < 10, f'[script] Bag: tonight\'s bag + oil on screen, Shake it up + Pack in {taps} taps, {dt:.1f}s')
     # Arsenal: find a ball and pin it (Keep in bag)
-    t0 = time.time(); await p.goto(BASE + '?s2#/arsenal'); await p.wait_for_selector('[data-keep], #arsSearch, input[type=search]')
-    taps = 0; q = await p.query_selector('#arsSearch') or await p.query_selector('#view input[type=search]')
+    t0 = time.time(); await p.goto(BASE + '?s2#/arsenal'); await p.wait_for_selector('#armFind')
+    taps = 0; q = await p.query_selector('#armFind')
     await q.fill('Ordnance'); taps += 1; await p.wait_for_timeout(250)
     k = await p.query_selector('#view [data-keep]:not([aria-pressed=true])')
     if k: await k.click(); taps += 1; await p.wait_for_timeout(300)
@@ -103,7 +120,8 @@ async def main():
         out['390x844-safe'] = await measure(b, {'width': 390, 'height': 844}, '390safe', safe=True)
         if SCRIPTS: out['scripts'] = await scripts(b)
         await b.close()
-    for k, m in out['360x780'].items(): print(f'{k:14s} words {m["words"]:4d}  controls {m["controls"]:3d}  scroll {m["scroll"]:5d}px  small {m["small"][:4]}')
+    for k, m in out['360x780'].items():
+        if 'words' in m: print(f'{k:14s} words {m["words"]:4d}  controls {m["controls"]:3d}  scroll {m["scroll"]:5d}px  small {m["small"][:4]}')
     if OUT: json.dump(out, open(OUT, 'w'), indent=1)
     print(f'\n{len(fails)} failed'); sys.exit(1 if fails else 0)
 
