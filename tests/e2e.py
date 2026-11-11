@@ -500,7 +500,7 @@ async def whynot_cycle(b):
     check('grab from home' in await p.text_content('#bagRows [data-own="own-guru-supreme"]'), '[whynot] an At home ball brought in is tagged "grab from home"')
     await axe_ok(p, '[whynot]'); small = await p.evaluate(SMALL); check(not small, f'[whynot] targets >= 44px {small[:6]}')
     w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[whynot] no horizontal overflow {w}')
-    await p.click('#bagPackGo'); await p.wait_for_function("() => location.hash === '#/tonight'"); await p.click('[data-event=league]'); await p.wait_for_selector('.adv-row[data-owned="own-guru-supreme"]')
+    await p.click('#bagPackGo'); await p.wait_for_function("() => location.hash === '#/tonight'"); await p.click('[data-event=league]'); await p.wait_for_selector('.adv-row[data-owned="own-guru-supreme"]', state='attached')   # v72: rows fold under the ball names
     check(True, '[whynot] Pack these N -> Tonight shows the packed bag (Guru in)')
     check(not errs, f'[whynot] no page errors {errs[:3]}'); await c.close()
 
@@ -997,7 +997,7 @@ async def advisor_cycle(b):
     await seed(p); await p.goto(BASE + '?adv#/tonight'); await p.wait_for_selector('#noBag'); await load_sample(p); await p.wait_for_selector('#tnAdvisor')
     first = await p.evaluate("document.querySelector('#tonightBody').firstElementChild.id"); check(first == 'tnAdvisor', f'[advisor] event selector is the first thing on Tonight ({first})')
     labels = await p.eval_on_selector_all('#advEvent [data-event]', 'e=>e.map(x=>x.textContent)'); check(labels == ['League', 'Tournament', 'Practice', 'New center', 'Sport'], f'[advisor] 5 events {labels}')
-    await p.click('[data-event=league]'); await p.wait_for_selector('.adv-row')
+    await p.click('[data-event=league]'); await p.wait_for_selector('.adv-row', state='attached')   # v72: the bag rows fold under one line of names on Strike line
     st = await p.text_content('#advStart'); check(st.startswith('Start with: Rattler Big Bite, from feet 17, aim 10\u00bd'), f'[advisor] 1 tap -> start line with stand feet (laydown 10 + offset 7), not the laydown: {st!r}')
     rows = await p.eval_on_selector_all('.adv-row', 'e=>e.map(x=>[x.dataset.owned, x.dataset.role, !!document.querySelector(`#advDetails [data-ev-of="${x.dataset.owned}"] .prov`), x.querySelector("p").textContent.length>5])')
     check(len(rows) == 3 and rows[-1][1] == 'spare' and all(r[2] and r[3] for r in rows), f'[advisor] league = 2 + spare, each with role, reason, confidence {rows}')
@@ -1012,6 +1012,7 @@ async def advisor_cycle(b):
     await axe_ok(p, '[advisor]')
     await shot(p, 'phone-advisor')
     # swap in 2 taps
+    await p.click('#tnBagRows summary')   # v72: open the folded bag rows (Swap stays 2 taps after it; the full builder is the Bag tab)
     await p.click('.adv-row[data-role=weaker-control] [data-swap]'); await p.click('[data-swap-to]'); await p.wait_for_timeout(300)
     rows2 = await p.eval_on_selector_all('.adv-row', 'e=>e.map(x=>x.dataset.owned)'); check(rows2 != [r[0] for r in rows] and len(rows2) == 3, f'[advisor] swap in 2 taps {rows2}')
     await p.click('#advPack'); await p.wait_for_selector('#advPackList')
@@ -1480,8 +1481,10 @@ async def status_cycle(b):
     await p.click('#ballStatus [data-v="proShop"]'); await p.wait_for_selector('#ballWhyNot[data-why="proShop"]')
     check('pro shop' in await p.text_content('#ballWhyNot'), '[status] ball page: "Why not this ball?" says at the pro shop')
     await p.evaluate("location.hash = '#/tonight'"); await p.wait_for_selector('#tnAdvisor')
-    await p.click('[data-event=tournament]'); await p.wait_for_selector('#advStart')
+    await p.click('[data-event=tournament]'); await p.wait_for_selector('#advStart'); await p.wait_for_selector('.adv-row', state='attached')
     rows = await p.eval_on_selector_all('.adv-row', 'e => e.map(x => x.dataset.owned)'); check('own-ordnance-c4' not in rows, f'[status] advisor never packs a pro-shop ball {rows}')
+    await p.wait_for_selector('#tnBagRows', state='attached')
+    if not await p.evaluate("() => document.querySelector('#tnBagRows').open"): await p.click('#tnBagRows summary')
     await p.click('.adv-row [data-swap]'); await p.wait_for_selector('[data-swap-to]')
     sw = await p.eval_on_selector_all('[data-swap-to]', 'e => e.map(x => [x.dataset.swapTo, x.textContent])')
     check(sw and all(x[0] != 'own-ordnance-c4' for x in sw), f'[status] absent from Tonight Swap {[x[0] for x in sw]}')
@@ -1732,8 +1735,10 @@ async def tonightfold_cycle(b):
     await p.wait_for_selector('#tnStartBowl')
     await p.click('#advEvent [data-event="league"]'); await p.wait_for_selector('#tnWho'); await p.wait_for_timeout(300)
     m = await p.evaluate("() => ({ h: document.scrollingElement.scrollHeight, sb: document.querySelector('#tnStartBowl').getBoundingClientRect().bottom + scrollY, ab: document.querySelector('#tnAddBowler').getBoundingClientRect().bottom + scrollY, who: document.querySelector('#tnWho').getBoundingClientRect().top < document.querySelector('#tnStartBowl').getBoundingClientRect().top, pad: !!document.querySelector('#qlStrike'), pick: !!document.querySelector('#tnPick'), extra: !document.querySelector('#tnExtra').open })")
-    # PRODUCT_SPINE v71: Strike line adds one row (Find my strike line / Lane view, no card); budget 1110 -> 1150, Start bowling still <= 740.
-    check(m['h'] <= 1150, f"[tonightfold] League Strike line <= 1150 px tall ({m['h']})")
+    # PRODUCT_SPINE v72: Find my strike line sits above Start bowling; the bag rows fold under one line, so the 1110 budget holds again.
+    check(m['h'] <= 1110, f"[tonightfold] League Strike line <= 1110 px tall ({m['h']})")
+    fo = await p.evaluate("() => [document.querySelector('#tnFindLine').getBoundingClientRect().bottom, document.querySelector('#tnStartBowl').getBoundingClientRect().top, document.querySelector('#tnFindLine').classList.contains('primary'), document.querySelector('#tnStartBowl').classList.contains('primary')]")
+    check(fo[0] < fo[1] and fo[2] and not fo[3], f"[tonightfold] v72: Find my strike line (primary) above Start bowling (not primary) {fo}")
     check(m['sb'] <= 740 and m['ab'] <= 740, f"[tonightfold] Start bowling ({round(m['sb'])}) and Add a bowler ({round(m['ab'])}) in the first 740 px")
     check(m['who'] and not m['pad'] and not m['pick'] and m['extra'], f'[tonightfold] Who\'s bowling above Start bowling; no pad, no first-ball card; extras folded {m}')
     t = await p.text_content('#tnHand'); check(t.startswith('Right-handed') and 'change' in t, f'[tonightfold] P1.6 "Right-handed \u00b7 change" visible ({t})')

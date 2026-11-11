@@ -1,4 +1,4 @@
-"""PRODUCT_SPINE (v71) check + 360 px screenshots. Owner 2026-11-11: "bag building first, then arsenal manager, then the strike
+"""PRODUCT_SPINE (v71, v72 strike finder before scoring) check + 360 px screenshots. Owner 2026-11-11: "bag building first, then arsenal manager, then the strike
 finder, then a log book; everything a max three clicks away".
 Checks: the default home is the Bag; the four spine tabs in order; first run starts empty (no preload) and lands on the Bag; the
 Bag -> Strike line -> Find my strike line -> game -> End night -> Log book flow; the focused game chrome (and in-game Lane/Targeting);
@@ -88,9 +88,10 @@ async def main():
         await p.click(TAB('bag')); await p.wait_for_selector('#bagPackGo'); await p.click('#bagPackGo')
         await p.wait_for_function("() => location.hash.startsWith('#/tonight')"); await p.wait_for_selector('#tnFindLine')
         if await p.locator('#handAsk').count(): await p.click('#handR'); await p.wait_for_selector('#tnHand')   # the one-time hand question
-        r = await p.evaluate("() => ({ title: document.querySelector('#tnTitle').textContent, cur: (document.querySelector('#tabs [aria-current=page]') || {}).dataset.tab, find: document.querySelector('#tnFindLine').getBoundingClientRect().bottom, start: document.querySelector('#tnStartBowl').getBoundingClientRect().bottom, fold: document.querySelector('#tabs').getBoundingClientRect().top })")
-        check(r['title'] == 'Strike line' and r['cur'] == 'tonight' and r['find'] <= r['fold'] and r['start'] <= r['fold'], f'Pack -> Strike line: Start bowling and Find my strike line above the tab bar on the first screen {r}')
-        await shot(p, '04-strike-finder.png', 'Strike line (the strike finder): where you bowl and the start line, Find my strike line / Lane view, Stand \u00b7 Aim, Start bowling')
+        r = await p.evaluate("() => ({ title: document.querySelector('#tnTitle').textContent, cur: (document.querySelector('#tabs [aria-current=page]') || {}).dataset.tab, find: document.querySelector('#tnFindLine').getBoundingClientRect().bottom, start: document.querySelector('#tnStartBowl').getBoundingClientRect().bottom, startTop: document.querySelector('#tnStartBowl').getBoundingClientRect().top, fold: document.querySelector('#tabs').getBoundingClientRect().top, findPrimary: document.querySelector('#tnFindLine').classList.contains('primary'), startPrimary: document.querySelector('#tnStartBowl').classList.contains('primary') })")
+        check(r['title'] == 'Strike line' and r['cur'] == 'tonight' and r['find'] <= r['fold'] and r['start'] <= r['fold'], f'Pack -> Strike line: Find my strike line and Start bowling above the tab bar on the first screen {r}')
+        check(r['find'] < r['startTop'] and r['findPrimary'] and not r['startPrimary'], 'v72: Find my strike line is the primary button, above Start bowling (strike finder before scoring)')
+        await shot(p, '04-strike-finder.png', 'v72 Strike line: where you bowl and the start line, then Find my strike line (primary) and Lane view, Stand \u00b7 Aim, who is bowling, then Start bowling (secondary); the bag rows fold under one line of ball names')
         await p.click('#tnFindLine'); await p.wait_for_selector('#tgFindCard, #tgFindLine', timeout=20000)
         check(p.url.split('#')[-1].startswith('/target?find=1') and await cur() == 'tonight', 'Find my strike line runs the search in one tap, under the Strike line tab')
         await shot(p, '04b-find-my-strike-line.png', 'Find my strike line, one tap from Strike line: the search result on Targeting (Strike line tab stays current)')

@@ -823,3 +823,4 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .recovery-choice{display:flex;align-items:center;gap:12px;min-height:44px;overflow-wrap:anywhere;padding:8px 0}
 .recovery-choice input{flex:0 0 44px;width:44px;height:44px}
 .recovery-choice span{min-width:0}
+.btn-grid.tn-strike{grid-template-columns:2fr 1fr}   /* v72: Find my strike line is the wide, primary cell; Lane view beside it */

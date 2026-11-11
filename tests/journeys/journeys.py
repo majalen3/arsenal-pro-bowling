@@ -874,7 +874,7 @@ async def j15_front(j):
         await j.nav('/tonight'); await j.settle(300)
         if await j.page.locator('#advEvent [data-event="league"]').count(): await j.page.click('#advEvent [data-event="league"]'); await j.settle(400)
         h = await j.ev("() => document.scrollingElement.scrollHeight")
-        s.check(h <= 1150, f'scrollHeight {h} <= 1150')   # PRODUCT_SPINE v71: + the Find my strike line / Lane view row (was 1110; docs/DECISIONS.md)
+        s.check(h <= 1110, f'scrollHeight {h} <= 1110')   # v72: Find row above Start bowling; the bag rows fold, so 1110 holds
         sb = await first_viewport(j, r'Start bowling'); s.check(sb is not None and sb <= 740, f'Start bowling bottom {sb} px')
         ab = await first_viewport(j, r'Add a bowler'); s.check(ab is not None and ab <= 740, f'Add a bowler bottom {ab} px')
     async with j.step('Learn tab: search first; Glossary in <= 2 taps with no scroll', task='learn', target_taps=2) as s:

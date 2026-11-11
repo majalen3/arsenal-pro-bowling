@@ -70,7 +70,7 @@ export async function render(o = {}) {
   const setNet = () => { net.hidden = navigator.onLine; };
   window.addEventListener('online', setNet); window.addEventListener('offline', setNet);
   const ql = { leave: new Set(), foul: false, tag: null };   // quick-log taps not yet written
-  let drillOpen = false, swapOpen = null, lastTap = 0, busy = false, moreOpen = false, savedMsg = '', shownMsg = '', frameT0 = 0, edit = null, lastEdit = null, pickFix = false, ballOpen = false, teamOpen = null;
+  let bagRowsOpen = false, drillOpen = false, swapOpen = null, lastTap = 0, busy = false, moreOpen = false, savedMsg = '', shownMsg = '', frameT0 = 0, edit = null, lastEdit = null, pickFix = false, ballOpen = false, teamOpen = null;
   let local = {};   // UI state not yet written (avoids re-render churn while typing)
   const sess = () => Object.assign({ kind: 'tonight', patternSlug: null, ft: null, ml: null, ratio: null, centerId: null, surface: 'unknown', stage: 'fresh', bagId: null, game: 1, pickId: null, reads: [] }, (proj().sessions || {})[curSid()], local);
   async function save(fields) {
@@ -233,6 +233,9 @@ export async function render(o = {}) {
     if (night) body.append(buildingLine('Your night is open. Change the lanes or the line here, then go back to the game.'));
     if (night) body.append(h('button', { class: 'btn primary block tn-start', id: 'tnStartBowl', 'data-back': '', onclick: () => go('#/bowl') }, `Back to the game \u00b7 game ${s.game || 1}`));
     body.append(advCard);
+    // v72 (owner t119 "Merge and execute"): the strike finder comes before scoring. Find my strike line is the big button, right under
+    // the start line; Start bowling stays one tap away further down as a plain (not primary) button.
+    body.append(strikeStrip(cur));
     const lastCard = lastTimeCard(P, s, center); if (lastCard) body.append(lastCard);
     const fc = prefs().focus;
     if (fc && fc.text && fc.from !== curSid()) body.append(h('div', { class: 'row between tn-focus', id: 'tnFocus' }, h('p', { class: 'small', text: fc.text.replace(/^Next focus: /, 'Your focus: ') }),
@@ -240,14 +243,12 @@ export async function render(o = {}) {
     // P1.6: "Right-handed \u00b7 change"; asks once while unset (never during a game). IA P2: the Stand \u00b7 Aim chip shares the hand row
     // (both are "your line"; the Lane mirrors by hand), so the 44 px chip doesn't add a row and League Tonight stays <= 1110 px.
     const ask = handAsk(), chip = ask ? null : advCard.querySelector('#tnAimChip');
-    body.append(ask || (chip ? h('div', { class: 'row between wrap tn-hand-row' }, handLine(), chip) : handLine()));
+    if (!ask) body.append(chip ? h('div', { class: 'row between wrap tn-hand-row' }, handLine(), chip) : handLine());   // the one-time hand question sits under Start bowling (v72)
     if (whoHere) body.append(whoCard(s));
     if (s.event === 'practice') body.append(drillCard(P, s));
-    if (!night) body.append(h('button', { class: 'btn primary block tn-start', id: 'tnStartBowl', onclick: () => go('#/bowl') },
+    if (!night) body.append(h('button', { class: 'btn ghost block tn-start', id: 'tnStartBowl', onclick: () => go('#/bowl') },
       (s.game || 1) > 1 ? `Start bowling \u00b7 game ${s.game || 1}` : 'Start bowling'));
-    // PRODUCT_SPINE: the strike finder is this screen's job: Find my strike line and Lane view, one tap each, right under Start bowling
-    // (above it would push Start bowling out of the first 740 px when the hand question shows; the fold budgets are owner decisions).
-    body.append(strikeStrip(cur));
+    if (ask) body.append(ask);
     if (bagCard) body.append(bagCard);
     body.append(h('details', { class: 'tn-more tn-extra', id: 'tnExtra', open: extraOpen, ontoggle: e => { extraOpen = e.target.open; } }, h('summary', { text: 'More details' }),
       h('p', { class: 'coach', id: 'tnCoach', role: 'status', text: coach }), alts || '', thenLine || '', whyBox || '', setup));
@@ -510,8 +511,8 @@ export async function render(o = {}) {
   function buildingLine(text) { return h('p', { class: 'small muted bld-line', id: 'tnBuildingLine', text }); }
   function strikeStrip(c) {
     const id = c && (c.id || c.catalogId);
-    // One row, no card around it (keeps League Strike line close to its height budget).
-    return h('div', { class: 'btn-grid tn-strike', id: 'tnStrike' }, h('a', { class: 'btn', id: 'tnFindLine', href: '#/target?find=1' + (id ? '&ball=' + encodeURIComponent(id) : '') }, 'Find my strike line \u203a'),
+    // One row, no card around it: Find my strike line (primary, the wide cell) and Lane view.
+    return h('div', { class: 'btn-grid tn-strike', id: 'tnStrike' }, h('a', { class: 'btn primary', id: 'tnFindLine', href: '#/target?find=1' + (id ? '&ball=' + encodeURIComponent(id) : '') }, 'Find my strike line \u203a'),
       h('a', { class: 'btn ghost', id: 'tnLaneLink', href: '#/lane' }, 'Lane view \u203a'));
   }
   function arsenalStrip(P, packedN) {
@@ -601,10 +602,13 @@ export async function render(o = {}) {
         const m = Object.assign({}, prefs().advisor), e2 = Object.assign({}, m[ev]); e2.swaps = Object.assign({}, e2.swaps); for (const [k, v] of Object.entries(e2.swaps)) if (v === r.ownedId) delete e2.swaps[k];
         e2.swaps[r.ownedId] = x.ownedId; m[ev] = e2; swapOpen = null; setPrefs({ advisor: m }); draw(); toast(`${x.name} in for ${r.name}.`); } }, x.home ? `${x.name} \u00b7 ${ST.HOME_TAG}` : x.name))));
       return li; }));
-    bagCard.append(list);
+    // v72: Strike line is for the line; the bag's rows fold under one line of ball names (the Bag tab is the full builder).
+    const rowsBox = h('details', { class: 'tn-more adv-rows', id: 'tnBagRows', open: bagRowsOpen || !!swapOpen, ontoggle: e => { bagRowsOpen = e.target.open; } },
+      h('summary', { id: 'tnBagNames', text: a.rows.map(r => r.name).join(' \u00b7 ') }), list);
+    bagCard.append(rowsBox);
     // Clutter audit C7: each row is name + role + one reason; results, confidence and the model's assumptions sit behind one tap.
     const sl = start && start.name ? start.ml : a.line, assumed = sl && !sl.none && standOf(sl.feet).assumed;
-    bagCard.append(h('details', { class: 'tn-more', id: 'advDetails' }, h('summary', { text: 'More details' }),
+    rowsBox.append(h('details', { class: 'tn-more', id: 'advDetails' }, h('summary', { text: 'More details' }),
       h('ul', { class: 'plain' }, ...a.rows.map(r => h('li', { class: 'small', 'data-ev-of': r.ownedId }, h('b', { text: r.name + ' ' }),
         provChip(r.confidence.key === 'measured' ? 'device' : r.confidence.key === 'spec' ? 'catalog' : 'assumed', r.confidence.label), r.evidence ? h('span', { 'data-evidence': '' }, ' ', r.evidence) : null))),
       assumed ? h('p', { class: 'small muted', id: 'advOffset' }, 'Stand = laydown + 7 boards (offset 7 assumed). Set your own on Targeting.') : null));

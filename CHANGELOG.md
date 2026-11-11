@@ -2,6 +2,11 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## Strike finder before scoring — 2026-11-11 America/Chicago; offline build v72 (first live build of the product spine; v71 never deployed)
+- Strike line (`#/tonight`): **Find my strike line ›** is now the primary button, right under the start line, with **Lane view ›** beside it. **Start bowling** follows as a plain button after Stand · Aim and Who's bowling. The one-time hand question sits under Start bowling.
+- Tonight's bag on Strike line folds its rows under one line of ball names (tap to open; Swap is inside). Pack these N and Bag builder stay visible, and the Bag tab is the full builder. League Strike line is back under the 1110 px budget (930), so the 1150 px exception from v71 is reverted.
+- Evidence: `/workspace/t119-evidence/04-strike-finder.png` (360 px). Routes and saved data unchanged; equivalence 7500/0.
+
 ## Product spine — unreleased (2026-11-11 America/Chicago; offline build v71)
 - Four tabs in the order a bowler uses them: **Bag · Arsenal · Strike line · Log book** (were Building · Bag · Results · Learn). The Bag is the front door. No hash, an unknown hash, `#/building` and a finished or skipped welcome all land on `#/bag`. A new profile starts empty there with Find my balls.
 - **Arsenal** is its own tab at `#/arsenal` (the Armory). `#/bag?view=all` still opens it. Ball, add-ball, compare, insights and sheet sit under it.
