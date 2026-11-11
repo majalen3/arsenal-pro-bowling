@@ -60,7 +60,7 @@ export async function render(o = {}) {
   const net = h('span', { class: 'pill net-chip', id: 'netChip', role: 'status', hidden: navigator.onLine, text: 'Offline \u00b7 saved on this phone' });
   // HOME_GAME_FLOW (docs/HOME_GAME_FLOW.md): #/tonight is the Building (home base); #/bowl is the game page: its own bar with a
   // Leave button, no tab bar, no Help or Me. Leaving keeps the night open; the Building offers "Back to the game".
-  const leave = h('button', { class: 'btn ghost sm', id: 'tnLeave', hidden: !BOWL, 'aria-label': 'Leave the game for the Building (your night stays open)', onclick: () => { sessionStorage.setItem(LEFT_KEY, '1'); go('#/tonight'); } }, '\u2190 Building');
+  const leave = h('button', { class: 'btn ghost sm', id: 'tnLeave', hidden: !BOWL, 'aria-label': 'Back to the Building (your night stays open)', onclick: () => { sessionStorage.setItem(LEFT_KEY, '1'); go('#/tonight'); } }, '\u2190 Building');
   const gamePill = h('span', { class: 'pill game-pill', id: 'tnGamePill', hidden: !BOWL, text: 'In the game' });
   const bar = h('header', { class: 'appbar' + (BOWL ? ' game-bar' : '') }, h('h1', { class: 'title', id: 'tnTitle', text: BOWL ? 'Game' : 'The building' }), h('div', { class: 'appbar-actions' }, net, gamePill, leave));
   const el = h('section', { class: 'screen list-screen' + (BOWL ? ' game-screen' : ''), id: 'tonight' }, bar, body);
