@@ -844,7 +844,7 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .arm-row:last-child{border-bottom:0}
 .arm-find-row{display:flex;gap:var(--s2);align-items:center}.arm-find-row .search{flex:1;min-width:0}
 .arm-row-link{flex:1;min-width:0;display:flex;align-items:center;gap:var(--s2);min-height:44px;color:inherit;text-decoration:none}
-.arm-row-name{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arm-row-name{flex:1;min-width:0;font-weight:600;line-height:1.2;overflow-wrap:anywhere}   /* wraps to two lines, never clipped (journeys truncation probe) */
 .ball-orb.sm{width:22px;height:22px;flex:none}
 .ball-orb.sm::after{display:none}
 /* v73 #/strike: lane picture + four tiles, no paragraphs (owner t124u) */
