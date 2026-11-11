@@ -35,10 +35,10 @@ async def main():
   assert all('Storm' in t for t in await p.locator('[data-select]').all_text_contents())
   await p.locator('[data-select]').first.click();await p.click('#welNext');await p.wait_for_selector('#welChosen [data-copy]');await p.locator('[data-copy]').first.click()
   names=p.locator('[data-nickname]');await names.nth(0).fill('Fictional reference - polished');await names.nth(1).fill('Fictional reference - matte')
-  await check_screen('02-two-copy-review');await p.click('#welNext');await p.wait_for_selector('#bagNone');await p.goto(BASE+'#/bag?view=all');await p.wait_for_selector('#armBench')
+  await check_screen('02-two-copy-review');await p.click('#welNext');await p.wait_for_selector('#bagNone');await p.goto(BASE+'#/bag?view=all');await p.wait_for_selector('#armList [data-own]')   # v73: one row per owned ball first; shelves folded
   owned=await p.evaluate('Object.values(window.__apData.projection().owned)');assert len(owned)==2;assert len({o['id'] for o in owned})==2
   first,second=owned[0]['id'],owned[1]['id'];
-  if not await p.locator('#armBench').evaluate('e=>e.open'): await p.click('#armBench summary')
+  assert await p.locator('#armList [data-own]').count()==2
   await check_screen('03-distinct-owned-copies')
   await p.goto(BASE+'#/bag');await p.wait_for_selector('#bagStartEmpty');await p.click('#bagStartEmpty');await p.wait_for_selector('#bagLeft');await p.click('#bagLeft summary');await p.locator('[data-bring="'+first+'"]').click();await p.locator('[data-bring="'+second+'"]').click();await p.click('#bagPackGo');await p.wait_for_selector('#tnStartBowl')
   packed=await p.evaluate("Promise.all([import('./js/cc/status.js'),import('./js/hub.js')]).then(([s,h])=>s.packedIds(h.proj(),s.currentBag(h.proj())))");assert set(packed)=={first,second}
@@ -63,7 +63,7 @@ async def main():
   await check_screen('06-local-only-status')
   await p.click('#editProfile');await p.wait_for_selector('#pSpeedVal');assert 'Not set' in await p.text_content('#pSpeedVal');await p.click('#profSave')
   assert await p.evaluate('window.__apData.projection().bowler.speed == null')
-  await p.goto(BASE+'#/welcome');await p.wait_for_selector('#welManual');await p.click('#welManual summary');await p.fill('#welManualName','Fictional mystery ball');await p.click('#welManualAdd');await p.click('#welNext');await p.click('#welNext');await p.wait_for_selector('#bag');await p.goto(BASE+'#/bag?view=all');await p.wait_for_selector('#armBench')
+  await p.goto(BASE+'#/welcome');await p.wait_for_selector('#welManual');await p.click('#welManual summary');await p.fill('#welManualName','Fictional mystery ball');await p.click('#welManualAdd');await p.click('#welNext');await p.click('#welNext');await p.wait_for_selector('#bag');await p.goto(BASE+'#/bag?view=all');await p.wait_for_selector('#armList [data-own]')   # v73: one row per owned ball first; shelves folded
   manual=await p.evaluate("Object.values(window.__apData.projection().owned).find(o=>o.name==='Fictional mystery ball')");assert manual['spec']['cat']['rg'] is None
   await p.goto(BASE+'#/ball/'+manual['id']);await p.wait_for_selector('#ballRead');assert 'no model path' in await p.text_content('#ballRead');await check_screen('07-unmodeled-manual-ball')
   assert not requests,requests;assert not errors,errors
@@ -75,7 +75,7 @@ async def main():
   # Fresh DB for the legacy snapshot, no production migration or browser owner data.
   await p.evaluate("() => new Promise(r=>{const q=indexedDB.deleteDatabase('arsenal-pro');q.onsuccess=q.onblocked=()=>r()})")
   await p.goto(BASE+'?legacy#/me');await p.wait_for_selector('#legacyReview');before=await p.evaluate('window.__apData.events()')
-  await p.goto(BASE+'#/welcome?review=1');await p.wait_for_selector('#welSearch');await p.fill('#welSearch','hy-road');await p.locator('[data-select]').first.click();await p.click('#welNext');await p.click('#welNext');await p.wait_for_selector('#bag');await p.goto(BASE+'#/bag?view=all');await p.wait_for_selector('#armory')
+  await p.goto(BASE+'#/welcome?review=1');await p.wait_for_selector('#welSearch');await p.fill('#welSearch','hy-road');await p.locator('[data-select]').first.click();await p.click('#welNext');await p.click('#welNext');await p.wait_for_selector('#bag');await p.goto(BASE+'#/bag?view=all');await p.wait_for_selector('#armMine')
   await p.goto(BASE+'#/me');await p.wait_for_selector('#undoOwnershipReview');await p.click('#undoOwnershipReview');await p.wait_for_selector('#legacyReview');assert await p.evaluate('Object.keys(window.__apData.projection().owned).length')==0
   pr=await p.evaluate("JSON.parse(localStorage.getItem('ap_profile'))");assert pr['pap']=='Fictional confirmed PAP' and pr['hand']=='left';assert await p.evaluate("JSON.parse(localStorage.getItem('ap_prefs')).myLines['hy-road'].eyes")==10
   assert await p.evaluate('window.__apData.events()')>before
@@ -83,9 +83,9 @@ async def main():
   print('PASS legacy snapshot/review/undo/preserved PAP/hand/aims, no deleted events',flush=True);await c.close()
   # Cache-first v72 cold launch then offline add/reload, not impossible never-loaded first-install offline.
   c=await b.new_context(viewport={'width':360,'height':800},is_mobile=True,has_touch=True,service_workers='allow');await c.route('**/*',guard);p=await c.new_page();await p.goto(BASE);await p.wait_for_selector('#welSearch');await p.evaluate('navigator.serviceWorker.ready');await p.reload();await p.wait_for_function('() => navigator.serviceWorker.controller')
-  assert await p.evaluate("caches.keys().then(k=>k.includes('arsenal-pro-v72'))")
-  await c.set_offline(True);await p.reload();await p.wait_for_selector('#welSearch');await p.fill('#welSearch','hy-road');await p.locator('[data-select]').first.click();await p.click('#welNext');await p.click('#welNext');await p.wait_for_selector('#bag');await p.goto(BASE+'#/bag?view=all');await p.wait_for_selector('#armory');await p.reload();await p.wait_for_selector('#armory');assert await p.evaluate('Object.keys(window.__apData.projection().owned).length')==1
+  assert await p.evaluate("caches.keys().then(k=>k.includes('arsenal-pro-v73'))")
+  await c.set_offline(True);await p.reload();await p.wait_for_selector('#welSearch');await p.fill('#welSearch','hy-road');await p.locator('[data-select]').first.click();await p.click('#welNext');await p.click('#welNext');await p.wait_for_selector('#bag');await p.goto(BASE+'#/bag?view=all');await p.wait_for_selector('#armMine');await p.reload();await p.wait_for_selector('#armMine');assert await p.evaluate('Object.keys(window.__apData.projection().owned).length')==1
   await p.screenshot(path=f'{OUT}/09-offline-owned-arsenal.png',full_page=True)
-  print('PASS atomic offline v72 catalog/add/durable-reload; screenshot inventory is fictional, no recovery keys',flush=True);await c.close();await b.close()
+  print('PASS atomic offline v73 catalog/add/durable-reload; screenshot inventory is fictional, no recovery keys',flush=True);await c.close();await b.close()
   Path(OUT+'/manifest.json').write_text(json.dumps({'viewport':'360x800','files':sorted(str(x) for x in Path(OUT).glob('*.png')),'data':'safe fictional inventory; no account/recovery screens'},indent=2))
 asyncio.run(main())

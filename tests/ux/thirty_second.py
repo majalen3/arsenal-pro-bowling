@@ -19,6 +19,7 @@ WIPE = "() => { localStorage.clear(); return new Promise(r => { const q = indexe
 LOAD = """async () => { const [m, f] = await Promise.all([import('./js/hub.js'), import('./tests/data/fixtures/sample_arsenal.mjs')]);
   await m.ready(); await m.loadStarter(f.sampleEvents, f.SAMPLE_ID); }"""
 ROUTES = [('bag', '#/bag'), ('arsenal', '#/arsenal'), ('strike-line', '#/tonight'), ('strike-finder', '#/strike'), ('log-book', '#/results'), ('add-ball', '#/add-ball')]
+if '--legacy' in sys.argv: ROUTES = [(n, '#/target?find=1' if n == 'strike-finder' else h) for n, h in ROUTES]   # v72 baseline: Find ran on Targeting
 SAFE = ":root{--sat:47px !important;--sab:34px !important}"   # css/app.css reads the iOS insets through --sat/--sab
 MEASURE = """() => {
   const view = document.querySelector('#view .screen') || document.querySelector('#view');
@@ -59,7 +60,9 @@ async def measure(b, vp, tag, safe=False):
     c, p = await fresh(b, vp, safe); out = {}
     for name, hsh in ROUTES:
         await p.goto(BASE + f'?m{name}{tag}' + hsh); await p.wait_for_timeout(900)
-        if name == 'strike-finder': await p.wait_for_selector('#slTiles', timeout=20000)
+        if name == 'strike-finder':
+            try: await p.wait_for_selector('#slTiles, #tgFindCard', timeout=20000)
+            except Exception: pass
         if safe: await p.add_style_tag(content=SAFE)
         await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())")
         m = await p.evaluate(MEASURE); out[name] = m
@@ -67,7 +70,9 @@ async def measure(b, vp, tag, safe=False):
         ok_h1 = m['h1'] and m['h1'][0] >= 0 and m['h1'][1] <= m['header'] + 2
         ok_first = m['first'] and m['header'] - 2 <= m['first'][1] < m['viewport'] - 120
         if name in FIT:
-            fit = await p.evaluate(FIT[name]); check(fit[0], f'[{tag}] {name}: core + primary action fit one screen, no scroll needed {fit[1]}')
+            try: fit = await p.evaluate(FIT[name])
+            except Exception as e: fit = [False, str(e)[:80]]
+            check(fit[0], f'[{tag}] {name}: core + primary action fit one screen, no scroll needed {fit[1]}')
         check(ok_h1 and ok_first, f'[{tag}] {name}: title and first content visible on load, not under the header (h1 {m["h1"]}, header {m["header"]}, first {m["first"]})')
     # in-game Score page: start a game from Strike line, nothing to scroll
     await p.goto(BASE + f'?g{tag}#/tonight'); await p.wait_for_selector('#tnStartBowl'); await p.click('#tnStartBowl'); await p.wait_for_timeout(1200)

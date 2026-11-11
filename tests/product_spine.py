@@ -92,9 +92,10 @@ async def main():
         check(r['title'] == 'Strike line' and r['cur'] == 'tonight' and r['find'] <= r['fold'] and r['start'] <= r['fold'], f'Pack -> Strike line: Find my strike line and Start bowling above the tab bar on the first screen {r}')
         check(r['find'] < r['startTop'] and r['findPrimary'] and not r['startPrimary'], 'v72: Find my strike line is the primary button, above Start bowling (strike finder before scoring)')
         await shot(p, '04-strike-finder.png', 'v72 Strike line: where you bowl and the start line, then Find my strike line (primary) and Lane view, Stand \u00b7 Aim, who is bowling, then Start bowling (secondary); the bag rows fold under one line of ball names')
-        await p.click('#tnFindLine'); await p.wait_for_selector('#tgFindCard, #tgFindLine', timeout=20000)
-        check(p.url.split('#')[-1].startswith('/target?find=1') and await cur() == 'tonight', 'Find my strike line runs the search in one tap, under the Strike line tab')
-        await shot(p, '04b-find-my-strike-line.png', 'Find my strike line, one tap from Strike line: the search result on Targeting (Strike line tab stays current)')
+        await p.click('#tnFindLine'); await p.wait_for_selector('#slTiles [data-tile]', timeout=20000)
+        sl = await p.evaluate("() => ({ tiles: [...document.querySelectorAll('#slTiles [data-tile]')].map(x => x.dataset.tile), pocket: document.querySelector('#slDiagram').dataset.endsAtPocket, est: !!document.querySelector('#slTag [data-prov=model]'), paras: document.querySelectorAll('#strike > p, #slOut > p:not(.sl-tag)').length, scroll: document.documentElement.scrollHeight, h: innerHeight })")
+        check(p.url.split('#')[-1].startswith('/strike') and await cur() == 'tonight' and sl['tiles'] == ['stand', 'target', 'breakpoint', 'ball'] and sl['pocket'] == 'true' and sl['est'] and sl['paras'] == 0 and sl['scroll'] <= sl['h'] + 1, f'v73 Find my strike line, one tap: lane picture to the pocket + stand/target/breakpoint/ball tiles, "estimate" tag, no paragraphs, no scroll {sl}')
+        await shot(p, '04b-find-my-strike-line.png', 'v73 Find my strike line, one tap from Strike line: lane picture ending at the pocket, four tiles, estimate tag, Use this line; everything else behind Details')
         # ---- the game: focused chrome; in-game Lane/Targeting keep it
         await p.click(TAB('tonight')); await p.wait_for_selector('#tnStartBowl'); await p.click('#tnStartBowl'); await p.wait_for_selector('#qlStrike')
         for _ in range(3): await p.click('#qlStrike'); await p.wait_for_timeout(450)

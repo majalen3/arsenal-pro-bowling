@@ -128,7 +128,7 @@ async def run(b, kind):
     await p.click('#useOnLane'); await p.wait_for_selector('#patChip')
     check('Sport' in (await p.text_content('#patChip')) or 'Shark' in (await p.text_content('#patChip')), t + 'J4 pattern applied to lane (' + (await p.text_content('#patChip')).strip() + ')')
     # J5 compare 2 balls in Arsenal
-    await p.click('#tabs a[href="#/bag"]'); await p.click('#bagView [data-v="all"]'); await p.wait_for_selector('#arsGrid')
+    await p.click('#tabs a[href="#/arsenal"]'); await p.click('#armMoreD summary'); await p.wait_for_selector('#arsGrid')   # v73: catalogue compare sits under Arsenal > More
     await p.click('.cmp-btn >> nth=0'); await p.click('.cmp-btn >> nth=1'); await p.click('#trayGo'); await p.wait_for_selector('.cmp-table')
     check(await p.locator('.cmp-col').count() == 2, t + 'J5 compare two balls'); await p.wait_for_timeout(700); await shot(p, f'{kind}-compare')
     # back button: sheet closes before route changes
@@ -403,7 +403,7 @@ async def bag_cycle(b):
     taps = 0
     await p.click('#bagRows [data-swap="own-hy-road-pearl"]'); taps += 1; await p.wait_for_selector('#bagSwap')
     sw = await p.eval_on_selector_all('#bagSwap [data-cand]', 'e => e.map(x => [x.dataset.cand, x.textContent])')
-    check(all(x[1].strip() for x in sw) and all(('grab from home' in x[1]) == (x[0] in ('own-guru-supreme', 'own-raw-hammer', 'own-green-scout', 'own-rack-attack')) for x in sw) and any(('Stronger' in x[1] or 'Weaker' in x[1] or 'Same' in x[1] or 'TBD' in x[1]) for x in sw), '[bag] Swap sheet: In my bag + At home ("grab from home"), each with what changes')
+    check(all(x[1].strip() for x in sw) and all(('grab from home' in x[1]) == (x[0] in ('own-guru-supreme', 'own-raw-hammer', 'own-green-scout', 'own-rack-attack')) for x in sw) and any(('Stronger' in x[1] or 'Weaker' in x[1] or 'Same' in x[1] or 'not published' in x[1]) for x in sw), '[bag] Swap sheet: In my bag + At home ("grab from home"), each with what changes')
     await axe_ok(p, '[bag] swap sheet')
     await p.click('#bagSwap [data-cand="own-ordnance-c4"]'); taps += 1
     await p.wait_for_function("() => document.querySelector('#bagRows [data-own=\"own-ordnance-c4\"]') && !document.querySelector('#bagRows [data-own=\"own-hy-road-pearl\"]')")
@@ -463,7 +463,7 @@ async def onebag_cycle(b):
     chip = await p.evaluate("""async () => { const h = await import('./js/hub.js'), S = await import('./js/cc/status.js'); const P = h.proj(), b = S.currentBag(P); return [b.id, S.packedIds(P, b).map(id => S.itemOfOwned(P, id).name)]; }""")
     check(chip[0] == 'bag-tonight' and sorted(chip[1]) == sorted(names), f'[onebag] Pack saves THE bag; ball chip source = the same balls {chip}')
     await p.evaluate("location.hash = '#/bag'"); await p.wait_for_selector('#bagRows')
-    got = await p.eval_on_selector_all('#bagRows .adv-head b', 'e => e.map(x => x.textContent)'); cnt = await p.text_content('#bagCount')
+    got = await p.eval_on_selector_all('#bagRows .bb-name', 'e => e.map(x => x.textContent)'); cnt = await p.text_content('#bagCount')
     check(len(names) == 3 and got == names and cnt == '3 packed', f'[onebag] #/bag shows the same 3 names and count {got} {cnt!r}')
     await p.click('#bagPackGo'); await p.wait_for_function("() => location.hash === '#/tonight'"); await p.wait_for_selector('#advPack')
     again = await p.eval_on_selector_all('.adv-row .adv-head b', 'e => e.map(x => x.textContent)'); check(again == names and 'Packed' in await p.text_content('#advPack'), f'[onebag] "Pack these 3" -> Tonight shows the same bag {again}')
@@ -575,7 +575,7 @@ async def export_cycle(b):
       await m.add('ownedBall.edited', other, { fields: { status: 'retired' } });
       const Q = m.proj(); return { bag, id, other, name: S.itemOfOwned(Q, id).name, games: Q.games.filter(g => g.complete).map(g => g.score), n: Object.keys(Q.owned).length }; }""")
     await p.evaluate("const q = JSON.parse(localStorage.getItem('ap_profile') || '{}'); localStorage.setItem('ap_profile', JSON.stringify(Object.assign(q, {hand:'right', speed:15.5, rev:310, pap:'4 3/4 x 1/2 up', entered:Object.assign(q.entered || {}, {hand:true, speed:true, rev:true})})))")
-    await p.goto(BASE + '?ex2#/arsenal'); await p.wait_for_selector('#arsExport')
+    await p.goto(BASE + '?ex2#/arsenal'); await p.click('#armMoreD summary'); await p.wait_for_selector('#arsExport')
     await p.click('#arsExport'); await p.wait_for_selector('#expSheet')
     opts = await p.eval_on_selector_all('#expSheet .exp-opt', 'e => e.map(x => x.id)')
     check([o for o in opts if o != 'expOld'] == ['expSheetBtn', 'expCard', 'expCsv', 'expBackup'], f'[export] Arsenal > Export offers sheet, card, CSV, backup (+ Old Friends card when a ball is retired) {opts}')
@@ -1365,11 +1365,15 @@ async def alley_cycle(b):
 async def armory_cycle(b):
     # Armory: owned balls on lit shelves, gold nameplates, Old Friends behind a tap, marks only when earned. No new tab.
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
-    await seed(p); await p.goto(BASE + '?arm#/arsenal'); await p.wait_for_selector('#armory')
+    await seed(p); await p.goto(BASE + '?arm#/arsenal'); await p.wait_for_selector('#armMine')
     check(await p.text_content('.arm-team') == 'Arsenal Pro' and await p.text_content('.appbar .title') == 'Armory', '[armory] header: team line + Armory (no invented name)')
-    n = await p.evaluate("() => document.querySelectorAll('#armBag .ped[data-own]').length"); check(n == 0 and await p.query_selector('#armEmpty[href=\"#/add-ball\"]') is not None, f'[armory] empty: only the Add ball pedestal ({n})')
+    n = await p.evaluate("() => document.querySelectorAll('#armBag .ped[data-own]').length"); check(n == 0 and await p.query_selector('#armMine #armAddFirst[href=\"#/add-ball\"]') is not None, f'[armory] empty: Add your first ball, no shelves ({n})')
     await p.goto(BASE + '?arm#/bowl'); await p.wait_for_selector('#noBag'); await load_sample(p); await bowl_more(p); await p.wait_for_selector('#tnBagLink')
-    await p.goto(BASE + '?arm2#/arsenal'); await p.wait_for_selector('#armBag .ped[data-own]')
+    await p.goto(BASE + '?arm2#/arsenal'); await p.wait_for_selector('#armList [data-own]')
+    rows = await p.evaluate("() => [...document.querySelectorAll('#armList [data-own]')].map(x => x.dataset.own)")
+    top = await p.evaluate("() => { const r = document.querySelector('#armMine').getBoundingClientRect(), o = document.querySelector('#armList .ball-orb'); return [Math.round(r.top), o ? Math.round(o.getBoundingClientRect().height) : 0, !document.querySelector('#armShelvesD').open]; }")
+    check(len(rows) == 10 and top[0] < 200 and top[1] <= 24 and top[2], f'[armory] v73: find + one row per ball first (small dot, no big ball at the top), shelves folded {top}')
+    await p.click('#armShelvesD summary')
     ids = await p.evaluate("() => [...document.querySelectorAll('#armBag .ped[data-own]')].map(x => x.dataset.own)")
     check(len(ids) == 6 and ids[0] == 'own-rattler-big-bite', f'[armory] bag shelf: 6 in-bag balls, benchmark first {ids}')
     check(await p.evaluate("() => document.querySelectorAll('#armBenchShelf .ped').length") == 4 and not await p.evaluate("() => document.querySelector('#armBench').open"), '[armory] bench (4) folded behind a tap')
@@ -1381,7 +1385,7 @@ async def armory_cycle(b):
     await shot(p, 'phone-armory')
     await p.goto(BASE + '?arm3#/bag'); await p.wait_for_selector('#bagCare'); await p.evaluate("() => { document.querySelectorAll('#bagCare, #bagLeft, #bagLeftAll').forEach(d => { d.open = true; }) }"); await p.select_option('#bagCareBall', 'own-raw-hammer'); await p.click('#bagCare [data-v="retired"]')
     await p.wait_for_function("() => document.querySelector('#bagCare [data-v=\"retired\"]').getAttribute('aria-checked') === 'true' || document.querySelector('#bagCare [data-v=\"retired\"]').getAttribute('aria-pressed') === 'true'"); await p.wait_for_timeout(400)
-    await p.goto(BASE + '?arm4#/arsenal'); await p.wait_for_selector('#armHall'); await p.click('#armHall summary')
+    await p.goto(BASE + '?arm4#/arsenal'); await p.click('#armShelvesD summary'); await p.wait_for_selector('#armHall'); await p.click('#armHall summary')
     hall = await p.evaluate("() => [...document.querySelectorAll('#armHallShelf .ped')].map(x => x.dataset.own)")
     check(hall == ['own-raw-hammer'], f'[armory] retired ball moves to Old Friends {hall}')
     await axe_ok(p, '[armory] hall open'); await shot(p, 'phone-armory-hall')
@@ -1389,7 +1393,7 @@ async def armory_cycle(b):
     check(True, '[armory] pedestal opens the ball page')
     check(not errs, f'[armory] no page errors {errs[:3]}'); await c.close()
 
-HELP_SCREENS = [('tonight', '#/tonight', '#tnAdvisor'), ('lane', '#/lane', '.lane-tools'), ('target', '#/target', '#tgCall'), ('arsenal', '#/arsenal', '#armBagH'),
+HELP_SCREENS = [('tonight', '#/tonight', '#tnAdvisor'), ('lane', '#/lane', '.lane-tools'), ('target', '#/target', '#tgCall'), ('arsenal', '#/arsenal', '#armMine'),
     ('ball', '#/ball/hy-road', '#ballRead'), ('compare', '#/compare?ids=hy-road,rattler', '.cmp-body'), ('insights', '#/arsenal/insights', '#insGame'),
     ('patterns', '#/patterns', '.list-screen'), ('pattern', '#/pattern/2024-pba-shark', '.heat-wrap'), ('sessions', '#/sessions', '.list-screen'),
     ('card', '#/card', '#bcHead'), ('bag', '#/bag', '#bagCare')]
@@ -1809,7 +1813,7 @@ async def ia5_cycle(b):
         await p.goto(BASE + '?i5r' + old); await p.wait_for_timeout(500)
         check(p.url.split('#')[-1] == new[1:], f'[ia5] redirect {old} -> {new} ({p.url.split("#")[-1]})')
     await p.goto(BASE + '?i5r#/sessions?x=1'); await p.wait_for_timeout(400); check(p.url.endswith('#/results?x=1'), f'[ia5] redirect keeps the query ({p.url.split("#")[-1]})')
-    await p.goto(BASE + '?i5r#/arsenal'); await p.wait_for_selector('#bagView'); check(await p.get_attribute('#bagView [data-v="all"]', 'aria-pressed') == 'true' or await p.query_selector('#bagView [data-v="all"][aria-checked=true], #bagView [data-v="all"].on'), '[ia5] #/arsenal lands on Bag > All my balls')
+    await p.goto(BASE + '?i5r#/bag?view=all'); await p.wait_for_selector('#armMine'); check(await p.query_selector('#bagView') is None and await p.query_selector('#tabs a[href="#/arsenal"][aria-current=page]') is not None, '[ia5] old #/bag?view=all deep link opens Arsenal (switch removed in v73)')
     hp = await p.evaluate("() => JSON.parse(localStorage.getItem('ap_prefs') || '{}').help")
     check(not hp, f'[ia5] DECISIONS #32 kept: Help is off by default ({hp})')
     await p.goto(BASE + '?i5#/tonight'); await p.wait_for_selector('#tnAimChip')
@@ -1842,7 +1846,7 @@ async def task12_cycle(b):
     await p.goto(BASE + '?t12#/tonight'); await p.wait_for_selector('#noBag, #tnStartBowl')
     if await p.query_selector('#loadStarter'): await load_sample(p)
     await p.wait_for_selector('#tnStartBowl')
-    plan = {1: 2, 2: 4, 3: 4, 4: 3, 5: 2, 6: 0, 7: 2, 8: 1, 9: 4, 10: 3, 11: 2, 12: 4}
+    plan = {1: 2, 2: 4, 3: 4, 4: 3, 5: 2, 6: 0, 7: 2, 8: 1, 9: 4, 10: 3, 11: 3, 12: 4}   # v73: Export games is under Log book > More (docs/CUTS_V73.md)
     names = {1: 'Log a frame', 2: 'Start a league night', 3: 'Add a bowler', 4: "Pick tonight's bag", 5: 'Change ball mid-game', 6: 'Find stand/aim', 7: 'Look up a term', 8: "See last night's recap", 9: 'Add a ball', 10: 'Set handedness', 11: 'Export games', 12: 'Fix a past frame'}
     got = {}; n = [0]
     async def tap(sel, q=False):
@@ -1958,8 +1962,8 @@ async def account_cycle(b):
     check(await q.locator('#migSheet').count() == 0, '[account] empty phone: no migration question')
     h1, h2 = await apx(p, "window.__apData.hash()"), await apx(q, "window.__apData.hash()")
     check(h1 == h2, '[account] second phone signed in: identical arsenal and history')
-    await q.goto(BASE + '?acct4#/arsenal'); await q.wait_for_selector('#armBag'); await q.wait_for_timeout(300)
-    nb = await q.locator('#armBag .ped, #armBag [data-ball], #armBag button').count(); check(nb > 0, f'[account] signed-in arsenal shows the synced balls ({nb})')
+    await q.goto(BASE + '?acct4#/arsenal'); await q.wait_for_selector('#armList'); await q.wait_for_timeout(300)
+    nb = await q.locator('#armList [data-own]').count(); check(nb > 0, f'[account] signed-in arsenal shows the synced balls ({nb})')
     await shot(q, 'phone-arsenal-signedin')
     # Isolation: a different account sees none of it.
     c3, r = await phone('d-e2e-acct-0003'); await r.goto(BASE + '?acct5#/more'); await r.click('#acctCreate')

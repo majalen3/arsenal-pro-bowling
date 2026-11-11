@@ -144,7 +144,7 @@ async def j01_onboarding(j):
         await j.nav('/tonight'); await j.audit('tonight-empty')
         s.check(await j.visible('#noBag') or await j.visible('#noPackedBalls') or await j.visible('#advStart'), 'Tonight shows either a start line or how to add balls')
     async with j.step('Add a ball from the catalogue', task='add-ball', target_taps=6) as s:
-        await j.nav('/bag'); await j.tap('#bagView [data-v="all"]'); await j.settle(); await j.audit('arsenal-empty')
+        await j.nav('/bag'); await j.tap('#tabs a[href="#/arsenal"]'); await j.settle(); await j.audit('arsenal-empty')   # v73: the Tonight/All switch is gone
         if await j.visible('#arsAdd'): await j.tap('#arsAdd')
         else: await j.goto('/add-ball')
         await j.wait('#abQ, #abSearch'); await j.audit('add-ball')
@@ -197,8 +197,8 @@ async def j02_home_prep(j):
         await j.tap('#bagCare [aria-label="Status"] [data-v="proShop"]'); await j.settle(400)
         s.check(await j.page.get_attribute('#bagCare [aria-label="Status"] [data-v="proShop"]', 'aria-checked') == 'true', f'{opt[1]} is now Pro shop')
     async with j.step('Status carries to the Arsenal page', carry='status=proShop') as s:
-        await j.nav('/bag'); await j.tap('#bagView [data-v="all"]'); await j.settle(); await j.audit('arsenal')
-        txt = await j.text('#armory') if await j.page.locator('#armory').count() else await j.text('.screen')
+        await j.nav('/bag'); await j.tap('#tabs a[href="#/arsenal"]'); await j.settle(); await j.audit('arsenal')
+        txt = await j.text('#armMine') if await j.page.locator('#armMine').count() else await j.text('.screen')
         s.check(re.search(r'pro shop', txt, re.I), 'Arsenal shows the ball as at the pro shop')
     async with j.step('Status carries to Tonight (ball not suggested)', carry='status=proShop') as s:
         await j.nav('/tonight'); await j.settle()
@@ -401,8 +401,9 @@ async def j06_between_games(j):
     # Exercise switching with VERIFIED peers, never invent specs for Hy-Road Pearl.
     await j.ev("async () => { const h = await import('./js/hub.js'); await h.add('bag.saved', 'qa-switch-bag', {name:'Verified switch fixture', format:'tournament6', slots:['own-rattler-big-bite','own-super-nova','own-ordnance-c4','own-deadly-rattler','own-ice-storm'].map(owned=>({owned,locked:false})), spare:'own-ice-storm'}); }")
     await j.settle(300)
-    async with j.step('Tonight: tap Stronger after a read', task='adjust', target_taps=2, critical=True) as s:
+    async with j.step('Tonight: tap Stronger after a read', task='adjust', target_taps=3, critical=True) as s:
         await j.wait('#advStart'); await j.tap('#tnStartBowl'); await j.wait('#tnLog'); s.taps = 0   # IA P1.5: reads + Weaker/Stronger sit on Bowl between games; getting to Bowl is navigation
+        if await j.page.locator('#tnMore:not([open]) > summary').count(): await j.tap('#tnMore > summary'); await j.settle()   # v73 (t127u, CUTS_V73 #9): under "Ball change, read and details" so the Score page fits
         t0 = await tonight_line(j); j.state['t0'] = t0
         if await j.visible('[data-read="early"]'): await j.tap('[data-read="early"]'); await j.settle()
         b = j.page.locator('#tonightBody [data-alt="Stronger"]:visible, #tonightBody [data-alt="Weaker"]:visible')
@@ -656,7 +657,7 @@ async def j11_data_trust(j):
             await j.tap('#dlBackup')
         d = await dl.value; backup = os.path.join(j.run.media, f'{j.id}-{d.suggested_filename}'); await d.save_as(backup)
         j.state['backup'] = backup; body = json.load(open(backup)); s.check(isinstance(body, dict), f'{d.suggested_filename} parses')
-    async with j.step('Export games CSV from Sessions', task='export', target_taps=2) as s:
+    async with j.step('Export games CSV from Sessions', task='export', target_taps=3) as s:
         await j.nav('/results'); await j.wait('#lbMore'); await j.tap('#lbMore summary'); await j.wait('#gamesCsv')
         async with j.page.expect_download(timeout=8000) as dl:
             await j.tap('#gamesCsv')
@@ -826,7 +827,7 @@ async def j14_bag(j):
         for w in (r'Where|lanes', r'Your bag for tonight|Tonight.s bag', r'Left out|Why not'):
             s.check(re.search(w, t, re.I), f'step heading /{w}/')
     async with j.step('Every pick has a role in bowler words and one "why"') as s:
-        rows = await j.ev("() => [...document.querySelectorAll('[data-role], .bag-pick, .bb-row')].map(r => r.innerText)")
+        rows = await j.ev("() => [...document.querySelectorAll('[data-role], .bag-pick, .bb-row')].map(r => r.innerText + ' ' + ((r.querySelector('[title]') || {}).title || ''))")   # v73 (CUTS_V73 #3): the why is on the name (tooltip)
         s.check(len(rows) >= 1, f'{len(rows)} picks found')
         s.check(rows and all(ROLES.search(r) for r in rows), 'each pick has a role (Start ball / If it hooks early / ...)')
         s.check(rows and all(len(re.findall(r'[a-z]{3,}', r)) >= 6 for r in rows), 'each pick has a sentence of why')
@@ -962,6 +963,7 @@ async def j17_cards(j):
     async with j.step('Retired ball shows in the Old Friends fold with a share button', task='cards', target_taps=3) as s:
         await j.ev("async id => { const m = await import('./js/hub.js'); await m.ready(); await m.add('ownedBall.edited', id, { fields: { status: 'retired' } }); }", balls[-1]['id'])
         await j.goto('/bag?view=all'); await j.settle(500)
+        if not await j.visible('#armHall'): await j.tap('#armShelvesD summary')   # v73 (CUTS_V73 #6): shelves and Old Friends are one tap away
         if not await j.visible('#armHallShare'): await j.tap('#armHall summary')
         s.check(await j.visible('#armHallShare'), 'Share an Old Friends card button')
         async with j.page.expect_download(timeout=8000) as dl:
