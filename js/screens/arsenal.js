@@ -65,8 +65,9 @@ function mine(P, rerender) {
   })); };
   find.oninput = () => { st.mq = find.value; fill(); };
   fill();
-  return h('section', { class:'card', id:'armMine', 'aria-label':'My balls' }, find, ul,
-    list.length ? null : h('a', { class:'btn primary block', id:'armEmpty', href:'#/add-ball' }, 'Add your first ball'));
+  const dot = helpDot('ap-status', 'Ball status');   // help bubbles on: one "?" beside the search (no extra words when off)
+  return h('section', { class:'card', id:'armMine', 'aria-label':'My balls' }, dot ? h('div', { class:'arm-find-row' }, find, dot) : find, ul,
+    list.length ? null : h('a', { class:'btn primary block', id:'armAddFirst', href:'#/add-ball' }, 'Add your first ball'));
 }
 function armory(P) {
   const sh = A.shelves(P, catOf), badges = A.starterBadges(P), next = UX.flag('nextUp') ? A.nextUp(P) : null;

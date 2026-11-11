@@ -148,7 +148,7 @@ export async function render() {
     const nIn = pick === 'other' ? h('label', { class: 'fld' }, h('span', { text: 'How many balls (with the spare)' }), h('input', { id: 'bagBringN', type: 'number', inputmode: 'numeric', min: '1', max: '20', step: '1', value: String(bring),
       onchange: e => { const v = A.bringOf(e.target.value); if (!v) return toast('Type a number of balls, e.g. 7', { kind: 'bad' }); setBring(proj(), ST.currentBag(proj()), ev, v); } })) : null;
     // Bring sits in the bag card (v73 no-scroll rule, owner t127u); its explainer moved to the "?" bubble.
-    top.querySelector('#bagShuffleRow').before(h('div', { class: 'fld bag-bring', id: 'bagWhere' }, h('span', { class: 'small', text: 'Bring (with the spare)' }), seg, nIn));
+    top.querySelector('#bagShuffleRow').before(h('div', { class: 'fld bag-bring', id: 'bagWhere' }, h('span', { class: 'small', text: 'Bring', title: 'Counts the spare' }), seg, nIn));
     // ladder + checks behind a tap
     const items = rows.filter(r => r.role !== 'spare').map(r => itemOf(P, r.ownedId)), spare = rows.find(r => r.role === 'spare') ? itemOf(P, rows.find(r => r.role === 'spare').ownedId) : null;
     const ctx = { format: BE.formatOfBring(bring), style: (P.bowler || {}).style || 'tweener', health: P.health, eventDate: bag.eventDate || null };

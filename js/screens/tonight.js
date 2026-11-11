@@ -202,7 +202,7 @@ export async function render(o = {}) {
       pick = h('div', { class: 'card pick', id: 'tnPick' },
         h('div', { class: 'row between' }, h('span', { class: 'ball-name', id: 'tnPickName', text: cur.name })),
         stand ? h('p', { class: 'tn-line', id: 'tnStand', text: `Feet ${stand.feet} \u00b7 eyes ${fmtHalf(ml.target)} at the arrows` }) : null,
-        stand ? h('button', { class: 'btn primary block', id: 'tnFind', onclick: () => go('#/strike?find=1&ball=' + encodeURIComponent(cur.id || cur.catalogId || '')) }, 'Find my strike line \u203a') : null,
+        stand ? h('button', { class: 'btn primary block', id: 'tnFind', onclick: () => go('#/target?find=1&ball=' + encodeURIComponent(cur.id || cur.catalogId || '')) }, 'Find my strike line \u203a') : null,
         gameOpen ? null : alts,
         h('details', { class: 'tn-more', id: 'tnPickMore' }, h('summary', { text: 'Why this ball, specs and model' }),
           h('span', { class: 'pill gold', id: 'tnLevel', text: cur.level != null ? `Level ${cur.level} \u00b7 demand ${d.demand}` : `specs not published \u00b7 demand ${d.demand}` }),
