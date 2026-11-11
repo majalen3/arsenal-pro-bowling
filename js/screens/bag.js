@@ -31,7 +31,7 @@ export async function render() {
   await ready();
   const body = h('div', { class: 'stack', id: 'bagBody' });
   const el = h('section', { class: 'screen list-screen', id: 'bag' },
-    h('header', { class: 'appbar' }, h('h1', { class: 'title', text: 'Bag' }), h('div', { class: 'appbar-actions' }, h('a', { class: 'btn ghost sm', id: 'bagTeam', href: '#/team' }, 'Team'), h('a', { class: 'btn ghost sm', id: 'bagAdd', href: '#/add-ball' }, 'Add ball'))), bagView('pack'), body);
+    h('header', { class: 'appbar' }, h('h1', { class: 'title', text: 'Bag' }), h('div', { class: 'appbar-actions' }, h('a', { class: 'btn ghost sm', id: 'bagTeam', href: '#/team' }, 'Team'), h('a', { class: 'btn ghost sm', id: 'bagAdd', href: '#/add-ball' }, 'Add ball'))), bagView('pack'), h('p', { class: 'small muted', id: 'bagExplain', text: 'Tonight\u2019s bag is what you take to the lanes tonight. All my balls is everything you own. Packing never removes a ball from your arsenal.' }), body);
   let proposal = null, careId = null, otherOpen = false;
   if (!TERT) loadIndex().then(x => { TERT = R.tertiles(x); if (el.isConnected) draw(); }).catch(() => {});
   const itemOf = (P, id) => ST.itemOfOwned(P, id);
@@ -48,13 +48,16 @@ export async function render() {
     if (nb.spare && !nb.slots.some(s => s.owned === nb.spare)) nb.slots = nb.slots.concat([{ owned: nb.spare, locked: false }]);
     delete nb.packedTs; await add('bag.saved', bag.id, nb); draw();
   }
+  // Bring N is additive (live eval 2026-11-10): going up keeps every packed ball and adds; going down takes out balls without specs
+  // first and never the last ball with specs, the spare or a 📌 Always bring ball (cc/bagedit.js resize).
   async function setBring(P, bag, ev, n) {
     const locked = bag.slots.filter(s => s.locked).map(s => s.owned), packed = ST.packedIds(P, bag);
-    const a = A.advise(P, Object.assign(opts(P, ev, n), { locked, current: packed }));
-    if (a.none) return toast(a.reason);
-    await saveBag(bag, BE.fromAnswer(P, bag, a), ev, n);
-    const got = a.slots.length + (a.spare ? 1 : 0);
-    toast(got < n ? `Bring ${n}: ${got} balls are In my bag or pinned. Bring more from Left out.` : `Bring ${n}: bag refilled, \ud83d\udccc Always bring kept.`);
+    const a = packed.length < n ? A.advise(P, Object.assign(opts(P, ev, n), { locked, current: packed })) : null;
+    const r = BE.resize(P, bag, n, a && !a.none ? a : null), nm = id => (itemOf(P, id) || { name: id }).name;
+    await saveBag(bag, r.data, ev, n);
+    toast(r.added.length ? `Bring ${n}: added ${r.added.map(nm).join(', ')}.` + (r.size < n ? ` Only ${r.size} ready; mark more balls ${ST.LABEL.inBag} or Bring one from home.` : '')
+      : r.removed.length ? `Bring ${n}: took out ${r.removed.map(nm).join(', ')}.` + (r.size > n ? ` ${r.size} stay (spare or ${ST.ALWAYS}).` : '')
+      : r.size < n ? `Bring ${n}: all ${r.size} ready balls are packed. Mark more balls ${ST.LABEL.inBag} or Bring one from home.` : `Bring ${n}.`);
   }
   // [Swap]: In my bag first, then At home ("grab from home"), each with one line on what changes.
   function swapSheet(P, bag, ev, bring, fromId) {
@@ -67,8 +70,8 @@ export async function render() {
       h('b', { text: x.name + (x.status === 'benched' ? ` \u00b7 ${ST.HOME_TAG}` : '') }), h('span', { class: 'small muted', text: what(x) }));
     const mine = cands.filter(x => x.status === 'inBag'), home = cands.filter(x => x.status === 'benched');
     const s = sheet({ title: `Swap ${from.name} for\u2026`, id: 'bagSwap', body: h('div', { class: 'stack' },
-      cands.length ? null : h('p', { class: 'muted', text: 'No other ball In my bag or At home. Change a ball\u2019s Status on its page.' }),
-      mine.length ? h('h3', { class: 'small', text: 'In my bag' }) : null, ...mine.map(btn),
+      cands.length ? null : h('p', { class: 'muted', text: 'No other ball Ready to bring or At home. Change a ball\u2019s Status on its page.' }),
+      mine.length ? h('h3', { class: 'small', text: ST.LABEL.inBag }) : null, ...mine.map(btn),
       home.length ? h('h3', { class: 'small', text: 'At home' }) : null, ...home.map(btn),
       h('button', { class: 'btn ghost block', id: 'bagSwapCancel', onclick: () => s.close() }, 'Cancel')) });
   }
@@ -90,11 +93,11 @@ export async function render() {
       h('div', { class: 'row between' }, h('p', { id: 'bagWhereLine' }, `${E.short} \u00b7 ${n0.pat ? n0.pat.name : `House shot (assumed ${R.HOUSE_ASSUMED.ft} ft)`} \u00b7 ${STAGE[(n0.s && n0.s.stage) || 'fresh'] || 'fresh'}`),
         h('button', { class: 'btn ghost sm', id: 'bagWhereChange', onclick: () => go('#/tonight') }, 'change \u203a')),
       h('div', { class: 'fld' }, h('span', { text: 'Bring' }), seg), nIn,
-      h('p', { class: 'muted small', text: 'Counts the spare. Changing it refills the bag; \ud83d\udccc Always bring stays in.' })));
+      h('p', { class: 'muted small', text: 'Counts the spare. Raising it adds balls; lowering it takes out balls without specs first. \ud83d\udccc Always bring stays in.' })));
     // ---- step 2: your bag for tonight
-    const step2 = h('div', { class: 'card', id: 'bagTonight' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: '2 \u00b7 Your bag for tonight' }), h('span', { class: 'pill gold', id: 'bagCount', text: `${rows.length} packed` })));
-    if (a.none) step2.append(h('p', { class: 'muted', text: a.reason }));
-    if (rows.length < bring) step2.append(h('p', { class: 'small', id: 'bagShort', text: `Bring ${bring}: ${rows.length} packed. Bring more from Left out below, or set a ball In my bag.` }));
+    const step2 = h('div', { class: 'card', id: 'bagTonight' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: '2 \u00b7 Tonight\u2019s bag' }), h('span', { class: 'pill gold', id: 'bagCount', text: `${rows.length} packed` })));
+    if (a.none) step2.append(h('p', { class: 'muted', id: 'bagEmptyNote', text: packed.length ? a.reason : 'Nothing packed yet. Choose Bring above to fill the bag, or tap Bring on a ball below. Balls At home are packed as \u201cgrab from home\u201d.' }));
+    if (rows.length < bring) step2.append(h('p', { class: 'small', id: 'bagShort', text: `Bring ${bring}: ${rows.length} packed. Bring more from Left out below, or mark a ball ${ST.LABEL.inBag}.` }));
     step2.append(h('ul', { class: 'plain stack', id: 'bagRows' }, ...rows.map(r => h('li', { class: 'bb-row', 'data-own': r.ownedId, 'data-ball': r.ownedId, 'data-role': r.role },
       h('div', { class: 'adv-head' }, h('b', { text: r.name }), h('span', { class: 'pill' + (r.role === 'benchmark' ? ' gold' : ''), 'data-role-label': '', text: r.label }), r.home ? h('span', { class: 'pill', text: ST.HOME_TAG }) : null),
       h('p', { class: 'small muted', text: r.line }),
@@ -113,8 +116,9 @@ export async function render() {
         h('ul', { class: 'why', id: 'bagChecks' }, ...ch.map(c => h('li', { 'data-check': c.n, 'data-warn': String(c.warn) }, h('b', { text: c.warn ? '\u26a0 ' : '\u2713 ' }), c.text, prov(SRC_PROV[c.src] || null, c.src))))));
     // suggest again (diff, then confirm)
     const fillBtn = h('button', { class: 'btn block', id: 'bagFill', onclick: () => {
-      const r = A.advise(P, Object.assign(opts(P, ev, bring), { locked, current: packed }));
-      if (r.none) return toast(r.reason);
+      const r0 = A.advise(P, Object.assign(opts(P, ev, bring), { locked, current: packed }));
+      if (r0.none) return toast(r0.reason);
+      const r = Object.assign({}, r0, BE.topUp(P, r0, Math.max(bring, packed.length), packed));   // never shrink to one ball when you own more
       const d = G.diffBags({ slots: packed.map(owned => ({ owned })), spare: bag.spare }, { slots: r.slots.concat(r.spare ? [r.spare] : []).map(owned => ({ owned })), spare: r.spare });
       proposal = d.in.length || d.out.length || d.spare !== undefined ? { r, d } : null;
       if (!proposal) toast('Your bag is already the best fit from the balls you own.'); draw(); } }, 'Suggest again from my balls');
@@ -134,8 +138,8 @@ export async function render() {
       h('div', {}, h('b', { text: w.x.name }), h('p', { class: 'small muted why-not', text: w.text })),
       h('div', { class: 'row' }, w.canBring ? h('button', { class: 'btn sm', 'data-bring': w.x.ownedId, 'aria-label': `Bring ${w.x.name}`, onclick: async () => {
         const P2 = proj(), b2 = ST.currentBag(P2), r = BE.bringIn(P2, b2, w.x.ownedId, bring);
-        if (r.blocked) return toast(r.blocked === 'pinned' ? 'Every ball is \ud83d\udccc Always bring: unpin one or raise Bring.' : 'Set it In my bag or At home first.');
-        await saveBag(b2, r.data, ev, bring); toast(r.out ? `${w.x.name} in, ${itemOf(P2, r.out).name} out.` : `${w.x.name} in.`); } }, 'Bring') : null,
+        if (r.blocked) return toast(`Set it ${ST.LABEL.inBag} or At home first.`);
+        await saveBag(b2, r.data, ev, r.grew || bring); toast(r.grew ? `${w.x.name} added. Tonight\u2019s bag is now ${r.grew}.` : `${w.x.name} added to tonight\u2019s bag.`); } }, 'Bring') : null,
         statusButton(P, w.x.ownedId, { onDone: draw, text: w.canBring ? null : 'Change where it is \u203a' })));
     const shown = left.slice(0, LEFT_SHOWN), rest = left.slice(LEFT_SHOWN);
     // Clutter audit C9: Left out collapses to one row, as on Tonight; it stays open across redraws once opened.

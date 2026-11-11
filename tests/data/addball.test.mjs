@@ -60,10 +60,14 @@ test('catalogue rows: maker provenance with URL + read date, plastic not engine-
   const rk = A.entryById('sc-hammer-reckoning'); assert.equal(rk.fields.symmetry.v, 'Asymmetric'); assert.equal(rk.fields.symmetry.prov.kind, 'derived');
   const pl = A.catalog().find(x => x.src === 'catalog' && x.fields.coverType && x.fields.coverType.v === 'Plastic' && x.fields.rg);
   assert.ok(pl); assert.equal(A.engineReady(pl.fields), false); assert.match(A.missing(pl.fields)[0], /Plastic cover/);
-  const rows = A.catalog().filter(x => x.src === 'catalog'); assert.equal(rows.length, 143);
+  const rows = A.catalog().filter(x => x.src === 'catalog'); assert.equal(rows.length, 163);   // 143 + 7 maker rows (2026-11-10) + 13 rows filling the 2026-11-10 404 gaps (2026-11-11: 10 maker pages under new URLs, 3 archived maker pages)
   for (const r of rows) {
     assert.doesNotMatch(JSON.stringify(r), /bowlingballvideos|bowwwl|bowlingball\.com|bowlingthismonth/i, r.id);
     if (r.specStatus === 'maker') { assert.match(r.source, /^https:\/\//, r.id); for (const f of Object.values(r.fields)) assert.ok(['manufacturer', 'derived', 'usbc'].includes(f.prov.kind), r.id); }
+    else if (r.specStatus === 'archive') {   // a Wayback copy of the maker's own page: maker data, labelled archived, original URL kept
+      assert.match(r.source, /^https:\/\/web\.archive\.org\/web\/\d{8,14}\/https?:\/\//, r.id); assert.ok(r.source.endsWith(r.original.replace(/^https?:\/\//, '')), r.id);
+      for (const f of Object.values(r.fields)) { assert.ok(['manufacturer', 'derived'].includes(f.prov.kind), r.id); assert.equal(f.prov.archived, true, r.id); }
+    }
     else { assert.equal(r.specStatus, 'unverified'); assert.deepEqual(r.fields, {}); assert.match(r.flag, /unverified/); }
   }
 });

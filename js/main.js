@@ -16,7 +16,7 @@ restoreState(); deviceId();
 // GAP (a): keep the install offer for later (shown once after the first saved game, never mid-game). Installed apps ask for persistent storage at boot (no prompt there).
 listenInstall(); if (isStandalone()) askPersist();
 // IA P2 (owner 2026-10-31: "Do the 5-tab layout but keep Help off by default"): Tonight / Bowl / Results / Bag / Learn, Me in the top bar.
-// Lane and Target are tools (no tab of their own): they open from the Stand · Aim chip on Tonight and Bowl, and from Learn.
+// Lane and Target are tools (no tab of their own): they open from the Stand · Aim chip in the Building and the game, and from Learn.
 route(/^\/lane$/, 'lane', () => import('./screens/lane.js'));
 route(/^\/target$/, 'lane', () => import('./screens/target.js'));
 route(/^\/arsenal\/insights$/, 'bag', () => import('./screens/insights.js'));
@@ -47,21 +47,50 @@ route(/^\/welcome$/, null, () => import('./screens/welcome.js'));
 route(/^\/tonight$/, 'tonight', () => import('./screens/tonight.js'));
 route(/^\/bowl$/, 'bowl', () => import('./screens/tonight.js').then(m => ({ render: o => m.render(Object.assign({}, o, { bowl: true })) })));
 // Old hashes land on their new home (IA_PLAN §7 P2).
+redirect(/^\/building$/, '/tonight');
+redirect(/^\/game$/, '/bowl');
 redirect(/^\/sessions$/, '/results');
 redirect(/^\/arsenal$/, '/bag?view=all');
 redirect(/^\/more$/, '/me');
 redirect(/^\/patterns$/, '/learn/patterns');
-// tab bar / rail
-const TABS = [['tonight', 'Tonight'], ['bowl', 'Bowl'], ['results', 'Results'], ['bag', 'Bag'], ['learn', 'Learn']];
+// tab bar / rail. HOME_GAME_FLOW (owner 2026-11-10: "the building, then the scoring page should be an in-game page"): the Building
+// (#/tonight) is home; scoring (#/bowl) is a focused game page with no tab of its own and no tab bar, entered from the Building.
+const TABS = [['tonight', 'Building', 'building'], ['bag', 'Bag', 'bag'], ['results', 'Results', 'results'], ['learn', 'Learn', 'learn']];
 const nav = $('#tabs');
-nav.innerHTML = TABS.map(([k, l]) => `<a class="tab" href="#/${k}" data-tab="${k}">${icon(k)}<span>${l}</span></a>`).join('');
+nav.innerHTML = TABS.map(([k, l, ic]) => `<a class="tab" href="#/${k}" data-tab="${k}">${icon(ic)}<span>${l}</span></a>`).join('');
 function setTab(t) { $$('.tab', nav).forEach(a => { if (a.dataset.tab === t) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }); document.body.dataset.tab = t || 'none'; }
 // first run: skippable onboarding (existing v1 users with saved state skip it automatically)
 if (!profile() && !prefs().onboarded && !rawGet('ap_state') && !location.hash) history.replaceState(null, '', '#/welcome');
 // Owner bug 2026-10-24 ("the help feature does nothing, I can't find any '?'"): a "?" switch in every app bar (not Welcome).
+// HOME_GAME_FLOW v70: Lane and Target opened from the game page stay "in the game": no tab bar, no Help or Me, one "<- Game" button.
+// The game context starts on #/bowl (or a ?game=1 deep link to Lane/Target) and ends on any other screen. Opened from the Building
+// or Learn, Lane and Target keep the normal tab bar.
+const GAME_CTX = 'ap_game_ctx', GAME_TOOLS = new Set(['/lane', '/target']);
+let firstDecor = true;
+function gameContext(path) {
+  const q = new URLSearchParams(location.hash.split('?')[1] || '');
+  // A fresh visit straight to Lane/Target is out of the game; a reload of an in-game tool stays in it.
+  if (firstDecor) { firstDecor = false; const nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || {};
+    if (GAME_TOOLS.has(path) && q.get('game') !== '1' && nav.type !== 'reload') sessionStorage.removeItem(GAME_CTX); }
+  if (path === '/bowl' || (GAME_TOOLS.has(path) && q.get('game') === '1')) sessionStorage.setItem(GAME_CTX, '1');
+  else if (!GAME_TOOLS.has(path)) sessionStorage.removeItem(GAME_CTX);
+  return GAME_TOOLS.has(path) && sessionStorage.getItem(GAME_CTX) === '1';
+}
 setDecorate((el, path) => {
   UX.count('screen.' + (path.split('/')[1] || 'tonight'));
-  if (path === '/welcome') return;
+  const inGame = gameContext(path);
+  document.body.toggleAttribute('data-ingame', inGame);
+  if (inGame) {   // in-game tool: its own bar keeps only the tool's controls plus the way back to the game
+    const bar = el.querySelector('.appbar');
+    if (bar && !bar.querySelector('#gameBack')) {
+      const gb = Object.assign(document.createElement('a'), { className:'btn ghost sm game-back', id:'gameBack', href:'#/bowl', textContent:'\u2190 Game' });
+      gb.setAttribute('aria-label', 'Back to the game');
+      const acts = path === '/lane' && bar.querySelector('.appbar-actions');   // Lane: beside its tools, so the ball header keeps its row
+      if (acts) acts.prepend(gb); else bar.prepend(gb);
+    }
+    return;
+  }
+  if (path === '/welcome' || path === '/bowl' || location.hash.startsWith('#/bowl')) return;   // the game page keeps only its own Leave button (no Help, no Me)
   const bar = el.querySelector('.appbar'); if (!bar || bar.querySelector('#helpToggle')) return;
   const t = helpToggle(() => go(location.hash || '#/tonight', { replace:true })), acts = bar.querySelector('.appbar-actions');
   if (acts) acts.prepend(t); else bar.append(t);

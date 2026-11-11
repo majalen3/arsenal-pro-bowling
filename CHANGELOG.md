@@ -2,6 +2,17 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## Building/game follow-up + 404 catalog gaps — unreleased (2026-11-11 America/Chicago; offline build v70)
+- Lane and Targeting opened from the game page stay in the game: no tab bar/rail, Help, Me or first-visit tour, and one **← Game** button back to the pad. Opened from the Building or Learn they keep the tab bar. Routes and saved data unchanged.
+- The once-per-night share offer after End night is recorded when shown; **Not now** removes it and reopening the return page never brings it back. Native share sheet only.
+- 13 catalog rows for the balls whose maker URL 404'd on 2026-11-10: Storm Phaze III, Phaze V, PhysiX, Summit, !Q Tour Edition; Roto Grip Idol; Brunswick Prism Solid, Prism Hybrid, Prism Warp, Prism Warp Hybrid (makers' live pages under new URLs); 900 Global Zen, Honey Badger and Roto Grip Hustle Ink (Wayback copies of the maker's own page, `specStatus: "archive"`). Facts only, source URL + 2026-11-11 read date each; no generic "Prism"; Honey Badger has no printed RG/diff, so they stay "spec TBD". The generator now accepts `archive`, Wikipedia-only `secondary` (with attribution) and name-only `community` rows, and still rejects bowlingballvideos, bowwwl, bowlingball.com and BowlingThisMonth. Existing rows, `simulatePath` and the engine baseline unchanged (equivalence 7500/0).
+
+## Home = the Building, scoring = the game — unreleased (2026-11-10 America/Chicago; offline build v69)
+- Home is **the Building** (`#/tonight`); scoring is a focused **game page** (`#/bowl`) with no tab bar, Help or Me, and a ← Building button. Tabs: Building · Bag · Results · Learn. End night returns to the Building with a Night saved card and a once-per-night native share. Deep links and saved data unchanged; `#/building` and `#/game` alias the two. See docs/HOME_GAME_FLOW.md.
+- Search lists every catalog match for a partial name (Hy-Road 5/5, Rattler 4/4, Phaze 3/3; II = 2, case and hyphens ignored). A second physical copy sits under the ball it copies.
+- 7 maker-sourced catalog rows (Phaze II, Phaze 4, Phaze AI, Attention Star, Black Widow 3.0, Purple Pearl Urethane, Venom Shock), source URL + read date each; existing rows and the engine baseline unchanged (equivalence 7500/0).
+- Packing is additive: Bring adds (never swaps a ball out), Bring N fills to N and lowers without dropping the last ball with specs, Suggest again never shrinks to one ball. The `inBag` status now reads "Ready to bring"; the Bag says plainly what tonight's bag is.
+
 ## Reviewed local recovery — unreleased (2026-11-08 America/New_York EST; offline build v68)
 - Add a separate explicit local-only modern-backup review: validated supported preferences/saved aims and nonempty saved-line/surface/note mirrors, per-value conflicts defaulting to this phone. Non-conflicting physical copies/layouts/games remain additive; no specs or engine changes.
 - Persist a private before-state checkpoint and sync hold before applying. Offer guarded append-only Undo, including interrupted apply/Undo repair after reload. New events/queued writes/settings edits block Undo rather than roll them back; explicit Keep preserves current edits and ends Undo. Retain checkpoint history; locally undone event IDs are not silently resurrected.

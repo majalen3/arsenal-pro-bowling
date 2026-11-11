@@ -43,16 +43,24 @@ function appEntry(b) {
 const hostOf = u => { try { return new URL(u).host.replace(/^www\./, ''); } catch (e) { return 'maker page'; } };
 function rowEntry(r) {
   const id = 'sc-' + slug(r.brand + ' ' + r.name), base = { id, brand: r.brand, name: r.name, src: 'catalog', source: r.source || null, checked: r.checked || null, specStatus: r.specStatus };
-  if (r.specStatus !== 'maker') return Object.assign(base, { fields: {}, flag: 'No maker page found for this ball; specs unverified. Enter them from the box or the maker page.' });
-  const p = { kind: 'manufacturer', ref: hostOf(r.source), url: r.source, date: r.checked }, der = new Set(r.derived || []);
+  // v70: "archive" = a web.archive.org copy of the maker's own page (still maker data, labelled archived); "secondary" = Wikipedia with
+  // attribution (catalog provenance, flagged); "community" / "unverified" = name only.
+  if (r.specStatus === 'community') return Object.assign(base, { fields: {}, flag: 'Community-reported name only (a public forum post); specs unverified. Enter them from the box or the maker page.' });
+  if (!['maker', 'archive', 'secondary'].includes(r.specStatus)) return Object.assign(base, { fields: {}, flag: 'No maker page found for this ball; specs unverified. Enter them from the box or the maker page.' });
+  const p = r.specStatus === 'archive' ? { kind: 'manufacturer', ref: 'archived ' + hostOf(r.original), url: r.source, original: r.original, date: r.checked, archived: true }
+    : r.specStatus === 'secondary' ? { kind: 'catalog', ref: r.attribution || hostOf(r.source), url: r.source, date: r.checked, secondary: true }
+    : { kind: 'manufacturer', ref: hostOf(r.source), url: r.source, date: r.checked }, der = new Set(r.derived || []);
+  if (r.specStatus === 'archive') Object.assign(base, { original: r.original, sourceAlso: r.sourceAlso || null });
+  if (r.specStatus === 'secondary') base.attribution = r.attribution;
   const d = Object.assign({}, p, { kind: 'derived', ref: 'read from the maker\u2019s wording' }), P = k => (der.has(k) ? d : p);
   const w = r.weight, wNote = w == null ? 'weight not stated' : w === 15 ? '15 lb' : `${w} lb value; 15 lb not printed`;
   const num = k => { const x = F(r[k], p, wNote); if (x && w != null && w !== 15) x.weightMismatch = true; return x; };
   const ct = r.coverType ? coverTypeOf(r.coverType) || r.coverType : null;
   return Object.assign(base, { fields: pack({
-    rg: num('rg'), diff: num('diff'), intDiff: num('intDiff'), coverstock: F(r.coverstock, p), coverType: F(ct, P('coverType'), ct !== r.coverType ? `maker says "${r.coverType}"` : null),
+    rg: num('rg'), diff: num('diff'), intDiff: num('intDiff'), coverstock: F(r.coverstock, P('coverstock')), coverType: F(ct, P('coverType'), ct !== r.coverType ? `maker says "${r.coverType}"` : null),
     finish: F(r.finish, P('finish')), core: F(r.core, p), symmetry: F(r.symmetry, P('symmetry')), releaseDate: F(r.release, p), condition: F(r.conditionText, P('condition')),
-    oil: F(COND_OIL[r.condition] ? COND_OIL[r.condition].slice() : null, Object.assign({}, d, { ref: 'maker condition' })) }), flag: null });
+    oil: F(COND_OIL[r.condition] ? COND_OIL[r.condition].slice() : null, Object.assign({}, d, { ref: 'maker condition' })) }),
+    flag: r.specStatus === 'secondary' ? `Specs from ${r.attribution || 'a public reference'}, not the maker; check them against the box.` : null });
 }
 export const CATALOG_NOTE = CATALOG_META.note;
 let LIST = null;
@@ -108,6 +116,29 @@ export function search(input, { limit = 6 } = {}) {
     return { entry: e, score: +s.toFixed(3) };
   }).filter(x => x.score >= 0.4).sort((a, b) => b.score - a.score || (a.entry.src === 'app' ? -1 : 1) || a.entry.name.localeCompare(b.entry.name)).slice(0, limit);
   return { query: input, brand, exact: null, candidates: c };
+}
+
+// Browse (welcome, add-ball and kit lists): EVERY catalogue entry whose brand + name contains what was typed, so a partial
+// name never hides a family ("Hy-Road" → all five Hy-Roads, "Rattler" → every Rattler, "Phaze 2" = "Phaze II" = "phaze2").
+// Each typed word must start a word of the brand + name (case, hyphens and II/2 ignored), or the squashed text must appear
+// inside the squashed brand + name. The exact alias stays first; typo-tolerant fuzzy candidates from search() follow.
+const PREFIX_ROMAN = { 1: 'i', 2: 'ii', 3: 'iii', 4: 'iv', 5: 'v', 6: 'vi' };
+export function matches(e, input) {
+  const q = canon(input); if (!q) return true;
+  const hay = canon(e.brand + ' ' + e.name).split(' '), qt = q.split(' ');
+  if (qt.every(t => hay.some(w => w.startsWith(t) || (PREFIX_ROMAN[w] && PREFIX_ROMAN[w].startsWith(t) && t.length > 0 && /^[iv]+$/.test(t))))) return true;
+  const sq = squash(q); return sq.length >= 5 && squash(hay.join(' ')).includes(sq);
+}
+export function browse(input, { fuzzy = true } = {}) {
+  const all = catalog(); if (!canon(input)) return all.slice();
+  const r = search(input, { limit: all.length }), seen = new Set(), out = [];
+  const push = e => { if (e && !seen.has(e.id)) { seen.add(e.id); out.push(e); } };
+  push(r.exact);
+  const q = canon(input), hit = all.filter(e => matches(e, input));
+  hit.sort((a, b) => { const na = canon(a.name), nb = canon(b.name), pa = na.startsWith(q) || canon(a.brand + ' ' + a.name).startsWith(q), pb = nb.startsWith(q) || canon(b.brand + ' ' + b.name).startsWith(q);
+    return (pb - pa) || (a.src === b.src ? 0 : a.src === 'app' ? -1 : 1) || (a.brand + ' ' + a.name).localeCompare(b.brand + ' ' + b.name); }).forEach(push);
+  if (fuzzy) r.candidates.forEach(c => push(c.entry));
+  return out;
 }
 
 // ---- Maker lookup result (GET /api/spec-lookup) → fields with manufacturer provenance, for one ball weight.

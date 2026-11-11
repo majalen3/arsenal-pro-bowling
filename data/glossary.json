@@ -3448,8 +3448,8 @@
    "tree": "Equipment — Balls",
    "term": "Ball status",
    "level": "Beginner",
-   "bubble": "Where a ball is: In my bag (tonight's bag can pick it), At home, At the pro shop, or Retired (on the Old Friends shelf). Its history is always kept.",
-   "glossary": "Status is one setting per ball. In my bag: the bag builder can pick it. At home: you own it; the builder won't pick it on its own, but Swap offers it, tagged \"grab from home\". At the pro shop: never picked until you set it back. Retired: moves to the Old Friends shelf; never picked. Changing status never deletes games or lines.",
+   "bubble": "Where a ball is: Ready to bring (tonight's bag can pick it), At home, At the pro shop, or Retired (on the Old Friends shelf). Its history is always kept.",
+   "glossary": "Status is one setting per ball. Ready to bring: the bag builder can pick it. At home: you own it; the builder won't pick it on its own, but Swap offers it, tagged \"grab from home\". At the pro shop: never picked until you set it back. Retired: moves to the Old Friends shelf; never picked. Changing status never deletes games or lines.",
    "placement": "Bubble (Ball page › Status; Bag builder) + Guide",
    "priority": "High",
    "sources": [
@@ -3471,8 +3471,8 @@
    "tree": "Equipment — Balls",
    "term": "Why not this ball?",
    "level": "Beginner",
-   "bubble": "Tonight's bag is built only from balls In my bag. A ball you own is left out for one plain reason: its Status, service due, too close to a ball you're bringing, or stronger/weaker than tonight's lanes need.",
-   "glossary": "The builder fills the bag from balls marked In my bag, covering strength from heavy oil to dry and avoiding two balls that do the same job. 📌 Always bring keeps a ball in. Every ball left out shows one reason, in this order: Retired, At the pro shop, At home, service due, overlap with a ball you're bringing, no oil tag yet (spec TBD), stronger or weaker than tonight's lanes (app oil-tag level vs the pattern's demand), or the bag is full. Strength levels are this app's tags, not a measurement.",
+   "bubble": "Tonight's bag is built only from balls marked Ready to bring. A ball you own is left out for one plain reason: its Status, service due, too close to a ball you're bringing, or stronger/weaker than tonight's lanes need.",
+   "glossary": "The builder fills the bag from balls marked Ready to bring, covering strength from heavy oil to dry and avoiding two balls that do the same job. 📌 Always bring keeps a ball in. Every ball left out shows one reason, in this order: Retired, At the pro shop, At home, service due, overlap with a ball you're bringing, no oil tag yet (spec TBD), stronger or weaker than tonight's lanes (app oil-tag level vs the pattern's demand), or the bag is full. Strength levels are this app's tags, not a measurement.",
    "placement": "Bubble (Bag builder) + Guide",
    "priority": "High",
    "sources": [

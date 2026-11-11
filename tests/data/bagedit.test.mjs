@@ -35,18 +35,57 @@ test('swap: replacement takes the slot; At home ball tagged fromHome; no id/ts l
   const s = d.slots.find(x => x.owned === 'own-guru-supreme'); assert.ok(s && s.fromHome); assert.ok(!d.slots.some(x => x.owned === 'own-hy-road-pearl'));
   assert.equal(d.spare, bag.spare);
 });
-test('bringIn: adds while room, else swaps the closest unpinned non-spare; blocked for pro shop / all pinned', () => {
-  const bag = P0.bags['bag-league'];
-  const r1 = BE.bringIn(P0, bag, 'own-super-nova', 4); assert.equal(r1.out, null); assert.ok(r1.data.slots.some(s => s.owned === 'own-super-nova'));
-  const r2 = BE.bringIn(P0, bag, 'own-super-nova', 3); assert.ok(r2.out && r2.out !== bag.spare); assert.equal(r2.data.slots.length, bag.slots.length);
+// Live eval 2026-11-10: Bring used to swap a packed ball out (once the only ball with specs). Bring is now additive.
+test('bringIn: always adds; a full bag grows to N+1; never swaps a ball out; blocked only for pro shop / retired', () => {
+  const bag = P0.bags['bag-league'], n0 = ST.packedIds(P0, bag).length;
+  const r1 = BE.bringIn(P0, bag, 'own-super-nova', n0 + 1); assert.equal(r1.out, null); assert.equal(r1.grew, null); assert.ok(r1.data.slots.some(s => s.owned === 'own-super-nova'));
+  const r2 = BE.bringIn(P0, bag, 'own-super-nova', n0); assert.equal(r2.out, null); assert.equal(r2.grew, n0 + 1);
+  for (const id of ST.packedIds(P0, bag)) assert.ok(r2.data.slots.some(s => s.owned === id), `kept ${id}`);
   let pinned = bag; for (const s of bag.slots) pinned = Object.assign({ id: bag.id }, BE.pin(pinned, s.owned, true));
-  assert.equal(BE.bringIn(P0, pinned, 'own-super-nova', 3).blocked, 'pinned');
+  assert.equal(BE.bringIn(P0, pinned, 'own-super-nova', n0).grew, n0 + 1);
   const P1 = structuredClone(P0); P1.owned['own-super-nova'].status = 'proShop';
   assert.equal(BE.bringIn(P1, bag, 'own-super-nova', 3).blocked, 'status');
+});
+// The live-eval arsenal: one ball with specs (Super Nova) and three without (manual / unverified copies).
+function evalArsenal() {
+  const P = structuredClone(P0), keep = 'own-super-nova';
+  for (const id of Object.keys(P.owned)) if (id !== keep) delete P.owned[id];
+  for (const [id, name] of [['own-zz-1', 'ZZ Fake Pearl #1'], ['own-zz-2', 'ZZ Fake Pearl #2'], ['own-zz-3', 'ZZ Fake Test Ball Alpha']]) P.owned[id] = { id, name, catalogId: null, status: 'inBag' };
+  return P;
+}
+test('Bring N up is additive: keeps every packed ball and adds Ready balls to the chosen count', () => {
+  const P = evalArsenal(), bag = { id: ST.TONIGHT_BAG, slots: [{ owned: 'own-super-nova' }, { owned: 'own-zz-1' }, { owned: 'own-zz-2' }], spare: null };
+  const r = BE.resize(P, bag, 4); assert.equal(r.size, 4); assert.deepEqual(r.removed, []); assert.deepEqual(r.added, ['own-zz-3']);
+  assert.deepEqual(r.data.slots.map(s => s.owned).slice(0, 3), ['own-super-nova', 'own-zz-1', 'own-zz-2']);
+  const r6 = BE.resize(P, bag, 6); assert.equal(r6.size, 4, 'capped by what you own, not shrunk');
+});
+test('Bring N down takes out balls without specs first and never the only ball with specs, the spare or a pinned ball', () => {
+  const P = evalArsenal(), bag = { id: ST.TONIGHT_BAG, slots: [{ owned: 'own-super-nova' }, { owned: 'own-zz-1' }, { owned: 'own-zz-2', locked: true }, { owned: 'own-zz-3' }], spare: 'own-zz-3' };
+  const r = BE.resize(P, bag, 2); const ids = r.data.slots.map(s => s.owned);
+  assert.ok(ids.includes('own-super-nova'), 'the only modeled ball stays'); assert.ok(ids.includes('own-zz-2'), 'pinned stays'); assert.ok(ids.includes('own-zz-3'), 'spare stays');
+  assert.deepEqual(r.removed, ['own-zz-1']); assert.equal(r.size, 3);
+  const r1 = BE.resize(P, { id: 'b', slots: [{ owned: 'own-super-nova' }, { owned: 'own-zz-1' }], spare: null }, 1);
+  assert.deepEqual(r1.data.slots.map(s => s.owned), ['own-super-nova']);
+});
+test('Suggest again tops up to Bring N: never proposes a one-ball bag when you own more', () => {
+  const P = evalArsenal(), packed = ['own-super-nova', 'own-zz-1', 'own-zz-2'];
+  const t = BE.topUp(P, { slots: ['own-super-nova'], spare: null }, 3, packed);
+  assert.equal(t.slots.length, 3); assert.equal(t.slots[0], 'own-super-nova'); assert.ok(t.slots.includes('own-zz-1') && t.slots.includes('own-zz-2'));
+  const one = BE.topUp(P, { slots: ['own-super-nova'], spare: null }, 3, []); assert.equal(one.slots.length, 3, 'filled from other Ready balls');
+  const P1 = evalArsenal(); for (const id of ['own-zz-1', 'own-zz-2', 'own-zz-3']) delete P1.owned[id];
+  assert.equal(BE.topUp(P1, { slots: ['own-super-nova'], spare: null }, 3, ['own-super-nova']).slots.length, 1, 'one ball only when you own one');
 });
 test('fromAnswer keeps 📌 Always bring and sets format from bring', () => {
   const bag = Object.assign({ id: 'b' }, BE.pin(P0.bags['bag-league'], 'own-rattler-big-bite', true));
   const a = A.advise(P0, { event: 'league', bring: 3, locked: ['own-rattler-big-bite'] });
   const d = BE.fromAnswer(P0, bag, { slots: a.rows.filter(r => r.role !== 'spare').map(r => r.ownedId), spare: a.rows.find(r => r.role === 'spare').ownedId }, { bring: 3, event: 'league' });
   assert.ok(d.slots.find(s => s.owned === 'own-rattler-big-bite').locked); assert.equal(d.format, 'league3'); assert.equal(d.bring, 3);
+});
+test('a fresh arsenal (every ball At home) still fills Bring N, as "grab from home"; Ready balls go first', () => {
+  const P = evalArsenal(); for (const id of Object.keys(P.owned)) P.owned[id].status = 'benched';
+  const r = BE.resize(P, { id: ST.TONIGHT_BAG, slots: [], spare: null }, 3);
+  assert.equal(r.size, 3); assert.equal(r.added[0], 'own-super-nova', 'the ball with specs first'); assert.ok(r.data.slots.every(s => s.fromHome));
+  assert.equal(ST.packedIds(P, r.data).length, 3, 'packed means packed: At-home slots count');
+  P.owned['own-zz-3'].status = 'inBag';
+  assert.equal(BE.resize(P, { id: 'b', slots: [], spare: null }, 1).added[0], 'own-zz-3', 'Ready to bring before At home');
 });

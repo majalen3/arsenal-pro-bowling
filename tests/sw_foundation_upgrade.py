@@ -1,4 +1,4 @@
-"""Real local v64/v65/v66/v67->v68 worker update, existing synthetic data, then offline cold launch.
+"""Real local v64/v65/v66/v67/v68/v69->v70 worker update, existing synthetic data, then offline cold launch.
 No live API requests; requires an archived base tree and the current static app.
 """
 import argparse,asyncio,json,threading
@@ -6,7 +6,7 @@ from pathlib import Path
 from http.server import SimpleHTTPRequestHandler,ThreadingHTTPServer
 from playwright.async_api import async_playwright
 async def main():
- a=argparse.ArgumentParser();a.add_argument('--from-version',type=int,choices=[64,65,66,67],default=65);a.add_argument('--legacy-root',required=True);a.add_argument('--current-root',required=True);a.add_argument('--shots',default='/tmp/shots-launch-foundation');args=a.parse_args();root=[args.legacy_root]
+ a=argparse.ArgumentParser();a.add_argument('--from-version',type=int,choices=[64,65,66,67,68,69],default=65);a.add_argument('--legacy-root',required=True);a.add_argument('--current-root',required=True);a.add_argument('--shots',default='/tmp/shots-launch-foundation');args=a.parse_args();root=[args.legacy_root]
  class Handler(SimpleHTTPRequestHandler):
   def __init__(self,*a,**kw):super().__init__(*a,directory=root[0],**kw)
   def log_message(self,*a):pass
@@ -29,7 +29,7 @@ async def main():
    await p.evaluate("import('./js/hub.js').then(h=>h.ready())")
    assert await p.evaluate("import('./js/data/backup.js').then(m=>typeof m.restoreIssues==='function' && typeof m.recoverySupport==='function')")
    assert await p.evaluate("import('./js/hub.js').then(h=>h.db.meta.foundationV===1)")
-   assert await p.evaluate("v=>caches.keys().then(k=>k.includes('arsenal-pro-v68')&&!k.includes('arsenal-pro-v'+v))",args.from_version)
+   assert await p.evaluate("v=>caches.keys().then(k=>k.includes('arsenal-pro-v70')&&!k.includes('arsenal-pro-v'+v))",args.from_version)
    if args.from_version>=65:assert await p.evaluate("import('./js/hub.js').then(h=>JSON.stringify(h.db.meta.foundationSnapshot))")==foundation
    else:await p.wait_for_selector('#legacyReview')
    after=await p.evaluate("import('./js/hub.js').then(h=>h.db.events().map(e=>e.id))");assert set(before)<=set(after);o=await p.evaluate("window.__apData.projection().owned['fictional-kept']");assert o['layout']=='Fictional confirmed layout';assert await p.evaluate("JSON.parse(localStorage.getItem('ap_profile')).pap")=='Fictional confirmed PAP';assert await p.evaluate("JSON.parse(localStorage.getItem('ap_profile')).hand")=='left'
@@ -37,6 +37,6 @@ async def main():
    assert await p.evaluate('window.__apSync.run().then(r=>r.paused)')
    asset=await c.new_page();response=await asset.goto(base+'tests/axe.min.js');assert response and 'html' not in response.headers.get('content-type','');assert await asset.locator('script[src]').count()==0;await asset.close()
    await c.set_offline(True);await p.reload();await p.wait_for_function('() => window.__apData');assert await p.evaluate("window.__apData.projection().owned['fictional-kept'].name")=='Fictional original copy';assert await p.evaluate("Promise.all([import('./js/data/local_recovery.js'),import('./js/screens/recovery.js')]).then(([a,b])=>typeof a.undoLocalRecovery==='function'&&typeof b.localRecoveryPanel==='function')");await p.screenshot(path=args.shots+f'/v{args.from_version}-to-v68-offline-upgrade.png',full_page=True)
-   await c.close();await b.close();print(f'PASS real waiting v{args.from_version}->v68 update + reload; original IDs/layout/PAP/aims kept, migration idempotent, sync paused, offline cold launch; direct asset navigation stays an asset, all external requests blocked')
+   await c.close();await b.close();print(f'PASS real waiting v{args.from_version}->v70 update + reload; original IDs/layout/PAP/aims kept, migration idempotent, sync paused, offline cold launch; direct asset navigation stays an asset, all external requests blocked')
  finally:server.shutdown();server.server_close()
 asyncio.run(main())

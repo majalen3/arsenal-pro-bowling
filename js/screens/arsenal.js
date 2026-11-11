@@ -51,8 +51,8 @@ function armory(P) {
   const empty = h('div', { role:'listitem' }, h('a', { class:'ped ped-empty', id:'armEmpty', href:'#/add-ball' }, h('span', { class:'ped-lit', 'aria-hidden':'true' }, h('span', { class:'ped-slot' })), h('span', { class:'plate' }, h('span', { class:'plate-name', text:'Add ball' }), h('span', { class:'plate-role', text:'Empty pedestal' }))));
   const fold = (id, label, n, body) => h('details', { class:'card arm-fold', id, open:id === 'armBench' && !sh.bag.length }, h('summary', {}, h('span', { text:label }), h('span', { class:'pill', text:String(n) })), body);
   return h('section', { class:'armory', id:'armory', 'aria-labelledby':'armBagH' },
-    withHelp(h('h2', { class:'group-h', id:'armBagH', text:`In my bag \u00b7 ${sh.bag.length}` }), 'ap-status', 'Ball status'),
-    shelf(sh.bag, 'armBag', 'In my bag', empty),
+    withHelp(h('h2', { class:'group-h', id:'armBagH', text:`${ST.LABEL.inBag} \u00b7 ${sh.bag.length}` }), 'ap-status', 'Ball status'),
+    shelf(sh.bag, 'armBag', ST.LABEL.inBag, empty),
     sh.bench.length ? fold('armBench', 'At home and at the pro shop', sh.bench.length, shelf(sh.bench, 'armBenchShelf', 'At home and at the pro shop')) : null,
     badges.length ? h('section', { class:'card', id:'armMilestones', 'aria-labelledby':'armMarksH' }, h('h2', { class:'card-title', id:'armMarksH', text:'Milestones' }),
       h('div', { class:'badge-shelf' }, ...badges.map(m => h('a', { class:'badge-card', href:m.href, 'data-badge':m.id, onclick:() => UX.count('badge.open') }, h('b', { text:m.title }), h('span', { class:'small muted', text:m.note })))),

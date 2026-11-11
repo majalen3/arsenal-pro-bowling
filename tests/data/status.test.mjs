@@ -9,10 +9,11 @@ import * as ST from '../../js/cc/status.js';
 const base = () => seedEvents({ now: 1000 });
 const ed = (id, status, ts) => mkEvent('ownedBall.edited', id, { fields: { status } }, { ts });
 const apply = (evs, mig) => evs.concat(mig.map(([t, id, d], i) => mkEvent(t, id, d, { ts: 50000 + i })));
+// 2026-11-10 live eval: "In my bag" read like tonight's bag; the inBag status now reads "Ready to bring" (key unchanged).
 test('labels: four bowler words, v1 keys kept', () => {
-  assert.deepEqual(ST.STATUS.map(s => s[1]), ['In my bag', 'At home', 'At the pro shop', 'Retired']);
+  assert.deepEqual(ST.STATUS.map(s => s[1]), ['Ready to bring', 'At home', 'At the pro shop', 'Retired']);
   assert.deepEqual(ST.KEYS, ['inBag', 'benched', 'proShop', 'retired']);
-  assert.equal(ST.label({}), 'In my bag'); assert.equal(ST.label({ status: 'benched' }), 'At home'); assert.equal(ST.ALWAYS, '\ud83d\udccc Always bring');
+  assert.equal(ST.label({}), 'Ready to bring'); assert.equal(ST.label({ status: 'benched' }), 'At home'); assert.equal(ST.ALWAYS, '\ud83d\udccc Always bring');
 });
 test('migration: excluded in-bag ball → At home; pro shop / retired keep their status; lists cleared; idempotent', () => {
   const bag = Object.assign({}, project(base()).bags['bag-league']); delete bag.id; delete bag.ts;

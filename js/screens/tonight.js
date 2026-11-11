@@ -42,6 +42,7 @@ const laneBall = x => { const c = x && (ballFor(x.id) || x.cat); if (c && ballKe
 const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
 const provChip = (prov, label) => h('span', { class: 'prov', 'data-prov': prov || null, text: label });
 const SRC_PROV = { [R.SRC.assumed]: 'assumed', [R.SRC.model]: 'model', [R.SRC.spec]: 'manufacturer', [R.SRC.usbc]: 'usbc', [R.SRC.bowl]: 'usbc', [R.SRC.tag]: 'catalog' };
+export const LEFT_KEY = 'ap_left_game';   // set by Leave: the Building does not bounce back into an open game this tab session
 export const TAP_GUARD_MS = 400;   // sim bug 2: a second tap on a log button within this window is ignored
 let IDX = null, TERT = null;
 // The bowler's hand: only what they told us (cc/hand.js; owner 2026-10-24: no auto-detection). Unset reads boards right-handed.
@@ -49,15 +50,22 @@ export const handOf = () => HAND.handOr();
 export async function render(o = {}) {
   const t0 = performance.now();
   // IA P1.5: Tonight plans the night (bag, start line, who's bowling); the score pad lives on #/bowl ("Start bowling").
-  // #/tonight with a game open or between games of a night goes straight to #/bowl (replaceState: no second render).
+  // #/tonight with a night in progress goes straight to #/bowl (replaceState: no second render) unless the bowler tapped Leave.
   let BOWL = !!o.bowl, drawn = false, extraOpen = false;
+  const shareHere = new Set(), shareDone = new Set();   // nights whose one share offer this screen is showing / has closed
   await ready();
   let sid = openNight(proj()) || newNightId(proj());
   // The current night: stays put across midnight; a new one only after "End night" (or 4 h idle on the next open).
   const curSid = () => { const s = proj().sessions[sid]; if (s && s.ended) sid = openNight(proj()) || newNightId(proj()); return sid; };
   const body = h('div', { class: 'stack', id: 'tonightBody' });
   const net = h('span', { class: 'pill net-chip', id: 'netChip', role: 'status', hidden: navigator.onLine, text: 'Offline \u00b7 saved on this phone' });
-  const el = h('section', { class: 'screen list-screen', id: 'tonight' }, h('header', { class: 'appbar' }, h('h1', { class: 'title', id: 'tnTitle', text: BOWL ? 'Bowl' : 'Tonight' }), net), body);
+  // HOME_GAME_FLOW (docs/HOME_GAME_FLOW.md): #/tonight is the Building (home base); #/bowl is the game page: its own bar with a
+  // Leave button, no tab bar, no Help or Me. Leaving keeps the night open; the Building offers "Back to the game".
+  const leave = h('button', { class: 'btn ghost sm', id: 'tnLeave', hidden: !BOWL, 'aria-label': 'Back to the Building (your night stays open)', onclick: () => { sessionStorage.setItem(LEFT_KEY, '1'); go('#/tonight'); } }, '\u2190 Building');
+  const gamePill = h('span', { class: 'pill game-pill', id: 'tnGamePill', hidden: !BOWL, text: 'In the game' });
+  const bar = h('header', { class: 'appbar' + (BOWL ? ' game-bar' : '') }, h('h1', { class: 'title', id: 'tnTitle', text: BOWL ? 'Game' : 'The building' }), h('div', { class: 'appbar-actions' }, net, gamePill, leave));
+  const el = h('section', { class: 'screen list-screen' + (BOWL ? ' game-screen' : ''), id: 'tonight' }, bar, body);
+  if (BOWL) sessionStorage.removeItem(LEFT_KEY);
   const setNet = () => { net.hidden = navigator.onLine; };
   window.addEventListener('online', setNet); window.addEventListener('offline', setNet);
   const ql = { leave: new Set(), foul: false, tag: null };   // quick-log taps not yet written
@@ -91,15 +99,20 @@ export async function render(o = {}) {
   }
   const gameOf = (P, s, who = 'me') => { const game = s.game || 1, src = who === 'me' ? P.shots : (P.teamShots || []).filter(x => x.who === who), mine = playOrder(src.filter(x => x.sessionId === curSid() && x.frame != null && (x.game || 1) === game));
     return { game, who, mine, st: Q.stateOf(mine.map(x => ({ down: x.down, leave: x.leave || [], foul: !!x.foul }))) }; };
+  function enterGameChrome() { el.querySelector('#tnTitle').textContent = 'Game'; requestAnimationFrame(() => { document.title = 'Game \u00b7 Arsenal Pro'; }); bar.classList.add('game-bar'); el.classList.add('game-screen'); leave.hidden = false; gamePill.hidden = false; sessionStorage.removeItem(LEFT_KEY);
+    bar.querySelectorAll('#helpToggle, #meBtn, .help-toggle').forEach(x => x.remove()); }
   function draw() {
     const P = proj(), s = sess(), b = bowlerOf(P), hand = handOf(P);
     const keepOpen = document.getElementById('tnMore'); if (keepOpen) moreOpen = keepOpen.open;
     body.innerHTML = '';
     if (!Object.keys(P.owned).length) {
-      body.append(h('div', { class: 'card', id: 'noBag' }, h('h2', { class: 'card-title', text: 'No balls in your bag yet' }),
-        h('p', { class: 'muted', text: 'Tonight ranks only balls you own. Add yours on Arsenal or Me, or look around first with an example arsenal (10 catalog balls, 2 bags, marked \u201cexample\u201d, not a real bowler\u2019s).' }),
-        h('button', { class: 'btn primary block', id: 'loadStarter', onclick: async () => { await loadStarter(); toast('Example arsenal loaded. Remove it any time on Me \u2192 Imports.'); } }, 'Load example arsenal'),
-        h('button', { class: 'btn block', id: 'addOwnBall', onclick: () => go('#/add-ball') }, 'Add my own ball'), h('button', { class: 'btn block', onclick: () => go('#/me') }, 'Choose balls on Me')));
+      if (BOWL) { body.append(h('div', { class: 'card', id: 'noBag' }, h('h2', { class: 'card-title', text: 'Nothing to bowl with yet' }), h('p', { class: 'muted', text: 'Add the balls you own in the Building first, then start a game from there.' }), h('button', { class: 'btn primary block', id: 'gameToBuilding', onclick: () => go('#/tonight') }, 'Go to the Building'))); return; }
+      body.append(buildingLine('Your home base. Add the balls you own, pack tonight\u2019s bag, then start a game.'),
+        h('div', { class: 'card', id: 'noBag' }, h('h2', { class: 'card-title', text: 'Your arsenal is empty' }),
+        h('p', { class: 'muted', text: 'Search the catalog for the balls you own. Nothing is preloaded. You can also look around first with an example arsenal (10 catalog balls, marked \u201cexample\u201d, not a real bowler\u2019s).' }),
+        h('a', { class: 'btn primary block', id: 'findMyBalls', href: '#/welcome' }, 'Find my balls'),
+        h('button', { class: 'btn block', id: 'addOwnBall', onclick: () => go('#/add-ball') }, 'Add a ball with its specs'),
+        h('button', { class: 'btn ghost block', id: 'loadStarter', onclick: async () => { await loadStarter(); toast('Example arsenal loaded. Remove it any time on Me \u2192 Imports.'); } }, 'Look around with an example arsenal')));
       return;
     }
     const pat = s.ft != null ? { slug: s.patternSlug, name: s.patternName || s.patternSlug, ft: s.ft, ml: s.ml, ratio: s.ratio } : null;
@@ -120,7 +133,9 @@ export async function render(o = {}) {
     const team = teamOf(P, s), g = team ? team.g : gameOf(P, s);
     const gameOpen = (team ? team.started : g.mine.length > 0) && !g.st.done;
     if (!gameOpen && !list.length) body.append(h('div', { class:'card', id:'noPackedBalls' }, h('h2', { class:'card-title', text:'Your arsenal is saved' }), h('p', { class:'small', text:'Choose which physical balls to bring tonight. Adding a ball does not pack it automatically.' }), h('a', { class:'btn primary block', href:'#/bag' }, 'Pack a bag for tonight')));
-    if (!BOWL && !drawn && (gameOpen || (g0(P) && g.st.done && !s.ended))) { BOWL = true; history.replaceState(null, '', '#/bowl'); retab('bowl'); el.querySelector('#tnTitle').textContent = 'Bowl'; }
+    // A night in progress (a game open, or between games before End night) is "in the game": opening the app lands back on the
+    // game page. After Leave the Building stays the Building (this tab session) and offers "Back to the game".
+    if (!BOWL && !drawn && (gameOpen || (g0(P) && g.st.done && !s.ended)) && !sessionStorage.getItem(LEFT_KEY)) { BOWL = true; history.replaceState(null, '', '#/bowl'); retab('bowl'); enterGameChrome(); }
     laneBall((gameOpen || BOWL) ? hb : cur);   // F03: Lane opens with the ball Tonight / Bowl names
     drawn = true;
     WK.keepAwake(WK.shouldHold(gameOpen, prefs().wakeLock));
@@ -159,7 +174,7 @@ export async function render(o = {}) {
         whoHere ? null : h('div', { class: 'fld' }, h('span', { text: 'Scoring' }), scoringSeg(s)),
         !whoHere && (s.mode || 'solo') !== 'solo' ? teamSetup(s) : null,
         goalField(s),
-        h('button', { class: 'btn ghost block', id: 'tnBagLink', onclick: () => go('#/bag') }, 'Bag builder \u203a'));
+        BOWL && gameOpen ? null : h('button', { class: 'btn ghost block', id: 'tnBagLink', onclick: () => go('#/bag') }, 'Bag builder \u203a'));
     const preview = UX.flag('stepPreview') && !gameOpen;
     const alt = (x, lbl) => x ? h('button', { class:'alt btn', 'data-alt':lbl, 'aria-label':preview ? `${lbl} ${x.name}` : lbl,
       onclick:() => { UX.tap(x.id, lbl.toLowerCase()); return save({ pickId:x.id, throwId:null }); } },
@@ -198,20 +213,26 @@ export async function render(o = {}) {
       } }, l)))) : null;
     const pend = P.measurements.filter(m => !m.accepted && m.source === 'lanetrax');
     const measNudge = pend.length ? h('a', { class: 'btn ghost block', id: 'tnMeasNudge', href: '#/card' }, `${pend.length} LaneTrax ${pend.length === 1 ? 'number' : 'numbers'} to review on your Bowler Card \u203a`) : null;
-    if (gameOpen || BOWL) {
+    if (BOWL) {   // the game page; the Building (even with a game open after Leave) draws below
       // ---- Bowl (#/bowl), and game open (sim bug 4): ball \u00b7 feet \u00b7 aim, the ball-change line, the scoring card, Weaker/Stronger. The rest behind one tap.
       body.append(h('div', { class: 'card tn-now', id: 'tnNow' },
         h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: hb ? hb.name : 'No ball' }), ' ', aimChip(HL && HL.stand, HL && HL.ml, hb && (hb.id || hb.catalogId))),
         gameOpen ? null : thenLine),   // C3: during a game the ball-change plan sits under details
         quickLog(P, s, cur, b, hand, stand, g, team), alts || '', !gameOpen && reads ? reads : '',   // between games: the read and Weaker/Stronger in reach (J06)
-        h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: 'Bag, lanes and line details' }),
-          ...advisorCard(P, s, b, adv, cur && { name: cur.name, ml, catalogId: cur.catalogId }), h('p', { class: 'coach', id: 'tnCoach', text: coach }), gameOpen && thenLine ? thenLine : '', pick || '', gameOpen && reads ? reads : '', !gameOpen && s.event === 'practice' ? drillCard(P, s) : '', setup));
+        // HOME_GAME_FLOW: mid-game this holds ball, line and lane/scoring details only (no bag advisor or Bag builder link); between games the advisor returns.
+        h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: gameOpen ? 'Ball, lanes and line details' : 'Bag, lanes and line details' }),
+          ...(gameOpen ? [] : advisorCard(P, s, b, adv, cur && { name: cur.name, ml, catalogId: cur.catalogId })), h('p', { class: 'coach', id: 'tnCoach', text: coach }), gameOpen && thenLine ? thenLine : '', pick || '', gameOpen && reads ? reads : '', !gameOpen && s.event === 'practice' ? drillCard(P, s) : '', setup));
       if (gameOpen) requestAnimationFrame(padToThumb);
       return;
     }
     // ---- Tonight (IA P1.5): bag and start line, hand, who's bowling, Start bowling. The rest behind "More details".
     const [advCard, bagCard, whyBox] = advisorCard(P, s, b, adv, cur && { name: cur.name, ml, catalogId: cur.catalogId });
+    const night = g0(P) && !s.ended;
+    const back = returnedCard(P); if (back) body.append(back);
+    if (night) body.append(buildingLine('Your night is open. Change the bag or lanes here, then go back to the game.'));
+    if (night) body.append(h('button', { class: 'btn primary block tn-start', id: 'tnStartBowl', 'data-back': '', onclick: () => go('#/bowl') }, `Back to the game \u00b7 game ${s.game || 1}`));
     body.append(advCard);
+    if (!bagCard) body.append(arsenalStrip(P, list.length + (spare ? 1 : 0)));   // with a bag card, its title says tonight's bag vs the arsenal
     const lastCard = lastTimeCard(P, s, center); if (lastCard) body.append(lastCard);
     const fc = prefs().focus;
     if (fc && fc.text && fc.from !== curSid()) body.append(h('div', { class: 'row between tn-focus', id: 'tnFocus' }, h('p', { class: 'small', text: fc.text.replace(/^Next focus: /, 'Your focus: ') }),
@@ -222,9 +243,8 @@ export async function render(o = {}) {
     body.append(ask || (chip ? h('div', { class: 'row between wrap tn-hand-row' }, handLine(), chip) : handLine()));
     if (whoHere) body.append(whoCard(s));
     if (s.event === 'practice') body.append(drillCard(P, s));
-    const night = g0(P) && !s.ended;
-    body.append(h('button', { class: 'btn primary block tn-start', id: 'tnStartBowl', onclick: () => go('#/bowl') },
-      night || (s.game || 1) > 1 ? `Start bowling \u00b7 game ${s.game || 1}` : 'Start bowling'));
+    if (!night) body.append(h('button', { class: 'btn primary block tn-start', id: 'tnStartBowl', onclick: () => go('#/bowl') },
+      (s.game || 1) > 1 ? `Start bowling \u00b7 game ${s.game || 1}` : 'Start bowling'));
     if (bagCard) body.append(bagCard);
     body.append(h('details', { class: 'tn-more tn-extra', id: 'tnExtra', open: extraOpen, ontoggle: e => { extraOpen = e.target.open; } }, h('summary', { text: 'More details' }),
       h('p', { class: 'coach', id: 'tnCoach', role: 'status', text: coach }), alts || '', thenLine || '', whyBox || '', setup));
@@ -418,7 +438,7 @@ export async function render(o = {}) {
       const rc = nightRecap(P, sid);
       if (rc) card.append(rc);
       card.append(h('button', { class: 'btn primary block', id: 'qlNext', onclick: () => save({ game: game + 1 }) }, `Start game ${game + 1}`),
-        h('button', { class: 'btn ghost block', id: 'qlEnd', onclick: async () => { await save({ ended: true, endedTs: Date.now() }); toast('Night saved. It is on Results.'); go('#/session/' + encodeURIComponent(sid)); } }, 'End night'));
+        h('button', { class: 'btn ghost block', id: 'qlEnd', onclick: async () => { await save({ ended: true, endedTs: Date.now() }); toast('Night saved. It is on Results.'); go('#/tonight?night=' + encodeURIComponent(sid)); } }, 'End night'));
       const pn = protectNudge(P); if (pn) card.append(pn);
     } else {
       const pins = h('div', { class: 'pins', id: 'qlPins', role: 'group', 'aria-label': facingLeave ? 'Tap the pins still standing' : 'Tap the pins left standing' },
@@ -483,6 +503,31 @@ export async function render(o = {}) {
     }
   }
   // ---- GAP (a), between games only: one install offer (once ever), else a backup nudge (no file and >3 games, or file >14 days old).
+  // ---- Building pieces (HOME_GAME_FLOW)
+  function buildingLine(text) { return h('p', { class: 'small muted bld-line', id: 'tnBuildingLine', text }); }
+  function arsenalStrip(P, packedN) {
+    const owned = Object.values(P.owned || {}).filter(o => ST.statusOf(o) !== 'retired').length;
+    return h('div', { class: 'card bld-strip', id: 'tnArsenal' },
+      h('p', { id: 'tnArsenalLine' }, h('b', { text: `Arsenal: ${owned} ${owned === 1 ? 'ball' : 'balls'}` }), ` \u00b7 Tonight\u2019s bag: ${packedN} packed`),
+      h('div', { class: 'btn-grid' }, h('a', { class: 'btn ghost', id: 'tnPack', href: '#/bag' }, 'Pack bag'), h('a', { class: 'btn ghost', id: 'tnAddBalls', href: '#/welcome' }, 'Add balls'), h('a', { class: 'btn ghost', id: 'tnArmory', href: '#/bag?view=all' }, 'Armory')));
+  }
+  // Back in the Building after End night: the night's numbers, a link to Results and, once per night, the native share sheet.
+  function returnedCard(P) {
+    const id = o.query && o.query.get('night'), ses = id && P.sessions[id]; if (!ses || !ses.ended) return null;
+    const games = (P.games || []).filter(gm => gm.sessionId === id && gm.complete).sort((x, y) => x.game - y.game), tot = games.map(gm => gm.score).filter(x => x != null);
+    const series = tot.reduce((a, x) => a + x, 0), line = tot.length ? `${tot.length} ${tot.length === 1 ? 'game' : 'games'} \u00b7 ${tot.join(', ')}${tot.length > 1 ? ` \u00b7 series ${series}` : ''}` : 'No complete games logged.';
+    // v70: the offer is made once per night. Showing it records it (so reopening this return page never brings it back); while this
+    // screen stays open it can be used or dismissed with Not now. Native share sheet only, never auto-posted.
+    const markOffered = () => setPrefs({ shareOffered: Object.assign({}, prefs().shareOffered, { [id]: Date.now() }) });
+    if (!!navigator.share && tot.length && !(prefs().shareOffered || {})[id] && !shareHere.has(id)) { shareHere.add(id); markOffered(); }
+    const canShare = !!navigator.share && tot.length && shareHere.has(id) && !shareDone.has(id);
+    const shareRow = canShare ? h('div', { class: 'btn-grid share-row', id: 'tnShareOffer' },
+      h('button', { class: 'btn ghost', id: 'tnShareNight', onclick: async () => { shareDone.add(id); try { await navigator.share({ title: 'My bowling night', text: `Bowled ${line}.` }); } catch (e) {} draw(); } }, 'Share this night'),
+      h('button', { class: 'btn ghost', id: 'tnShareSkip', onclick: () => { shareDone.add(id); draw(); } }, 'Not now')) : null;
+    return h('div', { class: 'card', id: 'tnNightDone', role: 'status' }, h('h2', { class: 'card-title', text: 'Night saved' }), h('p', { id: 'tnNightLine', text: line }),
+      h('a', { class: 'btn block', id: 'tnNightResults', href: '#/session/' + encodeURIComponent(id) }, 'See the night on Results \u203a'),
+      shareRow);
+  }
   function protectNudge(P) {
     const pf = prefs(), db = hub.db; if (!db) return null;
     if (!PR.isStandalone() && !pf.installAsked) {
@@ -508,7 +553,7 @@ export async function render(o = {}) {
       r.support.length ? h('dl', { class: 'bc-figs' }, ...r.support.map(x => h('div', { class: 'bc-fig', 'data-k': x.k }, h('dt', { text: x.label }), h('dd', { text: x.text })))) : null);
     if (r.focus) { const fc = prefs().focus, set = fc && fc.from === sid && fc.text === r.focus.text;
       box.append(h('p', { class: 'bc-focus', id: 'tnRecapFocus', text: r.focus.text }),
-        h('button', { class: 'btn ghost block', id: 'tnSetFocus', 'aria-pressed': String(!!set), onclick: () => { setPrefs({ focus: set ? null : { text: r.focus.text, from: sid, ts: Date.now() } }); toast(set ? 'Focus cleared.' : 'Saved. It shows on Tonight next time.'); draw(); } }, set ? 'Next-time focus saved \u2713' : 'Make this my next focus')); }
+        h('button', { class: 'btn ghost block', id: 'tnSetFocus', 'aria-pressed': String(!!set), onclick: () => { setPrefs({ focus: set ? null : { text: r.focus.text, from: sid, ts: Date.now() } }); toast(set ? 'Focus cleared.' : 'Saved. It shows in the Building next time.'); draw(); } }, set ? 'Next-time focus saved \u2713' : 'Make this my next focus')); }
     const gr = DR.goalResult(P, sid, (P.sessions[sid] || {}).goal); if (gr) box.append(h('p', { class: 'small', id: 'tnGoalResult', text: 'Your goal: ' + gr.text }));
     box.append(h('a', { class: 'btn ghost block', id: 'tnRecapAll', href: '#/session/' + encodeURIComponent(sid) }, 'Whole night, game by game \u203a'));
     return box;
@@ -533,7 +578,7 @@ export async function render(o = {}) {
   // Now item 3 (PRODUCT_EVAL_1 #3, 2026-11-02): the Stand \u00b7 Aim chip opens Targeting in one tap (it used to open the Lane, then
   // Targeting was a second tap). Lane is one tap back from Targeting's header. Without a model line Targeting still sets feet and eyes.
   function aimChip(st, ml, cid) {
-    return h('a', { class: 'chip aim-chip', id: 'tnAimChip', href: '#/target' + (cid ? '?ball=' + encodeURIComponent(cid) : ''), onclick: () => UX.count('aim.chip'), 'aria-label': st ? `Stand ${st.feet}, aim ${fmtHalf(ml.target)}: open Targeting` : 'Stand · Aim › — set on Targeting' },
+    return h('a', { class: 'chip aim-chip', id: 'tnAimChip', href: '#/target' + (cid || BOWL ? '?' + [cid ? 'ball=' + encodeURIComponent(cid) : '', BOWL ? 'game=1' : ''].filter(Boolean).join('&') : ''), onclick: () => UX.count('aim.chip'), 'aria-label': st ? `Stand ${st.feet}, aim ${fmtHalf(ml.target)}: open Targeting` : 'Stand · Aim › — set on Targeting' },
       st ? `Stand ${st.feet} \u00b7 Aim ${fmtHalf(ml.target)} \u203a` : 'Stand \u00b7 Aim \u203a');
   }
   function advisorCard(P, s, b, adv, start) {
@@ -549,7 +594,7 @@ export async function render(o = {}) {
     card.append(startLine(start && start.name ? start : { name: a.A.name, ml: a.line, catalogId: a.A.catalogId }));
     const packed = !!(mine && mine.packedTs);
     // P1.5: the bag itself is its own card under Start bowling (the lanes-first answer stays on top).
-    const bagCard = h('div', { class: 'card adv', id: 'tnBag' }, h('h2', { class: 'card-title', id: 'advBagT', text: `Your bag \u00b7 Bring ${bring}` }));
+    const bagCard = h('div', { class: 'card adv', id: 'tnBag' }, h('h2', { class: 'card-title', id: 'advBagT', text: `Tonight\u2019s bag \u00b7 Bring ${bring} of ${Object.values(P.owned || {}).filter(o => ST.statusOf(o) !== 'retired').length} owned` }));
     const list = h('ul', { class: 'adv-list', id: 'advList' }, ...a.rows.map(r => {
       const li = h('li', { class: 'adv-row', 'data-owned': r.ownedId, 'data-role': r.role },
         h('div', { class: 'adv-head' }, h('b', { text: r.name }), h('span', { class: 'pill' + (r.role === 'benchmark' ? ' gold' : ''), text: r.label || r.role })),
@@ -606,6 +651,6 @@ export async function render(o = {}) {
   if (!IDX) loadIndex().then(x => { IDX = x; TERT = R.tertiles(x); draw(); }).catch(() => {});
   const offs = [on('data', () => { if (!body.contains(document.activeElement) || document.activeElement.tagName === 'BUTTON') draw(); })];
   window.__apTonightMs = Math.round(performance.now() - t0);
-  return { el, title: BOWL ? 'Bowl' : 'Tonight', mounted() { if (document.getElementById('tnNow')) padToThumb(); },
+  return { el, title: BOWL ? 'Game' : 'The building', mounted() { if (document.getElementById('tnNow')) padToThumb(); },
     destroy() { WK.keepAwake(false); offs.forEach(f => f()); window.removeEventListener('online', setNet); window.removeEventListener('offline', setNet); } };
 }

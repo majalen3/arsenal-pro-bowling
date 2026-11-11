@@ -16,7 +16,7 @@
     ["900 Global Portal", "sc-900-global-portal"],
     ["Raw Hammer", ["raw-hammer", "sc-hammer-raw-hammer-black-grey", "sc-hammer-raw-hammer-black-purple-teal", "sc-hammer-raw-hammer-blue-black-orange", "sc-hammer-raw-hammer-red-smoke-black", "sc-hammer-raw-hammer-red-white-purple", "sc-hammer-raw-hammer-smoke-blue-gold"]],
     ["Storm Tropical Surge", ["sc-storm-tropical-surge-apple-kiwi-avocado", "sc-storm-tropical-surge-black-blue-pink", "sc-storm-tropical-surge-black-cherry", "sc-storm-tropical-surge-emerald-charcoal", "sc-storm-tropical-surge-gold-bronze-medallion", "sc-storm-tropical-surge-purple", "sc-storm-tropical-surge-teal-blue"]],
-    ["Storm Phaze II", null], ["Roto Grip Attention Star", null], ["Hammer Black Widow Black Gold", null], ["DV8 Hater", null],
+    ["Storm Phaze II", "sc-storm-phaze-ii"], ["Roto Grip Attention Star", "sc-roto-grip-attention-star"], ["Hammer Black Widow Black Gold", null], ["DV8 Hater", null],
     ["Track Kinetic Emerald", null], ["Ebonite Game Breaker 4", null], ["Brunswick Prism", null]
   ]
 }

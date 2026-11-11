@@ -87,7 +87,7 @@ export function advise(P, opts = {}) {
   const itemOf = o => { const c = catOf(o.catalogId);
     return { ownedId: o.id, catalogId: o.catalogId || null, name: o.name || (c && c.name) || 'Unknown ball', benchmark: !!o.benchmark, status: ST.statusOf(o), note: o.note || '', finish: o.finish || 'factory', cat: c }; };
   const pool = Object.values(P.owned || {}).filter(ST.offered).map(itemOf), owned = pool.filter(AVAILABLE);
-  if (!owned.length && !(opts.fixed?.slots || []).some(id => pool.some(o => o.ownedId === id))) return { none: true, reason: 'No ball is In my bag yet. Set a ball\u2019s Status to In my bag on its page (At home, pro shop and retired balls are left out).' };
+  if (!owned.length && !(opts.fixed?.slots || []).some(id => pool.some(o => o.ownedId === id))) return { none: true, reason: 'No ball is marked Ready to bring yet. Set a ball\u2019s Status to Ready to bring on its page (At home, pro shop and retired balls are left out).' };
   const pat = opts.pattern || null, stage = 'fresh';
   const d = demandOf({ pattern: pat, tert: opts.tert, surface: opts.surface || 'unknown', stage });
   // spec/engine fit order (rank.js) + results: a ball with ≥ MIN_GAMES games and a higher strike % moves ahead of a

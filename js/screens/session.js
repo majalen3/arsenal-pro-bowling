@@ -40,7 +40,7 @@ export async function render({ params, query }) {
         (() => { const gr = DR.goalResult(P, id, (P.sessions[id] || {}).goal); return gr ? h('p', { class: 'small', id: 'sessGoal', text: 'Your goal: ' + gr.text }) : null; })(),
         r.focus ? h('p', { class: 'bc-focus', id: 'sessFocus', text: r.focus.text }) : null,
         r.focus ? (() => { const fc = prefs().focus, set = !!(fc && fc.from === id && fc.text === r.focus.text);
-          return h('button', { class: 'btn ghost block', id: 'sessSetFocus', 'aria-pressed': String(set), onclick: () => { setPrefs({ focus: set ? null : { text: r.focus.text, from: id, ts: Date.now() } }); toast(set ? 'Focus cleared.' : 'Saved. It shows on Tonight next time.'); draw(); } }, set ? 'Next-time focus saved \u2713' : 'Make this my next focus'); })() : null,
+          return h('button', { class: 'btn ghost block', id: 'sessSetFocus', 'aria-pressed': String(set), onclick: () => { setPrefs({ focus: set ? null : { text: r.focus.text, from: id, ts: Date.now() } }); toast(set ? 'Focus cleared.' : 'Saved. It shows in the Building next time.'); draw(); } }, set ? 'Next-time focus saved \u2713' : 'Make this my next focus'); })() : null,
         // Item 3: corner pin left alone (flat/ring 10, flat/ring 7 for LH), only with enough first balls; counts from frames.
         cornerBlock('sessCorner', CO.cornerInsight(CO.cornerLeaves(s.games, hand()), { scope: 'night', hand: hand() }))));
     if (s.games.length || s.scores.length) body.append(h('div', { class: 'card', id: 'sessGames' }, withHelp(h('h2', { class: 'card-title', text: s.games.length + s.scores.length === 1 ? 'Game' : `Games \u00b7 ${st.series != null ? st.series + ' series' : ''}` }), 'sc-average', 'Series and average'),
@@ -100,7 +100,7 @@ export async function render({ params, query }) {
     // M1: a note for next time at this center (shown on Tonight before the first ball there). Behind Details; plain text.
     const raw = P.sessions[id] || {}, ctr = raw.centerId && P.centers[raw.centerId];
     if (ctr) { const ta = h('input', { id: 'sessCenterNote', maxlength: '140', autocomplete: 'off', placeholder: 'e.g. 3rd arrow hooked early on 15', value: CM.noteOf(P, ctr.id) || '' });
-      ta.onchange = async () => { await add('center.edited', ctr.id, { fields: { note: CM.cleanNote(ta.value) } }); toast(`Saved. It shows on Tonight next time at ${ctr.name}.`); };
+      ta.onchange = async () => { await add('center.edited', ctr.id, { fields: { note: CM.cleanNote(ta.value) } }); toast(`Saved. It shows in the Building next time at ${ctr.name}.`); };
       det.append(h('label', { class: 'fld' }, h('span', { text: `Note for next time at ${ctr.name}` }), ta)); }
     if (det.children.length > 1) body.append(det);
     body.append(h('a', { class: 'btn ghost block', href: '#/card', id: 'sessToCard' }, 'My Bowler Card'));

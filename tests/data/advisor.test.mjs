@@ -77,7 +77,7 @@ test('start line comes from the model line callback; deterministic', () => {
 });
 test('no available balls → a reason, not a bag', () => {
   const evs = base().concat(Object.keys(P0.owned).map((id, i) => mkEvent('ownedBall.edited', id, { fields: { status: 'benched' } }, { ts: 9000 + i })));
-  const a = A.advise(project(evs), { event: 'league' }); assert.ok(a.none); assert.match(a.reason, /In my bag/);
+  const a = A.advise(project(evs), { event: 'league' }); assert.ok(a.none); assert.match(a.reason, /Ready to bring/);
 });
 test('C2: small samples read as counts, not rates', () => {
   assert.equal(A.evidenceText('X', { n: 8, strikes: 2, strikePct: 25, pocketN: 4, pocket: 3, pocketPct: 75, sessions: 1, games: 1 }), 'X: 3 of 4 pocket, 2 of 8 strikes over 1 session (n=8 first balls)');

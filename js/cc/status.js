@@ -4,7 +4,7 @@
 // "why not this ball?" that the ball page, Arsenal, Tonight's advisor and the bag builder all show. Pure.
 import { overlaps, dueOf, cellOfCat } from './bag.js';
 import { catOf } from './cats.js';
-export const STATUS = [['inBag', 'In my bag'], ['benched', 'At home'], ['proShop', 'At the pro shop'], ['retired', 'Retired']];
+export const STATUS = [['inBag', 'Ready to bring'], ['benched', 'At home'], ['proShop', 'At the pro shop'], ['retired', 'Retired']];
 export const KEYS = STATUS.map(s => s[0]);
 export const LABEL = Object.fromEntries(STATUS);
 export const statusOf = o => (o && KEYS.includes(o.status) ? o.status : 'inBag');
