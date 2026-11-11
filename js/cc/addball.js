@@ -20,6 +20,15 @@ export const USBC = { 'rattler-big-bite': '2024-06-25', 'deadly-rattler': '2023-
 // Brands the server lookup can try (arsenal-pro-api lib/specfetch.js BRANDS).
 export const LOOKUP_BRANDS = ['Storm', 'Roto Grip', '900 Global', 'Brunswick', 'Radical', 'DV8', 'Hammer', 'Ebonite', 'Track', 'Columbia 300', 'Motiv'];
 export const UNSUPPORTED = {};
+// t123u: when the lookup misses, a real next step: the maker's own product search (Storm, Roto Grip and 900 Global share
+// stormbowling.com; its /product_search/?q= is robots-allowed). Other makers: their home page. Never a review/retail site.
+const MAKER_HOME = { Storm: 'https://www.stormbowling.com', 'Roto Grip': 'https://www.stormbowling.com', '900 Global': 'https://www.stormbowling.com',
+  Brunswick: 'https://www.brunswickbowling.com', Radical: 'https://www.radicalbowling.com', DV8: 'https://www.dv8bowling.com', Hammer: 'https://hammerbowling.com',
+  Ebonite: 'https://www.ebonite.com', Track: 'https://www.trackbowling.com', 'Columbia 300': 'https://www.columbia300.com', Motiv: 'https://www.motivbowling.com' };
+export function makerSearch(brand, name) {
+  const home = MAKER_HOME[brand]; if (!home) return null;
+  return /stormbowling/.test(home) ? { url: `${home}/product_search/?q=${encodeURIComponent(String(name || '').trim())}`, label: `Search ${brand} on stormbowling.com` } : { url: home, label: `Open the ${brand} site` };
+}
 const BRAND_ALIAS = { rotogrip: 'Roto Grip', 'roto grip': 'Roto Grip', '900g': '900 Global', '900 global': '900 Global', columbia: 'Columbia 300',
   'columbia 300': 'Columbia 300', dv8: 'DV8', 'dv 8': 'DV8', strikeforce: 'KR Strikeforce', 'kr strikeforce': 'KR Strikeforce', 'kr': 'KR Strikeforce' };
 const COND_OIL = { Heavy: ['heavy'], 'Medium-Heavy': ['heavy', 'medium'], Medium: ['medium'], 'Medium-Light': ['medium', 'light'], Light: ['light'], Dry: ['light'] };

@@ -60,13 +60,16 @@ test('catalogue rows: maker provenance with URL + read date, plastic not engine-
   const rk = A.entryById('sc-hammer-reckoning'); assert.equal(rk.fields.symmetry.v, 'Asymmetric'); assert.equal(rk.fields.symmetry.prov.kind, 'derived');
   const pl = A.catalog().find(x => x.src === 'catalog' && x.fields.coverType && x.fields.coverType.v === 'Plastic' && x.fields.rg);
   assert.ok(pl); assert.equal(A.engineReady(pl.fields), false); assert.match(A.missing(pl.fields)[0], /Plastic cover/);
-  const rows = A.catalog().filter(x => x.src === 'catalog'); assert.equal(rows.length, 163);   // 143 + 7 maker rows (2026-11-10) + 13 rows filling the 2026-11-10 404 gaps (2026-11-11: 10 maker pages under new URLs, 3 archived maker pages)
+  const rows = A.catalog().filter(x => x.src === 'catalog'); assert.equal(rows.length, 164);   // + 900 Global Sublime (2026-11-11, t123u: secondary, bowlinglife.eu, flagged not-maker); 143 + 7 maker rows (2026-11-10) + 13 rows filling the 2026-11-10 404 gaps (2026-11-11: 10 maker pages under new URLs, 3 archived maker pages)
   for (const r of rows) {
     assert.doesNotMatch(JSON.stringify(r), /bowlingballvideos|bowwwl|bowlingball\.com|bowlingthismonth/i, r.id);
     if (r.specStatus === 'maker') { assert.match(r.source, /^https:\/\//, r.id); for (const f of Object.values(r.fields)) assert.ok(['manufacturer', 'derived', 'usbc'].includes(f.prov.kind), r.id); }
     else if (r.specStatus === 'archive') {   // a Wayback copy of the maker's own page: maker data, labelled archived, original URL kept
       assert.match(r.source, /^https:\/\/web\.archive\.org\/web\/\d{8,14}\/https?:\/\//, r.id); assert.ok(r.source.endsWith(r.original.replace(/^https?:\/\//, '')), r.id);
       for (const f of Object.values(r.fields)) { assert.ok(['manufacturer', 'derived'].includes(f.prov.kind), r.id); assert.equal(f.prov.archived, true, r.id); }
+    }
+    else if (r.specStatus === 'secondary') {   // t123u: a public non-maker page; every field says so and the row carries a flag
+      assert.match(r.flag, /not the maker/, r.id); for (const f of Object.values(r.fields)) assert.ok(['catalog', 'derived'].includes(f.prov.kind) && (f.prov.kind !== 'catalog' || f.prov.secondary), r.id);
     }
     else { assert.equal(r.specStatus, 'unverified'); assert.deepEqual(r.fields, {}); assert.match(r.flag, /unverified/); }
   }
@@ -85,4 +88,10 @@ test('placement: strength × shape, overlaps and holes; added ball resolves via 
   const p = A.placement(cat, items); assert.ok(p.level == null || (p.level >= 1 && p.level <= 5)); assert.ok(Array.isArray(p.overlaps));
   const ev = A.ownedEvent(cat, f, { weight: 15, src: 'maker' }); assert.ok(JSON.stringify(ev).length < 8000, 'fits the API event limit');
   clearExtra(); assert.equal(catOf(cat.id), null); registerOwned({ owned: { o1: Object.assign({ id: 'o1' }, ev) } }); assert.equal(catOf(cat.id).rg, cat.rg); clearExtra();
+});
+test('t123u: 900 Global Sublime is in the catalogue, flagged not-maker, engine-ready from its published RG/diff', () => {
+  const e = A.entryById('sc-900-global-sublime'); assert.ok(e, 'Sublime row');
+  assert.equal(e.specStatus, 'secondary'); assert.match(e.flag, /not the maker/); assert.equal(e.fields.rg.v, 2.47); assert.equal(e.fields.diff.v, 0.056);
+  assert.equal(e.fields.coverType.v, 'Hybrid'); assert.ok(A.engineReady(e.fields));
+  const hit = A.search('Sublime'); assert.ok(JSON.stringify(hit).includes('sc-900-global-sublime'), 'typing Sublime finds it');
 });

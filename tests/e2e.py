@@ -771,6 +771,8 @@ async def addball_cycle(b):
         if mode['off']: return await route.abort()
         name = (qs.get('name') or [''])[0].lower(); url = (qs.get('url') or [''])[0]
         f = 'lookup-prism-hybrid.json' if url.endswith('prism-hybrid') else 'lookup-phaze-ii.json' if 'phaze' in name else 'lookup-prism.json' if 'prism' in name else 'lookup-rattler-big-bite.json' if 'rattler big bite' in name else None
+        if 'zork' in name: return await route.fulfill(status=200, content_type='application/json', headers={'access-control-allow-origin': '*'}, body=json.dumps({'status': 'not-found', 'noSpecs': True, 'why': 'The maker page for this ball lists no specs (no RG or differential).', 'brand': '900 global', 'source': {'url': 'https://www.stormbowling.com/900-global-zork-bowling-ball', 'host': 'www.stormbowling.com'}, 'searchUrl': 'https://www.stormbowling.com/product_search/?q=Zork'}))
+        if 'nopage' in name: return await route.fulfill(status=200, content_type='application/json', headers={'access-control-allow-origin': '*'}, body=json.dumps({'status': 'not-found', 'why': "No page with that name on the maker's site.", 'brand': '900 global', 'searchUrl': 'https://www.stormbowling.com/product_search/?q=Nopage'}))
         if not f: return await route.fulfill(status=200, content_type='application/json', body=json.dumps({'status': 'not_found', 'why': 'No maker page matched.'}))
         await route.fulfill(status=200, content_type='application/json', headers={'access-control-allow-origin': '*'}, body=fx(f))
     await c.route('**/arsenal-pro-api.onrender.com/api/spec-lookup**', look)
@@ -824,6 +826,13 @@ async def addball_cycle(b):
     mode['off'] = True; await p.fill('#abQ', 'Hammer Reckoning'); await p.click('#abList [data-pick="sc-hammer-reckoning"]'); await p.wait_for_selector('#abRetry')
     check('hammerbowling.com spec' in await p.text_content('#abFields [data-f=rg]') and 'hammerbowling.com' in await p.text_content('#abSource') and "Can\u2019t reach the maker list offline. Type the name and specs." in await p.text_content('#abStatus'), '[addball] lookup fails: catalogue values with the maker chip + Source link + Retry + the offline line')
     check(await p.query_selector('#abType') is None, '[addball] catalogue ball with every spec: no "Type the specs" card')
+    # t123u (900 Global Sublime): a maker page with no specs, and no page at all, end in a card with Retry + the maker link, not a dead end
+    mode['off'] = False
+    for q, link, want in [('900 Global Zork', '#abMakerPage', 'lists no RG'), ('900 Global Nopage', '#abMakerSearch', 'No page')]:
+        await p.fill('#abQ', q); await p.wait_for_selector('#abMaker'); await p.click('#abMaker'); await p.wait_for_selector('#abMiss #abStatus')
+        box = await p.evaluate(f"() => {{ const c = document.querySelector('#abMiss'), r = document.querySelector('#abRetry').getBoundingClientRect(), l = document.querySelector('{link}'); return [c.contains(document.querySelector('#abStatus')), document.querySelector('#abStatus').textContent, Math.round(r.height), l ? l.href : null, l ? Math.round(l.getBoundingClientRect().height) : 0, !!document.querySelector('#abType')]; }}")
+        check(box[0] and want in box[1] and box[2] >= 44 and box[3] and 'stormbowling.com' in box[3] and box[4] >= 44 and box[5], f'[addball] {q}: miss card holds the message, Retry and {link} (44 px), plus Type the specs {box}')
+    await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())"); await shot(p, 'phone-addball-miss')
     # Airplane mode (navigator.onLine false): say it before any lookup, then a typed ball reaches the engine and saves
     mode['off'] = False; n_calls = len(calls); await c.set_offline(True)
     await p.fill('#abQ', 'Storm Zz Testball'); await p.wait_for_selector('#abOffline')

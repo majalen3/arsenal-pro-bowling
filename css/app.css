@@ -887,3 +887,6 @@ body[data-tab=bowl] #view,body[data-ingame] #view{padding-bottom:calc(var(--sab)
 .game-screen #tnNow .tn-line{margin:0}
 .game-screen #tnMore:not([open]){padding-top:2px;padding-bottom:2px}
 .game-screen #tnLog{padding-top:10px;padding-bottom:10px}
+/* t123u: the lookup miss is a card; Retry and the maker link are full 44 px buttons side by side */
+.ab-miss .btn-grid{margin-top:var(--s2)}
+.ab-miss #abStatus{margin:0}

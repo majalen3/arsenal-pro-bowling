@@ -13,18 +13,19 @@ const banned = /bowlingballvideos|bowwwl|bowlingball\.com|bowlingthismonth/i;
 //   maker      the manufacturer's own live page (source = that URL)
 //   archive    a Wayback Machine copy of the manufacturer's own page: source = https://web.archive.org/web/<timestamp>/<maker URL>,
 //              original = the maker URL it copies. Still maker data. sourceAlso = more archived maker pages read for missing fields.
-//   secondary  Wikipedia / Wikimedia only, facts only: source = that https page, attribution = e.g. "Wikipedia, CC BY-SA 4.0"
+//   secondary  Wikipedia / Wikimedia, or bowlinglife.eu (t123u: a public review page, not on the banned list) when the maker page
+//              prints no numbers; facts only, shown as "not the maker": source = that https page, attribution = e.g. "Wikipedia, CC BY-SA 4.0"
 //   community  a public forum post (last resort): name, brand, source and checked only, shown as community-reported, no values
 //   unverified no source found: name and brand only ("spec TBD")
 const STATUS = ['maker', 'archive', 'secondary', 'community', 'unverified'];
-const ARCHIVE = /^https:\/\/web\.archive\.org\/web\/\d{8,14}\/https?:\/\/[^ ]+$/, SECONDARY = /^https:\/\/([a-z]{2,3}\.)?(m\.)?(wikipedia|wikimedia)\.org\//;
+const ARCHIVE = /^https:\/\/web\.archive\.org\/web\/\d{8,14}\/https?:\/\/[^ ]+$/, SECONDARY = /^https:\/\/(([a-z]{2,3}\.)?(m\.)?(wikipedia|wikimedia)\.org|bowlinglife\.eu)\//;   // t123u: + bowlinglife.eu (public review site, not banned), flagged not-maker
 const NAME_ONLY = ['brand', 'name', 'source', 'checked', 'specStatus'];
 for (const r of rows) {
   if (!r.brand || !r.name || !/^\d{4}-\d{2}-\d{2}$/.test(r.checked || '') || !STATUS.includes(r.specStatus)) throw new Error('bad row ' + JSON.stringify(r));
   if (r.specStatus === 'maker' && !/^https:\/\//.test(r.source || '')) throw new Error('maker row without source: ' + r.name);
   if (r.specStatus === 'archive' && (!ARCHIVE.test(r.source || '') || !/^https?:\/\//.test(r.original || '') || !r.source.endsWith(r.original.replace(/^https?:\/\//, ''))
     || [].concat(r.sourceAlso || []).some(u => !ARCHIVE.test(u)))) throw new Error('archive row needs a web.archive.org copy of the maker page + original: ' + r.name);
-  if (r.specStatus === 'secondary' && (!SECONDARY.test(r.source || '') || !r.attribution)) throw new Error('secondary row needs a Wikipedia/Wikimedia source + attribution: ' + r.name);
+  if (r.specStatus === 'secondary' && (!SECONDARY.test(r.source || '') || !r.attribution)) throw new Error('secondary row needs a Wikipedia/Wikimedia/bowlinglife.eu source + attribution: ' + r.name);
   if (banned.test(JSON.stringify(r))) throw new Error('third-party source in ' + r.name);
   if (r.specStatus === 'community' && (!/^https:\/\//.test(r.source || '') || Object.keys(r).some(k => !NAME_ONLY.includes(k)))) throw new Error('community row: name, brand, source, checked only: ' + r.name);
   if (r.specStatus === 'unverified' && Object.keys(r).some(k => !NAME_ONLY.includes(k))) throw new Error('unverified row with values: ' + r.name);
