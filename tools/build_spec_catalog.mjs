@@ -5,7 +5,9 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const here = new URL('..', import.meta.url);
 const rows = JSON.parse(readFileSync(new URL('tools/catalog/maker_rows.json', here), 'utf8'));
 const KEYS = ['brand', 'name', 'source', 'page', 'original', 'sourceAlso', 'attribution', 'checked', 'specStatus', 'weight', 'rg', 'diff', 'intDiff', 'coverstock', 'coverType', 'finish', 'core',
-  'symmetry', 'release', 'conditionText', 'condition', 'derived'];
+  'symmetry', 'release', 'conditionText', 'condition', 'derived', 'filled'];
+// filled (2026-11-11, owner t120 "a lot of specs TBD"): fields added to an existing row later, each with its own source + checked date
+// ([{fields, source, checked, note}]). The source must be the row's own maker page (or its archived copy); existing values are never overwritten.
 const banned = /bowlingballvideos|bowwwl|bowlingball\.com|bowlingthismonth/i;
 // specStatus (owner 2026-11-11: a maker page that 404s may be filled from an archived copy of it or Wikipedia, never a banned site):
 //   maker      the manufacturer's own live page (source = that URL)
@@ -27,6 +29,8 @@ for (const r of rows) {
   if (r.specStatus === 'community' && (!/^https:\/\//.test(r.source || '') || Object.keys(r).some(k => !NAME_ONLY.includes(k)))) throw new Error('community row: name, brand, source, checked only: ' + r.name);
   if (r.specStatus === 'unverified' && Object.keys(r).some(k => !NAME_ONLY.includes(k))) throw new Error('unverified row with values: ' + r.name);
   if (r.specStatus !== 'archive' && (r.original || r.sourceAlso)) throw new Error('original/sourceAlso are for archive rows: ' + r.name);
+  for (const f of [].concat(r.filled || [])) if (!Array.isArray(f.fields) || !f.fields.length || !/^\d{4}-\d{2}-\d{2}$/.test(f.checked || '') || !/^https:\/\//.test(f.source || '')
+    || f.fields.some(k => !KEYS.includes(k) || r[k] == null) || (f.source !== r.source && f.source !== r.page && ![].concat(r.sourceAlso || []).includes(f.source))) throw new Error('filled needs fields present on the row + the row\'s own source + checked: ' + r.name);
 }
 const pick = r => Object.fromEntries(KEYS.filter(k => r[k] != null && !(Array.isArray(r[k]) && !r[k].length)).map(k => [k, r[k]]));
 const out = rows.map(pick).sort((a, b) => a.brand.toLowerCase().localeCompare(b.brand.toLowerCase()) || a.name.toLowerCase().localeCompare(b.name.toLowerCase()));

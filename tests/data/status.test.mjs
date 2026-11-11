@@ -13,7 +13,7 @@ const apply = (evs, mig) => evs.concat(mig.map(([t, id, d], i) => mkEvent(t, id,
 test('labels: four bowler words, v1 keys kept', () => {
   assert.deepEqual(ST.STATUS.map(s => s[1]), ['Ready to bring', 'At home', 'At the pro shop', 'Retired']);
   assert.deepEqual(ST.KEYS, ['inBag', 'benched', 'proShop', 'retired']);
-  assert.equal(ST.label({}), 'Ready to bring'); assert.equal(ST.label({ status: 'benched' }), 'At home'); assert.equal(ST.ALWAYS, '\ud83d\udccc Always bring');
+  assert.equal(ST.label({}), 'Ready to bring'); assert.equal(ST.label({ status: 'benched' }), 'At home'); assert.equal(ST.ALWAYS, 'Keep in bag'); assert.match(ST.KEEP_HINT, /stays when you repack/);
 });
 test('migration: excluded in-bag ball → At home; pro shop / retired keep their status; lists cleared; idempotent', () => {
   const bag = Object.assign({}, project(base()).bags['bag-league']); delete bag.id; delete bag.ts;

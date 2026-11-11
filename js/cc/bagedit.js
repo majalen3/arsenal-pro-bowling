@@ -61,6 +61,32 @@ export function topUp(P, answer, n, current = []) {
   for (const id of keep.concat(readyIds(P, ids.concat(keep)))) { if (out.slots.length + (out.spare ? 1 : 0) >= n) break; if (!out.slots.includes(id) && id !== out.spare) out.slots.push(id); }
   return out;
 }
+// Shake it up (owner t120 "need a random or shake it up function"): a different random-but-sensible bag of the same size from the
+// balls the bowler owns and can bring (Ready to bring, then At home as "grab from home"). Kept balls (Keep in bag) always stay; at
+// least one ball with specs stays in, the spare stays the spare when any is available; the exact same set is avoided when another one exists. Pure: rand is
+// injectable for tests. Nothing leaves the arsenal; the caller keeps the previous bag for Undo. → { data, ids, added, removed, same }.
+export function shakeUp(P, bag, n, rand = Math.random) {
+  const was = new Map((bag && bag.slots || []).map(s => [s.owned, s])), now = ST.packedIds(P, bag);
+  const pool = Object.keys(P.owned || {}).filter(id => ST.offered(P.owned[id]));
+  const kept = now.filter(id => ((was.get(id) || {}).locked || id === (bag && bag.spare)) && pool.includes(id));   // the spare keeps its job
+  const size = Math.max(Math.min(n || now.length || 1, pool.length), kept.length);
+  const free = pool.filter(id => !kept.includes(id)), anyModel = pool.some(id => modeled(P, id));
+  const shuffle = xs => { const a = xs.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const key = ids => ids.slice().sort().join('|'), cur = key(now);
+  let ids = null;
+  for (let t = 0; t < 24; t++) {
+    let pick = kept.concat(shuffle(free).slice(0, size - kept.length));
+    if (anyModel && !pick.some(id => modeled(P, id))) {   // keep one ball the app can place
+      const m = shuffle(free.filter(id => modeled(P, id)))[0], out = pick.filter(id => !kept.includes(id)).pop();
+      if (m && out) pick = pick.filter(id => id !== out).concat([m]);
+    }
+    ids = pick; if (key(pick) !== cur) break;
+  }
+  const nb = base(bag);
+  nb.slots = ids.map(id => was.get(id) ? Object.assign({}, was.get(id)) : slotFor(P, id));
+  if (nb.spare && !ids.includes(nb.spare)) nb.spare = null;
+  return { data: nb, ids, added: ids.filter(id => !now.includes(id)), removed: now.filter(id => !ids.includes(id)), same: key(ids) === cur };
+}
 export function pin(bag, id, on) { const nb = base(bag); nb.slots = nb.slots.map(s => s.owned === id ? Object.assign(s, { locked: !!on }) : s); return nb; }
 // A filled answer (advisor.advise) → the bag, keeping 📌 Always bring and the bag's other fields.
 export function fromAnswer(P, bag, a, extra = {}) {

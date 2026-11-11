@@ -52,7 +52,9 @@ export async function render(o = {}) {
   const t0 = performance.now();
   // IA P1.5: Tonight plans the night (bag, start line, who's bowling); the score pad lives on #/bowl ("Start bowling").
   // #/tonight with a night in progress goes straight to #/bowl (replaceState: no second render) unless the bowler tapped Leave.
-  let BOWL = !!o.bowl, drawn = false, extraOpen = false;
+  // #/tonight?lanes=1 (Bag top "Oil & lanes"): open the lane setup straight away.
+  const lanesAsk = !!(o.query && o.query.get('lanes'));
+  let BOWL = !!o.bowl, drawn = false, extraOpen = lanesAsk;
   const shareHere = new Set(), shareDone = new Set();   // nights whose one share offer this screen is showing / has closed
   await ready();
   let sid = openNight(proj()) || newNightId(proj());
@@ -137,8 +139,10 @@ export async function render(o = {}) {
     // A night in progress (a game open, or between games before End night) is "in the game": opening the app lands back on the
     // game page. After Leave the Building stays the Building (this tab session) and offers "Back to the game".
     if (!BOWL && !drawn && (gameOpen || (g0(P) && g.st.done && !s.ended)) && !sessionStorage.getItem(LEFT_KEY)) { BOWL = true; history.replaceState(null, '', '#/bowl'); retab('bowl'); enterGameChrome(); }
+    const firstDraw = !drawn;
     laneBall((gameOpen || BOWL) ? hb : cur);   // F03: Lane opens with the ball Tonight / Bowl names
     drawn = true;
+    if (firstDraw && lanesAsk && !BOWL) setTimeout(() => { const x = el.querySelector('#tnSetup'); if (x) x.scrollIntoView({ block: 'start' }); }, 60);
     WK.keepAwake(WK.shouldHold(gameOpen, prefs().wakeLock));
     // ---- coach line (≤ 2 sentences, starts with a ball name)
     const coach = !cur ? 'Add balls to a bag to get a pick.' : cur === r.pick && bf && cur.benchmark ? `${cur.name} first: ${bf}, so start with your benchmark and read it.`

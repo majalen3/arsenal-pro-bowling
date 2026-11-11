@@ -3472,7 +3472,7 @@
    "term": "Why not this ball?",
    "level": "Beginner",
    "bubble": "Tonight's bag is built only from balls marked Ready to bring. A ball you own is left out for one plain reason: its Status, service due, too close to a ball you're bringing, or stronger/weaker than tonight's lanes need.",
-   "glossary": "The builder fills the bag from balls marked Ready to bring, covering strength from heavy oil to dry and avoiding two balls that do the same job. 📌 Always bring keeps a ball in. Every ball left out shows one reason, in this order: Retired, At the pro shop, At home, service due, overlap with a ball you're bringing, no oil tag yet (spec TBD), stronger or weaker than tonight's lanes (app oil-tag level vs the pattern's demand), or the bag is full. Strength levels are this app's tags, not a measurement.",
+   "glossary": "The builder fills the bag from balls marked Ready to bring, covering strength from heavy oil to dry and avoiding two balls that do the same job. Keep in bag (the pin) keeps a ball in through Bring changes, Suggest again and Shake it up. Every ball left out shows one reason, in this order: Retired, At the pro shop, At home, service due, overlap with a ball you're bringing, no oil tag yet (spec TBD), stronger or weaker than tonight's lanes (app oil-tag level vs the pattern's demand), or the bag is full. Strength levels are this app's tags, not a measurement.",
    "placement": "Bubble (Bag builder) + Guide",
    "priority": "High",
    "sources": [

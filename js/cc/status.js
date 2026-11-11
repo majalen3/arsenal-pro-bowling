@@ -12,7 +12,9 @@ export const label = o => LABEL[statusOf(o)];
 // The builder, Swap and Bowl's ball chip offer In my bag and At home balls (At home is tagged "grab from home").
 export const offered = o => !!o && ['inBag', 'benched'].includes(statusOf(o));
 export const inMyBag = o => !!o && statusOf(o) === 'inBag';
-export const ALWAYS = '\ud83d\udccc Always bring';
+// owner t120 "no idea what the pin does": plain words. KEEP_HINT is shown under a kept ball.
+export const ALWAYS = 'Keep in bag';
+export const KEEP_HINT = 'Kept: stays when you repack, change Bring or shake it up.';
 export const HOME_TAG = 'grab from home';
 // Migration (excluded → At home, unless already at the pro shop or retired). Returns the events to append, as
 // [type, entityId, data]; idempotent: nothing to do once no bag carries an `excluded` list.

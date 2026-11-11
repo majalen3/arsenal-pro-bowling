@@ -824,3 +824,16 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .recovery-choice input{flex:0 0 44px;width:44px;height:44px}
 .recovery-choice span{min-width:0}
 .btn-grid.tn-strike{grid-template-columns:2fr 1fr}   /* v72: Find my strike line is the wide, primary cell; Lane view beside it */
+/* v73 Bag first: Keep in bag toggle (owner t120/t121). OFF = outlined dim pin, ON = filled gold pin + "Kept". */
+.keep-btn{min-height:44px;min-width:88px;gap:6px;display:inline-flex;align-items:center;justify-content:center}
+.keep-btn .ic{width:20px;height:20px}
+.keep-btn .pin-off{opacity:.6}
+.keep-btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft)}
+.keep-btn .pin-on{fill:currentColor}
+.keep-hint{color:var(--accent-ink);margin:4px 0 0}
+.bag-lane{gap:8px;flex-wrap:nowrap;align-items:center}
+.bag-lane p{margin:0;flex:1;min-width:0}
+.bag-lane .btn{white-space:nowrap;min-height:44px}
+.bag-undo{gap:8px;margin-top:8px;align-items:center}
+.bag-undo .small{flex:1;min-width:0}
+#bagShuffleRow{margin-top:10px}
