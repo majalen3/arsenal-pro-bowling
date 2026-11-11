@@ -15,6 +15,7 @@ import { PATTERN_LABEL, FINISH_LABEL, CALL_LABEL, CALL_TONE, f1 } from '../label
 import { helpDot, withHelp } from './help.js';
 import { aboutAngle, releaseSource } from '../cc/provenance.js';
 import * as HAND from '../cc/hand.js';
+import { fitToPocket } from '../cc/pocketfit.js';
 // sim2 #2: the Aim Box uses tonight's picked length when this preset is tonight's (same as Lane and Targeting)
 const patNow = () => { const P = proj(), sess = P ? ((P.sessions || {})[openNight(P) || ''] || {}) : {}, ft = sess.ft != null ? +sess.ft : null;
   return { preset: S.pattern, ft: ft != null && presetFor(ft) === S.pattern ? ft : null }; };
@@ -25,12 +26,15 @@ export function render({ query }) {
   const lanes = [];
   const swap = i => { const s = sheet({ title:'Swap ball', body:h('div', { class:'blist' }, ...balls.filter(b => !ids.includes(b.id)).map(b => ballRow(b, { onPick:x => { s.close(); const n = ids.slice(); n[i] = x.id; go(`#/compare?ids=${n.join(',')}`, { replace:true }); } }))) }); };
   const res = ps.map(b => modelOK(b) ? analyze(b) : { points:[], call:'', entryBoard:null, angle:null, bpBoard:null, bpFeet:null });
+  // owner t122u: each drawn line finishes at the pocket. The table keeps the same-line numbers (that is the comparison); the
+  // pictures show each ball's own line to the pocket, fitted on aim/feet and labelled as an estimate.
+  const fit = ps.map(b => modelOK(b) ? fitToPocket(b, { release:+S.release, aim:+S.aim }) : null);
   const cols = ps.map((b, i) => {
     const cv = h('canvas', { class:'mini-lane', role:'img', 'aria-label':`${b.name} on ${PATTERN_LABEL[S.pattern]}: ${CALL_LABEL[res[i].call]}, entry ${f1(res[i].entryBoard)}, ${f1(res[i].angle)} degrees` });
-    if (modelOK(b)) lanes.push([cv, b, res[i]]); else cv.hidden = true;
+    if (modelOK(b)) { lanes.push([cv, b, fit[i].result]); cv.dataset.endBoard = String(fit[i].endBoard); cv.dataset.pocketOk = String(fit[i].ok); } else cv.hidden = true;
     return h('div', { class:'cmp-col' },
       h('div', { class:'cmp-head' }, h('span', { class:'ball-orb', style:{ '--c':b.color }, 'aria-hidden':'true' }), h('div', {}, h('div', { class:'cmp-name', text:b.name }), h('div', { class:'muted small', text:b.brand })), h('button', { class:'icon-btn', 'aria-label':`Swap ${b.name}`, html:icon('sync'), onclick:() => swap(i) })),
-      cv, h('div', { class:'mini-read', 'data-tone':CALL_TONE[res[i].call] }, h('b', { text:CALL_LABEL[res[i].call] || 'Specs unverified / cover not supported' })),
+      cv, fit[i] ? h('p', { class:'small cmp-fit', 'data-fit':b.id }, h('span', { class:'prov', 'data-prov':'model', text:'estimate' }), fit[i].ok ? ` To the pocket: feet ${fit[i].ov.release}, aim ${fit[i].ov.aim}${fit[i].fitted ? ' (fitted)' : ''}` : ' No line reaches the pocket here') : null, h('div', { class:'mini-read', 'data-tone':CALL_TONE[res[i].call] }, h('b', { text:CALL_LABEL[res[i].call] || 'Specs unverified / cover not supported' })),
       h('button', { class:'btn sm primary', onclick:() => { setBall(b); go('#/lane'); } }, 'Put on lane'));
   });
   const best = (vals, fn) => { const nums = vals.map(fn); return nums; };

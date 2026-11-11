@@ -60,7 +60,8 @@ async def main():
         await p.wait_for_selector('#bagStartEmpty')
         t = await p.text_content('#bagNone'); check('arsenal is saved' in t and 'does not pack it' in t, f'back on the Bag: arsenal saved, nothing packed yet ({t})')
         await p.click('#bagStartEmpty'); await p.wait_for_selector('#bagBring')
-        ex = await p.text_content('#bagExplain'); check('everything you own' in ex, f'Bag explains tonight vs arsenal ({ex})')
+        # v73 (docs/CUTS_V73.md #2): the explainer sentence is gone; the bag card says it is tonight's bag and Arsenal is its own tab
+        ex = await p.text_content('#bagTonight'); check("Tonight" in ex and await p.query_selector('#bagExplain') is None, f'Bag card is tonight\'s bag, no explainer ({ex[:40]})')
         # Bring 4 fills additively
         await p.click('#bagBring button:has-text("4")'); await p.wait_for_timeout(500)
         n = await p.eval_on_selector_all('#bagRows [data-own]', 'e => e.length'); check(n == 4, f'Bring 4 packs 4 of 4 owned ({n})')

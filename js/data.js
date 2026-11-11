@@ -25,7 +25,7 @@ export const balls = [
 ];
 export const CLASSES=['Benchmark / First Read', 'Strong Asymmetrical Solids', 'Strong Symmetrical Solids', 'Strong Asymmetrical Hybrids', 'Medium-Strong Hybrids', 'Medium Asymmetrical Pearls', 'Medium Symmetrical Pearls', 'Control Pieces / Benchmark Variants', 'Burn / Transition', 'Urethane', 'Spare Ball'];
 export const rgOf=b=>b.rg!=null?b.rg:b.simRg, diffOf=b=>b.diff!=null?b.diff:b.simDiff;
-export const rgTxt=b=>b.rg!=null?b.rg:'spec TBD', diffTxt=b=>b.diff!=null?b.diff:'spec TBD';
+export const rgTxt=b=>b.rg!=null?b.rg:'not published', diffTxt=b=>b.diff!=null?b.diff:'not published';
 export const specOK=b=>b.rg!=null&&b.diff!=null;
 export const estTag=b=>b.est?' <i class="est">est.</i>':'';
 export const BAGS=[['Tournament 6-ball bag',[['rattler-big-bite','Benchmark'],['super-nova','Strong solid'],['ordnance-c4','Strong hybrid'],['hy-road-pearl','Cleaner pearl'],['deadly-rattler','Control / transition'],['ice-storm','Spare']]],
@@ -34,3 +34,7 @@ export const BAGS=[['Tournament 6-ball bag',[['rattler-big-bite','Benchmark'],['
 export const coverKind=b=>/not urethane/i.test(b.cover)?'Not Urethane':/polyester|plastic/i.test(b.cover)?'Plastic':b.cover.includes('Solid')?'Solid':b.cover.includes('Pearl')?'Pearl':b.cover.includes('Hybrid')?'Hybrid':b.cover.includes('Urethane')?'Urethane':b.cover || 'unverified';
 // Specs and model support are separate. Do not simulate an unknown/plastic/NU cover as a guessed reactive family.
 export const modelOK=b=>specOK(b)&&['Solid','Pearl','Hybrid','Urethane'].includes(coverKind(b));
+// owner t120 "a lot of SPECs TBD": one quiet, honest line per ball instead of many TBD chips. null when nothing is missing.
+export const specNote=b=>{ if(!b) return null; const plastic=coverKind(b)==='Plastic'; if(specOK(b)&&(plastic||modelOK(b))) return plastic?'Plastic spare: goes straight, no hook line to model.':null;
+  if(plastic) return 'Plastic spare: makers rarely publish RG/differential for these. It goes straight.';
+  return 'Some specs not published by the maker, so the app can\u2019t place it or draw its line yet.'; };

@@ -3,6 +3,7 @@
 import { nav, topSheet, closeAllSheets, $ } from './ui.js';
 const routes = [];
 let cur = null, latest = null, first = true, mountEl = null, onTab = null, decorate = null, popped = false, scrollT = 0;
+try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) { /* older browsers */ }
 // Called after every screen mounts (main.js adds the top-bar Help "?" switch).
 export function setDecorate(fn) { decorate = fn; }
 export function route(re, tab, load) { routes.push({ re, tab, load }); }
@@ -57,7 +58,10 @@ async function render() {
   onTab && onTab(tab);
   const back = popped && history.state && history.state.y > 0 ? history.state.y : 0; popped = false;
   if (back) requestAnimationFrame(() => { scrollTo(0, back); if (Math.abs(scrollY - back) > 2) setTimeout(() => scrollTo(0, back), 150); });
-  if (!first) { if (!back) window.scrollTo(0, 0); const hd = scr.el.querySelector('h1'); if (hd) { hd.tabIndex = -1; hd.focus({ preventScroll:true }); } }
+  // owner t126u (iPhone: "we can never see the top of the page"): Safari restored the old scroll offset on load and on hash
+  // changes. Every route now opens at the top (scrollRestoration is manual; Back still returns to where you were).
+  if (first && !back) { window.scrollTo(0, 0); requestAnimationFrame(() => window.scrollTo(0, 0)); }
+  if (!first) { if (!back) { window.scrollTo(0, 0); requestAnimationFrame(() => { if (scrollY) window.scrollTo(0, 0); }); } const hd = scr.el.querySelector('h1'); if (hd) { hd.tabIndex = -1; hd.focus({ preventScroll:true }); } }
   first = false;
   scr.mounted && scr.mounted();
 }

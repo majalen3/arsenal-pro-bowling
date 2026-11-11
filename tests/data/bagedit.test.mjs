@@ -89,3 +89,43 @@ test('a fresh arsenal (every ball At home) still fills Bring N, as "grab from ho
   P.owned['own-zz-3'].status = 'inBag';
   assert.equal(BE.resize(P, { id: 'b', slots: [], spare: null }, 1).added[0], 'own-zz-3', 'Ready to bring before At home');
 });
+// Shake it up (owner t120): random-but-sensible, same size, Keep in bag stays, differs when possible, small arsenals are fine.
+const seq = xs => { let i = 0; return () => xs[i++ % xs.length]; };
+test('shakeUp keeps the size, keeps Keep-in-bag balls, never removes anything from the arsenal', () => {
+  const bag = P0.bags['bag-league'], ids = ST.packedIds(P0, bag), keepId = ids[0];
+  const pinned = BE.pin(bag, keepId, true);
+  for (let k = 0; k < 30; k++) {
+    const r = BE.shakeUp(P0, pinned, 3, seq([((k * 37) % 100) / 100, 0.3, 0.8, 0.1, 0.55]));
+    assert.equal(r.ids.length, 3, 'size preserved'); assert.ok(r.ids.includes(keepId), 'kept ball stays');
+    assert.ok(r.data.slots.find(s => s.owned === keepId).locked, 'still kept');
+    assert.ok(r.ids.every(id => P0.owned[id] && ST.offered(P0.owned[id])), 'only balls you own and can bring');
+  }
+  assert.equal(Object.keys(P0.owned).length, Object.keys(project(seedEvents({ now: 1000 })).owned).length);
+});
+test('shakeUp differs from the current bag when another set exists, and keeps a ball with specs', () => {
+  const bag = P0.bags['bag-league'], cur = ST.packedIds(P0, bag).slice().sort().join('|');
+  for (let k = 0; k < 20; k++) {
+    const r = BE.shakeUp(P0, bag, ST.packedIds(P0, bag).length, seq([0, 0, 0, 0]));   // a stuck "random" still yields a different bag
+    assert.notEqual(r.ids.slice().sort().join('|'), cur); assert.equal(r.same, false);
+  }
+  const r = BE.shakeUp(P0, bag, 3); assert.ok(r.ids.some(id => BE.readyIds(P0).includes(id)));
+});
+test('shakeUp with 1 or 2 owned balls: no crash, same set reported as same', () => {
+  for (const keepN of [1, 2]) {
+    const ids = Object.keys(P0.owned).filter(id => ST.offered(P0.owned[id])).slice(0, keepN), P1 = Object.assign({}, P0, { owned: Object.fromEntries(ids.map(id => [id, P0.owned[id]])) });
+    const bag = { slots: ids.map(o => ({ owned: o })), spare: null };
+    const r = BE.shakeUp(P1, bag, 3);
+    assert.equal(r.ids.length, keepN); assert.equal(r.same, true); assert.deepEqual(r.removed, []);
+  }
+  const r0 = BE.shakeUp(Object.assign({}, P0, { owned: {} }), { slots: [] }, 3); assert.deepEqual(r0.ids, []);
+});
+test('Keep in bag survives Bring-size changes and Suggest again (resize + fromAnswer)', () => {
+  const bag = P0.bags['bag-league'], ids = ST.packedIds(P0, bag), keepId = ids[ids.length - 1] === bag.spare ? ids[0] : ids[ids.length - 1];
+  const pinned = BE.pin(bag, keepId, true);
+  const down = BE.resize(P0, pinned, 1); assert.ok(down.data.slots.some(s => s.owned === keepId && s.locked), 'Bring 1 keeps it');
+  const up = BE.resize(P0, pinned, 6); assert.ok(up.data.slots.some(s => s.owned === keepId && s.locked), 'Bring 6 keeps it');
+  const locked = pinned.slots.filter(s => s.locked).map(s => s.owned);
+  const a = A.advise(P0, { event: 'league', bring: 3, locked, current: ids });
+  const fa = BE.fromAnswer(P0, pinned, Object.assign({}, a, BE.topUp(P0, a, 3, ids)));
+  assert.ok(fa.slots.some(s => s.owned === keepId && s.locked), 'Suggest again keeps it');
+});

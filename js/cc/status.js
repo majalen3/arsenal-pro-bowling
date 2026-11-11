@@ -12,7 +12,9 @@ export const label = o => LABEL[statusOf(o)];
 // The builder, Swap and Bowl's ball chip offer In my bag and At home balls (At home is tagged "grab from home").
 export const offered = o => !!o && ['inBag', 'benched'].includes(statusOf(o));
 export const inMyBag = o => !!o && statusOf(o) === 'inBag';
-export const ALWAYS = '\ud83d\udccc Always bring';
+// owner t120 "no idea what the pin does": plain words. KEEP_HINT is shown under a kept ball.
+export const ALWAYS = 'Keep in bag';
+export const KEEP_HINT = 'Kept: stays when you repack, change Bring or shake it up.';
 export const HOME_TAG = 'grab from home';
 // Migration (excluded → At home, unless already at the pro shop or retired). Returns the events to append, as
 // [type, entityId, data]; idempotent: nothing to do once no bag carries an `excluded` list.
@@ -42,7 +44,7 @@ export function whyNot(x, ctx = {}) {
   const ov = overlaps(bag.concat([x])).find(o => o.a === x.ownedId || o.b === x.ownedId);
   if (ov) { const other = bag.find(b => b.ownedId === (ov.a === x.ownedId ? ov.b : ov.a));
     return { key: 'overlap', text: `Too close to ${other ? other.name : 'a ball you\u2019re bringing'}: ${ov.why}.`, canBring: true }; }
-  if (cell.tbd) return { key: 'tbd', text: 'No oil tag yet (spec TBD), so the app can\u2019t place it.', canBring: true };
+  if (cell.tbd) return { key: 'tbd', text: 'Specs not published, so the app can\u2019t place it yet.', canBring: true };
   if (ctx.demand != null && cell.level != null && cell.level !== ctx.demand) {
     const more = cell.level > ctx.demand;
     return { key: more ? 'stronger' : 'weaker', text: `${more ? 'Stronger' : 'Weaker'} than tonight\u2019s lanes need (level ${cell.level} vs demand ${ctx.demand}).`, canBring: true };

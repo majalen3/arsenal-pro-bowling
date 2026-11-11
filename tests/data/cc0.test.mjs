@@ -70,7 +70,7 @@ test('G20 plan A/B/C walks weaker', () => {
 test('G21 spec-TBD ball (Rack Attack, unlinked) is ranked last-but-listed, gets "spec TBD" and 0 model lines', () => {
   const r = R.rank([...T6, B('rack-attack', null, { name: 'Rack Attack' })], { demand: 3 });
   const ra = r.order.find(x => x.id === 'own-rack-attack');
-  assert.equal(r.order[r.order.length - 1], ra); assert.equal(ra.level, null); assert.ok(ra.why.some(w => /spec TBD/.test(w.t)));
+  assert.equal(r.order[r.order.length - 1], ra); assert.equal(ra.level, null); assert.ok(ra.why.some(w => /not published/.test(w.t)));
   assert.equal(modelLine(null).none, true);
   assert.equal(R.readMove(r, 'own-rack-attack', 'early'), null);
 });

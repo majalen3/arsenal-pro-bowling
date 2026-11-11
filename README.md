@@ -26,7 +26,7 @@ Lane and Targeting open from Strike line (Find my strike line, Lane view, the "S
 - Everything is saved on your phone first (IndexedDB) and the app works with no signal.
 - A copy syncs to the Arsenal Pro server under your **backup code**, so you can restore on a new phone (Me › Restore from another device). No ads and no tracking.
 - **Optional account** (Me › Account): sign in with an email and password to keep your arsenal, profile, games and shots private to you and synced across phones. You choose whether this phone's data goes in. Export or delete the account on the same card. Without an account everything works as before.
-- Me › Download backup saves a file you keep. Results › Export games (CSV) gives you your scores.
+- Me › Download backup saves a file you keep. Log book › More › Export games (CSV) gives you your scores.
 - LaneTrax PDFs are read on the phone; the file itself is never uploaded.
 
 ## For developers

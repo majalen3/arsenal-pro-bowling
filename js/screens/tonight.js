@@ -52,7 +52,9 @@ export async function render(o = {}) {
   const t0 = performance.now();
   // IA P1.5: Tonight plans the night (bag, start line, who's bowling); the score pad lives on #/bowl ("Start bowling").
   // #/tonight with a night in progress goes straight to #/bowl (replaceState: no second render) unless the bowler tapped Leave.
-  let BOWL = !!o.bowl, drawn = false, extraOpen = false;
+  // #/tonight?lanes=1 (Bag top "Oil & lanes"): open the lane setup straight away.
+  const lanesAsk = !!(o.query && o.query.get('lanes'));
+  let BOWL = !!o.bowl, drawn = false, extraOpen = lanesAsk;
   const shareHere = new Set(), shareDone = new Set();   // nights whose one share offer this screen is showing / has closed
   await ready();
   let sid = openNight(proj()) || newNightId(proj());
@@ -137,8 +139,10 @@ export async function render(o = {}) {
     // A night in progress (a game open, or between games before End night) is "in the game": opening the app lands back on the
     // game page. After Leave the Building stays the Building (this tab session) and offers "Back to the game".
     if (!BOWL && !drawn && (gameOpen || (g0(P) && g.st.done && !s.ended)) && !sessionStorage.getItem(LEFT_KEY)) { BOWL = true; history.replaceState(null, '', '#/bowl'); retab('bowl'); enterGameChrome(); }
+    const firstDraw = !drawn;
     laneBall((gameOpen || BOWL) ? hb : cur);   // F03: Lane opens with the ball Tonight / Bowl names
     drawn = true;
+    if (firstDraw && lanesAsk && !BOWL) setTimeout(() => { const x = el.querySelector('#tnSetup'); if (x) x.scrollIntoView({ block: 'start' }); }, 60);
     WK.keepAwake(WK.shouldHold(gameOpen, prefs().wakeLock));
     // ---- coach line (≤ 2 sentences, starts with a ball name)
     const coach = !cur ? 'Add balls to a bag to get a pick.' : cur === r.pick && bf && cur.benchmark ? `${cur.name} first: ${bf}, so start with your benchmark and read it.`
@@ -189,7 +193,7 @@ export async function render(o = {}) {
     // ---- pick card: name + stand/eyes up front; the why, specs and model numbers behind one tap (GAP §2c).
     let pick = null;
     if (cur) {
-      const lineBox = !ml || ml.none ? h('p', { class: 'muted small', id: 'tnModel', text: (ml && ml.reason) || 'spec TBD: no model line' })
+      const lineBox = !ml || ml.none ? h('p', { class: 'muted small', id: 'tnModel', text: (ml && ml.reason) || 'Specs not published: no model line' })
         : h('dl', { class: 'kv', id: 'tnModel' }, h('dt', { text: 'Feet (stand)' }), h('dd', { id: 'tnFeet' }, String(stand.feet), provChip(stand.assumed ? 'assumed' : null, stand.assumed ? 'offset 7 assumed' : 'your offset')),
           h('dt', { text: 'Laydown' }), h('dd', {}, String(ml.feet), ml.kept ? provChip('user', 'your line (set on Lane or Targeting)') : provChip('model', '2-D model')),
           h('dt', { text: 'Eyes (arrows)' }), h('dd', { text: String(ml.target) }),
@@ -201,7 +205,7 @@ export async function render(o = {}) {
         stand ? h('button', { class: 'btn primary block', id: 'tnFind', onclick: () => go('#/target?find=1&ball=' + encodeURIComponent(cur.id || cur.catalogId || '')) }, 'Find my strike line \u203a') : null,
         gameOpen ? null : alts,
         h('details', { class: 'tn-more', id: 'tnPickMore' }, h('summary', { text: 'Why this ball, specs and model' }),
-          h('span', { class: 'pill gold', id: 'tnLevel', text: cur.level != null ? `Level ${cur.level} \u00b7 demand ${d.demand}` : `spec TBD \u00b7 demand ${d.demand}` }),
+          h('span', { class: 'pill gold', id: 'tnLevel', text: cur.level != null ? `Level ${cur.level} \u00b7 demand ${d.demand}` : `specs not published \u00b7 demand ${d.demand}` }),
           h('ul', { class: 'why', id: 'tnWhy' }, ...cur.why.concat(d.why.slice(0, 2)).map(w => h('li', {}, w.t, provChip(SRC_PROV[w.src] || null, w.src)))),
           lineBox,
           stand ? h('p', { class: 'muted small', text: `Model runs on the nearest preset (${ml.preset}, ${ml.presetLen} ft) with your ${num(b.speed) || START.speed} mph and ${num(b.rev) || START.rev} rpm. An estimate, not a promise.` }) : null));
@@ -219,10 +223,10 @@ export async function render(o = {}) {
       body.append(h('div', { class: 'card tn-now', id: 'tnNow' },
         h('p', { class: 'tn-line', id: 'tnNowLine' }, h('b', { text: hb ? hb.name : 'No ball' }), ' ', aimChip(HL && HL.stand, HL && HL.ml, hb && (hb.id || hb.catalogId))),
         gameOpen ? null : thenLine),   // C3: during a game the ball-change plan sits under details
-        quickLog(P, s, cur, b, hand, stand, g, team), alts || '', !gameOpen && reads ? reads : '',   // between games: the read and Weaker/Stronger in reach (J06)
+        quickLog(P, s, cur, b, hand, stand, g, team),   // v73 no-scroll Score page (owner t127u): Weaker/Stronger and the read moved into the one details below (docs/CUTS_V73.md)
         // HOME_GAME_FLOW: mid-game this holds ball, line and lane/scoring details only (no bag advisor or Bag builder link); between games the advisor returns.
-        h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: gameOpen ? 'Ball, lanes and line details' : 'Bag, lanes and line details' }),
-          ...(gameOpen ? [] : advisorCard(P, s, b, adv, cur && { name: cur.name, ml, catalogId: cur.catalogId })), h('p', { class: 'coach', id: 'tnCoach', text: coach }), gameOpen && thenLine ? thenLine : '', pick || '', gameOpen && reads ? reads : '', !gameOpen && s.event === 'practice' ? drillCard(P, s) : '', setup));
+        h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: 'Ball change, read and details' }), alts || '', reads || '',
+          ...(gameOpen ? [] : advisorCard(P, s, b, adv, cur && { name: cur.name, ml, catalogId: cur.catalogId })), h('p', { class: 'coach', id: 'tnCoach', text: coach }), gameOpen && thenLine ? thenLine : '', pick || '', '', !gameOpen && s.event === 'practice' ? drillCard(P, s) : '', setup));
       if (gameOpen) requestAnimationFrame(padToThumb);
       return;
     }
@@ -472,8 +476,8 @@ export async function render(o = {}) {
       // the ball picker (or the frame picker) takes the pad's place while open, so the sticky pad never covers it
       card.append(pickBall || (pickFix && tools.picker ? h('div', { class: 'ql-pad', id: 'qlPad' }, tools.picker)
         : h('div', { class: 'ql-pad', id: 'qlPad' }, hintEl, pins, btns)));
-      if (!facingLeave && !edit && meUp) card.append(h('div', { class: 'fld' }, h('span', { text: 'First ball hit (optional, for triggers)' }),
-        segmented('First ball hit', [['pocket', 'Pocket'], ['high', 'High'], ['light', 'Light']], ql.tag, v => { ql.tag = ql.tag === v ? null : v; draw(); }, 'wide')));
+      if (!facingLeave && !edit && meUp) card.append(h('div', { class: 'fld ql-hit' },
+        segmented('First ball hit (optional)', [['pocket', 'Hit: Pocket'], ['high', 'High'], ['light', 'Light']], ql.tag, v => { ql.tag = ql.tag === v ? null : v; draw(); }, 'wide')));
     }
     // triggers: first balls + reads this session, newest last
     const seq = P.shots.filter(x => x.sessionId === sid && x.roll === 1 && x.frame != null).map(x => ({ ts: x.ts, miss: x.miss || (x.down === 10 ? 'strike' : null) }))
@@ -512,7 +516,7 @@ export async function render(o = {}) {
   function strikeStrip(c) {
     const id = c && (c.id || c.catalogId);
     // One row, no card around it: Find my strike line (primary, the wide cell) and Lane view.
-    return h('div', { class: 'btn-grid tn-strike', id: 'tnStrike' }, h('a', { class: 'btn primary', id: 'tnFindLine', href: '#/target?find=1' + (id ? '&ball=' + encodeURIComponent(id) : '') }, 'Find my strike line \u203a'),
+    return h('div', { class: 'btn-grid tn-strike', id: 'tnStrike' }, h('a', { class: 'btn primary', id: 'tnFindLine', href: '#/strike?find=1' + (id ? '&ball=' + encodeURIComponent(id) : '') }, 'Find my strike line \u203a'),
       h('a', { class: 'btn ghost', id: 'tnLaneLink', href: '#/lane' }, 'Lane view \u203a'));
   }
   function arsenalStrip(P, packedN) {
@@ -567,7 +571,7 @@ export async function render(o = {}) {
   function startLine(S) {
     if (!S || !S.name) return '';
     const ml = S.ml, st = ml && !ml.none ? standOf(ml.feet) : null;
-    return h('p', { class: 'coach', id: 'advStart', role: 'status', text: st ? `Start with: ${S.name}, from feet ${st.feet}, aim ${fmtHalf(ml.target)} at the arrows.` : `Start with: ${S.name}. ${(ml && ml.reason) || 'spec TBD: no model line'}, so set feet and eyes on Targeting.` },
+    return h('p', { class: 'coach', id: 'advStart', role: 'status', text: st ? `Start with: ${S.name}, from feet ${st.feet}, aim ${fmtHalf(ml.target)} at the arrows.` : `Start with: ${S.name}. ${(ml && ml.reason) || 'Specs not published: no model line'}, so set feet and eyes on Targeting.` },
       st ? (ml && ml.kept ? provChip('user', 'your line (set on Lane or Targeting)') : provChip(st.assumed ? 'assumed' : 'model', '2-D model')) : null, ' ', aimChip(st, ml, S.catalogId || (S.cat && S.cat.id) || null));
   }
   // Now item 3 (PRODUCT_EVAL_1 #3, 2026-11-02): the Stand \u00b7 Aim chip opens Targeting in one tap (it used to open the Lane, then

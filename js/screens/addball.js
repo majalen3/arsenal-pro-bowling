@@ -87,13 +87,15 @@ export async function render() {
     if (offline()) { st.ctl = null; st.lookState = 'miss'; st.lookMsg = OFFLINE_MSG; draw(); return; }
     if (!supported) { st.lookState = 'skip'; st.lookMsg = A.UNSUPPORTED[e.brand] || `No maker lookup for ${e.brand} yet; showing catalogue values.`; draw(); return; }
     const ctl = st.ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 25000), t0 = performance.now();
+    st.missSource = null; st.missSearch = null;
     st.lookState = 'busy'; st.lookMsg = `Looking up ${e.brand} ${e.name} on the maker site\u2026`; draw();
     try {
       const res = await lookup(qs, ctl.signal); if (ctl !== st.ctl) return;
       const ms = Math.round(performance.now() - t0);
       if (res.status === 'found') { st.look = res; st.lookState = 'found'; st.lookMsg = `Found on ${res.source.host} in ${(ms / 1000).toFixed(1)} s${res.cached ? ' (cached)' : ''}.`; }
       else if (res.status === 'candidates') { st.makerCands = res.candidates || []; st.lookState = 'cands'; st.lookMsg = `${st.makerCands.length} pages on the ${e.brand} site could be this ball. Pick one.`; }
-      else { st.lookState = 'miss'; st.lookMsg = (res.why || 'No maker page found.') + (e.src === 'maker' ? '' : ' Showing catalogue values.'); }
+      else { st.lookState = 'miss'; st.missSource = res.source && res.source.url || null; st.missSearch = res.searchUrl || null;
+        st.lookMsg = (res.noSpecs || (res.source && res.source.url) ? 'Found the maker page, but it lists no RG or differential for this ball.' : res.why || 'No maker page found.') + (e.src === 'maker' ? '' : ' Showing catalogue values.'); }
     } catch (err) {
       if (ctl !== st.ctl) return; st.lookState = 'miss'; st.lookMsg = err && err.name === 'AbortError' ? 'The lookup server is waking up or offline. Try again in a minute.' : OFFLINE_MSG;
     } finally { clearTimeout(timer); if (ctl === st.ctl) { st.ctl = null; draw(); } }
@@ -110,8 +112,16 @@ export async function render() {
   function draw() {
     detail.innerHTML = ''; const e = st.pick; if (!e) return;
     const P = proj(), { fields, conflicts, made, cat } = current();
-    detail.append(h('p', { class: 'small', id: 'abStatus', role: 'status', 'data-state': st.lookState }, st.lookMsg,
-      st.lookState === 'miss' && e.brand && A.LOOKUP_BRANDS.includes(e.brand) ? h('button', { class: 'btn ghost sm', id: 'abRetry', style: { marginLeft: '8px' }, onclick: () => runLookup({ brand: e.brand, name: e.name }) }, 'Retry') : null));
+    // t123u: a miss is a card with next steps (retry, the maker's own search or page, type the specs), not a loose line + cramped Retry.
+    if (st.lookState === 'miss' && e.brand && A.LOOKUP_BRANDS.includes(e.brand)) {
+      const ms = A.makerSearch(e.brand, e.name), page = st.missSource;
+      detail.append(h('div', { class: 'card ab-miss', id: 'abMiss' },
+        h('p', { class: 'small', id: 'abStatus', role: 'status', 'data-state': st.lookState, text: st.lookMsg }),
+        h('div', { class: 'btn-grid' }, h('button', { class: 'btn ghost', id: 'abRetry', onclick: () => runLookup({ brand: e.brand, name: e.name }) }, 'Retry'),
+          page ? h('a', { class: 'btn ghost', id: 'abMakerPage', href: page, target: '_blank', rel: 'noopener noreferrer' }, 'Maker page \u2197')
+            : ms ? h('a', { class: 'btn ghost', id: 'abMakerSearch', href: st.missSearch || ms.url, target: '_blank', rel: 'noopener noreferrer' }, 'Maker search \u2197') : null),
+        h('p', { class: 'small muted', text: 'Or type the specs from the box or the maker\u2019s spec card below.' })));
+    } else detail.append(h('p', { class: 'small', id: 'abStatus', role: 'status', 'data-state': st.lookState }, st.lookMsg));
     if (st.lookState === 'cands') detail.append(h('div', { class: 'card', id: 'abMakerCands' }, h('h2', { class: 'card-title', text: 'Which page?' }),
       h('div', { class: 'blist' }, ...st.makerCands.map(c => h('div', { class: 'brow' }, h('button', { class: 'brow-main', 'data-url': c.url, onclick: () => runLookup({ url: c.url }) },
         h('span', { class: 'brow-text' }, h('span', { class: 'brow-name', text: c.label }), h('span', { class: 'brow-meta', text: new URL(c.url).host }))))))));
@@ -122,17 +132,19 @@ export async function render() {
     const dl = h('dl', { class: 'kv', id: 'abFields' });
     for (const k of ORDER) {
       const x = fields[k]; if (!x && (k === 'year' || k === 'condition' || k === 'intDiff' && !made)) continue;
-      dl.append(h('dt', { text: LABEL[k] }), h('dd', { 'data-f': k }, x ? fmt(k, x.v) : h('span', { class: 'muted', text: 'spec TBD' }),
+      dl.append(h('dt', { text: LABEL[k] }), h('dd', { 'data-f': k }, x ? fmt(k, x.v) : h('span', { class: 'muted', 'data-missing': '', title: 'not published', text: '\u2014' }),
         x && x.note ? h('span', { class: 'muted small', text: ' ' + x.note }) : null, x ? prov(x.prov && x.prov.kind, chip(x.prov)) : null,
         x && x.weightMismatch ? prov('assumed', 'other weight') : null));
     }
+    const gone = ORDER.filter(k => !fields[k] && !(k === 'year' || k === 'condition' || k === 'intDiff' && !made)).map(k => LABEL[k]);
+    const specNote = gone.length ? h('p', { class: 'small muted', id: 'abSpecNote', text: `Not published: ${gone.join(', ')}. Type them from the box if you have them.` }) : null;
     const lvl = G.cellOfCat(cat).level;
     const srcOf = made && made.source.url ? { url: made.source.url, ref: made.source.ref, date: made.source.date } : e.source ? { url: e.source, ref: e.specStatus === 'archive' && e.original ? `archived copy of ${new URL(e.original).host.replace(/^www\./, '')} (Wayback Machine)` : e.specStatus === 'secondary' && e.attribution ? e.attribution : new URL(e.source).host.replace(/^www\./, ''), date: e.checked } : null;
     const src = srcOf ? h('p', { class: 'small', id: 'abSource' }, 'Source: ', h('a', { class: 'srclink', href: srcOf.url, target: '_blank', rel: 'noopener noreferrer', text: srcOf.ref }), srcOf.date ? ` \u00b7 read ${srcOf.date}` : '') : null;
     detail.append(h('div', { class: 'card', id: 'abConfirm' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: `2. Check ${e.brand} ${e.name}` }), helpDot('eq-cover-types', 'Cover types')),
       h('div', { class: 'fld' }, h('span', {}, 'Ball weight ', st.weightSet ? null : prov('assumed', 'assumed 15 lb')),
         segmented('Ball weight', wts.map(w => [String(w), w + ' lb']), String(st.weight), v => { st.weight = +v; st.weightSet = true; draw(); }, 'wide')),
-      dl, src, e.flag ? h('p', { class: 'small', id: 'abFlag', text: e.flag }) : null,
+      dl, specNote, src, e.flag ? h('p', { class: 'small', id: 'abFlag', text: e.flag }) : null,
       conflicts.length ? h('div', { id: 'abConflicts' }, h('p', { class: 'small' }, h('b', { text: 'Sources disagree; maker value used.' })),
         h('ul', { class: 'plain small' }, ...conflicts.map(c => h('li', { 'data-conflict': c.field, text: `${LABEL[c.field]}: maker ${fmt(c.field, c.maker)}${c.note ? ' (' + c.note + ')' : ''} vs ${chip(c.otherProv)} ${fmt(c.field, c.other)}` })))) : null,
       lvl == null ? h('div', { class: 'fld', id: 'abLevel' }, h('span', { text: 'No oil condition printed. Where would you use it?' }),
@@ -142,7 +154,7 @@ export async function render() {
     const s = (P.sessions || {})[openNight(P) || ''] || {}, ft = s.ft != null ? s.ft : HOUSE_ASSUMED.ft, patName = s.ft != null ? (s.patternName || s.patternSlug || 'Tonight') : 'House shot (assumed)';
     const speed = num(b.speed) || START.speed, rev = num(b.rev) || START.rev, eng = h('div', { class: 'card', id: 'abEngine' }, h('h2', { class: 'card-title', text: '3. Ball motion vs the benchmark' }));
     const miss = A.missing(fields);
-    if (miss.length) eng.append(h('p', { class: 'small', id: 'abNoEngine', text: `Spec TBD: no engine run. Missing ${miss.join(', ')}.` }));
+    if (miss.length) eng.append(h('p', { class: 'small', id: 'abNoEngine', text: `No engine run until ${miss.join(', ')} ${miss.length === 1 ? 'is' : 'are'} known.` }));
     else {
       const ownBench = Object.values(P.owned).find(o => o.benchmark), bench = ownBench && catOf(ownBench.catalogId);
       const c = bench ? A.compare(cat, { bench, speed, rev, ft }) : { none:true, reason:'No owned benchmark chosen. Add without a comparison; no benchmark or ownership is assumed.' };
@@ -198,7 +210,7 @@ export async function render() {
   function typeCard() {
     // Only the four the 2-D engine needs, and only where nothing is on file. Values come from the ball's box or the maker's card.
     const base = current().fields, need = k => !base[k] || st.manual[k] != null, card = h('div', { class: 'card ab-type', id: 'abType' },
-      h('h2', { class: 'card-title', text: 'Type the specs' }), h('p', { class: 'muted small', text: 'From the box, the hang tag or the maker\u2019s spec card. Leave any you don\u2019t have: they read spec TBD.' }));
+      h('h2', { class: 'card-title', text: 'Type the specs' }), h('p', { class: 'muted small', text: 'From the box, the hang tag or the maker\u2019s spec card. Leave any you don\u2019t have: they show as not published.' }));
     for (const k of ['rg', 'diff']) if (need(k)) {
       const t = TYPE[k], inp = h('input', { type: 'text', inputmode: 'decimal', id: 'abType-' + k, 'aria-label': t.lab, placeholder: t.ph, autocomplete: 'off', value: st.manual[k] != null ? String(st.manual[k]) : '' });
       inp.addEventListener('change', () => {
