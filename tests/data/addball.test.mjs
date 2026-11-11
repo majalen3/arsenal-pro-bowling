@@ -60,7 +60,7 @@ test('catalogue rows: maker provenance with URL + read date, plastic not engine-
   const rk = A.entryById('sc-hammer-reckoning'); assert.equal(rk.fields.symmetry.v, 'Asymmetric'); assert.equal(rk.fields.symmetry.prov.kind, 'derived');
   const pl = A.catalog().find(x => x.src === 'catalog' && x.fields.coverType && x.fields.coverType.v === 'Plastic' && x.fields.rg);
   assert.ok(pl); assert.equal(A.engineReady(pl.fields), false); assert.match(A.missing(pl.fields)[0], /Plastic cover/);
-  const rows = A.catalog().filter(x => x.src === 'catalog'); assert.equal(rows.length, 143);
+  const rows = A.catalog().filter(x => x.src === 'catalog'); assert.equal(rows.length, 150);   // 143 + 7 maker rows added 2026-11-10 (Phaze II, Phaze 4, Phaze AI, Attention Star, Black Widow 3.0, Purple Pearl Urethane, Venom Shock)
   for (const r of rows) {
     assert.doesNotMatch(JSON.stringify(r), /bowlingballvideos|bowwwl|bowlingball\.com|bowlingthismonth/i, r.id);
     if (r.specStatus === 'maker') { assert.match(r.source, /^https:\/\//, r.id); for (const f of Object.values(r.fields)) assert.ok(['manufacturer', 'derived', 'usbc'].includes(f.prov.kind), r.id); }

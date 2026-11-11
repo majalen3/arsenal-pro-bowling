@@ -83,13 +83,13 @@ async def main():
   assert counts['badge.view']['n']>0 and counts['nextup.view']['n']>0
   st=await p.evaluate("async () => (await import('./js/cc/ux.js')).load()")
   assert len(st['taps'])==1 and st['taps'][0]['ball']
-  # SW caches v68 and new display helper; local flags are not event-log/sync records.
-  await p.wait_for_function("async () => (await caches.keys()).includes('arsenal-pro-v68')",timeout=15000)
+  # SW caches v69 and new display helper; local flags are not event-log/sync records.
+  await p.wait_for_function("async () => (await caches.keys()).includes('arsenal-pro-v69')",timeout=15000)
   await c.set_offline(True);await goto('bag?view=all','#armMilestones');assert await p.locator('[data-badge]').count()==3
   await shot('armory-offline',True);await c.set_offline(False)
   assert not errors,errors
   if os.path.exists(OUT+'/failure.png'): os.remove(OUT+'/failure.png')
   with open(OUT+'/results.json','w') as f:json.dump({'width':360,'checks':'passed','pageErrors':errors,'localCounters':counts,'screenshots':sorted(set(captured))},f,indent=2)
-  print('PASS Now UI: earned-only/Old Friends, opt-in next-up, model chips/summary both arms, 44px cards, preview/counter, no active-scoring extras, unverified guard, offline v68; 360px shots:',OUT)
+  print('PASS Now UI: earned-only/Old Friends, opt-in next-up, model chips/summary both arms, 44px cards, preview/counter, no active-scoring extras, unverified guard, offline v69; 360px shots:',OUT)
   await c.close();await b.close()
 asyncio.run(main())

@@ -56,11 +56,12 @@ export async function render() {
     if (!st.q.trim()) { results.append(h('p', { class: 'muted small', text: `${A.catalog().length} balls in the catalogue. ${A.CATALOG_NOTE}` })); return; }
     const row = (e, score) => h('button', { class: 'brow-main', 'data-pick': e.id, onclick: () => pick(e) },
       h('span', { class: 'brow-text' }, h('span', { class: 'brow-name', text: `${e.brand} ${e.name}` }),
-        h('span', { class: 'brow-meta', text: (e.src === 'app' ? 'app catalogue' : 'catalogue') + (score != null ? ` \u00b7 match ${Math.round(score * 100)}%` : ' \u00b7 exact match') })));
+        h('span', { class: 'brow-meta', text: (e.src === 'app' ? 'app catalogue' : 'catalogue') + (typeof score === 'string' ? ` \u00b7 ${score}` : score != null ? ` \u00b7 match ${Math.round(score * 100)}%` : ' \u00b7 exact match') })));
     const list = h('div', { class: 'blist', id: 'abList' });
-    if (r.exact) list.append(h('div', { class: 'brow' }, row(r.exact, null)));
-    r.candidates.forEach(c => list.append(h('div', { class: 'brow' }, row(c.entry, c.score))));
-    if (!r.exact && !r.candidates.length) results.append(h('p', { class: 'small', id: 'abNoMatch', text: 'Not in the catalogue.' }));
+    // Every catalogue entry that contains the typed name (A.browse), the exact alias first; fuzzy-only rows keep their match %.
+    const scoreOf = new Map(r.candidates.map(c => [c.entry.id, c.score]));
+    A.browse(st.q).forEach(e => list.append(h('div', { class: 'brow' }, row(e, r.exact && e.id === r.exact.id ? null : A.matches(e, st.q) ? 'name match' : scoreOf.get(e.id)))));
+    if (!list.childElementCount) results.append(h('p', { class: 'small', id: 'abNoMatch', text: 'Not in the catalogue.' }));
     results.append(list);
     if (offline()) {   // IA_PLAN §6 midnight/offline: the catalogue still works; the maker lookup needs the network
       results.append(h('p', { class: 'small', id: 'abOffline', role: 'status', text: OFFLINE_MSG }),

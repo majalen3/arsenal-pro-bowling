@@ -207,8 +207,8 @@ export function takeaways(c) {
 export function headline(c) {
   if (c.takeaways && c.takeaways.leak) return { text: c.takeaways.leak.text.replace(/\.$/, '') + '. ' + c.takeaways.drill.text.split('.')[0] + '.', k: c.takeaways.drill.k };
   if (c.takeaways) return { text: c.takeaways.strength.text, k: c.takeaways.strength.k };
-  if (c.empty) return { text: 'Score a game on Tonight or import a LaneTrax report to fill your card.', k: 'empty' };
-  return { text: 'Score a game on Tonight to see your strikes and spares here.', k: 'thin' };
+  if (c.empty) return { text: 'Score a game from the Building or import a LaneTrax report to fill your card.', k: 'empty' };
+  return { text: 'Score a game from the Building to see your strikes and spares here.', k: 'thin' };
 }
 // F08: the one leave to work on, from every scored throw on the card (same rule as the recap's next focus): the leave seen
 // at least twice with the lowest make rate. Informational, non-evaluative: names the leave and the count, nothing else.

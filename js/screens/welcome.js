@@ -41,16 +41,19 @@ export async function render({ query } = {}) {
   const brand = h('select', { id:'welBrand', 'aria-label':'Filter catalog by brand' }, h('option', { value:'', text:'All brands' }), ...[...new Set(A.catalog().map(e => e.brand))].sort().map(b => h('option', { value:b, text:b })));
   const next = h('button', { class:'btn primary block', id:'welNext', onclick:() => { if (reviewing) save(); else { reviewing = true; draw(); } } });
   const body = h('div', { class:'wel-body' }), count = h('p', { class:'small', id:'welCount', role:'status' });
-  const finish = (skip = false) => { setPrefs({ onboarded:true }); go(skip ? '#/tonight' : '#/bag?view=all', { replace:true }); };
-  const addDraft = e => { const id = 'own-' + uuid(); draft.push({ id, entry:e, name:`${e.brand} ${e.name}`.trim() }); };
+  const finish = (skip = false) => { setPrefs({ onboarded:true }); go('#/tonight', { replace:true }); };
+  // A second physical copy sits right under the ball it copies (live eval: it landed at the bottom, so nicknames went on the wrong row).
+  const addDraft = (e, near = false) => { const id = 'own-' + uuid(), base = `${e.brand} ${e.name}`.trim(), same = draft.filter(d => d.entry.id === e.id).length;
+    const row = { id, entry:e, name:same ? `${base} #${same + 1}` : base, copyOf:same ? e.id : null };
+    if (near && same) { let at = -1; draft.forEach((d, i) => { if (d.entry.id === e.id) at = i; }); draft.splice(at + 1, 0, row); } else draft.push(row); return row; };
   function select(e) { const i = draft.findIndex(d => d.entry.id === e.id); if (i < 0) addDraft(e); else { for (let j = draft.length - 1; j >= 0; j--) if (draft[j].entry.id === e.id) draft.splice(j, 1); } drawResults(); paintChosen(); }
   function drawResults() {
-    const text = q.value.trim(), r = text ? A.search(text, { limit:A.catalog().length }) : null;
-    const all = r ? (r.exact ? [r.exact] : r.candidates.map(c => c.entry)) : A.catalog();
+    const text = q.value.trim(), all = A.browse(text);   // every catalog match, not only the one exact alias (live eval: Hy-Road showed 1 of 5)
     const items = all.filter(e => !brand.value || e.brand === brand.value); result.replaceChildren();
     for (const e of items.slice(0, limit)) { const n = draft.filter(d => d.entry.id === e.id).length;
       result.append(h('button', { class:'brow-main', 'data-select':e.id, 'aria-pressed':String(n > 0), onclick:() => select(e) }, h('span', { class:'brow-text' }, h('span', { class:'brow-name', text:`${e.brand} ${e.name}` }), h('span', { class:'brow-meta', text:n ? `Selected · ${n} physical ${n === 1 ? 'ball' : 'balls'}` : 'Catalog model · not owned until you save' })))); }
     if (!items.length) result.append(h('p', { class:'muted', text:'No catalog match. Add by name below; specs can stay unknown.' }));
+    else if (text) result.prepend(h('p', { class:'small muted', id:'welMatchCount', role:'status', text:`${items.length} catalog ${items.length === 1 ? 'match' : 'matches'} for \u201c${text}\u201d` }));
     if (items.length > limit) result.append(h('button', { class:'btn ghost block', id:'welMore', onclick:() => { limit += 6; drawResults(); } }, 'More matches'));
   }
   function paintChosen() {
@@ -59,9 +62,9 @@ export async function render({ query } = {}) {
   }
   function drawReview() {
     chosen.replaceChildren();
-    for (const d of draft) chosen.append(h('div', { class:'card' }, h('h2', { class:'card-title', text:`${d.entry.brand} ${d.entry.name}`.trim() }),
+    for (const d of draft) chosen.append(h('div', { class:'card' + (d.copyOf ? ' wel-copy' : ''), 'data-draft':d.id, 'data-entry':d.entry.id }, h('h2', { class:'card-title', text:`${d.entry.brand} ${d.entry.name}`.trim() + (d.copyOf ? ` \u00b7 copy ${draft.filter(x => x.entry.id === d.entry.id).indexOf(d) + 1}` : '') }),
       h('label', { class:'fld' }, h('span', { text:'Name for this physical copy' }), h('input', { value:d.name, maxlength:100, 'data-nickname':d.id, oninput:e => { d.name = e.target.value.slice(0,100); } })),
-      h('div', { class:'btn-grid' }, h('button', { class:'btn ghost', 'data-copy':d.id, onclick:() => { addDraft(d.entry); draw(); } }, 'Add another copy'), h('button', { class:'btn ghost', 'data-remove':d.id, onclick:() => { draft.splice(draft.indexOf(d), 1); draw(); } }, 'Remove'))));
+      h('div', { class:'btn-grid' }, h('button', { class:'btn ghost', 'data-copy':d.id, onclick:() => { const c = addDraft(d.entry, true); draw(); const f = chosen.querySelector(`[data-nickname="${c.id}"]`); if (f) f.focus(); } }, 'Add another copy'), h('button', { class:'btn ghost', 'data-remove':d.id, onclick:() => { draft.splice(draft.indexOf(d), 1); draw(); } }, 'Remove'))));
   }
   function draw() {
     body.replaceChildren(h('h1', { class:'title xl', text:reviewing ? 'These are mine' : reviewLegacy ? 'Review your older bag' : 'Add your balls' }), h('p', { class:'muted', text: reviewLegacy ? 'The older app showed 22 catalog models by default. Choose only physical balls you own. Existing saved balls, games and lines stay unchanged.' : 'Your arsenal starts empty. Search the shared catalog, then save only the balls you own. No account needed.' }));

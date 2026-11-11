@@ -1,0 +1,88 @@
+"""HOME_GAME_FLOW focused check + 360 px screenshots: empty Building -> search (all Hy-Roads, Phaze II) -> two copies stay
+together -> pack tonight's bag additively -> enter the game (no extras) -> End night -> back in the Building.
+Usage: python tests/home_game_flow.py http://localhost:8350/ [--shots /tmp/shots-home-flow]. No production API calls."""
+import asyncio, json, sys, os
+from playwright.async_api import async_playwright
+BASE = sys.argv[1] if len(sys.argv) > 1 else 'http://localhost:8350/'
+SHOTS = sys.argv[sys.argv.index('--shots') + 1] if '--shots' in sys.argv else None
+fails, man = [], []
+def check(ok, msg):
+    print(('PASS ' if ok else 'FAIL ') + msg, flush=True)
+    if not ok: fails.append(msg)
+async def shot(p, name, what):
+    if not SHOTS: return
+    os.makedirs(SHOTS, exist_ok=True)
+    await p.evaluate("() => { const t = document.querySelector('#toast'); if (t) t.style.visibility = 'hidden'; }"); await p.wait_for_timeout(900)
+    await p.screenshot(path=f'{SHOTS}/{name}', full_page=False); man.append({'file': name, 'what': what})
+    await p.evaluate("() => { const t = document.querySelector('#toast'); if (t) t.style.visibility = ''; }")
+async def main():
+    async with async_playwright() as pw:
+        b = await pw.chromium.launch()
+        c = await b.new_context(viewport={'width': 360, 'height': 780}, device_scale_factor=2, is_mobile=True, has_touch=True, service_workers='block')
+        await c.route('https://arsenal-pro-api.onrender.com/**', lambda r: r.fulfill(status=503, body='{}'))
+        p = await c.new_page(); errs = []
+        p.on('pageerror', lambda e: errs.append(str(e)))
+        await p.goto(BASE); await p.wait_for_selector('#welSearch')
+        await p.click('#welSkip'); await p.wait_for_selector('#noBag')
+        r = await p.evaluate("() => ({ h: location.hash, title: document.querySelector('#tnTitle').textContent, tabs: [...document.querySelectorAll('#tabs .tab')].map(t => t.textContent.trim()), cur: (document.querySelector('#tabs [aria-current=page]') || {}).textContent, find: !!document.querySelector('#findMyBalls'), owned: document.querySelector('#noBag').textContent })")
+        check(r['h'].startswith('#/tonight') and r['title'] == 'The building' and r['tabs'] == ['Building', 'Bag', 'Results', 'Learn'] and r['cur'] == 'Building' and r['find'], f'empty Building is home: 4 tabs, Find my balls {r}')
+        check('22' not in r['owned'], 'no owner 22-ball preload')
+        await shot(p, '01-empty-building.png', 'Fresh profile, after Skip: the Building (home) with an empty arsenal, Find my balls first; 4 tabs, no Bowl tab')
+        await p.click('#findMyBalls'); await p.wait_for_selector('#welSearch')
+        await p.fill('#welSearch', 'Hy-Road'); await p.wait_for_timeout(300)
+        rows = await p.eval_on_selector_all('#welResults [data-select]', 'e => e.map(x => x.querySelector(".brow-name").textContent)')
+        check(len([x for x in rows if 'Hy-Road' in x]) == 5, f'search Hy-Road lists all five {rows}')
+        await shot(p, '02-search-hyroad-all.png', "Search 'Hy-Road': all 5 Hy-Road models listed with a match count")
+        await p.click('#welResults [data-select="hy-road-pearl"]')
+        for q, want in [('Rattler', 4), ('Phaze', 3)]:
+            await p.fill('#welSearch', q); await p.wait_for_timeout(250)
+            rows = await p.eval_on_selector_all('#welResults [data-select]', 'e => e.map(x => x.querySelector(".brow-name").textContent)')
+            check(len([x for x in rows if q in x]) >= want, f'search {q} lists {want}+ {rows}')
+        await p.fill('#welSearch', 'phaze 2'); await p.wait_for_timeout(250)
+        await p.click('#welResults [data-select="sc-storm-phaze-ii"]')
+        await p.fill('#welSearch', 'super nova'); await p.wait_for_timeout(250); await p.click('#welResults [data-select="super-nova"]')
+        await p.click('#welNext'); await p.wait_for_selector('[data-copy]')
+        await p.click('[data-entry="hy-road-pearl"] [data-copy]'); await p.wait_for_timeout(200)
+        order = await p.eval_on_selector_all('#welChosen [data-entry]', 'e => e.map(x => x.dataset.entry)')
+        names = await p.eval_on_selector_all('#welChosen [data-nickname]', 'e => e.map(x => x.value)')
+        check(order[:2] == ['hy-road-pearl', 'hy-road-pearl'] and names[1].endswith('#2'), f'second copy sits under its ball, named #2 {order} {names}')
+        await p.evaluate("() => document.querySelector('#welChosen [data-entry=\"hy-road-pearl\"] + [data-entry=\"hy-road-pearl\"]').scrollIntoView({block:'center'})")
+        await shot(p, '03-two-copy-add.png', "Review: 'Add another copy' puts Hy-Road Pearl #2 directly under Hy-Road Pearl")
+        await p.click('#welNext'); await p.wait_for_function("() => location.hash.startsWith('#/tonight')")
+        await p.wait_for_selector('#tnArsenal')
+        t = await p.text_content('#tnArsenalLine'); check('Arsenal: 4 balls' in t and '0 packed' in t, f'Building shows arsenal and tonight\u2019s bag apart ({t})')
+        await p.click('#tnPack'); await p.wait_for_selector('#bagStartEmpty'); await p.click('#bagStartEmpty'); await p.wait_for_selector('#bagBring')
+        ex = await p.text_content('#bagExplain'); check('everything you own' in ex, f'Bag explains tonight vs arsenal ({ex})')
+        # Bring 4 fills additively
+        await p.click('#bagBring button:has-text("4")'); await p.wait_for_timeout(500)
+        n = await p.eval_on_selector_all('#bagRows [data-own]', 'e => e.length'); check(n == 4, f'Bring 4 packs 4 of 4 owned ({n})')
+        await p.click('#bagBring button:has-text("2")'); await p.wait_for_timeout(500)
+        ids = await p.eval_on_selector_all('#bagRows [data-own]', 'e => e.map(x => x.querySelector("b").textContent)')
+        check(len(ids) == 2 and any('Super Nova' in x or 'Phaze' in x for x in ids), f'Bring 2 keeps a ball with specs ({ids})')
+        await p.click('#bagFill'); await p.wait_for_timeout(400)
+        dif = await p.query_selector('#bagDiff'); after = await p.eval_on_selector_all('#bagRows [data-own]', 'e => e.length')
+        check(after >= 2, f'Suggest again does not shrink the bag ({after}, proposal {bool(dif)})')
+        if dif: await p.click('#bagKeep')
+        await p.click('#bagBring button:has-text("3")'); await p.wait_for_timeout(500)
+        await p.evaluate("() => scrollTo(0, 0)")
+        await shot(p, '04-packing-tonight.png', "Bag: plain 'Tonight\u2019s bag vs All my balls' line; Bring 3 after 4 -> 2 -> 3, additive, a ball with specs kept")
+        await p.click('#bagPackGo'); await p.wait_for_function("() => location.hash.startsWith('#/tonight')"); await p.wait_for_selector('#tnStartBowl')
+        await p.click('#tnStartBowl'); await p.wait_for_selector('#qlStrike')
+        for _ in range(3): await p.click('#qlStrike'); await p.wait_for_timeout(450)
+        g = await p.evaluate("() => ({ h: location.hash, tab: getComputedStyle(document.querySelector('#tabs')).display, me: !!document.querySelector('#meBtn'), help: !!document.querySelector('#helpToggle'), leave: !!document.querySelector('#tnLeave:not([hidden])'), title: document.querySelector('#tnTitle').textContent, extras: [...document.querySelectorAll('#view .milestone, #view [data-badge], #tnShareNight, #tnBagLink, #advEvent, #tnArsenal')].filter(x => x.offsetParent).map(x => x.id || x.className) })")
+        check(g['h'] == '#/bowl' and g['tab'] == 'none' and not g['me'] and not g['help'] and g['leave'] and g['title'] == 'Game' and not g['extras'], f'in-game page: no tab bar, no Me/Help, Leave button, no extras {g}')
+        await shot(p, '05-in-game-midgame.png', 'Game page mid-game (frame 4): scoring, ball chip, aim, Leave to the Building; no tab bar, badges, share, tests or bag management')
+        await p.click('#tnLeave'); await p.wait_for_function("() => location.hash === '#/tonight' && document.querySelector('#tnStartBowl[data-back]')")
+        r = await p.evaluate("() => ({ h: location.hash, back: (document.querySelector('#tnStartBowl') || {}).textContent })")
+        check(r['h'] == '#/tonight' and 'Back to the game' in (r['back'] or ''), f'Leave returns to the Building with Back to the game {r}')
+        await p.click('#tnStartBowl'); await p.wait_for_selector('#qlStrike')
+        for _ in range(9): await p.click('#qlStrike'); await p.wait_for_timeout(450)
+        await p.wait_for_selector('#qlEnd'); await p.click('#qlEnd'); await p.wait_for_selector('#tnNightDone')
+        r = await p.evaluate("() => ({ h: location.hash, line: document.querySelector('#tnNightLine').textContent, tab: getComputedStyle(document.querySelector('#tabs')).display, cur: (document.querySelector('#tabs [aria-current=page]') || {}).textContent })")
+        check(r['h'].startswith('#/tonight?night=') and '300' in r['line'] and r['tab'] != 'none' and r['cur'] == 'Building', f'End night returns to the Building with the night {r}')
+        await shot(p, '06-return-building.png', 'After End night: back in the Building, Night saved card (300), link to Results, tab bar back')
+        check(not errs, f'no page errors {errs}')
+        await b.close()
+    if SHOTS: json.dump({'run': 'home-game-flow 360x780 mobile Chromium, fresh profile, fictional data, local server', 'base': BASE, 'files': man}, open(f'{SHOTS}/manifest.json', 'w'), indent=1)
+    print(f'{len(fails)} failed'); sys.exit(1 if fails else 0)
+asyncio.run(main())

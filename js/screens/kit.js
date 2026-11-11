@@ -34,7 +34,7 @@ export async function render() {
   const addId = id => { if (ids.includes(id)) return; if (ids.length >= MAX) { toast(`A sheet holds ${MAX} codes. Print this one and start another.`); return; } ids.push(id); save(); draw(); };
   function drawResults() {
     results.innerHTML = ''; if (!q.value.trim()) return;
-    const r = A.search(q.value), list = [r.exact, ...r.candidates.map(c => c.entry)].filter(Boolean);
+    const list = A.browse(q.value).slice(0, 12);
     if (!list.length) { results.append(h('p', { class: 'small', text: 'Not in the catalogue, so no code for it yet.' })); return; }
     results.append(h('div', { class: 'blist' }, ...list.map(e => h('div', { class: 'brow' }, h('button', { class: 'brow-main', 'data-kit-add': e.id, onclick: () => { addId(e.id); q.value = ''; drawResults(); } },
       h('span', { class: 'brow-text' }, h('span', { class: 'brow-name', text: `${e.brand} ${e.name}` }), h('span', { class: 'brow-meta', text: ids.includes(e.id) ? 'on the sheet' : 'add to the sheet' })))))));

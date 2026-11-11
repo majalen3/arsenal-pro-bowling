@@ -122,7 +122,7 @@ async def j01_onboarding(j):
         await j.audit('welcome')
     async with j.step('Search-first empty arsenal, review, save a physical ball', task='onboard', critical=True) as s:
         await j.wait('#welSearch'); s.check(await j.data("() => Object.keys(window.__apData.projection().owned).length") == 0, 'fresh arsenal empty, catalog is separate')
-        await j.type('#welSearch', 'hy-road'); await j.tap('#welResults [data-select] >> nth=0'); await j.tap('#welNext'); await j.wait('#welChosen'); await j.tap('#welNext'); await j.wait('#armory')
+        await j.type('#welSearch', 'hy-road'); await j.tap('#welResults [data-select] >> nth=0'); await j.tap('#welNext'); await j.wait('#welChosen'); await j.tap('#welNext'); await j.wait('#tnArsenal')   # HOME_GAME_FLOW: saving lands in the Building
         s.check(await j.data("() => Object.keys(window.__apData.projection().owned).length") == 1, 'only selected physical ball saved')
     async with j.step('Optional profile: explicitly choose Left hand after first value', task='profile') as s:
         await j.nav('/me'); await j.tap('#editProfile'); await j.tap('[aria-label="Bowling hand"] [data-v="left"]'); await j.tap('[aria-label="Style"] [data-v="stroker"]'); await j.tap('#profSave')
@@ -476,9 +476,11 @@ async def j07_recap_next(j):
         if await j.visible('#tnSetFocus'): await j.tap('#tnSetFocus')
         foc = await j.text('#tnRecapFocus') if await j.page.locator('#tnRecapFocus').count() else ''
         j.state['focus'] = foc; s.check(foc, f'focus text: "{foc[:80]}"')
-    async with j.step('End night lands on the session page', task='end', target_taps=1, carry='night id') as s:
+    async with j.step('End night returns to the Building, then the session page', task='end', target_taps=2, carry='night id') as s:
         sid = await j.ev("async () => { const m = await import('./js/hub.js'); const nw = await import('./js/cc/night.js'); return nw.openNight(m.proj()); }"); j.state['sid'] = sid
-        await j.tap('#qlEnd'); await j.settle(700); await j.audit('session')
+        await j.tap('#qlEnd'); await j.settle(700)   # HOME_GAME_FLOW: End night leaves the game for the Building's "Night saved" card
+        s.check('#/tonight?night=' in j.page.url and await j.visible('#tnNightDone'), f'Building with the saved night ({j.page.url.split("#")[-1]})')
+        await j.tap('#tnNightResults'); await j.settle(700); await j.audit('session')
         s.check('#/session/' in j.page.url and (sid or '') in j.page.url, f'session page of the same night ({j.page.url.split("#")[-1]})')
         s.check(await j.visible('#sessRecap, #sessHead'), 'recap on the session page')
     async with j.step('Session page focus matches the recap', carry='focus') as s:
@@ -697,7 +699,7 @@ async def j12_coach(j):
 # These steps are listed as "PENDING P1.x" in known_issues.json until the build lands; when one starts passing the run
 # prints it under "Known issues now passing" and the entry is deleted so the step guards from then on. Selectors are
 # by visible bowler words (IA_PLAN §4 glossary) and the event store, not by ids that do not exist yet.
-STATUS_WORDS = ['In my bag', 'At home', 'At the pro shop', 'Retired']
+STATUS_WORDS = ['Ready to bring', 'At home', 'At the pro shop', 'Retired']   # 2026-11-10: inBag reads "Ready to bring"
 OLD_WORDS = re.compile(r'\b(Exclude[ds]?|Benched|Bench & pro shop|Bench and pro shop|Lock(ed)?|Hall of Fame)\b')
 ROLES = re.compile(r'Start ball|If it hooks early|If it stops hooking|For heavy oil|Spares?|Specs to check', re.I)
 
@@ -748,7 +750,7 @@ async def j13_status(j):
             if m: bad[r] = m
         if tgt:
             await j.goto('/ball/' + tgt['id'].replace('own-', '')); await j.settle(500); t = await visible_text(j)
-            m = sorted({x.group(0) for x in OLD_WORDS.finditer(t)}); s.check(all(w in t for w in STATUS_WORDS), 'ball page offers In my bag / At home / At the pro shop / Retired')
+            m = sorted({x.group(0) for x in OLD_WORDS.finditer(t)}); s.check(all(w in t for w in STATUS_WORDS), 'ball page offers Ready to bring / At home / At the pro shop / Retired')
             if m: bad['/ball'] = m
         s.check(not bad, f'no old Status words on screen ({bad})')
     async with j.step('Set a ball to "At the pro shop" on its page in <= 2 taps', task='status', target_taps=2) as s:

@@ -22,3 +22,8 @@ Refresh (from a scratch dir with the API repo checked out next to this one):
 - Discovery output: **143 maker rows, zero unverified rows**. Mix Black White and Tropical Surge Purple were removed from discovery, not from saved equipment; owned confirmed specs still resolve.
 - `builtin_sources.json` separately records the review of all **22 stable built-in identities** in `js/data.js`, checked 2026-11-06. Five have unverified specs; Ice Storm, generic Reactive Scout and Not Urethane NU also lack a supported model family/complete inputs. No source or field is invented for these entries.
 - Physics input changes require a deliberate review of `tests/fixtures/engine-inputs.v64.json`, never an automatic refresh to make tests pass. Full per-ball old/new table and caveats: `docs/DECISIONS.md`. The engine code is unchanged.
+
+## 2026-11-10 additions
+- 7 rows read 2026-11-10 from the maker's own page (guardedFetch + parseSpecPage, then checked by hand against the page text): Storm Phaze II, Phaze 4, Phaze AI; Roto Grip Attention Star; Hammer Black Widow 3.0, Purple Pearl Urethane; Motiv Venom Shock. Weight row = 15 lb where printed, else the one printed (16 lb). 150 maker rows, zero unverified. No existing row changed.
+- Skipped because the maker URL returned 404 on 2026-11-10 (no guessed specs): Storm Phaze III, Phaze 5, IQ Tour, Physix, Summit; Roto Grip Idol, Hustle Ink; 900 Global Zen, Honey Badger.
+
