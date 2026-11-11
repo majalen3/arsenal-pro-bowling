@@ -8,16 +8,18 @@ Arsenal Pro is a free bowling companion for league and practice nights. It picks
 
 ## What it does
 
+Four tabs, in the order a bowler uses them (the product spine, [docs/PRODUCT_SPINE.md](docs/PRODUCT_SPINE.md)); every core action is at most 3 taps away.
+
 | Tab | Use it for |
 |---|---|
-| **Building** (home) | Your home base. Say where you are bowling (league, tournament, practice, the center, the pattern); it shows the ball to start with from your bag, where to stand and aim, who is bowling, and **Start bowling**. After End night it shows the night you just bowled. |
-| **Game** (no tab) | The scoring page you enter from the Building: strike in 1 tap, spare in 2, leaves, splits, 10th frame, fouls, fix any frame, league and team scoring with USBC handicap. No tab bar or extras; **← Building** leaves without ending the night. |
-| **Results** | The latest night first, then every night, your lines, lane notes and the Bowler Card (average, strikes, single-pin spares, the leave to work on). |
-| **Bag** | Tonight's bag (what you take tonight) and All my balls (everything you own): status (ready to bring, at home, at the pro shop, retired), the 3-step bag builder, compare, add a ball from a 163-row manufacturer spec catalogue or by typing the specs. |
-| **Learn** | 709 oil patterns (Kegel library), the bowling guide and a 119-term glossary. Help bubbles are off until you turn them on. |
-| **Me** (top right) | Bowler profile (hand, speed, revs), optional account, backup code, backup file, imports (CSV, LaneTrax session report PDF, read on the phone), text size, About. |
+| **Bag** (home) | Packing tonight's bag: where you bowl, Bring N, tonight's balls (Swap, Always bring), then **Pack these N**. A new profile starts here, empty: Find my balls searches the catalog. While a night is open: **Back to the game**. |
+| **Arsenal** | Everything you own: the Armory (in the bag, at home, Old Friends), status (ready to bring, at home, at the pro shop, retired), each ball's specs, compare, insights, and add a ball from a 163-row manufacturer spec catalogue or by typing the specs. |
+| **Strike line** | The strike finder, before scoring: the ball to start with and where to stand and aim, then **Find my strike line** (the main button) and **Lane view**, who is bowling, then **Start bowling**. |
+| **Game** (no tab) | The scoring page you enter from Strike line: strike in 1 tap, spare in 2, leaves, splits, 10th frame, fouls, fix any frame, league and team scoring with USBC handicap. No tab bar or extras; **← Strike line** leaves without ending the night. |
+| **Log book** | Nights, games and series: End night lands here with the night you just bowled, then every night, your lines, lane notes, the Bowler Card (average, strikes, single-pin spares, the leave to work on) and Season Wrapped. |
+| **Me** (top right) | Bowler profile (hand, speed, revs), Learn (709 oil patterns from the Kegel library, the bowling guide, a 119-term glossary and a word search), optional account, backup code, backup file, imports (CSV, LaneTrax session report PDF, read on the phone), text size, About. Help bubbles ("?" in the top bar) are off until you turn them on. |
 
-Lane and Targeting open from the "Stand · Aim" chip. They open from the Building and the game page and show a labelled 2-D model of the ball path; it is a model, not a measurement.
+Lane and Targeting open from Strike line (Find my strike line, Lane view, the "Stand · Aim" chip) and from the game page. They show a labelled 2-D model of the ball path; it is a model, not a measurement.
 
 ## Your data and privacy
 

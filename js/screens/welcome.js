@@ -41,7 +41,7 @@ export async function render({ query } = {}) {
   const brand = h('select', { id:'welBrand', 'aria-label':'Filter catalog by brand' }, h('option', { value:'', text:'All brands' }), ...[...new Set(A.catalog().map(e => e.brand))].sort().map(b => h('option', { value:b, text:b })));
   const next = h('button', { class:'btn primary block', id:'welNext', onclick:() => { if (reviewing) save(); else { reviewing = true; draw(); } } });
   const body = h('div', { class:'wel-body' }), count = h('p', { class:'small', id:'welCount', role:'status' });
-  const finish = (skip = false) => { setPrefs({ onboarded:true }); go('#/tonight', { replace:true }); };
+  const finish = (skip = false) => { setPrefs({ onboarded:true }); go('#/bag', { replace:true }); };   // PRODUCT_SPINE: land on the front door, tonight's bag
   // A second physical copy sits right under the ball it copies (live eval: it landed at the bottom, so nicknames went on the wrong row).
   const addDraft = (e, near = false) => { const id = 'own-' + uuid(), base = `${e.brand} ${e.name}`.trim(), same = draft.filter(d => d.entry.id === e.id).length;
     const row = { id, entry:e, name:same ? `${base} #${same + 1}` : base, copyOf:same ? e.id : null };

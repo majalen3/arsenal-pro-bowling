@@ -24,8 +24,8 @@ const SVC = [['refresh', 'Refresh'], ['resurface', 'Resurface'], ['detox', 'Deto
 const STAGE = { fresh: 'fresh', transition: 'in transition', burn: 'burned' };
 const LEFT_SHOWN = 4;
 let TERT = null;
-// IA P2: the Bag tab has two views: tonight's bag (this builder) and All my balls (the Armory and catalog, #/bag?view=all).
-export const bagView = v => h('div', { class: 'list-tools', id: 'bagView' }, segmented('Bag view', [['pack', 'Tonight\u2019s bag'], ['all', 'All my balls']], v, k => go(k === 'all' ? '#/bag?view=all' : '#/bag'), 'wide'));
+// IA P2 / PRODUCT_SPINE: tonight's bag (this builder, Bag tab) and All my balls (the Armory, Arsenal tab #/arsenal); this switch links the two.
+export const bagView = v => h('div', { class: 'list-tools', id: 'bagView' }, segmented('Bag view', [['pack', 'Tonight\u2019s bag'], ['all', 'All my balls']], v, k => go(k === 'all' ? '#/arsenal' : '#/bag'), 'wide'));
 export async function render() {
   OPEN.care = false; OPEN.left = false;
   await ready();
@@ -78,8 +78,11 @@ export async function render() {
   function draw() {
     const P = proj(), bag = ST.currentBag(P);
     body.innerHTML = '';
-    if (!bag) { const have = Object.keys(P.owned || {}).length; body.append(h('div', { class:'card', id:'bagNone' }, h('h2', { class:'card-title', text:have ? 'Your arsenal is saved' : 'No balls owned yet' }), h('p', { class:'muted', text:have ? 'Start an empty bag, then choose Bring for each physical ball you want tonight. Owning a ball does not pack it automatically.' : 'Search the shared catalog and save only the physical balls you own. You can skip and keep using the app.' }), have ? h('button', { class:'btn primary block', id:'bagStartEmpty', onclick:async () => { await add('bag.saved', ST.TONIGHT_BAG, { name:'Tonight', slots:[], spare:null, format:'league3', event:'league', bring:3 }); draw(); } }, 'Start an empty bag') : h('a', { class:'btn primary block', href:'#/welcome' }, 'Find my balls'))); return; }
+    if (!bag) { const have = Object.keys(P.owned || {}).length; body.append(h('div', { class:'card', id:'bagNone' }, h('h2', { class:'card-title', text:have ? 'Your arsenal is saved' : 'No balls owned yet' }), h('p', { class:'muted', text:have ? 'Start an empty bag, then choose Bring for each physical ball you want tonight. Owning a ball does not pack it automatically.' : 'Search the shared catalog and save only the physical balls you own. You can skip and keep using the app.' }), have ? h('button', { class:'btn primary block', id:'bagStartEmpty', onclick:async () => { await add('bag.saved', ST.TONIGHT_BAG, { name:'Tonight', slots:[], spare:null, format:'league3', event:'league', bring:3 }); draw(); } }, 'Start an empty bag') : h('a', { class:'btn primary block', id:'bagFindBalls', href:'#/welcome' }, 'Find my balls'), have ? null : h('a', { class:'btn ghost block', id:'bagAddOwn', href:'#/add-ball' }, 'Add a ball with its specs'))); return; }
     const ev = evOf(bag), E = A.EVENTS[ev], bring = bringOfBag(P, bag, ev), n0 = night(P);
+    // PRODUCT_SPINE: the Bag is the front door, so an open night is one tap from here too (the game is kept until End night).
+    const openSid = openNight(P);
+    if (openSid && n0.s && !n0.s.ended && (P.games || []).some(g => g.sessionId === openSid)) body.append(h('button', { class: 'btn primary block', id: 'bagBackGame', 'data-back': '', onclick: () => go('#/bowl') }, `Back to the game \u00b7 game ${n0.s.game || 1}`));
     const all = ownedItems(P), packed = ST.packedIds(P, bag), locked = bag.slots.filter(s => s.locked).map(s => s.owned);
     const a = A.advise(P, Object.assign(opts(P, ev, bring), { fixed: { slots: packed, spare: bag.spare } }));
     const rows = a.none ? [] : a.rows, inIds = rows.map(r => r.ownedId);

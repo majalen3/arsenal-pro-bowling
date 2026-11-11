@@ -122,7 +122,7 @@ async def j01_onboarding(j):
         await j.audit('welcome')
     async with j.step('Search-first empty arsenal, review, save a physical ball', task='onboard', critical=True) as s:
         await j.wait('#welSearch'); s.check(await j.data("() => Object.keys(window.__apData.projection().owned).length") == 0, 'fresh arsenal empty, catalog is separate')
-        await j.type('#welSearch', 'hy-road'); await j.tap('#welResults [data-select] >> nth=0'); await j.tap('#welNext'); await j.wait('#welChosen'); await j.tap('#welNext'); await j.wait('#tnArsenal')   # HOME_GAME_FLOW: saving lands in the Building
+        await j.type('#welSearch', 'hy-road'); await j.tap('#welResults [data-select] >> nth=0'); await j.tap('#welNext'); await j.wait('#welChosen'); await j.tap('#welNext'); await j.wait('#bagNone')   # PRODUCT_SPINE: saving lands on the Bag (front door)
         s.check(await j.data("() => Object.keys(window.__apData.projection().owned).length") == 1, 'only selected physical ball saved')
     async with j.step('Optional profile: explicitly choose Left hand after first value', task='profile') as s:
         await j.nav('/me'); await j.tap('#editProfile'); await j.tap('[aria-label="Bowling hand"] [data-v="left"]'); await j.tap('[aria-label="Style"] [data-v="stroker"]'); await j.tap('#profSave')
@@ -476,10 +476,10 @@ async def j07_recap_next(j):
         if await j.visible('#tnSetFocus'): await j.tap('#tnSetFocus')
         foc = await j.text('#tnRecapFocus') if await j.page.locator('#tnRecapFocus').count() else ''
         j.state['focus'] = foc; s.check(foc, f'focus text: "{foc[:80]}"')
-    async with j.step('End night returns to the Building, then the session page', task='end', target_taps=2, carry='night id') as s:
+    async with j.step('End night lands in the Log book, then the session page', task='end', target_taps=2, carry='night id') as s:
         sid = await j.ev("async () => { const m = await import('./js/hub.js'); const nw = await import('./js/cc/night.js'); return nw.openNight(m.proj()); }"); j.state['sid'] = sid
-        await j.tap('#qlEnd'); await j.settle(700)   # HOME_GAME_FLOW: End night leaves the game for the Building's "Night saved" card
-        s.check('#/tonight?night=' in j.page.url and await j.visible('#tnNightDone'), f'Building with the saved night ({j.page.url.split("#")[-1]})')
+        await j.tap('#qlEnd'); await j.settle(700)   # PRODUCT_SPINE: End night leaves the game for the Log book's "Night saved" card
+        s.check('#/results?night=' in j.page.url and await j.visible('#tnNightDone'), f'Log book with the saved night ({j.page.url.split("#")[-1]})')
         await j.tap('#tnNightResults'); await j.settle(700); await j.audit('session')
         s.check('#/session/' in j.page.url and (sid or '') in j.page.url, f'session page of the same night ({j.page.url.split("#")[-1]})')
         s.check(await j.visible('#sessRecap, #sessHead'), 'recap on the session page')
@@ -874,7 +874,7 @@ async def j15_front(j):
         await j.nav('/tonight'); await j.settle(300)
         if await j.page.locator('#advEvent [data-event="league"]').count(): await j.page.click('#advEvent [data-event="league"]'); await j.settle(400)
         h = await j.ev("() => document.scrollingElement.scrollHeight")
-        s.check(h <= 1110, f'scrollHeight {h} <= 1110')
+        s.check(h <= 1110, f'scrollHeight {h} <= 1110')   # v72: Find row above Start bowling; the bag rows fold, so 1110 holds
         sb = await first_viewport(j, r'Start bowling'); s.check(sb is not None and sb <= 740, f'Start bowling bottom {sb} px')
         ab = await first_viewport(j, r'Add a bowler'); s.check(ab is not None and ab <= 740, f'Add a bowler bottom {ab} px')
     async with j.step('Learn tab: search first; Glossary in <= 2 taps with no scroll', task='learn', target_taps=2) as s:

@@ -101,12 +101,12 @@ export async function render() {
     const tk = c.takeaways;
     body.append(...[
       tk ? sec('bcTake', 'Coach notes', [h('ul', { class: 'plain' }, h('li', {}, h('b', { text: 'Strength: ' }), tk.strength.text), tk.leak ? h('li', {}, h('b', { text: 'Leak: ' }), tk.leak.text) : null, h('li', {}, h('b', { text: 'Next drill: ' }), tk.drill.text)), h('p', { class: 'muted small', text: `Levels: ${C.SRC.levels.label} (${C.SRC.levels.how}). Drill: ${tk.drill.rule}.` })], '') : null,
-      sec('bcSpares', 'Spares', spare, 'Score a game from the Building (tap the pins left standing) to see single- and multi-pin spares.'),
+      sec('bcSpares', 'Spares', spare, 'Score a game from Strike line (tap the pins left standing) to see single- and multi-pin spares.'),
       sec('bcRelease', 'Release: speed, revs, style', rel.length ? rel : null, 'Import a LaneTrax report (Me \u203a LaneTrax report) or type speed and revs in Me \u203a Bowler profile.'),
       sec('bcCons', 'Consistency (LaneTrax levels)', cons ? [h('dl', { class: 'kv' }, ...lvRow('Speed', cons.speed, 'avg impact'), ...lvRow('Revs', cons.rpm, 'avg'), ...lvRow('Arrows', cons.arrows, 'avg off'), ...lvRow('Spares', cons.conversion, 'conversion')), h('p', { class: 'muted small', text: 'LaneTrax levels speed and revs by how much they vary shot to shot (5 = tightest).' })] : null, 'Import a LaneTrax report to see speed, rev and accuracy consistency.'),
       sec('bcAcc', 'Accuracy and breakpoint', acc, 'Import a LaneTrax report for arrows, breakpoint and entry. Tag "First ball hit" in the game for pocket %.'),
       sec('bcSrc', 'Sources and thresholds', [figs.length ? h('ul', { class: 'plain small bc-src', id: 'bcFigSrc' }, ...figs.map(f => h('li', { text: `${f.label}: ${[f.src, f.n ? `${f.n} ${f.nUnit || ''}`.trim() : null].filter(Boolean).join(' \u00b7 ')}` }))) : null, h('ul', { class: 'plain small bc-src' }, ...Object.values(C.SRC).map(s => h('li', {}, s.url ? h('a', { href: s.url, target: '_blank', rel: 'noopener' }, s.label) : s.label, ` (${s.how})`)))], '')].filter(Boolean));   // Element.append(null) would print "null"
-    body.append(h('div', { class: 'btn-grid' }, h('a', { class: 'btn ghost', href: '#/results', id: 'bcToSessions' }, 'Results'),
+    body.append(h('div', { class: 'btn-grid' }, h('a', { class: 'btn ghost', href: '#/results', id: 'bcToSessions' }, 'Log book'),
       figs.length ? h('button', { class: 'btn ghost', id: 'bcShare', onclick: () => sharePng(c, head, figs) }, 'Share as image') : h('a', { class: 'btn ghost', href: '#/import?kind=lanetrax', id: 'bcImport' }, 'Import LaneTrax')));
   }
   function drawKeep() { const open = new Set([...body.querySelectorAll('details[open]')].map(d => d.id)); draw(); for (const id of open) { const d = body.querySelector('#' + id); if (d) d.open = true; } }

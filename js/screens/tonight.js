@@ -34,6 +34,7 @@ import { helpDot, withHelp } from './help.js';
 import { gameTotalButton } from './gametotal.js';
 import * as HAND from '../cc/hand.js';
 import { handAsk, handLine } from './hand.js';
+import * as ND from '../cc/nightdone.js';
 import * as UX from '../cc/ux.js';   // Now item 5: on-device counts + local flags
 export { standOf };
 const short = n => String(n || '').replace(/^(Radical|Storm|Hammer|900 Global|Columbia 300|Roto Grip|Motiv)\s+/, '');
@@ -42,7 +43,7 @@ const laneBall = x => { const c = x && (ballFor(x.id) || x.cat); if (c && ballKe
 const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
 const provChip = (prov, label) => h('span', { class: 'prov', 'data-prov': prov || null, text: label });
 const SRC_PROV = { [R.SRC.assumed]: 'assumed', [R.SRC.model]: 'model', [R.SRC.spec]: 'manufacturer', [R.SRC.usbc]: 'usbc', [R.SRC.bowl]: 'usbc', [R.SRC.tag]: 'catalog' };
-export const LEFT_KEY = 'ap_left_game';   // set by Leave: the Building does not bounce back into an open game this tab session
+export const LEFT_KEY = 'ap_left_game';   // set by Leave: Strike line does not bounce back into an open game this tab session
 export const TAP_GUARD_MS = 400;   // sim bug 2: a second tap on a log button within this window is ignored
 let IDX = null, TERT = null;
 // The bowler's hand: only what they told us (cc/hand.js; owner 2026-10-24: no auto-detection). Unset reads boards right-handed.
@@ -61,15 +62,15 @@ export async function render(o = {}) {
   const net = h('span', { class: 'pill net-chip', id: 'netChip', role: 'status', hidden: navigator.onLine, text: 'Offline \u00b7 saved on this phone' });
   // HOME_GAME_FLOW (docs/HOME_GAME_FLOW.md): #/tonight is the Building (home base); #/bowl is the game page: its own bar with a
   // Leave button, no tab bar, no Help or Me. Leaving keeps the night open; the Building offers "Back to the game".
-  const leave = h('button', { class: 'btn ghost sm', id: 'tnLeave', hidden: !BOWL, 'aria-label': 'Back to the Building (your night stays open)', onclick: () => { sessionStorage.setItem(LEFT_KEY, '1'); go('#/tonight'); } }, '\u2190 Building');
+  const leave = h('button', { class: 'btn ghost sm', id: 'tnLeave', hidden: !BOWL, 'aria-label': 'Back to Strike line (your night stays open)', onclick: () => { sessionStorage.setItem(LEFT_KEY, '1'); go('#/tonight'); } }, '\u2190 Strike line');
   const gamePill = h('span', { class: 'pill game-pill', id: 'tnGamePill', hidden: !BOWL, text: 'In the game' });
-  const bar = h('header', { class: 'appbar' + (BOWL ? ' game-bar' : '') }, h('h1', { class: 'title', id: 'tnTitle', text: BOWL ? 'Game' : 'The building' }), h('div', { class: 'appbar-actions' }, net, gamePill, leave));
+  const bar = h('header', { class: 'appbar' + (BOWL ? ' game-bar' : '') }, h('h1', { class: 'title', id: 'tnTitle', text: BOWL ? 'Game' : 'Strike line' }), h('div', { class: 'appbar-actions' }, net, gamePill, leave));
   const el = h('section', { class: 'screen list-screen' + (BOWL ? ' game-screen' : ''), id: 'tonight' }, bar, body);
   if (BOWL) sessionStorage.removeItem(LEFT_KEY);
   const setNet = () => { net.hidden = navigator.onLine; };
   window.addEventListener('online', setNet); window.addEventListener('offline', setNet);
   const ql = { leave: new Set(), foul: false, tag: null };   // quick-log taps not yet written
-  let drillOpen = false, swapOpen = null, lastTap = 0, busy = false, moreOpen = false, savedMsg = '', shownMsg = '', frameT0 = 0, edit = null, lastEdit = null, pickFix = false, ballOpen = false, teamOpen = null;
+  let bagRowsOpen = false, drillOpen = false, swapOpen = null, lastTap = 0, busy = false, moreOpen = false, savedMsg = '', shownMsg = '', frameT0 = 0, edit = null, lastEdit = null, pickFix = false, ballOpen = false, teamOpen = null;
   let local = {};   // UI state not yet written (avoids re-render churn while typing)
   const sess = () => Object.assign({ kind: 'tonight', patternSlug: null, ft: null, ml: null, ratio: null, centerId: null, surface: 'unknown', stage: 'fresh', bagId: null, game: 1, pickId: null, reads: [] }, (proj().sessions || {})[curSid()], local);
   async function save(fields) {
@@ -106,8 +107,8 @@ export async function render(o = {}) {
     const keepOpen = document.getElementById('tnMore'); if (keepOpen) moreOpen = keepOpen.open;
     body.innerHTML = '';
     if (!Object.keys(P.owned).length) {
-      if (BOWL) { body.append(h('div', { class: 'card', id: 'noBag' }, h('h2', { class: 'card-title', text: 'Nothing to bowl with yet' }), h('p', { class: 'muted', text: 'Add the balls you own in the Building first, then start a game from there.' }), h('button', { class: 'btn primary block', id: 'gameToBuilding', onclick: () => go('#/tonight') }, 'Go to the Building'))); return; }
-      body.append(buildingLine('Your home base. Add the balls you own, pack tonight\u2019s bag, then start a game.'),
+      if (BOWL) { body.append(h('div', { class: 'card', id: 'noBag' }, h('h2', { class: 'card-title', text: 'Nothing to bowl with yet' }), h('p', { class: 'muted', text: 'Add the balls you own and pack tonight\u2019s bag first, then start a game from Strike line.' }), h('button', { class: 'btn primary block', id: 'gameToBuilding', onclick: () => go('#/bag') }, 'Go to the Bag'))); return; }
+      body.append(buildingLine('Find the line you start on, then bowl. It needs a ball you own: add yours, then pack tonight\u2019s bag.'),
         h('div', { class: 'card', id: 'noBag' }, h('h2', { class: 'card-title', text: 'Your arsenal is empty' }),
         h('p', { class: 'muted', text: 'Search the catalog for the balls you own. Nothing is preloaded. You can also look around first with an example arsenal (10 catalog balls, marked \u201cexample\u201d, not a real bowler\u2019s).' }),
         h('a', { class: 'btn primary block', id: 'findMyBalls', href: '#/welcome' }, 'Find my balls'),
@@ -229,10 +230,12 @@ export async function render(o = {}) {
     const [advCard, bagCard, whyBox] = advisorCard(P, s, b, adv, cur && { name: cur.name, ml, catalogId: cur.catalogId });
     const night = g0(P) && !s.ended;
     const back = returnedCard(P); if (back) body.append(back);
-    if (night) body.append(buildingLine('Your night is open. Change the bag or lanes here, then go back to the game.'));
+    if (night) body.append(buildingLine('Your night is open. Change the lanes or the line here, then go back to the game.'));
     if (night) body.append(h('button', { class: 'btn primary block tn-start', id: 'tnStartBowl', 'data-back': '', onclick: () => go('#/bowl') }, `Back to the game \u00b7 game ${s.game || 1}`));
     body.append(advCard);
-    if (!bagCard) body.append(arsenalStrip(P, list.length + (spare ? 1 : 0)));   // with a bag card, its title says tonight's bag vs the arsenal
+    // v72 (owner t119 "Merge and execute"): the strike finder comes before scoring. Find my strike line is the big button, right under
+    // the start line; Start bowling stays one tap away further down as a plain (not primary) button.
+    body.append(strikeStrip(cur));
     const lastCard = lastTimeCard(P, s, center); if (lastCard) body.append(lastCard);
     const fc = prefs().focus;
     if (fc && fc.text && fc.from !== curSid()) body.append(h('div', { class: 'row between tn-focus', id: 'tnFocus' }, h('p', { class: 'small', text: fc.text.replace(/^Next focus: /, 'Your focus: ') }),
@@ -240,11 +243,12 @@ export async function render(o = {}) {
     // P1.6: "Right-handed \u00b7 change"; asks once while unset (never during a game). IA P2: the Stand \u00b7 Aim chip shares the hand row
     // (both are "your line"; the Lane mirrors by hand), so the 44 px chip doesn't add a row and League Tonight stays <= 1110 px.
     const ask = handAsk(), chip = ask ? null : advCard.querySelector('#tnAimChip');
-    body.append(ask || (chip ? h('div', { class: 'row between wrap tn-hand-row' }, handLine(), chip) : handLine()));
+    if (!ask) body.append(chip ? h('div', { class: 'row between wrap tn-hand-row' }, handLine(), chip) : handLine());   // the one-time hand question sits under Start bowling (v72)
     if (whoHere) body.append(whoCard(s));
     if (s.event === 'practice') body.append(drillCard(P, s));
-    if (!night) body.append(h('button', { class: 'btn primary block tn-start', id: 'tnStartBowl', onclick: () => go('#/bowl') },
+    if (!night) body.append(h('button', { class: 'btn ghost block tn-start', id: 'tnStartBowl', onclick: () => go('#/bowl') },
       (s.game || 1) > 1 ? `Start bowling \u00b7 game ${s.game || 1}` : 'Start bowling'));
+    if (ask) body.append(ask);
     if (bagCard) body.append(bagCard);
     body.append(h('details', { class: 'tn-more tn-extra', id: 'tnExtra', open: extraOpen, ontoggle: e => { extraOpen = e.target.open; } }, h('summary', { text: 'More details' }),
       h('p', { class: 'coach', id: 'tnCoach', role: 'status', text: coach }), alts || '', thenLine || '', whyBox || '', setup));
@@ -438,7 +442,7 @@ export async function render(o = {}) {
       const rc = nightRecap(P, sid);
       if (rc) card.append(rc);
       card.append(h('button', { class: 'btn primary block', id: 'qlNext', onclick: () => save({ game: game + 1 }) }, `Start game ${game + 1}`),
-        h('button', { class: 'btn ghost block', id: 'qlEnd', onclick: async () => { await save({ ended: true, endedTs: Date.now() }); toast('Night saved. It is on Results.'); go('#/tonight?night=' + encodeURIComponent(sid)); } }, 'End night'));
+        h('button', { class: 'btn ghost block', id: 'qlEnd', onclick: async () => { await save({ ended: true, endedTs: Date.now() }); toast('Night saved in your Log book.'); go('#/results?night=' + encodeURIComponent(sid)); } }, 'End night'));
       const pn = protectNudge(P); if (pn) card.append(pn);
     } else {
       const pins = h('div', { class: 'pins', id: 'qlPins', role: 'group', 'aria-label': facingLeave ? 'Tap the pins still standing' : 'Tap the pins left standing' },
@@ -505,29 +509,20 @@ export async function render(o = {}) {
   // ---- GAP (a), between games only: one install offer (once ever), else a backup nudge (no file and >3 games, or file >14 days old).
   // ---- Building pieces (HOME_GAME_FLOW)
   function buildingLine(text) { return h('p', { class: 'small muted bld-line', id: 'tnBuildingLine', text }); }
+  function strikeStrip(c) {
+    const id = c && (c.id || c.catalogId);
+    // One row, no card around it: Find my strike line (primary, the wide cell) and Lane view.
+    return h('div', { class: 'btn-grid tn-strike', id: 'tnStrike' }, h('a', { class: 'btn primary', id: 'tnFindLine', href: '#/target?find=1' + (id ? '&ball=' + encodeURIComponent(id) : '') }, 'Find my strike line \u203a'),
+      h('a', { class: 'btn ghost', id: 'tnLaneLink', href: '#/lane' }, 'Lane view \u203a'));
+  }
   function arsenalStrip(P, packedN) {
     const owned = Object.values(P.owned || {}).filter(o => ST.statusOf(o) !== 'retired').length;
     return h('div', { class: 'card bld-strip', id: 'tnArsenal' },
       h('p', { id: 'tnArsenalLine' }, h('b', { text: `Arsenal: ${owned} ${owned === 1 ? 'ball' : 'balls'}` }), ` \u00b7 Tonight\u2019s bag: ${packedN} packed`),
-      h('div', { class: 'btn-grid' }, h('a', { class: 'btn ghost', id: 'tnPack', href: '#/bag' }, 'Pack bag'), h('a', { class: 'btn ghost', id: 'tnAddBalls', href: '#/welcome' }, 'Add balls'), h('a', { class: 'btn ghost', id: 'tnArmory', href: '#/bag?view=all' }, 'Armory')));
+      h('div', { class: 'btn-grid' }, h('a', { class: 'btn ghost', id: 'tnPack', href: '#/bag' }, 'Pack bag'), h('a', { class: 'btn ghost', id: 'tnAddBalls', href: '#/welcome' }, 'Add balls'), h('a', { class: 'btn ghost', id: 'tnArmory', href: '#/arsenal' }, 'Armory')));
   }
-  // Back in the Building after End night: the night's numbers, a link to Results and, once per night, the native share sheet.
-  function returnedCard(P) {
-    const id = o.query && o.query.get('night'), ses = id && P.sessions[id]; if (!ses || !ses.ended) return null;
-    const games = (P.games || []).filter(gm => gm.sessionId === id && gm.complete).sort((x, y) => x.game - y.game), tot = games.map(gm => gm.score).filter(x => x != null);
-    const series = tot.reduce((a, x) => a + x, 0), line = tot.length ? `${tot.length} ${tot.length === 1 ? 'game' : 'games'} \u00b7 ${tot.join(', ')}${tot.length > 1 ? ` \u00b7 series ${series}` : ''}` : 'No complete games logged.';
-    // v70: the offer is made once per night. Showing it records it (so reopening this return page never brings it back); while this
-    // screen stays open it can be used or dismissed with Not now. Native share sheet only, never auto-posted.
-    const markOffered = () => setPrefs({ shareOffered: Object.assign({}, prefs().shareOffered, { [id]: Date.now() }) });
-    if (!!navigator.share && tot.length && !(prefs().shareOffered || {})[id] && !shareHere.has(id)) { shareHere.add(id); markOffered(); }
-    const canShare = !!navigator.share && tot.length && shareHere.has(id) && !shareDone.has(id);
-    const shareRow = canShare ? h('div', { class: 'btn-grid share-row', id: 'tnShareOffer' },
-      h('button', { class: 'btn ghost', id: 'tnShareNight', onclick: async () => { shareDone.add(id); try { await navigator.share({ title: 'My bowling night', text: `Bowled ${line}.` }); } catch (e) {} draw(); } }, 'Share this night'),
-      h('button', { class: 'btn ghost', id: 'tnShareSkip', onclick: () => { shareDone.add(id); draw(); } }, 'Not now')) : null;
-    return h('div', { class: 'card', id: 'tnNightDone', role: 'status' }, h('h2', { class: 'card-title', text: 'Night saved' }), h('p', { id: 'tnNightLine', text: line }),
-      h('a', { class: 'btn block', id: 'tnNightResults', href: '#/session/' + encodeURIComponent(id) }, 'See the night on Results \u203a'),
-      shareRow);
-  }
+  // The old return page after End night (#/tonight?night=<id>) still shows the Night saved card; End night now goes to the Log book.
+  function returnedCard(P) { return ND.nightDoneCard(P, o.query && o.query.get('night'), { here: shareHere, done: shareDone }, draw); }
   function protectNudge(P) {
     const pf = prefs(), db = hub.db; if (!db) return null;
     if (!PR.isStandalone() && !pf.installAsked) {
@@ -553,7 +548,7 @@ export async function render(o = {}) {
       r.support.length ? h('dl', { class: 'bc-figs' }, ...r.support.map(x => h('div', { class: 'bc-fig', 'data-k': x.k }, h('dt', { text: x.label }), h('dd', { text: x.text })))) : null);
     if (r.focus) { const fc = prefs().focus, set = fc && fc.from === sid && fc.text === r.focus.text;
       box.append(h('p', { class: 'bc-focus', id: 'tnRecapFocus', text: r.focus.text }),
-        h('button', { class: 'btn ghost block', id: 'tnSetFocus', 'aria-pressed': String(!!set), onclick: () => { setPrefs({ focus: set ? null : { text: r.focus.text, from: sid, ts: Date.now() } }); toast(set ? 'Focus cleared.' : 'Saved. It shows in the Building next time.'); draw(); } }, set ? 'Next-time focus saved \u2713' : 'Make this my next focus')); }
+        h('button', { class: 'btn ghost block', id: 'tnSetFocus', 'aria-pressed': String(!!set), onclick: () => { setPrefs({ focus: set ? null : { text: r.focus.text, from: sid, ts: Date.now() } }); toast(set ? 'Focus cleared.' : 'Saved. It shows on Strike line next time.'); draw(); } }, set ? 'Next-time focus saved \u2713' : 'Make this my next focus')); }
     const gr = DR.goalResult(P, sid, (P.sessions[sid] || {}).goal); if (gr) box.append(h('p', { class: 'small', id: 'tnGoalResult', text: 'Your goal: ' + gr.text }));
     box.append(h('a', { class: 'btn ghost block', id: 'tnRecapAll', href: '#/session/' + encodeURIComponent(sid) }, 'Whole night, game by game \u203a'));
     return box;
@@ -590,7 +585,7 @@ export async function render(o = {}) {
     if (!ev) { card.append(startLine(start), h('p', { class: 'muted small', text: 'Pick one: the bag to pack for it appears here.' })); return [card]; }
     // P1.1/P1.2: when the saved bag is for this event, Tonight shows exactly that bag (its Bring N); else a fresh suggestion.
     const { mem, mine, bring, a } = adv;
-    if (a.none) { card.append(h('p', { class: 'muted', text: a.reason }), h('button', { class: 'btn block', onclick: () => go('#/bag?view=all') }, 'Open Bag \u203a')); return [card]; }
+    if (a.none) { card.append(h('p', { class: 'muted', text: a.reason }), h('button', { class: 'btn block', onclick: () => go('#/arsenal') }, 'Open Arsenal \u203a')); return [card]; }
     card.append(startLine(start && start.name ? start : { name: a.A.name, ml: a.line, catalogId: a.A.catalogId }));
     const packed = !!(mine && mine.packedTs);
     // P1.5: the bag itself is its own card under Start bowling (the lanes-first answer stays on top).
@@ -607,10 +602,13 @@ export async function render(o = {}) {
         const m = Object.assign({}, prefs().advisor), e2 = Object.assign({}, m[ev]); e2.swaps = Object.assign({}, e2.swaps); for (const [k, v] of Object.entries(e2.swaps)) if (v === r.ownedId) delete e2.swaps[k];
         e2.swaps[r.ownedId] = x.ownedId; m[ev] = e2; swapOpen = null; setPrefs({ advisor: m }); draw(); toast(`${x.name} in for ${r.name}.`); } }, x.home ? `${x.name} \u00b7 ${ST.HOME_TAG}` : x.name))));
       return li; }));
-    bagCard.append(list);
+    // v72: Strike line is for the line; the bag's rows fold under one line of ball names (the Bag tab is the full builder).
+    const rowsBox = h('details', { class: 'tn-more adv-rows', id: 'tnBagRows', open: bagRowsOpen || !!swapOpen, ontoggle: e => { bagRowsOpen = e.target.open; } },
+      h('summary', { id: 'tnBagNames', text: a.rows.map(r => r.name).join(' \u00b7 ') }), list);
+    bagCard.append(rowsBox);
     // Clutter audit C7: each row is name + role + one reason; results, confidence and the model's assumptions sit behind one tap.
     const sl = start && start.name ? start.ml : a.line, assumed = sl && !sl.none && standOf(sl.feet).assumed;
-    bagCard.append(h('details', { class: 'tn-more', id: 'advDetails' }, h('summary', { text: 'More details' }),
+    rowsBox.append(h('details', { class: 'tn-more', id: 'advDetails' }, h('summary', { text: 'More details' }),
       h('ul', { class: 'plain' }, ...a.rows.map(r => h('li', { class: 'small', 'data-ev-of': r.ownedId }, h('b', { text: r.name + ' ' }),
         provChip(r.confidence.key === 'measured' ? 'device' : r.confidence.key === 'spec' ? 'catalog' : 'assumed', r.confidence.label), r.evidence ? h('span', { 'data-evidence': '' }, ' ', r.evidence) : null))),
       assumed ? h('p', { class: 'small muted', id: 'advOffset' }, 'Stand = laydown + 7 boards (offset 7 assumed). Set your own on Targeting.') : null));
@@ -651,6 +649,6 @@ export async function render(o = {}) {
   if (!IDX) loadIndex().then(x => { IDX = x; TERT = R.tertiles(x); draw(); }).catch(() => {});
   const offs = [on('data', () => { if (!body.contains(document.activeElement) || document.activeElement.tagName === 'BUTTON') draw(); })];
   window.__apTonightMs = Math.round(performance.now() - t0);
-  return { el, title: BOWL ? 'Game' : 'The building', mounted() { if (document.getElementById('tnNow')) padToThumb(); },
+  return { el, title: BOWL ? 'Game' : 'Strike line', mounted() { if (document.getElementById('tnNow')) padToThumb(); },
     destroy() { WK.keepAwake(false); offs.forEach(f => f()); window.removeEventListener('online', setNet); window.removeEventListener('offline', setNet); } };
 }

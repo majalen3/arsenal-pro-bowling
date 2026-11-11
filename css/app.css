@@ -52,7 +52,7 @@ input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;bord
 /* ---- shell: content + bottom tab bar (phone) / side rail (desktop) */
 #app{min-height:100dvh}
 #view{padding-bottom:calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--s4));max-width:1180px;margin:0 auto}
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(4,1fr);height:calc(var(--tab-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:saturate(1.6) blur(18px);-webkit-backdrop-filter:saturate(1.6) blur(18px);border-top:1px solid var(--line)}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(4,1fr);height:calc(var(--tab-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:var(--surface);backdrop-filter:saturate(1.6) blur(18px);-webkit-backdrop-filter:saturate(1.6) blur(18px);border-top:1px solid var(--line)}
 .tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--text-3);text-decoration:none;font-size:.6875rem;font-weight:600;letter-spacing:.01em;min-height:var(--tap);position:relative}
 .tab .ic{width:24px;height:24px}
 .tab[aria-current=page]{color:var(--accent-ink)}
@@ -71,7 +71,7 @@ body[data-ingame] .tabbar{display:none}
 .bld-line,#bagExplain{margin:0 var(--s4) var(--s2)}
 .bld-strip .btn-grid{grid-template-columns:repeat(3,1fr)}
 #tnLeave,#tnStartBowl,.bld-strip .btn{min-height:44px}
-body:has(.ps-screen) .tabbar{background:var(--surface)}   /* C10: opaque over the white sheet so tab labels keep 4.5:1 */
+body:has(.ps-screen) .tabbar{background:var(--surface)}   /* C10: opaque over the white sheet so tab labels keep 4.5:1 (v71: the bar is opaque everywhere; content under it, e.g. a gold button, cut label contrast) */
 body[data-tab=none] #view{padding-bottom:var(--s4)}
 /* IA P2: nothing extra during active scoring: no help bubbles on the pad or its now-line, even with Help on (fold extras keep theirs). */
 body[data-tab=bowl] #tnLog .help-dot,body[data-tab=bowl] #tnNow .help-dot{display:none}
@@ -823,3 +823,4 @@ html[data-text=large]{font-size:112.5%} html[data-text=xl]{font-size:125%}
 .recovery-choice{display:flex;align-items:center;gap:12px;min-height:44px;overflow-wrap:anywhere;padding:8px 0}
 .recovery-choice input{flex:0 0 44px;width:44px;height:44px}
 .recovery-choice span{min-width:0}
+.btn-grid.tn-strike{grid-template-columns:2fr 1fr}   /* v72: Find my strike line is the wide, primary cell; Lane view beside it */

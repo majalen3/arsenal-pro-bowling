@@ -10,10 +10,12 @@ import * as C from '../cc/card.js';
 import { toCSV } from '../data/csv.js';
 import { ballName } from './session.js';
 import { helpDot, withHelp } from './help.js';
-const st = { tab:null, q:'' };   // first open: Nights if any session exists, else Lines if you saved one
+import { nightDoneCard } from '../cc/nightdone.js';
+const st = { tab:null, q:'' };
+const seen = { here:new Set(), done:new Set() };   // PRODUCT_SPINE: one share offer per night (cc/nightdone.js)   // first open: Nights if any session exists, else Lines if you saved one
 const MISS_LABEL = { left:'Left', right:'Right', high:'High', light:'Light' };
 const ago = t => { const s = (Date.now() - t) / 1000; return s < 60 ? 'just now' : s < 3600 ? Math.round(s / 60) + ' min ago' : s < 86400 ? Math.round(s / 3600) + ' h ago' : new Date(t).toLocaleDateString(); };
-export async function render() {
+export async function render({ query } = {}) {
   await ready();
   if (!st.tab) { const P = proj(); st.tab = P && C.sessionsOf(P).length ? 'nights' : allLines().length ? 'lines' : 'nights'; }
   const body = h('div', { class:'stack', id:'sessBody' });
@@ -64,7 +66,7 @@ export async function render() {
   // Nights (BC): every scored or imported session, newest first. One line each: what you'd check first (average or strikes).
   function nights() {
     const P = proj(), list = P ? C.sessionsOf(P) : [];
-    if (!list.length) return [emptyState('No sessions yet', 'Score a game from the Building, or import a LaneTrax report. Each night shows up here with what changed.', { label:'Go to the Building', run:() => go('#/tonight') })];
+    if (!list.length) return [emptyState('No sessions yet', 'Score a game from Strike line, or import a LaneTrax report. Each night shows up here with what changed.', { label:'Go to Strike line', run:() => go('#/tonight') })];
     const fmt = d => { if (!d) return 'Undated'; const t = new Date(d + 'T12:00:00'); return isNaN(t) ? d : t.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' }); };
     const line = x => { const s = x.stats; if (s.avg != null) return `${s.games} game${s.games === 1 ? '' : 's'} \u00b7 ${s.avg} avg${s.games > 1 ? ' \u00b7 ' + s.series + ' series' : ''}`;
       if (s.ltx) return `${s.ltx.shots} shots \u00b7 ${s.ltx.strikes} strikes \u00b7 ${s.ltx.spareMade}/${s.ltx.spare} spares`;
@@ -85,9 +87,11 @@ export async function render() {
         const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + toCSV(rows)], { type:'text/csv' })); a.download = `arsenal-pro-games-${today()}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
         toast(`Saved ${rows.length - 1} game${rows.length === 2 ? '' : 's'} as CSV`); } }, 'Export games (CSV)') ];
   }
-  function draw() { body.innerHTML = ''; body.append(...(st.tab === 'nights' ? nights() : st.tab === 'lines' ? lines() : st.tab === 'shots' ? shots() : notes())); }
+  const nightId = query && query.get('night');
+  if (nightId) st.tab = 'nights';   // End night lands here (PRODUCT_SPINE: the night goes into the Log book)
+  function draw() { body.innerHTML = ''; const done = st.tab === 'nights' && nightId ? nightDoneCard(proj(), nightId, seen, draw) : null; if (done) body.append(done); body.append(...(st.tab === 'nights' ? nights() : st.tab === 'lines' ? lines() : st.tab === 'shots' ? shots() : notes())); }
   draw();
   const offs = [on('data', () => st.tab === 'nights' && draw()), on('lines', () => st.tab === 'lines' && draw()), on('alley', () => st.tab === 'notes' && !body.contains(document.activeElement) && draw())];
-  const el = h('section', { class:'screen list-screen' }, h('header', { class:'appbar' }, h('h1', { class:'title' }, 'Results', helpDot('sc-average', 'Average'))), h('div', { class:'list-tools' }, seg), body);
-  return { el, title:'Results', destroy() { offs.forEach(f => f()); } };
+  const el = h('section', { class:'screen list-screen' }, h('header', { class:'appbar' }, h('h1', { class:'title' }, 'Log book', helpDot('sc-average', 'Average'))), h('div', { class:'list-tools' }, seg), body);
+  return { el, title:'Log book', destroy() { offs.forEach(f => f()); } };
 }

@@ -89,7 +89,7 @@ export async function render() {
       h('p', { text: 'Games and averages: only games logged with frames in Arsenal Pro, credited to the ball that threw the most first balls; n = complete games. Surface: the bowler\u2019s own finish, else the box finish. Status and bag: as set by the bowler.' }),
       h('p', { text: m.team && m.team !== 'Arsenal Pro' ? `Arsenal Pro ${m.version} \u00b7 ${m.team}` : `Arsenal Pro ${m.version}` })));
   const el = h('section', { class: 'screen list-screen ps-screen' },
-    h('header', { class: 'appbar no-print' }, h('a', { class: 'btn ghost sm', href: '#/bag?view=all', id: 'psBack' }, 'Back'), h('h1', { class: 'title', text: 'Sheet' }),
+    h('header', { class: 'appbar no-print' }, h('a', { class: 'btn ghost sm', href: '#/arsenal', id: 'psBack' }, 'Back'), h('h1', { class: 'title', text: 'Sheet' }),
       h('div', { class: 'appbar-actions' }, h('button', { class: 'btn primary sm', id: 'psPrint', 'aria-label': 'Print or save as PDF', onclick: () => window.print() }, 'Print'))),
     h('p', { class: 'small muted no-print ps-hint', text: 'Prints on Letter or A4. In the print dialog choose \u201cSave as PDF\u201d to keep a file.' }),
     h('div', { class: 'ps-scroll', tabindex: '0', role: 'region', 'aria-label': 'Arsenal sheet preview' }, paper));

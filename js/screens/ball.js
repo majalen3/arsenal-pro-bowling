@@ -24,7 +24,7 @@ export async function render({ params }) {
   const resolved = ballFor(params[0]);
   const own = P.owned[params[0]] || (copies.length === 1 && !location.hash.includes('catalog=1') ? copies[0] : null);
   const b = own ? ballFor(own.id) : resolved;
-  if (!b) return { el:h('section', { class:'screen' }, backBar('Ball', '#/bag?view=all'), emptyState('Ball not found', 'That ball is not in this arsenal.', { label:'Back to Bag', run:() => go('#/bag?view=all') })), title:'Ball' };
+  if (!b) return { el:h('section', { class:'screen' }, backBar('Ball', '#/arsenal'), emptyState('Ball not found', 'That ball is not in this arsenal.', { label:'Back to Bag', run:() => go('#/bag?view=all') })), title:'Ball' };
   await ready(); seedLine();   // clutter audit #4: the Lane line for this ball before Lane is opened
   const supported = modelOK(b), r = supported ? readInfo(b, readMed()) : null, mi = modelIn(), a = supported ? analyze(b, { release: mi.release, aim: mi.aim }) : { call:'GUTTER', entryBoard:null, bpBoard:null, bpFeet:null, angle:null }, onLane = ballKey(b) === ballKey(app.ball);
   const spec = (k, v, hid) => h('div', { class:'spec' }, h('div', { class:'spec-k' }, k, hid ? helpDot(hid, k) : null), h('div', { class:'spec-v', html:v }));
@@ -37,7 +37,7 @@ export async function render({ params }) {
     h('div', { class:'row between gap', id:'ballDrill' }, h('span', { class:'small' + (own.drill ? '' : ' muted'), id:'ballDrillSum', text: own.drill ? 'Drill card: ' + drillSummary(own.drill) : 'No drill card saved.' }),
       h('a', { class:'btn sm ghost', id:'ballDrillScan', href:'#/drill-card?own=' + encodeURIComponent(own.id) }, own.drill ? 'View or edit' : 'Scan a drill card'))) : null;
   const lines = linesForBall(key), surf = lsGet(LS.surface).filter(x => x.ballId === key).slice(-5).reverse();
-  const el = h('section', { class:'screen detail' }, backBar(b.name, '#/bag?view=all'),
+  const el = h('section', { class:'screen detail' }, backBar(b.name, '#/arsenal'),
     h('div', { class:'hero' }, h('span', { class:'ball-orb xl', style:{ '--c':b.color }, 'aria-hidden':'true' }),
       h('div', {}, h('div', { class:'muted small', text:`${b.brand}${b.year ? ' · ' + b.year : ''}` }), h('p', { class:'hero-role', text:b.role }),
         h('div', { class:'row gap wrap' },
