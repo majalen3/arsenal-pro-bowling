@@ -1,5 +1,5 @@
-"""HOME_GAME_FLOW focused check + 360 px screenshots: empty Building -> search (all Hy-Roads, Phaze II) -> two copies stay
-together -> pack tonight's bag additively -> enter the game (no extras) -> End night -> back in the Building.
+"""HOME_GAME_FLOW (+ PRODUCT_SPINE v71) focused check + 360 px screenshots: empty Bag (front door) -> search (all Hy-Roads, Phaze II) -> two copies stay
+together -> pack tonight's bag additively -> enter the game (no extras) -> End night -> the night in the Log book.
 Usage: python tests/home_game_flow.py http://localhost:8350/ [--shots /tmp/shots-home-flow]. No production API calls."""
 import asyncio, json, sys, os
 from playwright.async_api import async_playwright
@@ -25,12 +25,12 @@ async def main():
         p = await c.new_page(); errs = []
         p.on('pageerror', lambda e: errs.append(str(e)))
         await p.goto(BASE); await p.wait_for_selector('#welSearch')
-        await p.click('#welSkip'); await p.wait_for_selector('#noBag')
-        r = await p.evaluate("() => ({ h: location.hash, title: document.querySelector('#tnTitle').textContent, tabs: [...document.querySelectorAll('#tabs .tab')].map(t => t.textContent.trim()), cur: (document.querySelector('#tabs [aria-current=page]') || {}).textContent, find: !!document.querySelector('#findMyBalls'), owned: document.querySelector('#noBag').textContent })")
-        check(r['h'].startswith('#/tonight') and r['title'] == 'The building' and r['tabs'] == ['Building', 'Bag', 'Results', 'Learn'] and r['cur'] == 'Building' and r['find'], f'empty Building is home: 4 tabs, Find my balls {r}')
+        await p.click('#welSkip'); await p.wait_for_selector('#bagNone')
+        r = await p.evaluate("() => ({ h: location.hash, title: document.querySelector('#view h1.title').textContent, tabs: [...document.querySelectorAll('#tabs .tab')].map(t => t.textContent.trim()), cur: (document.querySelector('#tabs [aria-current=page]') || {}).textContent, find: !!document.querySelector('#bagFindBalls'), owned: document.querySelector('#bagNone').textContent })")
+        check(r['h'].startswith('#/bag') and r['title'] == 'Bag' and r['tabs'] == ['Bag', 'Arsenal', 'Strike line', 'Log book'] and r['cur'] == 'Bag' and r['find'], f'empty Bag is home: 4 spine tabs, Find my balls {r}')
         check('22' not in r['owned'], 'no owner 22-ball preload')
-        await shot(p, '01-empty-building.png', 'Fresh profile, after Skip: the Building (home) with an empty arsenal, Find my balls first; 4 tabs, no Bowl tab')
-        await p.click('#findMyBalls'); await p.wait_for_selector('#welSearch')
+        await shot(p, '01-empty-bag-home.png', 'Fresh profile, after Skip: the Bag (front door) with no balls, Find my balls first; 4 spine tabs')
+        await p.click('#bagFindBalls'); await p.wait_for_selector('#welSearch')
         await p.fill('#welSearch', 'Hy-Road'); await p.wait_for_timeout(300)
         rows = await p.eval_on_selector_all('#welResults [data-select]', 'e => e.map(x => x.querySelector(".brow-name").textContent)')
         check(len([x for x in rows if 'Hy-Road' in x]) == 5, f'search Hy-Road lists all five {rows}')
@@ -56,10 +56,10 @@ async def main():
         check(order[:2] == ['hy-road-pearl', 'hy-road-pearl'] and names[1].endswith('#2'), f'second copy sits under its ball, named #2 {order} {names}')
         await p.evaluate("() => document.querySelector('#welChosen [data-entry=\"hy-road-pearl\"] + [data-entry=\"hy-road-pearl\"]').scrollIntoView({block:'center'})")
         await shot(p, '03-two-copy-add.png', "Review: 'Add another copy' puts Hy-Road Pearl #2 directly under Hy-Road Pearl")
-        await p.click('#welNext'); await p.wait_for_function("() => location.hash.startsWith('#/tonight')")
-        await p.wait_for_selector('#tnArsenal')
-        t = await p.text_content('#tnArsenalLine'); check('Arsenal: 4 balls' in t and '0 packed' in t, f'Building shows arsenal and tonight\u2019s bag apart ({t})')
-        await p.click('#tnPack'); await p.wait_for_selector('#bagStartEmpty'); await p.click('#bagStartEmpty'); await p.wait_for_selector('#bagBring')
+        await p.click('#welNext'); await p.wait_for_function("() => location.hash.startsWith('#/bag')")
+        await p.wait_for_selector('#bagStartEmpty')
+        t = await p.text_content('#bagNone'); check('arsenal is saved' in t and 'does not pack it' in t, f'back on the Bag: arsenal saved, nothing packed yet ({t})')
+        await p.click('#bagStartEmpty'); await p.wait_for_selector('#bagBring')
         ex = await p.text_content('#bagExplain'); check('everything you own' in ex, f'Bag explains tonight vs arsenal ({ex})')
         # Bring 4 fills additively
         await p.click('#bagBring button:has-text("4")'); await p.wait_for_timeout(500)
@@ -75,11 +75,12 @@ async def main():
         await p.evaluate("() => scrollTo(0, 0)")
         await shot(p, '04-packing-tonight.png', "Bag: plain 'Tonight\u2019s bag vs All my balls' line; Bring 3 after 4 -> 2 -> 3, additive, a ball with specs kept")
         await p.click('#bagPackGo'); await p.wait_for_function("() => location.hash.startsWith('#/tonight')"); await p.wait_for_selector('#tnStartBowl')
+        check(await p.locator('#tnFindLine').count() == 1 and await p.locator('#tnLaneLink').count() == 1, 'Pack -> Strike line: Find my strike line and Lane one tap each')
         await p.click('#tnStartBowl'); await p.wait_for_selector('#qlStrike')
         for _ in range(3): await p.click('#qlStrike'); await p.wait_for_timeout(450)
         g = await p.evaluate("() => ({ h: location.hash, tab: getComputedStyle(document.querySelector('#tabs')).display, me: !!document.querySelector('#meBtn'), help: !!document.querySelector('#helpToggle'), leave: !!document.querySelector('#tnLeave:not([hidden])'), title: document.querySelector('#tnTitle').textContent, extras: [...document.querySelectorAll('#view .milestone, #view [data-badge], #tnShareNight, #tnBagLink, #advEvent, #tnArsenal')].filter(x => x.offsetParent).map(x => x.id || x.className) })")
         check(g['h'] == '#/bowl' and g['tab'] == 'none' and not g['me'] and not g['help'] and g['leave'] and g['title'] == 'Game' and not g['extras'], f'in-game page: no tab bar, no Me/Help, Leave button, no extras {g}')
-        await shot(p, '05-in-game-midgame.png', 'Game page mid-game (frame 4): scoring, ball chip, aim, Leave to the Building; no tab bar, badges, share, tests or bag management')
+        await shot(p, '05-in-game-midgame.png', 'Game page mid-game (frame 4): scoring, ball chip, aim, Leave to Strike line; no tab bar, badges, share, tests or bag management')
         # v70: Lane and Target from the game page stay in the game: no tab bar, no Help/Me, one Back to the game.
         CHROME = "() => ({ h: location.hash, tab: getComputedStyle(document.querySelector('#tabs')).display, me: !!document.querySelector('#meBtn'), help: !!document.querySelector('#helpToggle'), back: !!document.querySelector('#gameBack'), ingame: document.body.hasAttribute('data-ingame') })"
         await p.click('#tnAimChip'); await p.wait_for_selector('#tgBall')
@@ -95,13 +96,13 @@ async def main():
         check(r['h'] == '#/bowl', f'Back to the game returns to the scoring pad with the game kept {r}')
         await p.click('#tnLeave'); await p.wait_for_function("() => location.hash === '#/tonight' && document.querySelector('#tnStartBowl[data-back]')")
         r = await p.evaluate("() => ({ h: location.hash, back: (document.querySelector('#tnStartBowl') || {}).textContent })")
-        check(r['h'] == '#/tonight' and 'Back to the game' in (r['back'] or ''), f'Leave returns to the Building with Back to the game {r}')
+        check(r['h'] == '#/tonight' and 'Back to the game' in (r['back'] or ''), f'Leave returns to Strike line with Back to the game {r}')
         await p.click('#tnStartBowl'); await p.wait_for_selector('#qlStrike')
         for _ in range(9): await p.click('#qlStrike'); await p.wait_for_timeout(450)
         await p.wait_for_selector('#qlEnd'); await p.click('#qlEnd'); await p.wait_for_selector('#tnNightDone')
         r = await p.evaluate("() => ({ h: location.hash, line: document.querySelector('#tnNightLine').textContent, tab: getComputedStyle(document.querySelector('#tabs')).display, cur: (document.querySelector('#tabs [aria-current=page]') || {}).textContent })")
-        check(r['h'].startswith('#/tonight?night=') and '300' in r['line'] and r['tab'] != 'none' and r['cur'] == 'Building', f'End night returns to the Building with the night {r}')
-        await shot(p, '06-return-building.png', 'After End night: back in the Building, Night saved card (300), link to Results, tab bar back')
+        check(r['h'].startswith('#/results?night=') and '300' in r['line'] and r['tab'] != 'none' and r['cur'] == 'Log book', f'End night lands in the Log book with the night {r}')
+        await shot(p, '06-log-book-night.png', 'After End night: the Log book, Night saved card (300), Open the night, tab bar back')
         # v70: the one share offer per night: Not now closes it and it never comes back for that night.
         check(await p.locator('#tnShareOffer').count() == 1, 'share offered once after the completed night (native sheet only)')
         await p.click('#tnShareSkip'); await p.wait_for_timeout(300)
@@ -109,7 +110,7 @@ async def main():
         await p.reload(); await p.wait_for_selector('#tnNightDone')
         r = await p.evaluate("() => ({ offer: !!document.querySelector('#tnShareOffer'), shares: window.__shares || 0, h: location.hash })")
         check(not r['offer'] and r['shares'] == 0, f'reopening the return page does not bring the offer back; nothing shared {r}')
-        await shot(p, '09-building-share-skipped.png', 'Return page reopened after Not now: Night saved card, no share offer; tab bar back')
+        await shot(p, '09-log-book-share-skipped.png', 'Log book night reopened after Not now: Night saved card, no share offer; tab bar back')
         await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ballBtn')
         r = await p.evaluate(CHROME)
         check(r['tab'] != 'none' and not r['back'] and not r['ingame'], f'Lane opened outside the game keeps the tab bar {r}')

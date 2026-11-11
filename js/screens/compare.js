@@ -21,7 +21,7 @@ const patNow = () => { const P = proj(), sess = P ? ((P.sessions || {})[openNigh
 export function render({ query }) {
   const ids = (query.get('ids') || '').split(',').filter(Boolean).slice(0, 3);
   const ps = ids.map(id => balls.find(b => b.id === id)).filter(Boolean);
-  if (ps.length < 2) return { el:h('section', { class:'screen' }, backBar('Compare', '#/bag?view=all'), emptyState('Pick two balls', 'Choose two or three balls in Bag \u203a All my balls to compare them side by side.', { label:'Go to Arsenal', run:() => go('#/bag?view=all') })), title:'Compare' };
+  if (ps.length < 2) return { el:h('section', { class:'screen' }, backBar('Compare', '#/arsenal'), emptyState('Pick two balls', 'Choose two or three balls in Arsenal to compare them side by side.', { label:'Go to Arsenal', run:() => go('#/bag?view=all') })), title:'Compare' };
   const lanes = [];
   const swap = i => { const s = sheet({ title:'Swap ball', body:h('div', { class:'blist' }, ...balls.filter(b => !ids.includes(b.id)).map(b => ballRow(b, { onPick:x => { s.close(); const n = ids.slice(); n[i] = x.id; go(`#/compare?ids=${n.join(',')}`, { replace:true }); } }))) }); };
   const res = ps.map(b => modelOK(b) ? analyze(b) : { points:[], call:'', entryBoard:null, angle:null, bpBoard:null, bpFeet:null });
@@ -47,7 +47,7 @@ export function render({ query }) {
     h('thead', {}, h('tr', {}, h('th', { scope:'col' }, h('span', { class:'sr-only', text:'Spec' })), ...ps.map(b => h('th', { scope:'col', text:b.name })))),
     h('tbody', {}, ...rows.map(([k, fn, score]) => { const vals = ps.map((b, i) => fn(b, i)); const sc = score ? ps.map((b, i) => score(b, i)) : null; const min = sc ? Math.min(...sc) : null; const diff = new Set(vals).size > 1;
       return h('tr', { class:diff ? 'differs' : 'same' }, h('th', { scope:'row' }, k.replace(' · model',''), k.endsWith(' · model') ? h('span', { class:'prov', 'data-prov':'model', text:'model' }) : ['RG','Differential'].includes(k) ? h('span', { class:'prov', 'data-prov':'manufacturer', text:'maker / see ball' }) : null), ...vals.map((v, i) => h('td', { class:sc && sc[i] === min && diff ? 'best' : '' , text:v }))); })));
-  const el = h('section', { class:'screen compare' }, backBar('Compare', '#/bag?view=all'),
+  const el = h('section', { class:'screen compare' }, backBar('Compare', '#/arsenal'),
     h('p', { class:'muted small pad-x' }, helpDot('ap-compare', 'Compare'), ` Same line for both: feet ${S.release} · input; `, `${S.speed} mph`, h('span', { class:'prov', 'data-prov':releaseSource(proj().bowler?.speed, S.speed)[0], text:releaseSource(proj().bowler?.speed, S.speed)[1] }), ` ${S.rev} rpm`, h('span', { class:'prov', 'data-prov':releaseSource(proj().bowler?.rev, S.rev)[0], text:releaseSource(proj().bowler?.rev, S.rev)[1] }), ` on ${PATTERN_LABEL[S.pattern]}, ${FINISH_LABEL[S.finish]}. Highlighted rows differ; gold = closer to a model strike.`),
     h('div', { class:'cmp-body n' + ps.length }, h('div', { class:'cmp-cols n' + ps.length }, ...cols), h('div', { class:'table-wrap' }, table)));
   let ls = [];

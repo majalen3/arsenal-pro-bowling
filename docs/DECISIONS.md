@@ -357,3 +357,10 @@ The full audit also exposed pre-existing small accessibility defects: literal nu
 - **Packing is additive and predictable.** Bring never swaps a ball out; Bring N up keeps what is packed and adds Ready-to-bring, then At-home balls, balls with specs first; Bring N down removes spec-TBD balls first and keeps the last ball with specs, the spare and pinned balls; Suggest again tops up to N. "In my bag" (a ball's status) read like tonight's bag, so the label is now "Ready to bring"; key `inBag` unchanged.
 - **Release integrity.** SW v68→v69 once. simulatePath, engine inputs and existing catalog rows unchanged; equivalence 7500/0. No merge, deploy, spend or live operations.
 
+## Product spine — 11 November 2026 (America/Chicago), unreleased v71
+- **The tabs are the spine (owner t115/t116).** Bag (front door) → Arsenal → Strike line → Log book. Learn is not a tab. Me (top bar) carries Learn, the Glossary, patterns and a word search. Help "?" is unchanged (off by default, DECISIONS #32). No fifth tab.
+- **Rename and tighten, not new surfaces.** The Building (`#/tonight`) becomes Strike line. Results becomes Log book. The Armory view moves to its own `#/arsenal` route. The Bag keeps its builder. The only new UI pieces are the Find my strike line / Lane view row, the Bag's Back to the game button, the Night saved card in the Log book (shared module `js/cc/nightdone.js`) and the Learn card on Me.
+- **Three taps, measured.** Every core action is ≤ 3 taps from each spine screen, with the tab tap counted and typing not counted, per `tests/product_spine.py`. Exceptions: the game page has no tab bar (+1 tap); compare's second pick; typed or picker flows. See docs/PRODUCT_SPINE.md.
+- **Fold budgets.** Find my strike line sits under Start bowling, so Start bowling stays in the first 740 px even when the hand question shows. League Strike line height budget 1110 → 1150 px (measured 1142) for that one row. Flag for the owner.
+- **Release integrity.** SW v70 → v71 once. Routes kept (old hashes redirect or still render). No data migration. simulatePath, engine and catalog unchanged; equivalence 7500/0. No merge, deploy, spend or live operations.
+

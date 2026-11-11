@@ -2,6 +2,15 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## Product spine — unreleased (2026-11-11 America/Chicago; offline build v71)
+- Four tabs in the order a bowler uses them: **Bag · Arsenal · Strike line · Log book** (were Building · Bag · Results · Learn). The Bag is the front door. No hash, an unknown hash, `#/building` and a finished or skipped welcome all land on `#/bag`. A new profile starts empty there with Find my balls.
+- **Arsenal** is its own tab at `#/arsenal` (the Armory). `#/bag?view=all` still opens it. Ball, add-ball, compare, insights and sheet sit under it.
+- **Strike line** (`#/tonight`, formerly the Building) adds **Find my strike line ›** (opens Targeting and runs Find) and **Lane view ›**, one tap each, under Start bowling. Lane and Targeting highlight the Strike line tab. The game page's leave button reads **← Strike line**.
+- **Log book** (`#/results`): End night lands here (`#/results?night=<id>`) with the Night saved card and the once-per-night share offer (Not now). `#/tonight?night=<id>` still shows the card.
+- The Bag shows **Back to the game · game N** while a night is open.
+- Learn left the tab bar. **Me** opens with a Learn card: word search, Learn, Glossary, Oil patterns. Help "?" is unchanged.
+- Three-click rule: every core action is at most 3 taps from each spine screen, measured by the new `tests/product_spine.py` (worst case 3). Exceptions are in docs/PRODUCT_SPINE.md. Routes and saved data are unchanged; equivalence is 7500/0.
+
 ## Building/game follow-up + 404 catalog gaps — unreleased (2026-11-11 America/Chicago; offline build v70)
 - Lane and Targeting opened from the game page stay in the game: no tab bar/rail, Help, Me or first-visit tour, and one **← Game** button back to the pad. Opened from the Building or Learn they keep the tab bar. Routes and saved data unchanged.
 - The once-per-night share offer after End night is recorded when shown; **Not now** removes it and reopening the return page never brings it back. Native share sheet only.

@@ -15,7 +15,7 @@ import { accountCard } from './account.js';
 import { communityCard } from './community.js';
 import { account } from '../account.js';
 export const VERSION = '1.1.0';   // release version (CHANGELOG.md); the offline build id comes from the service worker cache name
-// IA P2: the Me screen (header button on every tab): profile, data, appearance, sync, about. Learn and the Help switch moved to the Learn tab.
+// IA P2: the Me screen (header button on every tab): profile, data, appearance, sync, about. PRODUCT_SPINE: Learn, Glossary and patterns links live here (no Learn tab).
 export function render() {
   const p = Object.assign({ hand:null, style:null, speed:null, rev:null, entered:{}, pap:'', tilt:'', owned:[] }, profile() || {});
   const editProfile = async () => {
@@ -77,7 +77,13 @@ export function render() {
     const pr = profile();
     body.innerHTML = '';
     const build = h('p', { class:'small muted', id:'aboutVersion', text:`Version ${VERSION}` });
+    // PRODUCT_SPINE: Learn left the tab bar; it lives here, first on Me (Me is in every spine screen's top bar): a word search
+    // (Me -> type -> Enter opens the Glossary), Learn, Glossary and Oil patterns. Click map: docs/PRODUCT_SPINE.md.
+    const lq = h('input', { type:'search', class:'search', id:'meSearch', placeholder:'Look up a bowling word', 'aria-label':'Search the Bowling Guide and Glossary', autocomplete:'off', enterkeyhint:'search' });
     body.append(
+      h('div', { class:'card', id:'meLearn' }, h('h2', { class:'card-title', text:'Learn' }),
+        h('form', { role:'search', id:'meSearchForm', onsubmit:e => { e.preventDefault(); const q = lq.value.trim(); go('#/glossary' + (q ? '?q=' + encodeURIComponent(q) : '')); } }, lq),
+        h('div', { class:'btn-grid' }, h('a', { class:'btn ghost', href:'#/learn', id:'meLearnLink' }, 'Learn'), h('a', { class:'btn ghost', href:'#/glossary', id:'meGlossary' }, 'Glossary'), h('a', { class:'btn ghost', href:'#/learn/patterns', id:'mePatterns' }, 'Oil patterns'))),
       h('div', { class:'card' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Bowler profile' }), h('button', { class:'btn sm ghost', id:'editProfile', onclick:editProfile }, h('span', { html:icon('edit') }), 'Edit')),
         pr ? h('p', { text:`${HAND.handOfProfile(pr) ? HAND.HAND_LABEL[HAND.handOfProfile(pr)] : 'Hand not set'}, ${pr.style === 'two' ? 'two-hander' : (pr.style || 'style not set')}, ${pr.speed != null && pr.speed !== '' ? (+pr.speed).toFixed(1) + ' mph' : 'speed not set'}, ${pr.rev != null && pr.rev !== '' ? pr.rev + ' rpm' : 'revs not set'}${pr.pap ? ', PAP ' + pr.pap : ''}${pr.tilt ? ', tilt ' + pr.tilt : ''}.` }) : h('p', { class:'muted', text:`Not set. The lane uses mid-range starting values (${S.speed} mph, ${S.rev} rpm) until you enter yours.` }),
         h('div', { class:'row between' }, h('span', { text:`Owned arsenal: ${hub.db ? Object.keys(hub.db.projection().owned).length : 0} physical balls` }), h('button', { class:'btn sm ghost', id:'editBag', onclick:editBag }, hub.db?.meta.ownershipReview?.needed ? 'Review older bag' : 'Add balls')),
@@ -90,7 +96,7 @@ export function render() {
         hub.db?.meta.localRecovery && !['undone','closed'].includes(hub.db.meta.localRecovery.phase) ? h('a',{class:'btn ghost block',href:'#/import',id:'reviewLocalRecovery'},'Review local recovery') : null,
         h('details', { class:'tn-more', id:'protMore' }, h('summary', { text:'Keep it safe' }), protBody),
         h('details', { class:'tn-more', id:'dataMore' }, h('summary', { text:'What\u2019s saved' }), dataCounts),
-        h('div', { class:'btn-grid' }, h('a', { class:'btn ghost', href:'#/import', id:'goImport' }, 'Import a file'), h('a', { class:'btn ghost', href:'#/import?kind=lanetrax', id:'goLaneTrax' }, 'LaneTrax report'), h('a', { class:'btn ghost', href:'#/card', id:'goCardMore' }, 'My Bowler Card'), h('a', { class:'btn ghost', href:'#/results', id:'goNights' }, 'Results'), h('button', { class:'btn ghost', id:'moreExport', onclick:async () => (await import('./export.js')).openExport() }, 'Export my arsenal')),
+        h('div', { class:'btn-grid' }, h('a', { class:'btn ghost', href:'#/import', id:'goImport' }, 'Import a file'), h('a', { class:'btn ghost', href:'#/import?kind=lanetrax', id:'goLaneTrax' }, 'LaneTrax report'), h('a', { class:'btn ghost', href:'#/card', id:'goCardMore' }, 'My Bowler Card'), h('a', { class:'btn ghost', href:'#/results', id:'goNights' }, 'Log book'), h('button', { class:'btn ghost', id:'moreExport', onclick:async () => (await import('./export.js')).openExport() }, 'Export my arsenal')),
         gameTotalButton('moreAddTotal', { onDone: sid => go('#/session/' + encodeURIComponent(sid)) })),
       h('div', { class:'card' }, h('h2', { class:'card-title', text:'Appearance' }), segmented('Theme', [['dark', 'Alley dark'], ['light', 'Light'], ['system', 'System']], prefs().theme || 'dark', v => { setPrefs({ theme:v }); applyTheme(v); }, 'wide'),
         h('div', { class:'fld', id:'textSizeFld' }, h('span', { text:'Text size' }), segmented('Text size', [['normal', 'Normal'], ['large', 'Large'], ['xl', 'Extra large']], prefs().textSize || 'normal', v => { setPrefs({ textSize:v }); WK.applyTextSize(v); }, 'wide')),

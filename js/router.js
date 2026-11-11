@@ -32,7 +32,7 @@ export function start(el, tabCb) {
   return render();
 }
 async function render() {
-  const raw = location.hash.replace(/^#/, '') || '/tonight';   // Tonight is the home screen (GAP §2c: don't open on Lane)
+  const raw = location.hash.replace(/^#/, '') || '/bag';   // PRODUCT_SPINE (owner 2026-11-11): the front door is packing tonight's bag
   let [path, qs] = raw.split('?'); let query = new URLSearchParams(qs || '');
   const rd = redirects.find(x => x.re.test(path));
   if (rd) {
@@ -41,11 +41,12 @@ async function render() {
     history.replaceState(null, '', '#' + path + (q ? '?' + q : ''));
   }
   let m = null, r = routes.find(x => (m = path.match(x.re)));
-  if (!r) { r = routes.find(x => x.re.test('/tonight')) || routes[0]; m = ['/tonight']; }
+  if (!r) { r = routes.find(x => x.re.test('/bag')) || routes[0]; m = ['/bag']; }
   const token = {}; latest = token;
   const mod = await r.load();
   if (latest !== token) return;
-  const prev = cur; cur = { token, tab:r.tab, path };
+  const tab = typeof r.tab === 'function' ? r.tab(path, query) : r.tab;   // a route may pick its tab from the query (#/bag?view=all = Arsenal)
+  const prev = cur; cur = { token, tab, path };
   const scr = await mod.render({ params:m.slice(1).map(decodeURIComponent), query });
   if (latest !== token) { scr.destroy && scr.destroy(); return; }
   if (prev && prev.scr && prev.scr.destroy) prev.scr.destroy();
@@ -53,7 +54,7 @@ async function render() {
   mountEl.replaceChildren(scr.el);
   if (decorate) { try { decorate(scr.el, path); } catch (e) { console.error(e); } }
   document.title = scr.title ? `${scr.title} · Arsenal Pro` : 'Arsenal Pro';
-  onTab && onTab(r.tab);
+  onTab && onTab(tab);
   const back = popped && history.state && history.state.y > 0 ? history.state.y : 0; popped = false;
   if (back) requestAnimationFrame(() => { scrollTo(0, back); if (Math.abs(scrollY - back) > 2) setTimeout(() => scrollTo(0, back), 150); });
   if (!first) { if (!back) window.scrollTo(0, 0); const hd = scr.el.querySelector('h1'); if (hd) { hd.tabIndex = -1; hd.focus({ preventScroll:true }); } }

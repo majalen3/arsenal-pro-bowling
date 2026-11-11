@@ -17,19 +17,20 @@ restoreState(); deviceId();
 listenInstall(); if (isStandalone()) askPersist();
 // IA P2 (owner 2026-10-31: "Do the 5-tab layout but keep Help off by default"): Tonight / Bowl / Results / Bag / Learn, Me in the top bar.
 // Lane and Target are tools (no tab of their own): they open from the Stand · Aim chip in the Building and the game, and from Learn.
-route(/^\/lane$/, 'lane', () => import('./screens/lane.js'));
-route(/^\/target$/, 'lane', () => import('./screens/target.js'));
-route(/^\/arsenal\/insights$/, 'bag', () => import('./screens/insights.js'));
-route(/^\/arsenal\/sheet$/, 'bag', () => import('./screens/export.js'));
-route(/^\/ball\/([\w-]+)$/, 'bag', () => import('./screens/ball.js'));
-route(/^\/compare$/, 'bag', () => import('./screens/compare.js'));
-route(/^\/add-ball$/, 'bag', () => import('./screens/addball.js'));
+route(/^\/lane$/, 'tonight', () => import('./screens/lane.js'));
+route(/^\/target$/, 'tonight', () => import('./screens/target.js'));
+route(/^\/arsenal\/insights$/, 'arsenal', () => import('./screens/insights.js'));
+route(/^\/arsenal\/sheet$/, 'arsenal', () => import('./screens/export.js'));
+route(/^\/ball\/([\w-]+)$/, 'arsenal', () => import('./screens/ball.js'));
+route(/^\/compare$/, 'arsenal', () => import('./screens/compare.js'));
+route(/^\/add-ball$/, 'arsenal', () => import('./screens/addball.js'));
 route(/^\/team$/, 'bag', () => import('./screens/team.js'));
 route(/^\/conduct$/, 'bag', () => import('./screens/conduct.js'));
 route(/^\/drill-card$/, 'bag', () => import('./screens/drillscan.js'));
 route(/^\/me\/drill-card$/, 'me', () => import('./screens/drillscan.js'));
-// Bag tab: the bag builder first; "All my balls" (the Armory and catalog) is a view of the same tab (#/bag?view=all).
-route(/^\/bag$/, 'bag', () => Promise.all([import('./screens/bag.js'), import('./screens/arsenal.js')]).then(([b, a]) => ({ render: o => (o.query && o.query.get('view') === 'all' ? a : b).render(o) })));
+// Bag tab: the bag builder (front door). Arsenal tab: the Armory (#/arsenal; the old #/bag?view=all still renders it under the Arsenal tab).
+route(/^\/arsenal$/, 'arsenal', () => import('./screens/arsenal.js'));   // PRODUCT_SPINE: the arsenal manager is its own place (was #/bag?view=all, still works)
+route(/^\/bag$/, (p, q) => (q && q.get('view') === 'all' ? 'arsenal' : 'bag'), () => Promise.all([import('./screens/bag.js'), import('./screens/arsenal.js')]).then(([b, a]) => ({ render: o => (o.query && o.query.get('view') === 'all' ? a : b).render(o) })));
 route(/^\/learn$/, 'learn', () => import('./screens/learn.js'));
 route(/^\/learn\/patterns$/, 'learn', () => import('./screens/patterns.js'));
 route(/^\/pattern\/([\w.-]+)$/, 'learn', () => import('./screens/pattern.js'));
@@ -47,15 +48,20 @@ route(/^\/welcome$/, null, () => import('./screens/welcome.js'));
 route(/^\/tonight$/, 'tonight', () => import('./screens/tonight.js'));
 route(/^\/bowl$/, 'bowl', () => import('./screens/tonight.js').then(m => ({ render: o => m.render(Object.assign({}, o, { bowl: true })) })));
 // Old hashes land on their new home (IA_PLAN §7 P2).
-redirect(/^\/building$/, '/tonight');
+redirect(/^\/building$/, '/bag');   // PRODUCT_SPINE: the old home now opens the front door (tonight's bag)
 redirect(/^\/game$/, '/bowl');
 redirect(/^\/sessions$/, '/results');
-redirect(/^\/arsenal$/, '/bag?view=all');
+
 redirect(/^\/more$/, '/me');
 redirect(/^\/patterns$/, '/learn/patterns');
 // tab bar / rail. HOME_GAME_FLOW (owner 2026-11-10: "the building, then the scoring page should be an in-game page"): the Building
 // (#/tonight) is home; scoring (#/bowl) is a focused game page with no tab of its own and no tab bar, entered from the Building.
-const TABS = [['tonight', 'Building', 'building'], ['bag', 'Bag', 'bag'], ['results', 'Results', 'results'], ['learn', 'Learn', 'learn']];
+// PRODUCT_SPINE (owner 2026-11-11, t115/t116: "bag building first, then arsenal manager, then the strike finder, then a log book;
+// everything a max three clicks away"): the four tabs ARE the spine, in that order. The Bag (#/bag) is the front door. Strike line
+// is the old Building (#/tonight: where, start line, Find my strike line, Lane, Start bowling); scoring (#/bowl) sits inside the night.
+// Learn and the Glossary moved off the tab bar: Help "?" and Me (top right) on every spine screen, Learn from Me and from Strike line.
+// Click-depth map and exceptions: docs/PRODUCT_SPINE.md.
+const TABS = [['bag', 'Bag', 'bag'], ['arsenal', 'Arsenal', 'arsenal'], ['tonight', 'Strike line', 'target'], ['results', 'Log book', 'results']];
 const nav = $('#tabs');
 nav.innerHTML = TABS.map(([k, l, ic]) => `<a class="tab" href="#/${k}" data-tab="${k}">${icon(ic)}<span>${l}</span></a>`).join('');
 function setTab(t) { $$('.tab', nav).forEach(a => { if (a.dataset.tab === t) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); }); document.body.dataset.tab = t || 'none'; }
@@ -103,12 +109,13 @@ const routePreloads = { __proto__:null,
   '/me':['screens/more','screens/account','screens/community','cc/community','cc/card'],
   '/welcome':['screens/welcome','cc/addball','data/spec_catalog','data/match','cc/ownership'],
   '/tonight':['screens/tonight','cc/quicklog','cc/rank','cc/model','cc/advisor','cc/bag','cc/target','patdata','cc/line','cc/status','cc/bagedit','cc/card','screens/gametotal'],
+  '/arsenal':['screens/bag','screens/arsenal','cc/rank','cc/model','cc/armory','cc/bag','cc/status'],
   '/bag':['screens/bag','screens/arsenal','cc/rank','cc/model','cc/armory','cc/bag','cc/target','cc/status','cc/bagedit','cc/advisor'],
   '/lane':['screens/lane','lane','deck','ctl','labels','screens/pickers'],
   '/target':['screens/target','lane','ctl','cc/target'],
   '/results':['screens/sessions','cc/card'], '/learn':['screens/learn']
 };
-const initialPath = location.hash.replace(/^#/, '').split('?')[0] || '/tonight';
+const initialPath = location.hash.replace(/^#/, '').split('?')[0] || '/bag';
 for (const name of routePreloads[initialPath === '/bowl' ? '/tonight' : initialPath] || []) {
   const link = document.createElement('link'); link.rel = 'modulepreload'; link.href = 'js/' + name + '.js'; document.head.append(link);
 }
