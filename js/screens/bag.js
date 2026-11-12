@@ -3,6 +3,7 @@
 // v73: tonight's bag + lane condition first (Swap / Keep in bag / Shake it up), Pack docked, then Bring; ladder and 10 checks behind a
 // tap); step 3 every other owned ball with its "why not" and [Bring]. Edits save at once; "Pack these N" confirms.
 // Rules stay in js/cc (bag.js checks/fill, advisor.js roles, bagedit.js edits); health = fold(events).
+import * as PERF from '../perf.js';
 import { h, toast, segmented, sheet, icon } from '../ui.js';
 import { go } from '../router.js';
 import { ready, proj, add, addMany } from '../hub.js';
@@ -84,6 +85,7 @@ export async function render() {
       h('button', { class: 'btn ghost block', id: 'bagSwapCancel', onclick: () => s.close() }, 'Cancel')) });
   }
   function draw() {
+    const endDraw = PERF.span('bag.draw');
     const P = proj(), bag = ST.currentBag(P);
     body.innerHTML = '';
     if (!bag) { const have = Object.keys(P.owned || {}).length; body.append(h('div', { class:'card', id:'bagNone' }, h('h2', { class:'card-title', text:have ? 'Your arsenal is saved' : 'No balls owned yet' }), h('p', { class:'muted', text:have ? 'Start an empty bag, then choose Bring for each physical ball you want tonight. Owning a ball does not pack it automatically.' : 'Search the shared catalog and save only the physical balls you own. You can skip and keep using the app.' }), have ? h('button', { class:'btn primary block', id:'bagStartEmpty', onclick:async () => { await add('bag.saved', ST.TONIGHT_BAG, { name:'Tonight', slots:[], spare:null, format:'league3', event:'league', bring:3 }); draw(); } }, 'Start an empty bag') : h('a', { class:'btn primary block', id:'bagFindBalls', href:'#/welcome' }, 'Find my balls'), have ? null : h('a', { class:'btn ghost block', id:'bagAddOwn', href:'#/add-ball' }, 'Add a ball with its specs'))); return; }
@@ -205,6 +207,7 @@ export async function render() {
       h('div', { class: 'btn-grid' }, ...SVC.map(([t, l]) => h('button', { class: 'btn', 'data-svc': t, onclick: async () => { await add('ball.serviced', 'svc-' + careId + '-' + Date.now(), { ballId: careId, type: t }); toast(`${cx.name}: ${l.toLowerCase()} logged.`); draw(); } }, 'Log ' + l.toLowerCase()))),
       // Scoring fix 4 / education: USBC Rule 18 (and 18/2: competition starts with the first ball thrown for score).
       h('p', { class: 'muted small', id: 'bagRule18' }, 'Sand, polish or clean before league or tournament play starts. Once any bowler throws a ball for score, no abrasive, cleaner, rosin or powder on any ball; a dry towel is fine.', prov('usbc', 'USBC Rule 18'))));
+    endDraw();
   }
   draw();
   return { el, title: 'Bag' };

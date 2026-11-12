@@ -4,6 +4,7 @@ import { helpToggle } from './screens/help.js';
 import { $, $$, toast, icon } from './ui.js';
 import { listenInstall, isStandalone, askPersist } from './cc/protect.js';
 import { applyTextSize } from './cc/wake.js';
+import * as PERF from './perf.js';
 import * as UX from './cc/ux.js';   // Now item 5: on-device counts only (localStorage ap_ux, never synced)
 // theme: dark (alley) default, light, or system
 export function applyTheme(t = prefs().theme || 'dark') {
@@ -121,6 +122,7 @@ const initialPath = location.hash.replace(/^#/, '').split('?')[0] || '/bag';
 for (const name of routePreloads[initialPath === '/bowl' ? '/tonight' : initialPath] || []) {
   const link = document.createElement('link'); link.rel = 'modulepreload'; link.href = 'js/' + name + '.js'; document.head.append(link);
 }
+PERF.mark('main.evaluated');
 const firstScreen = start($('#view'), setTab);
 startSync();
 // v1 event log opens after first paint (IndexedDB; never blocks the lane)

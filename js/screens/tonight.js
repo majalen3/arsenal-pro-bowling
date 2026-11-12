@@ -3,6 +3,7 @@
 // Sim fixes (docs/user-simulations.md): one line source (cc/line.js), nights not days (cc/night.js), the bowler's own hand
 // and stand for spare hints, 400 ms double-tap guard, and a game-open layout that shows only what you need mid-game.
 import { START } from '../engine.js';
+import * as PERF from '../perf.js';
 import { fmtHalf } from '../labels.js';
 import { h, icon, toast, segmented } from '../ui.js';
 import { go, retab } from '../router.js';
@@ -105,6 +106,7 @@ export async function render(o = {}) {
   function enterGameChrome() { el.querySelector('#tnTitle').textContent = 'Game'; requestAnimationFrame(() => { document.title = 'Game \u00b7 Arsenal Pro'; }); bar.classList.add('game-bar'); el.classList.add('game-screen'); leave.hidden = false; gamePill.hidden = false; sessionStorage.removeItem(LEFT_KEY);
     bar.querySelectorAll('#helpToggle, #meBtn, .help-toggle').forEach(x => x.remove()); }
   function draw() {
+    const endDraw = PERF.span('tonight.draw');
     const P = proj(), s = sess(), b = bowlerOf(P), hand = handOf(P);
     const keepOpen = document.getElementById('tnMore'); if (keepOpen) moreOpen = keepOpen.open;
     body.innerHTML = '';
@@ -228,7 +230,7 @@ export async function render(o = {}) {
         h('details', { class: 'card tn-more', id: 'tnMore', open: moreOpen, ontoggle: e => { moreOpen = e.target.open; } }, h('summary', { text: 'Ball change, read and details' }), alts || '', reads || '',
           ...(gameOpen ? [] : advisorCard(P, s, b, adv, cur && { name: cur.name, ml, catalogId: cur.catalogId })), h('p', { class: 'coach', id: 'tnCoach', text: coach }), gameOpen && thenLine ? thenLine : '', pick || '', '', !gameOpen && s.event === 'practice' ? drillCard(P, s) : '', setup));
       if (gameOpen) requestAnimationFrame(padToThumb);
-      return;
+      endDraw('bowl'); return;
     }
     // ---- Tonight (IA P1.5): bag and start line, hand, who's bowling, Start bowling. The rest behind "More details".
     const [advCard, bagCard, whyBox] = advisorCard(P, s, b, adv, cur && { name: cur.name, ml, catalogId: cur.catalogId });
@@ -257,6 +259,7 @@ export async function render(o = {}) {
     body.append(h('details', { class: 'tn-more tn-extra', id: 'tnExtra', open: extraOpen, ontoggle: e => { extraOpen = e.target.open; } }, h('summary', { text: 'More details' }),
       h('p', { class: 'coach', id: 'tnCoach', role: 'status', text: coach }), alts || '', thenLine || '', whyBox || '', setup));
     if (measNudge) body.append(measNudge);
+    endDraw();
   }
   // P1.5 "Who's bowling": just me, a league team (frames in lineup order) or Baker; Add a bowler one tap away.
   function scoringSeg(s) { return segmented('Scoring', [['solo', 'Just me'], ['league', 'League team'], ['baker', 'Baker']], s.mode || 'solo', v => save({ mode: v }), 'wide'); }
@@ -382,7 +385,7 @@ export async function render(o = {}) {
     // Writes one or more throws (the two-tap spare writes two) as shot.logged events, then shows "Saved".
     const write = async throws => {
       // sim bug 2: a repeat tap inside 400 ms (or while the last write is still in flight) is a double tap, not a second ball.
-      const now = performance.now(); if (live.done || busy || now - lastTap < TAP_GUARD_MS) return; lastTap = now; busy = true; lastEdit = null; pickFix = false;
+      const now = performance.now(); if (live.done || busy || now - lastTap < TAP_GUARD_MS) return; lastTap = now; busy = true; lastEdit = null; pickFix = false; const tapPainted = PERF.tapToPaint('score.tap');
       try {
         if (!proj().sessions[sid]) await addMany([mkEvent('session.created', sid, Object.assign({ kind: 'tonight', date: dayKey(Date.now()) }, sess(), { editTs: Date.now() }), { deviceId: deviceId(), prov: { kind: 'user' } })]);   // first throw opens the night
         let seq = mine.map(x => ({ down: x.down, leave: x.leave || [], foul: !!x.foul })), at = live;
@@ -396,7 +399,7 @@ export async function render(o = {}) {
         if (at.frame !== live.frame || at.done) { const tf = Date.now(); if (frameT0) (window.__apFrameMs = window.__apFrameMs || []).push(tf - frameT0); frameT0 = tf; }
         savedMsg = (at.done ? `Saved \u2713 game ${game}` : `Saved \u2713 frame ${live.frame}`) + tagOf(who);
       } finally { busy = false; }
-      ql.leave.clear(); ql.foul = false; ql.tag = null; draw();
+      ql.leave.clear(); ql.foul = false; ql.tag = null; draw(); tapPainted();
     };
     // Scoring fix 2: fix any frame. The frame is re-entered on the same pad; when it is complete the old shots are voided and
     // the new ones written in one append, so the log keeps both and "Undo fix" puts the old frame back.

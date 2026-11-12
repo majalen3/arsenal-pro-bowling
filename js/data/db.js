@@ -3,12 +3,13 @@ import { project, projectionHash } from './project.js';
 import { isEnvelope, setSeq } from './events.js';
 import { migrateV0 } from './migrate.js';
 import { SCHEMA_V } from './schema.js';
+import * as PERF from '../perf.js';
 export function createDB(backend, { deviceId = null } = {}) {
   const ev = new Map(); let meta = {}, P = null; const subs = new Set(); let writes = Promise.resolve(), activity = 0;
   const notify = () => { P = null; subs.forEach(f => { try { f(); } catch (e) { console.error(e); } }); };
   const api = {
     backend, deviceId,
-    async open() { const r = await backend.load(); ev.clear(); for (const e of r.events) if (isEnvelope(e)) ev.set(e.id, e); meta = r.meta || {}; let mx = 0; for (const e of ev.values()) if ((e.seq || 0) > mx) mx = e.seq; setSeq(mx); P = null; return api; },
+    async open() { const endLoad = PERF.span('db.load'); const r = await backend.load(); endLoad(ev.size); ev.clear(); for (const e of r.events) if (isEnvelope(e)) ev.set(e.id, e); meta = r.meta || {}; let mx = 0; for (const e of ev.values()) if ((e.seq || 0) > mx) mx = e.seq; setSeq(mx); P = null; return api; },
     events: () => [...ev.values()],
     activity: () => activity,
     has: id => ev.has(id),
@@ -30,7 +31,7 @@ export function createDB(backend, { deviceId = null } = {}) {
     },
     async markSynced(ids) { const ch = []; for (const id of ids) { const e = ev.get(id); if (e && !e.synced) { e.synced = true; ch.push(e); } } if (ch.length) await backend.put(ch); },
     async markUnsynced() { const ch = []; for (const e of ev.values()) if (e.synced) { e.synced = false; ch.push(e); } if (ch.length) await backend.put(ch); return ch.length; },
-    projection() { if (!P) P = project(api.events()); return P; },
+    projection() { if (!P) { PERF.count('cache.projection.miss'); const end = PERF.span('project', ev.size); P = project(api.events()); end(); } else PERF.count('cache.projection.hit'); return P; },
     hash() { return projectionHash(api.projection()); },
     on(fn) { subs.add(fn); return () => subs.delete(fn); },
     async wipe() { await backend.clear(); ev.clear(); meta = {}; notify(); },
