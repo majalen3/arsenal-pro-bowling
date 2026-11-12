@@ -41,32 +41,37 @@ function pedestal(it, why) {
         it.status !== 'inBag' ? h('span', { class:'plate-role', 'data-status':it.status, text:ST.LABEL[it.status] || it.status }) : it.role ? h('span', { class:'plate-role', text:it.role }) : null, h('span', { class:'plate-spec num sr-only', text:specs }), why && it.status !== 'retired' ? h('span', { class:'plate-why', 'data-why-not':it.id, 'data-why':why.key, text:'Why not: ' + why.text }) : null, onLane ? h('span', { class:'sr-only', text:'on lane' }) : null)),
     it.earned.length || onLane ? h('div', { class:'ped-marks' }, onLane ? h('span', { class:'pill gold', text:'On lane' }) : null, ...it.earned.map(m => h('span', { class:'pill', 'data-m':m.id, text:m.text }))) : null);
 }
-// v73 30-second test (owner t125u): Arsenal's one job is find a ball and keep it in tonight's bag. Search + one compact row per
-// ball (small dot, name, status, Keep toggle) replace the lit shelves at the top; the shelves, milestones and catalog now sit
-// behind "Shelf view" / "More" (docs/CUTS_V73.md).
+// v74 (owner t129u): My balls is a grid of tiles, 3 across, each only the ball picture (our own orb) and its name. Tap a tile and the ball
+// page has all of it (specs, layout, surface, games, Keep in bag, edit, status/retire). One sort control, remembered. Keep is a
+// corner badge only, so the page stays Arsenal -> ball = 2 taps. The shelves, milestones and Old Friends stay folded below (v73).
+import { levelOf } from '../cc/rank.js';
+import { prefs, setPrefs } from '../store.js';
+import * as KP from '../cc/keep.js';
 function mine(P, rerender) {
-  const sh = A.shelves(P, catOf), list = sh.bag.concat(sh.bench), bag = ST.currentBag(P), packed = bag ? ST.packedIds(P, bag) : [];
+  const sh = A.shelves(P, catOf), list = sh.bag.concat(sh.bench), bag = ST.currentBag(P);
   const kept = new Set(bag ? bag.slots.filter(s => s.locked).map(s => s.owned) : []);
+  const sort = A.SORTS.some(x => x[0] === prefs().armSort) ? prefs().armSort : 'name';
   const find = h('input', { type:'search', class:'search', id:'armFind', placeholder:'Find a ball', 'aria-label':'Find one of your balls', autocomplete:'off', value:st.mq || '' });
-  const ul = h('ul', { class:'plain arm-list', id:'armList' });
-  const keep = async (it, on) => {
-    const P2 = proj(), b = ST.currentBag(P2); if (!b) { toast('Pack a bag on the Bag tab first.'); return; }
-    const nb = BE.pin(b, it.id, on);
-    if (on && !nb.slots.some(x => x.owned === it.id)) nb.slots.push(Object.assign({ owned:it.id, locked:true }, it.status === 'benched' ? { fromHome:true } : {}));
-    await add('bag.saved', b.id, nb); toast(on ? `${it.name}: kept in tonight’s bag.` : `${it.name}: no longer kept.`); rerender();
+  const sel = h('select', { id:'armSort', class:'arm-sort', 'aria-label':'Sort my balls' }, ...A.SORTS.map(([k, l]) => h('option', { value:k, selected:k === sort, text:l })));
+  const grid = h('ul', { class:'plain arm-grid', id:'armList', 'aria-label':'My balls' });
+  const fill = () => {
+    const q = (st.mq || '').trim().toLowerCase(), key = sel.value;
+    const rows = A.sortBalls(list.filter(it => !q || it.name.toLowerCase().includes(q)), key, { level:it => levelOf(it.cat), created:it => (P.owned[it.id] || {}).createdTs || 0 });
+    grid.replaceChildren(...rows.map(it => {
+      const on = kept.has(it.id), nm = (it.benchmark ? '\u2605 ' : '') + it.name;
+      return h('li', { class:'arm-tile', 'data-own':it.id },
+        h('a', { class:'arm-tile-link', href:`#/ball/${it.id}`, 'aria-label':on ? `${nm}, kept in bag` : nm },
+          h('span', { class:'ball-orb arm-orb', style:{ '--c':it.color || 'var(--text-3)' }, 'aria-hidden':'true' }),
+          h('span', { class:'arm-tile-name', text:nm }),
+          on ? h('span', { class:'arm-tile-keep', 'data-kept':'', 'aria-hidden':'true', html:icon('pin', 'pin-on') }) : null));
+    }));
+    if (q && !rows.length) grid.append(h('li', { class:'muted small arm-none', text:'No ball by that name.' }));
   };
-  const fill = () => { const q = (st.mq || '').trim().toLowerCase(); ul.replaceChildren(...list.filter(it => !q || it.name.toLowerCase().includes(q)).map(it => {
-    const on = kept.has(it.id), inb = packed.includes(it.id);
-    return h('li', { class:'arm-row', 'data-own':it.id },
-      h('a', { class:'arm-row-link', href:`#/ball/${it.id}` }, h('span', { class:'ball-orb sm', style:{ '--c':it.color || 'var(--text-3)' }, 'aria-hidden':'true' }),
-        h('span', { class:'arm-row-name', text:(it.benchmark ? '\u2605 ' : '') + it.name }), h('span', { class:'pill' + (inb ? ' gold' : ''), text:inb ? 'In bag' : (ST.LABEL[it.status] || it.status) })),
-      h('button', { class:'btn sm ghost keep-btn', 'data-keep':it.id, 'aria-pressed':String(on), 'aria-label':`Keep ${it.name} in bag: ${on ? 'on' : 'off'}`, onclick:() => keep(it, !on) },
-        h('span', { html:icon('pin', on ? 'pin-on' : 'pin-off') }), on ? 'Kept' : 'Keep'));
-  })); };
   find.oninput = () => { st.mq = find.value; fill(); };
+  sel.onchange = () => { setPrefs({ armSort:sel.value }); fill(); };
   fill();
   const dot = helpDot('ap-status', 'Ball status');   // help bubbles on: one "?" beside the search (no extra words when off)
-  return h('section', { class:'card', id:'armMine', 'aria-label':'My balls' }, dot ? h('div', { class:'arm-find-row' }, find, dot) : find, ul,
+  return h('section', { class:'card', id:'armMine', 'aria-label':'My balls' }, h('div', { class:'arm-find-row' }, find, sel, dot), grid,
     list.length ? null : h('a', { class:'btn primary block', id:'armAddFirst', href:'#/add-ball' }, 'Add your first ball'));
 }
 function armory(P) {
