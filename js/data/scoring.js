@@ -53,7 +53,15 @@ const PIN = { 1: [0, 0], 2: [-1, 1], 3: [1, 1], 4: [-2, 2], 5: [0, 2], 6: [2, 2]
 // least one pin is down (1) between two or more standing pins (e.g. 7-9, 3-10) or (2) immediately ahead of two or more
 // standing pins (e.g. 5-6). Our reading of "between": a down pin whose x lies strictly between two standing pins' x and whose
 // row lies within their rows; "immediately ahead": a down pin whose two touching pins in the next row both stand.
+// Pure in the set of standing pins (at most 1,023 distinct leaves), and the Log book / game page ask it for every first ball of
+// every game on every redraw, so the answer is memoised by a bitmask of the standing pins (v75, owner t134u: it was 749 ms of a 2.3 s Log book render
+// at 4x CPU on 500 games). The cache is bounded by construction and cannot go stale: the geometry above is constant.
+const splitMemo = new Map(); export const splitMemoSize = () => splitMemo.size;
 export function isSplit(standing) {
+  let key = 0; for (const p of standing) key |= 1 << Number(p);   // bitmask of the standing pins: the cheapest stable key
+  let r = splitMemo.get(key); if (r === undefined) { r = isSplitRaw(standing); splitMemo.set(key, r); } return r;
+}
+export function isSplitRaw(standing) {
   const s = new Set(standing.map(Number));
   if (s.has(1) || s.size < 2) return false;
   const down = Object.keys(PIN).map(Number).filter(p => !s.has(p)), st = [...s];
