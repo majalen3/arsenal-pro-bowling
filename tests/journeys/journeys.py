@@ -198,7 +198,10 @@ async def j02_home_prep(j):
         s.check(await j.page.get_attribute('#bagCare [aria-label="Status"] [data-v="proShop"]', 'aria-checked') == 'true', f'{opt[1]} is now Pro shop')
     async with j.step('Status carries to the Arsenal page', carry='status=proShop') as s:
         await j.nav('/bag'); await j.tap('#tabs a[href="#/arsenal"]'); await j.settle(); await j.audit('arsenal')
-        txt = await j.text('#armMine') if await j.page.locator('#armMine').count() else await j.text('.screen')
+        # v74 (owner t129u): the grid tiles are picture + name only; the status shows on the shelves (one tap) and on the ball page
+        await j.tap('#armShelvesD summary')
+        if await j.page.locator('#armBench:not([open]) > summary').count(): await j.tap('#armBench > summary')
+        txt = await j.text('#armory')
         s.check(re.search(r'pro shop', txt, re.I), 'Arsenal shows the ball as at the pro shop')
     async with j.step('Status carries to Tonight (ball not suggested)', carry='status=proShop') as s:
         await j.nav('/tonight'); await j.settle()

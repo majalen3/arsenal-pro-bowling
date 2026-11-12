@@ -83,7 +83,7 @@ async def main():
   print('PASS legacy snapshot/review/undo/preserved PAP/hand/aims, no deleted events',flush=True);await c.close()
   # Cache-first v72 cold launch then offline add/reload, not impossible never-loaded first-install offline.
   c=await b.new_context(viewport={'width':360,'height':800},is_mobile=True,has_touch=True,service_workers='allow');await c.route('**/*',guard);p=await c.new_page();await p.goto(BASE);await p.wait_for_selector('#welSearch');await p.evaluate('navigator.serviceWorker.ready');await p.reload();await p.wait_for_function('() => navigator.serviceWorker.controller')
-  assert await p.evaluate("caches.keys().then(k=>k.includes('arsenal-pro-v73'))")
+  assert await p.evaluate("caches.keys().then(k=>k.includes('arsenal-pro-v74'))")
   await c.set_offline(True);await p.reload();await p.wait_for_selector('#welSearch');await p.fill('#welSearch','hy-road');await p.locator('[data-select]').first.click();await p.click('#welNext');await p.click('#welNext');await p.wait_for_selector('#bag');await p.goto(BASE+'#/bag?view=all');await p.wait_for_selector('#armMine');await p.reload();await p.wait_for_selector('#armMine');assert await p.evaluate('Object.keys(window.__apData.projection().owned).length')==1
   await p.screenshot(path=f'{OUT}/09-offline-owned-arsenal.png',full_page=True)
   print('PASS atomic offline v73 catalog/add/durable-reload; screenshot inventory is fictional, no recovery keys',flush=True);await c.close();await b.close()

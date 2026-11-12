@@ -1372,7 +1372,7 @@ async def armory_cycle(b):
     await p.goto(BASE + '?arm2#/arsenal'); await p.wait_for_selector('#armList [data-own]')
     rows = await p.evaluate("() => [...document.querySelectorAll('#armList [data-own]')].map(x => x.dataset.own)")
     top = await p.evaluate("() => { const r = document.querySelector('#armMine').getBoundingClientRect(), o = document.querySelector('#armList .ball-orb'); return [Math.round(r.top), o ? Math.round(o.getBoundingClientRect().height) : 0, !document.querySelector('#armShelvesD').open]; }")
-    check(len(rows) == 10 and top[0] < 200 and top[1] <= 24 and top[2], f'[armory] v73: find + one row per ball first (small dot, no big ball at the top), shelves folded {top}')
+    check(len(rows) == 10 and top[0] < 200 and top[1] <= 56 and top[2], f'[armory] v74: find + sort + one tile per ball first (52 px ball, no big hero), shelves folded {top}')
     await p.click('#armShelvesD summary')
     ids = await p.evaluate("() => [...document.querySelectorAll('#armBag .ped[data-own]')].map(x => x.dataset.own)")
     check(len(ids) == 6 and ids[0] == 'own-rattler-big-bite', f'[armory] bag shelf: 6 in-bag balls, benchmark first {ids}')
@@ -1398,6 +1398,72 @@ HELP_SCREENS = [('tonight', '#/tonight', '#tnAdvisor'), ('lane', '#/lane', '.lan
     ('patterns', '#/patterns', '.list-screen'), ('pattern', '#/pattern/2024-pba-shark', '.heat-wrap'), ('sessions', '#/sessions', '.list-screen'),
     ('card', '#/card', '#bcHead'), ('bag', '#/bag', '#bagCare')]
 VISIBLE_DOTS = "() => [...document.querySelectorAll('.help-dot')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && !e.closest('details:not([open]) > :not(summary)'); }).length"
+
+async def armgrid_cycle(b):
+    # v74 (owner t129u): My balls is a 3-across grid of picture + name tiles; tap -> the ball page with all its data; one sort control, remembered.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.goto(BASE + '?ag#/bowl'); await p.wait_for_selector('#noBag'); await load_sample(p)
+    await p.goto(BASE + '?ag1#/arsenal'); await p.wait_for_selector('#armList [data-own]')
+    INFO = """async () => { const [h, c, r] = await Promise.all([import('./js/hub.js'), import('./js/cc/cats.js'), import('./js/cc/rank.js')]); const P = h.proj();
+      return [...document.querySelectorAll('#armList [data-own]')].map(li => { const o = P.owned[li.dataset.own], cat = c.catOf(o.catalogId);
+        return { id: li.dataset.own, name: li.querySelector('.arm-tile-name').textContent.replace('\\u2605 ', ''), brand: cat && cat.brand || '', level: cat ? r.levelOf(cat) : null, created: o.createdTs || 0 }; }); }"""
+    tiles = await p.evaluate("() => [...document.querySelectorAll('#armList .arm-tile')].map(e => { const r = e.getBoundingClientRect(); return [Math.round(r.left), Math.round(r.width), Math.round(r.height)]; })")
+    cols = sorted({t[0] for t in tiles}); check(len(tiles) == 10 and len(cols) == 3, f'[armgrid] 360: 10 tiles, 3 columns {cols}')
+    check(all(t[1] >= 44 and t[2] >= 44 for t in tiles), f'[armgrid] every tile is at least 44 px {[t[1:] for t in tiles][:3]}')
+    txt = await p.evaluate("() => [...document.querySelectorAll('#armList .arm-tile')].map(e => e.innerText.trim().split('\\n').length)")
+    check(max(txt) == 1, f'[armgrid] a tile shows only the name (no brand, status or buttons) {txt}')
+    names = await p.evaluate("() => [...document.querySelectorAll('.arm-tile-name')].map(e => [e.scrollWidth <= e.clientWidth + 1, e.scrollHeight <= e.clientHeight + 1, e.textContent])")
+    check(all(n[0] and n[1] for n in names), f'[armgrid] names wrap to two lines, none cut off {[n[2] for n in names if not (n[0] and n[1])]}')
+    check(await p.evaluate("() => [...document.querySelectorAll('#armList .arm-tile-link')].every(a => (a.getAttribute('aria-label') || '').length > 2 && a.getAttribute('href').startsWith('#/ball/'))"), '[armgrid] each tile is a link named by its ball')
+    check(await p.evaluate("() => !document.querySelector('#armList button, #armList select, #armList input') && !!document.querySelector('#armSort') && !!document.querySelector('#armFind')"), '[armgrid] no buttons on tiles; one sort control and the search above')
+    sw = await p.evaluate("() => { const e = document.querySelector('#armSort').getBoundingClientRect(); return [Math.round(e.height), document.querySelector('#armSort').getAttribute('aria-label'), [...document.querySelector('#armSort').options].map(o => o.value).join()]; }")
+    check(sw[0] >= 44 and sw[1] == 'Sort my balls' and sw[2] == 'name,brand,strength,newest,used', f'[armgrid] sort control: 44 px, labelled, options {sw}')
+    check(await p.evaluate("() => !document.querySelector('#armShelvesD').open && !!document.querySelector('#armMoreD')"), '[armgrid] shelves, Old Friends and More stay folded below')
+    await shot(p, 'armgrid-360')
+    # sort orders (checked against the ball data, not the sort function)
+    async def sort_by(k): await p.select_option('#armSort', k); await p.wait_for_timeout(150); return await p.evaluate(INFO)
+    r = await sort_by('name'); ns = [x['name'].lower() for x in r]; check(ns == sorted(ns), f'[armgrid] sort Name A-Z {ns[:4]}')
+    r = await sort_by('brand'); bs = [x['brand'] for x in r]; known = [x for x in bs if x]
+    check(known == sorted(known) and bs[:len(known)] == known and len(set(known)) > 1, f'[armgrid] sort Brand: A-Z, unknown last {sorted(set(bs))}')
+    r = await sort_by('strength'); lv = [x['level'] for x in r]; lk = [x for x in lv if x is not None]
+    check(lk == sorted(lk, reverse=True) and lv[:len(lk)] == lk and len(set(lk)) > 1, f'[armgrid] sort Strongest to weakest {lv}')
+    await shot(p, 'armgrid-sorted-strength')
+    r = await sort_by('newest'); cr = [x['created'] for x in r]; check(cr == sorted(cr, reverse=True), f'[armgrid] sort Newest first {cr[:3]}')
+    r = await sort_by('used'); check(len(r) == 10, '[armgrid] sort Most used keeps every ball')
+    await sort_by('strength'); await p.goto(BASE + '?ag2#/arsenal'); await p.wait_for_selector('#armList [data-own]')
+    check(await p.input_value('#armSort') == 'strength' and [x['level'] for x in await p.evaluate(INFO)][0] == 5, '[armgrid] the sort choice is remembered after a reload')
+    await p.fill('#armFind', 'hy-road'); await p.wait_for_timeout(150)
+    check(await p.evaluate("() => [...document.querySelectorAll('.arm-tile-name')].map(e => e.textContent).every(x => /hy-road/i.test(x))") and await p.locator('.arm-tile').count() >= 1, '[armgrid] search still narrows the grid')
+    await p.fill('#armFind', '')
+    # tap a tile -> the ball page with all of it (2 taps: Arsenal, then the ball)
+    first = await p.evaluate("() => document.querySelector('#armList [data-own]').dataset.own")
+    await p.click(f'#armList [data-own="{first}"] a'); await p.wait_for_selector('#ballKeep')
+    check(await p.evaluate("() => location.hash") == f'#/ball/{first}', f'[armgrid] tap a tile opens that ball ({first})')
+    got = await p.evaluate("() => ['ballKeep', 'ballRecord', 'ballFactLayout', 'ballFactSurface', 'ballFactGames', 'ownEdit', 'ballSpecs', 'logSurf'].map(i => [i, !!document.getElementById(i)]).filter(x => !x[1]).map(x => x[0])")
+    check(not got and await p.evaluate("() => document.querySelector('#ballSpecs').open") and await p.query_selector('#ballOwned .seg [data-v="retired"], #ballOwned [data-v="retired"]') is not None, f'[armgrid] ball page has Keep, record (layout, surface, games), specs open, edit, surface log, Retired status {got}')
+    k = await p.evaluate("() => { const b = document.querySelector('#ballKeep'), r = b.getBoundingClientRect(); return [b.getAttribute('aria-pressed'), b.getAttribute('aria-label'), Math.round(r.height), b.textContent.trim()]; }")
+    check(k[0] == 'false' and k[2] >= 44 and k[3] == 'Keep in bag: off' and k[1].startswith('Keep in bag: off'), f'[armgrid] ball page Keep in bag toggle, off, 44 px {k}')
+    await shot(p, 'armgrid-ball')
+    await p.click('#ballKeep'); await p.wait_for_function("() => document.querySelector('#ballKeep').getAttribute('aria-pressed') === 'true'")
+    check(await p.text_content('#ballKeep') == 'Keep in bag: on', '[armgrid] Keep in bag: on (2 taps from the Arsenal)')
+    await p.goto(BASE + '?ag3#/arsenal'); await p.wait_for_selector('#armList [data-own]')
+    badge = await p.evaluate(f"() => {{ const l = document.querySelector('#armList [data-own=\"{first}\"]'), b = l.querySelector('.arm-tile-keep'); const r = b && b.getBoundingClientRect(), t = l.getBoundingClientRect(); return [!!b, r && Math.round(r.width), r && r.top < t.top + 12 && r.right > t.right - 12, (l.querySelector('a').getAttribute('aria-label') || '').includes('kept in bag')]; }}")
+    check(badge[0] and badge[1] <= 24 and badge[2] and badge[3], f'[armgrid] kept ball: small corner badge, named "kept in bag" {badge}')
+    await shot(p, 'armgrid-kept-360')
+    await p.click(f'#armList [data-own="{first}"] a'); await p.wait_for_selector('#ballKeep'); await p.click('#ballKeep')
+    await p.wait_for_function("() => document.querySelector('#ballKeep').getAttribute('aria-pressed') === 'false'"); check(True, '[armgrid] Keep in bag toggles back off')
+    await axe_ok(p, '[armgrid ball]')
+    await p.goto(BASE + '?ag4#/arsenal'); await p.wait_for_selector('#armList [data-own]'); await axe_ok(p, '[armgrid]')
+    w = await p.evaluate('[innerWidth, document.documentElement.scrollWidth]'); check(w[1] <= 360, f'[armgrid] no horizontal overflow at 360 {w}')
+    # 390x844 with an iPhone safe area: still 3 across, nothing under the header
+    await p.set_viewport_size({'width': 390, 'height': 844}); await p.add_style_tag(content=':root{--sat:47px !important;--sab:34px !important}'); await p.wait_for_timeout(200)
+    cols = await p.evaluate("() => [...new Set([...document.querySelectorAll('#armList .arm-tile')].map(e => Math.round(e.getBoundingClientRect().left)))].length")
+    top = await p.evaluate("() => [Math.round(document.querySelector('#view h1').getBoundingClientRect().top), Math.round(document.querySelector('#armFind').getBoundingClientRect().top)]")
+    check(cols == 3 and top[0] >= 0 and top[1] > top[0], f'[armgrid] 390 with safe area: 3 columns, title and Find on screen {cols} {top}')
+    await shot(p, 'armgrid-390safe')
+    check(not errs, f'[armgrid] no page errors {errs[:2]}')
+    await c.close()
+
 
 async def help_counts(p, tag):
     out = {}
@@ -1984,7 +2050,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('account', lambda: account_cycle(b)), ('tonightfold', lambda: tonightfold_cycle(b)), ('ia5', lambda: ia5_cycle(b)), ('task12', lambda: task12_cycle(b)), ('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('export', lambda: export_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('account', lambda: account_cycle(b)), ('tonightfold', lambda: tonightfold_cycle(b)), ('ia5', lambda: ia5_cycle(b)), ('task12', lambda: task12_cycle(b)), ('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('export', lambda: export_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('armgrid', lambda: armgrid_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)
