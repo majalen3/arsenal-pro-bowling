@@ -16,6 +16,9 @@ import { statusField, whyNotLine } from './status.js';
 import { demandOf } from '../cc/rank.js';
 import { aboutAngle, specSource } from '../cc/provenance.js';
 import { drillSummary } from './drillscan.js';
+import * as KP from '../cc/keep.js';
+import * as ARM from '../cc/armory.js';
+import * as ST from '../cc/status.js';
 export function backBar(title, fallback) {
   return h('header', { class:'appbar' }, h('button', { class:'icon-btn', 'aria-label':'Back', html:icon('back'), onclick:() => back(fallback) }), h('h1', { class:'title', text:title }));
 }
@@ -44,6 +47,8 @@ export async function render({ params }) {
           onLane ? h('span', { class:'pill gold', text:'On lane' }) : h('button', { class:'btn primary', id:'putOnLane', onclick:() => { setBall(b); go('#/lane'); } }, 'Put on lane'),
           onLane ? null : h('a', { class:'btn ghost', id:'cmpOnLane', href:`#/compare?ids=${app.ball.id},${b.id}` }, h('span', { html:icon('compare') }), `Compare with ${app.ball.name}`), onLane ? null : helpDot('ap-compare', 'Compare')))),
     specNote(b) ? h('p', { class:'small muted spec-note', id:'ballSpecNote', text:specNote(b) }) : null,
+    own ? keepToggle(P, own, b) : null,
+    own ? recordCard(P, own) : null,
     ownCard,
     copies.length > 1 ? h('div', { class:'card', id:'ballCopies' }, h('h2', { class:'card-title', text:'Your physical copies' }), ...copies.map(o => h('a', { class:'btn ghost block', href:'#/ball/' + o.id }, o.name || b.name))) : null,
     own && (linesForBall(b.id).length || lsGet(LS.surface).some(x => x.ballId === b.id)) ? h('a', { class:'btn ghost block', id:'ballOlderLines', href:'#/ball/' + b.id + '?catalog=1' }, 'Older catalog lines (physical copy not recorded)') : null,
@@ -52,7 +57,7 @@ export async function render({ params }) {
         h('span', { class:'num', text:` entry ${f1(a.entryBoard)}` }), h('span', { class:'prov', 'data-prov':'model', text:'model' }), helpDot('bm-entry-angle', 'Entry'), h('span', { class:'num', text: ' · ' + aboutAngle(a.angle) }), h('span', { class:'prov', 'data-prov':'model', text:'model' }), helpDot('ap-model', 'Model estimate'),   // Now item 4: "about N° · model"
         h('span', { class:'num', text:` · breakpoint ${f1(a.bpBoard)}${a.bpFeet != null ? ' @ ' + Math.round(a.bpFeet) + ' ft' : ''}` }), h('span', { class:'prov', 'data-prov':'model', text:'model' }), helpDot('bm-breakpoint', 'Breakpoint'))),
     // Clutter audit C8: the spec tiles are for Compare and Armory; one tap away here.
-    h('details', { class:'card tn-more', id:'ballSpecs' }, h('summary', { text:'Specs: RG, differential, core, cover' }),
+    h('details', { class:'card tn-more', id:'ballSpecs', open:!!own }, h('summary', { text:'Specs: RG, differential, core, cover' }),
       h('div', { class:'spec-grid' }, spec('RG', String(rgTxt(b)) + '<small class="prov">' + specSource(b, 'rg')[1] + '</small>', 'eq-rg'), spec('Differential', String(diffTxt(b)) + '<small class="prov">' + specSource(b, 'diff')[1] + '</small>', 'eq-diff'), spec('Core', esc(b.core) + (b.coreName ? '<small>' + esc(b.coreName) + '</small>' : '') + (b.est ? ' <i class="est">est.</i>' : ''), 'eq-core'),
       spec('Cover', esc(b.cover) + (b.coverName ? '<small>' + esc(b.coverName) + '</small>' : ''), 'eq-cover-types'), spec('Factory finish', esc(b.finish || '\u2014'), 'eq-surface'), spec('Reads · model', r ? `${r.tag}<small>skids ~${Math.round(r.f)} ft</small>` : '\u2014', 'bm-shr'))),
     h('div', { class:'card' }, withHelp(h('h2', { class:'card-title', text:'How it rolls' }), 'eq-cover-types', 'How it rolls'), h('p', { text:b.motion }), b.note ? h('p', { class:'muted small', text:b.note }) : null),
@@ -76,4 +81,24 @@ function instanceEditor(own) {
     h('label', { class:'fld' }, h('span', { text:'Copy name' }), name), h('label', { class:'fld' }, h('span', { text:'Layout (as recorded, not modeled)' }), layout), h('label', { class:'fld' }, h('span', { text:'Your surface note (not factory specs)' }), finish),
     h('button', { class:'btn primary block', id:'ownSave', onclick:async () => { await add('ownedBall.edited', own.id, { fields:{ name:name.value.trim().slice(0,100) || own.name, layout:layout.value === (typeof own.layout === 'string' ? own.layout : '') ? own.layout : layout.value.trim().slice(0,100), finish:finish.value.trim().slice(0,80) } }); toast('Saved for this physical copy.'); go(location.hash, { replace:true }); } }, 'Save this copy'),
     h('button', { class:'btn ghost block', id:'ownCopy', onclick:async e => { e.currentTarget.disabled = true; const id = 'own-' + uuid(); await add('ownedBall.created', id, { catalogId:own.catalogId, name:(own.name || 'Ball') + ' (another copy)', status:'benched', weight:null, spec:own.spec || null }); toast('Another physical copy added; layout and weight are unknown.'); go('#/ball/' + id); } }, 'I own another copy of this model'));
+}
+
+// v74 (owner t129u): "click ball, boom, data". From the Arsenal grid a tap lands here, so an owned ball shows Keep in bag first,
+// then its own record (layout, surface, games) and the specs open. Status (incl. Retired) and edit are in the card below.
+function keepToggle(P, own, b) {
+  const can = KP.canKeep(own); let on = KP.isKept(P, own.id);
+  const btn = h('button', { type:'button', class:'btn ghost keep-btn', id:'ballKeep', 'data-keep':own.id }), set = () => {
+    btn.setAttribute('aria-pressed', String(on)); btn.setAttribute('aria-label', `${ST.ALWAYS}: ${on ? 'on' : 'off'}, ${b.name}`);
+    btn.replaceChildren(h('span', { html:icon('pin', on ? 'pin-on' : 'pin-off') }), `${ST.ALWAYS}: ${on ? 'on' : 'off'}`); };
+  set(); btn.disabled = !can && !on;
+  btn.onclick = async () => { const r = await KP.setKeep(own.id, !on); if (!r.ok) { toast(r.msg); return; } on = r.on; set(); toast(on ? `${b.name}: kept in tonight\u2019s bag.` : `${b.name}: no longer kept.`); };
+  return h('div', { class:'stack', id:'ballKeepRow' }, btn, !can && !on ? h('p', { class:'small muted', text:`${ST.label(own)}: set it back to Ready to bring or At home to keep it in a bag.` }) : null);
+}
+function recordCard(P, own) {
+  const rec = ARM.records(P)[own.id], row = (k, v, id) => [h('dt', { text:k }), h('dd', { id, text:v })];
+  return h('div', { class:'card', id:'ballRecord' }, h('h2', { class:'card-title', text:'Record' }),
+    h('dl', { class:'ball-facts' }, ...row('Layout', typeof own.layout === 'string' && own.layout ? own.layout : '\u2014', 'ballFactLayout'),
+      ...row('Surface', own.finish || '\u2014', 'ballFactSurface'),
+      ...row('Games', rec ? `${rec.games} logged${rec.best != null ? ` \u00b7 best ${rec.best}` : ''}` : 'None logged yet', 'ballFactGames')),
+    h('a', { class:'btn sm ghost', id:'ballLog', href:'#/results' }, 'Open Log book'));
 }

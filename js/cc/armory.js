@@ -46,6 +46,21 @@ export function shelves(P, catOf) {
   return out;
 }
 
+// v74 Arsenal grid sort. Only real data: name, maker (catalogue brand), strength 1-5 (the app's oil tag, cc/rank.js levelOf),
+// date added (owned-ball event time), games logged (records). A ball with no value for the key goes last, then by name.
+export const SORTS = [['name', 'Name'], ['brand', 'Brand'], ['strength', 'Strongest to weakest'], ['newest', 'Newest'], ['used', 'Most used']];
+export function sortBalls(items, key, { level = () => null, created = () => 0 } = {}) {
+  const nm = (a, b) => String(a.name).localeCompare(String(b.name), undefined, { sensitivity: 'base' });
+  const by = {
+    name: nm,
+    brand: (a, b) => { const x = a.cat && a.cat.brand || '', y = b.cat && b.cat.brand || ''; return !x !== !y ? (x ? -1 : 1) : x.localeCompare(y) || nm(a, b); },
+    strength: (a, b) => { const x = level(a), y = level(b); return (x == null) !== (y == null) ? (x == null ? 1 : -1) : (y || 0) - (x || 0) || nm(a, b); },
+    newest: (a, b) => (created(b) || 0) - (created(a) || 0) || nm(a, b),
+    used: (a, b) => ((b.rec && b.rec.games) || 0) - ((a.rec && a.rec.games) || 0) || nm(a, b),
+  };
+  return items.slice().sort(by[key] || by.name);
+}
+
 // Starter cards describe actions already taken, never a skill rating. Recomputed after undo/import removal.
 const STARTERS = [
   { id:'first-ball', title:'First ball added', note:'Your equipment, kept together.', href:'#/bag', has:P => Object.keys(P.owned || {}).length > 0 },

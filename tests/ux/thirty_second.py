@@ -93,15 +93,15 @@ async def scripts(b):
     await p.click('#bagPackGo'); taps += 1; await p.wait_for_timeout(300); dt = time.time() - t0
     res['bag'] = {'taps': taps, 'seconds': round(dt, 1), 'bag_and_oil_visible': see}
     check(see and taps <= 2 and dt < 10, f'[script] Bag: tonight\'s bag + oil on screen, Shake it up + Pack in {taps} taps, {dt:.1f}s')
-    # Arsenal: find a ball and pin it (Keep in bag)
-    t0 = time.time(); await p.goto(BASE + '?s2#/arsenal'); await p.wait_for_selector('#armFind')
-    taps = 0; q = await p.query_selector('#armFind')
-    await q.fill('Ordnance'); taps += 1; await p.wait_for_timeout(250)
-    k = await p.query_selector('#view [data-keep]:not([aria-pressed=true])')
+    # Arsenal (v74, owner t129u): the tile grid, tap the ball (its page), then Keep in bag = 2 taps
+    t0 = time.time(); await p.goto(BASE + '?s2#/arsenal'); await p.wait_for_selector('#armList [data-own]')
+    taps = 0
+    await p.click('#armList [data-own] a'); taps += 1; await p.wait_for_selector('#ballKeep')
+    k = await p.query_selector('#ballKeep:not([aria-pressed=true])')
     if k: await k.click(); taps += 1; await p.wait_for_timeout(300)
-    pinned = await p.evaluate("() => !!document.querySelector('#view [data-keep][aria-pressed=true]')"); dt = time.time() - t0
+    pinned = await p.evaluate("() => document.querySelector('#ballKeep').getAttribute('aria-pressed') === 'true'"); dt = time.time() - t0
     res['arsenal'] = {'taps': taps, 'seconds': round(dt, 1), 'pinned': pinned}
-    check(pinned and taps <= 2 and dt < 15, f'[script] Arsenal: find a ball and keep it in the bag in {taps} taps, {dt:.1f}s')
+    check(pinned and taps <= 2 and dt < 15, f'[script] Arsenal: tap a ball, keep it in the bag in {taps} taps, {dt:.1f}s')
     # Strike line: 1 tap -> stand / target / breakpoint / ball, line ends at the pocket
     t0 = time.time(); await p.goto(BASE + '?s3#/tonight'); await p.wait_for_selector('#tnFindLine')
     await p.click('#tnFindLine'); await p.wait_for_selector('#slTiles [data-tile]', timeout=20000); dt = time.time() - t0

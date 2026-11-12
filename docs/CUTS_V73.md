@@ -51,3 +51,19 @@ commit. To undo one cut, use its "Restore" line.
 ## Not cut, on purpose
 - Strike line `#/tonight` was already one screen (57 words). Its only change is that Find my strike line opens `#/strike`.
 - In the game, `#tnFind` still opens Targeting (`#/target?find=1`) so the v70 in-game chrome and its tests stay the same.
+
+
+## v74 (owner t129u): Arsenal grid
+
+Measured the same way at 360x780 (sample arsenal, 10 balls). Before is v73 (`origin/main` f92ec47).
+
+| Screen | Words before → after | Controls before → after | Page height before → after (px) |
+|---|---|---|---|
+| Arsenal `#/arsenal` | 70 → 45 (−36%) | 27 → 18 | 1020 → 884 |
+
+| # | Screen | What was removed (R) or hidden (H) | How to restore |
+|---|---|---|---|
+| 16 | Arsenal | R: the one-row-per-ball list (dot, name, status pill, Keep button). My balls is now a 3-across grid of tiles with only the ball picture and name. A kept ball has a small corner pin badge. | Put back the `.arm-row` list from v73 `mine()` in `js/screens/arsenal.js` (commit 40457d7) and its CSS. |
+| 17 | Arsenal | R: the status pill ("In bag", "At home") on each ball, and the Keep button. Status is on the ball page and in the shelf view. Keep is on the ball page. Pinning is still 2 taps (tile, then Keep in bag). | Same as #16. |
+| 18 | Arsenal | New: one Sort control (Name, Brand, Strongest to weakest, Newest, Most used), remembered in `ap_prefs.armSort`. | Remove `#armSort` from `mine()`; ignore `armSort`. |
+| 19 | Ball page | New for owned balls: Keep in bag toggle first, a Record card (layout, surface, games logged and best), specs open. Nothing removed; the status and edit card, surface log and lines are unchanged. | Drop `keepToggle`/`recordCard` in `js/screens/ball.js`; remove `open:!!own` on `#ballSpecs`. |

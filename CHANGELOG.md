@@ -2,6 +2,12 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## Arsenal grid — 2026-11-12 America/Chicago; offline build v74
+- **My balls is a grid**: 3 tiles across at 360-414 px, each only the ball picture (our own preview) and its name. A kept ball has a small pin badge in the corner.
+- **Tap a ball, get everything**: the ball page now opens with **Keep in bag** (on/off), then Record (layout, surface, games logged, best game), specs open, status incl. Retired, edit and the surface log. Arsenal then ball is 2 taps; pinning is 2 taps.
+- **One Sort control** next to the search: Name, Brand, Strongest to weakest, Newest, Most used. It is remembered.
+- Shelf view, milestones and Old Friends are still one tap below. Arsenal screen: 70 → 45 words, 27 → 18 controls, 1020 → 884 px. See docs/CUTS_V73.md (#16-19). simulatePath and saved data unchanged; equivalence 7500/0.
+
 ## Bag first, 30-second test — 2026-11-11 America/Chicago; offline build v73
 - **Bag** opens with tonight's bag and the oil/lane (Oil & lanes ›, a Lane condition switch), then compact rows (name, role, Swap, **Keep**), Bring, **Shake it up** / Suggest again and Pack. Pack is visible without scrolling. The Tonight/All switch is gone; `#/bag?view=all` opens Arsenal.
 - **Keep in bag**: a one-tap on/off toggle (pin icon, aria-pressed, 44 px). Kept balls stay through Bring changes, Suggest again and Shake it up ("Kept: stays when you repack, change Bring or shake it up.").
