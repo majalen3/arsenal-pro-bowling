@@ -13,7 +13,7 @@ Four tabs, in the order a bowler uses them (the product spine, [docs/PRODUCT_SPI
 | Tab | Use it for |
 |---|---|
 | **Bag** (home) | Packing tonight's bag: where you bowl, Bring N, tonight's balls (Swap, Always bring), then **Pack these N**. A new profile starts here, empty: Find my balls searches the catalog. While a night is open: **Back to the game**. |
-| **Arsenal** | Everything you own: the Armory (in the bag, at home, Old Friends), status (ready to bring, at home, at the pro shop, retired), each ball's specs, compare, insights, and add a ball from a 163-row manufacturer spec catalogue or by typing the specs. |
+| **Arsenal** | Everything you own: a grid of your balls (picture and name, sortable; tap a ball for all its data and Keep in bag), the Armory (in the bag, at home, Old Friends), status (ready to bring, at home, at the pro shop, retired), each ball's specs, compare, insights, and add a ball from a 163-row manufacturer spec catalogue or by typing the specs. |
 | **Strike line** | The strike finder, before scoring: the ball to start with and where to stand and aim, then **Find my strike line** (the main button) and **Lane view**, who is bowling, then **Start bowling**. |
 | **Game** (no tab) | The scoring page you enter from Strike line: strike in 1 tap, spare in 2, leaves, splits, 10th frame, fouls, fix any frame, league and team scoring with USBC handicap. No tab bar or extras; **← Strike line** leaves without ending the night. |
 | **Log book** | Nights, games and series: End night lands here with the night you just bowled, then every night, your lines, lane notes, the Bowler Card (average, strikes, single-pin spares, the leave to work on) and Season Wrapped. |

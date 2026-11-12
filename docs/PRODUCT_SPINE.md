@@ -9,7 +9,7 @@ The four tabs are the spine, in this order. Nothing else is a tab. This builds o
 | # | Tab | Route | What it is for |
 |---|---|---|---|
 | 1 | **Bag** (front door) | `#/bag` | Packing tonight's bag. Where & lanes, Bring N, tonight's balls with Swap / Always bring, then **Pack these N**. First run lands here, empty. While a night is open it also shows **Back to the game · game N**. |
-| 2 | **Arsenal** | `#/arsenal` (old `#/bag?view=all` still works) | The arsenal manager: the Armory shelves (in the bag, at home, Old Friends), Add ball (catalog search or typed specs), a ball's specs page, compare, insights, the printable sheet. |
+| 2 | **Arsenal** | `#/arsenal` (old `#/bag?view=all` still works) | The arsenal manager: a 3-across grid of your balls (picture + name, sortable; tap one for all its data and Keep in bag), the Armory shelves (in the bag, at home, Old Friends) folded below, Add ball (catalog search or typed specs), a ball's specs page, compare, insights, the printable sheet. |
 | 3 | **Strike line** | `#/tonight` (was "the Building") | The strike finder for tonight. In order: where you bowl and the start line; **Find my strike line ›** (the primary button) with **Lane view ›**; the Stand · Aim chip (Targeting); who is bowling; then **Start bowling** (a plain button, v72). Tonight's bag folds under one line of ball names. Scoring (`#/bowl`) sits inside the night. |
 | 4 | **Log book** | `#/results` | Nights, games, series and history: the latest night, every night, lines, lane taps, notes, Bowler Card, Season Wrapped, CSV export (v73: these three sit under **More** below the stat tiles). **End night lands here** (`#/results?night=<id>`) with the Night saved card and the one-time share offer. |
 
@@ -75,7 +75,7 @@ Secondary actions sit off the main chrome (top bar). They are measured too, and 
 | (none), unknown | `#/bag` | Bag |
 | `#/bag` | Bag | Bag |
 | `#/building` | redirect → `#/bag` | Bag |
-| `#/arsenal`, `#/bag?view=all` | Arsenal (Armory) | Arsenal |
+| `#/arsenal`, `#/bag?view=all` | Arsenal (Armory): the ball grid | Arsenal |
 | `#/add-ball`, `#/ball/:id`, `#/compare`, `#/arsenal/insights`, `#/arsenal/sheet` | Arsenal screens | Arsenal |
 | `#/tonight` (`?night=<id>` still shows Night saved) | Strike line | Strike line |
 | `#/strike` (`?find=1&ball=<id>`) | Find my strike line (v73: lane picture to the pocket, stand/target/breakpoint/ball tiles, Details) | Strike line |
@@ -97,3 +97,7 @@ Saved data does not change. No migration was needed: tabs and routes are UI only
 - Each spine screen has one job and one primary action that is visible at 360x780 without scrolling. Bag, the Score page and Find my strike line (`#/strike`) do not scroll at 360x780 or at 390x844 with an iOS safe area. This is checked by `tests/ux/thirty_second.py`.
 - Timed scripts: Bag (tonight's bag + oil on screen, Shake it up + Pack) takes 2 taps. Arsenal (find a ball, Keep in bag) takes 2 taps. Strike line → stand/target/breakpoint/ball takes 1 tap, and the line ends at the pocket. Log book → games + key stat takes 1 tap.
 - Everything that moved is listed with restore steps in `docs/CUTS_V73.md`. The tap counts above still hold, except Export games (CSV), which is now Log book › More › Export (+1).
+
+## v74: Arsenal grid (owner t129u)
+- `#/arsenal` opens on My balls: search, one Sort control (Name, Brand, Strongest to weakest, Newest, Most used), then a 3-across grid of picture + name tiles. A tile opens `#/ball/<id>`, which holds all of the ball's data and the Keep in bag toggle.
+- Taps: find and open a ball = 2 (Arsenal, the ball); pin it = 2 (Arsenal tile, Keep in bag). Shelves, milestones and Old Friends are folded under the grid. Restore steps are in docs/CUTS_V73.md (#16-19).
