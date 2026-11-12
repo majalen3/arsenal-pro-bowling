@@ -8,12 +8,16 @@ import { seedEvents, SEED_ID, LEGACY_SEED_ID } from './data/seed.js';
 import { LEGACY_KEYS } from './data/migrate.js';
 import { prepareFoundation } from './data/foundation.js';
 import { registerOwned } from './cc/cats.js';
+import * as PERF from './perf.js';
 export let db = null;
 let readyP = null;
 export const ready = () => readyP || (readyP = init());
-export const proj = () => { const P = db ? db.projection() : null; if (P) registerOwned(P); return P; };   // added balls resolve via cats.catOf
+// Added balls resolve via cats.catOf. registerOwned only needs to run when the projection is a new object (it was running on every
+// call: 150k times in one profiling session, v75 owner t134u); db.projection() hands back the same object until the log changes.
+let registered = null;
+export const proj = () => { const P = db ? db.projection() : null; if (P && P !== registered) { registerOwned(P); registered = P; } return P; };
 async function init() {
-  const t0 = performance.now();
+  const t0 = performance.now(), endInit = PERF.span('hub.init');
   let be; try { be = await bestBackend(); } catch (e) { be = memoryBackend(); }
   db = createDB(be, { deviceId: deviceId() }); await db.open();
   const legacy = {}; for (const k of LEGACY_KEYS) { const v = rawGet(k); if (v != null) legacy[k] = v; }
@@ -36,6 +40,7 @@ async function init() {
   window.__apData = { backend: be.kind, bootMs: Math.round(performance.now() - t0), events: () => db.events().length, hash: () => db.hash(), projection: () => db.projection() };
   emit('data');
   import('./sync.js').then(m => m.startOutbox(db)).catch(() => {});
+  endInit();
   return db;
 }
 // The More → "My bag" picker still writes ap_profile.owned; mirror new picks into ownedBall events (never removes).
