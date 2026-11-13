@@ -2,6 +2,12 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## The Lane view is the strike page, with Optimize — 2026-11-12 America/Chicago; offline build v78
+- **One screen.** The Strike line tab button ("Your strike line ›") opens the **Lane view**. The v76 strike line page is retired from navigation (`#/strike` redirects to `#/lane`; the code is kept, see docs/CUTS_V73.md #22).
+- **Optimize.** One big button on the Lane view runs the Forgiving sweep from the line on the lane, puts the best stand and target on the lane (the line ends at the pocket) and shows an estimate chip: pocket % against the line it replaced, miss room left/right, and **Undo**. If nothing beats your line it says "Already your best line". Miss size stays in Details (default Auto). No strike % is shown.
+- The Lane view now fits one screen at 360x780 and 390x844 with the safe area: lane picture, pin deck, stand/aim, Optimize and the miss buttons. Conditions, quick-switch balls, entry/angle/break, margin, skid/hook/roll and the miss size are under one **Details**. The one-time "Which hand?" question is one row here.
+- simulatePath unchanged; equivalence 7500/0. Perf budget: the Optimize tap replaces the old strike-finder rows.
+
 ## Add a ball checks more legal sources — 2026-11-12 America/Chicago; offline build v77
 - **Find a ball: one legal source chain.** Once a name is picked, the lookup tries the maker's page, then a saved (Wayback) copy of it, then the USBC approved list (approval date only), then allowlisted public pages that republish the spec table. The four banned sites are never read. Each value shows where it came from; anything not from the maker's current page is flagged "check against the box"; nothing is saved until you tap Add. Needs the matching API release (arsenal-pro-api PR 6, live).
 - **Fix:** older Storm pages with 10 to 16 lb panels no longer show the 10 lb numbers as the 15 lb ball's RG and differential.

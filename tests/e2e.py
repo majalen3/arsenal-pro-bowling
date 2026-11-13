@@ -18,6 +18,7 @@ def hb(s):   # "10\u00bd" -> 10.5 (bowler half boards, owner aim fix 2026-10-24)
 def check(cond, name):
     (passes if cond else fails).append(name); print(('PASS ' if cond else 'FAIL ') + name)
 
+OPEN_LANE = "() => { const d = document.querySelector('#laneDetails'); if (d) d.open = true; }"   # v78: the Lane view keeps its secondary tools under Details
 async def ctx_for(b, kind, **kw):
     vp = {'width': 390, 'height': 844} if kind == 'phone' else {'width': 1280, 'height': 800}
     c = await b.new_context(viewport=vp, is_mobile=kind == 'phone', has_touch=kind == 'phone', device_scale_factor=2 if kind == 'phone' else 1, **kw)
@@ -72,6 +73,7 @@ async def run(b, kind):
     await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ballBtn')
     await shot(p, f'{kind}-lane')
     # pin deck close-up: readable size, real pocket, text alternative, tone by result
+    await p.evaluate(OPEN_LANE); await p.wait_for_timeout(250)   # v78: the full-size pin deck is in Details
     bb = await (await p.query_selector('#deck')).bounding_box()
     check(bb['width'] >= 180, t + f"pin deck is large enough ({round(bb['width'])}px wide)")
     lbl = await p.get_attribute('#deck', 'aria-label')
@@ -80,6 +82,7 @@ async def run(b, kind):
     check('approximate 2-D model' in cap and await p.query_selector('#deckCap a[href*="DEFLECTION"]') is not None, t + 'pin action labelled as an approximate model with a sources link')
     check(await p.get_attribute('#deckCard', 'data-tone') in ('good', 'warn', 'info', 'bad'), t + 'pin deck coloured by result')
     if SHOTS: await (await p.query_selector('#deckCard')).screenshot(path=os.path.join(SHOTS, f'{kind}-deck.png'))
+    await p.evaluate("() => window.scrollTo(0, 0)"); await p.wait_for_timeout(150)
     # J1 change ball: 2 taps
     before = await p.text_content('.ball-btn-name')
     await p.click('#ballBtn'); await p.wait_for_selector('#ballSheet')
@@ -159,7 +162,7 @@ async def run(b, kind):
 async def deck_cases(b):
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs)
     await p.goto(BASE); await p.evaluate("localStorage.clear();localStorage.setItem('ap_prefs','{\"onboarded\":true}');localStorage.setItem('ap_profile','{\"hand\":\"left\"}')")
-    await p.goto(BASE + '#/lane'); await p.wait_for_selector('#deck'); await p.wait_for_timeout(400)
+    await p.goto(BASE + '#/lane'); await p.wait_for_selector('#deck', state='attached'); await p.wait_for_timeout(400)
     lbl = await p.get_attribute('#deck', 'aria-label')
     check('1-2 pocket' in lbl and 'then the 2 pin' in lbl, '[deck] left hand highlights the 1-2 pocket')
     # cycle 6: full lane mirror for left-handers
@@ -176,8 +179,8 @@ async def deck_cases(b):
     await p.evaluate(tap, [.2]); rl = await p.evaluate(rel); await p.evaluate(tap, [.8]); rr = await p.evaluate(rel)
     check(rl < 15 < rr, f'[lefty] press near the foul line: screen left = low boards, screen right = high boards {rl} {rr}')
     await p.evaluate("localStorage.clear();localStorage.setItem('ap_prefs','{\"onboarded\":true}');localStorage.setItem('ap_profile','{\"hand\":\"left\"}')")
-    await p.reload(); await p.wait_for_selector('#deck'); await p.wait_for_timeout(800)   # let the 300 ms saveState debounce land first
-    await p.evaluate("localStorage.removeItem('ap_state');localStorage.setItem('ap_profile','{\"hand\":\"right\",\"speed\":15,\"rev\":220}')"); await p.reload(); await p.wait_for_selector('#deck')
+    await p.reload(); await p.wait_for_selector('#deck', state='attached'); await p.wait_for_timeout(800)   # let the 300 ms saveState debounce land first
+    await p.evaluate("localStorage.removeItem('ap_state');localStorage.setItem('ap_profile','{\"hand\":\"right\",\"speed\":15,\"rev\":220}')"); await p.reload(); await p.wait_for_selector('#deck', state='attached')
     # neutral start ball (de-brand): keep missing right until the model reads light (at most 4 moves)
     for _ in range(4):
         await p.click('[data-miss=right]'); await p.wait_for_timeout(400)
@@ -1393,47 +1396,72 @@ async def armory_cycle(b):
     check(True, '[armory] pedestal opens the ball page')
     check(not errs, f'[armory] no page errors {errs[:3]}'); await c.close()
 
-HELP_SCREENS = [('tonight', '#/tonight', '#tnAdvisor'), ('lane', '#/lane', '.lane-tools'), ('target', '#/target', '#tgCall'), ('arsenal', '#/arsenal', '#armMine'),
+HELP_SCREENS = [('tonight', '#/tonight', '#tnAdvisor'), ('lane', '#/lane', '#optimize'), ('target', '#/target', '#tgCall'), ('arsenal', '#/arsenal', '#armMine'),
     ('ball', '#/ball/hy-road', '#ballRead'), ('compare', '#/compare?ids=hy-road,rattler', '.cmp-body'), ('insights', '#/arsenal/insights', '#insGame'),
     ('patterns', '#/patterns', '.list-screen'), ('pattern', '#/pattern/2024-pba-shark', '.heat-wrap'), ('sessions', '#/sessions', '.list-screen'),
     ('card', '#/card', '#bcHead'), ('bag', '#/bag', '#bagCare')]
 VISIBLE_DOTS = "() => [...document.querySelectorAll('.help-dot')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && !e.closest('details:not([open]) > :not(summary)'); }).length"
 
-async def strikeline_cycle(b):
-    # v76 (owner t140u): ONE strike-line door on the tab, Standard | Forgiving line on the answer screen, miss room, Adjust -> Lane, no scroll.
+async def laneopt_cycle(b):
+    # v78 (owner t143u): the strike-line tab opens the Lane view; one Optimize button runs the Forgiving sweep on it; #/strike redirects here.
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
     await seed(p); await p.goto(BASE + '?sl#/bowl'); await p.wait_for_selector('#noBag'); await load_sample(p)
     await p.goto(BASE + '?sl1#/tonight'); await p.wait_for_selector('#tnFindLine')
-    check(await p.locator('#tnLaneLink').count() == 0 and (await p.inner_text('#tnFindLine')).startswith('Your strike line') and await p.locator('#tnStrike a').count() == 1, '[strikeline] the tab has ONE strike-line button (no separate Lane view button)')
-    await p.click('#tnFindLine'); await p.wait_for_selector('#slTiles [data-tile]'); await p.wait_for_timeout(200)
-    TILES = "() => [...document.querySelectorAll('#slTiles [data-tile]')].map(t => [t.dataset.tile, t.querySelector('.sl-v').textContent])"
-    POCKET = "() => { const m = document.querySelector('#slTag').textContent.match(/Pocket (\\d+)%/); return m ? +m[1] : null; }"
-    std_tiles = await p.evaluate(TILES); std_pocket = await p.evaluate(POCKET)
-    st = await p.evaluate("() => ({ std: document.querySelector('#slStd').getAttribute('aria-checked'), forg: document.querySelector('#slForg').getAttribute('aria-checked'), mode: document.querySelector('#slDiagram').dataset.mode, ends: document.querySelector('#slDiagram').dataset.endsAtPocket, group: document.querySelector('#slMode').getAttribute('role') })")
-    check(st == {'std': 'true', 'forg': 'false', 'mode': 'standard', 'ends': 'true', 'group': 'radiogroup'} and [t[0] for t in std_tiles] == ['stand', 'target', 'breakpoint', 'ball'], f'[strikeline] opens on Standard: 4 tiles, line ends at the pocket {st}')
-    fit = "() => { const d = document.querySelector('#slDetails').getBoundingClientRect().bottom, t = document.querySelector('#tabs').getBoundingClientRect().top; return [Math.round(d), Math.round(t), document.documentElement.scrollHeight <= innerHeight + 1]; }"
-    f = await p.evaluate(fit); check(f[0] <= f[1] and f[2], f'[strikeline] no scroll at 360x780, Details above the tab bar {f}')
-    sizes = await p.evaluate("() => ['#slStd', '#slForg', '#slUse', '#slAdjust'].map(s => Math.round(document.querySelector(s).getBoundingClientRect().height))")
-    check(min(sizes) >= 44, f'[strikeline] toggle, Use and Adjust are at least 44 px {sizes}')
-    await p.click('#slForg'); await p.wait_for_function("() => document.querySelector('#slDiagram')?.dataset.mode === 'forgiving'"); await p.wait_for_timeout(200)
-    fg_tiles = await p.evaluate(TILES); fg_pocket = await p.evaluate(POCKET); tag = await p.inner_text('#slTag')
-    check(len(fg_tiles) == 4 and await p.evaluate("() => document.querySelector('#slDiagram').dataset.endsAtPocket") == 'true' and await p.locator('#slDiagram .sl-miss').count() == 1, f'[strikeline] Forgiving: 4 tiles, line ends at the pocket, miss band drawn {fg_tiles}')
-    check(fg_pocket is not None and std_pocket is not None and fg_pocket >= std_pocket and 'Standard' in tag and 'room' in tag and 'estimate' in tag and 'strike' not in tag.lower(), f'[strikeline] Forgiving pocket {fg_pocket}% >= Standard {std_pocket}%, shows miss room, labelled estimate, no strike % [{tag}]')
-    f = await p.evaluate(fit); check(f[0] <= f[1] and f[2], f'[strikeline] Forgiving also fits without scroll {f}')
-    await p.reload(); await p.wait_for_selector('#slTiles [data-tile]'); await p.wait_for_timeout(300)
-    check(await p.evaluate("() => document.querySelector('#slForg').getAttribute('aria-checked')") == 'true', '[strikeline] the toggle is remembered')
-    await p.click('#slDetails summary'); await p.select_option('#slMissSel', '3'); await p.wait_for_timeout(500)
-    big_pocket = await p.evaluate(POCKET); check(big_pocket is not None and big_pocket <= fg_pocket, f'[strikeline] a bigger miss size (3 boards) never raises the pocket % ({fg_pocket} -> {big_pocket})')
-    check(await p.evaluate("() => !!document.querySelector('#slRoom') && document.querySelector('#slMissSel').value === '3'"), '[strikeline] Details: miss-size setting and the plain-words miss room')
-    await p.select_option('#slMissSel', 'auto'); await p.wait_for_timeout(400); await p.click('#slStd'); await p.wait_for_function("() => document.querySelector('#slDiagram')?.dataset.mode === 'standard'"); await p.wait_for_timeout(200)
-    check(await p.evaluate(TILES) == std_tiles, '[strikeline] back on Standard: the same line as before (nothing changed for anyone who does not use Forgiving)')
-    await p.click('#slForg'); await p.wait_for_timeout(300); await p.click('#slUse'); await p.wait_for_function("() => location.hash.startsWith('#/tonight')")
-    chip = await p.inner_text('#tnAimChip'); check(f"Stand {fg_tiles[0][1]}" in chip and fg_tiles[1][1] in chip.replace('\u00bd', '\u00bd'), f'[strikeline] Use this line keeps the Forgiving line on Tonight {chip} vs {fg_tiles[:2]}')
-    await p.goto(BASE + '?sl2#/strike'); await p.wait_for_selector('#slAdjust'); await p.click('#slAdjust'); await p.wait_for_selector('#ballBtn')
-    check('#/lane' in p.url, '[strikeline] Adjust opens the Lane view (Bag -> tab -> strike line -> Adjust = 3 taps)')
-    await p.set_viewport_size({'width': 390, 'height': 844}); await p.goto(BASE + '?sl3#/strike'); await p.wait_for_selector('#slTiles [data-tile]'); await p.add_style_tag(content=":root{--sat:47px !important;--sab:34px !important}"); await p.wait_for_timeout(200)
-    f = await p.evaluate(fit); check(f[0] <= f[1] and f[2], f'[strikeline] 390x844 with the iPhone safe area: no scroll {f}')
-    check(not errs, f'[strikeline] no page errors {errs[:2]}'); await c.close()
+    check(await p.locator('#tnLaneLink').count() == 0 and (await p.inner_text('#tnFindLine')).startswith('Your strike line') and await p.locator('#tnStrike a').count() == 1, '[laneopt] the tab has ONE strike-line button')
+    await p.click('#tnFindLine'); await p.wait_for_selector('#optimize'); await p.wait_for_timeout(400)
+    check(p.url.split('#')[1].startswith('/lane') and await p.locator('#slTiles').count() == 0 and await p.get_attribute('#tabs a[aria-current=page], #tabs a.active', 'href') == '#/tonight', f'[laneopt] the tab button opens the Lane view (1 tap; Bag -> tab -> button = 2) {p.url}')
+    fit = "() => { const d = document.querySelector('#laneDetails').getBoundingClientRect().bottom, t = document.querySelector('#tabs').getBoundingClientRect().top; return [Math.round(d), Math.round(t), document.documentElement.scrollHeight <= innerHeight + 1]; }"
+    f = await p.evaluate(fit); check(f[0] <= f[1] and f[2], f'[laneopt] Lane view fits at 360x780 with no scroll, Details above the tab bar {f}')
+    words = await p.evaluate("() => (document.querySelector('#view').innerText.match(/[A-Za-z0-9\u00bd\u2192]+/g) || []).length")
+    check(words <= 110, f'[laneopt] minimal words on the Lane view ({words})')
+    LINE = "() => ({ stand: document.querySelector('#lineSum').dataset.stand, aim: document.querySelector('#lineSum').dataset.aim, rel: document.querySelector('#lineSum').dataset.release })"
+    OUT = "() => ({ ...document.querySelector('#optOut').dataset, hidden: document.querySelector('#optOut').hidden, text: document.querySelector('#optOut').innerText })"
+    sizes = await p.evaluate("() => ['#optimize', '#laneDetails summary', '.miss-btn'].map(s => Math.round(document.querySelector(s).getBoundingClientRect().height))")
+    check(min(sizes) >= 44, f'[laneopt] Optimize, Details and the miss buttons are at least 44 px {sizes}')
+    check(await p.evaluate("() => document.querySelector('#optOut').hidden"), '[laneopt] no stat before Optimize is tapped')
+    l0 = await p.evaluate(LINE)
+    await p.click('#optimize'); await p.wait_for_selector('#optOut:not([hidden])'); await p.wait_for_timeout(500)
+    o1 = await p.evaluate(OUT); l1 = await p.evaluate(LINE)
+    pk, was = int(o1['pocket']), int(o1['was'])
+    check(o1['state'] in ('applied', 'same') and pk >= was and 'estimate' in o1['text'] and 'strike' not in o1['text'].lower().replace('strike line', '') and 'Room' in o1['text'], f'[laneopt] Optimize shows pocket {pk}% vs {was}% before, room {o1["room"]}, labelled estimate, no strike % [{o1["text"].strip()[:90]!r}]')
+    if o1['state'] == 'applied':
+        check((l1['stand'], l1['aim']) != (l0['stand'], l0['aim']), f'[laneopt] Optimize moved the line on the lane {l0} -> {l1}')
+        e = await p.evaluate("() => +(document.querySelector('#lane').getAttribute('aria-label').match(/Entry board ([\\d.]+)/) || [])[1]")
+        check(16.5 <= e <= 18.5, f'[laneopt] the optimized line ends in the pocket (entry board {e})')
+        check(await p.evaluate("() => document.querySelector('#optUndo').getBoundingClientRect().height") >= 44, '[laneopt] Undo is 44 px')
+    f = await p.evaluate(fit); check(f[0] <= f[1] and f[2], f'[laneopt] still no scroll with the stat showing {f}')
+    if o1['state'] == 'applied':
+        await p.click('#optUndo'); await p.wait_for_timeout(500)
+        check(await p.evaluate(LINE) == l0 and await p.evaluate("() => document.querySelector('#optOut').hidden"), f'[laneopt] Undo puts back exactly the previous line {l0}')
+        await p.click('#optimize'); await p.wait_for_selector('#optOut:not([hidden])'); await p.wait_for_timeout(500); l1 = await p.evaluate(LINE)
+    await p.click('#optimize'); await p.wait_for_function("() => document.querySelector('#optOut').dataset.state === 'same'"); await p.wait_for_timeout(300)
+    o2 = await p.evaluate(OUT)
+    check(await p.evaluate(LINE) == l1 and 'Already your best line' in o2['text'] and await p.locator('#optUndo').count() == 0, f'[laneopt] Optimize again: "Already your best line", nothing moves [{o2["text"].strip()[:60]!r}]')
+    await p.reload(); await p.wait_for_selector('#optimize'); await p.wait_for_timeout(500)
+    check(await p.evaluate(LINE) == l1 and await p.evaluate("() => document.querySelector('#optOut').hidden"), '[laneopt] the optimized line is the kept line after a reload (the stat is not claimed any more)')
+    await p.click('#laneDetails summary'); await p.wait_for_selector('#optMissSel')
+    check('Auto' in await p.inner_text('#optMissSel option[value=auto]') and await p.eval_on_selector('#optMissSel', 'e => e.value') == 'auto', '[laneopt] miss size lives in Details and defaults to Auto')
+    await p.select_option('#optMissSel', '1'); await p.click('#optimize'); await p.wait_for_selector('#optOut:not([hidden])'); await p.wait_for_timeout(400); small = int((await p.evaluate(OUT))['pocket'])
+    await p.select_option('#optMissSel', '3'); await p.click('#optimize'); await p.wait_for_function("() => !document.querySelector('#optOut').hidden"); await p.wait_for_timeout(500); big = int((await p.evaluate(OUT))['pocket'])
+    check(big <= small, f'[laneopt] a bigger assumed miss never raises the pocket % ({small}% at +-1, {big}% at +-3)')
+    await p.select_option('#optMissSel', 'auto')
+    await p.click('#optimize'); await p.wait_for_function("() => !document.querySelector('#optOut').hidden"); await p.wait_for_timeout(400)
+    q = p.locator('#qballs .qball[data-ball]').first; await q.click(); await p.wait_for_timeout(500)
+    check(await p.evaluate("() => document.querySelector('#optOut').hidden"), '[laneopt] changing the ball clears the stat (it described the old ball)')
+    await p.click('#laneDetails summary')
+    await p.goto(BASE + '?sl2#/strike?ball=hy-road'); await p.wait_for_selector('#optimize'); await p.wait_for_timeout(300)
+    check(p.url.split('#')[1].startswith('/lane') and 'ball=hy-road' in p.url and 'Hy-Road' in await p.inner_text('.ball-btn-name'), f'[laneopt] #/strike redirects to the Lane view and keeps the ball {p.url} {await p.inner_text(".ball-btn-name")}')
+    await p.goto(BASE + '?sl3#/lane?game=1'); await p.wait_for_selector('#gameBack'); await p.wait_for_selector('#optimize'); await p.wait_for_timeout(300)
+    check(await p.locator('#deck').count() == 1 and await p.locator('[data-miss=left]').count() == 1 and await p.locator('#targetBtn').count() == 1, '[laneopt] in-game Lane keeps its tools (pin deck, miss buttons, Targeting) and Optimize')
+    await p.set_viewport_size({'width': 390, 'height': 844}); await p.goto(BASE + '?sl4#/lane'); await p.wait_for_selector('#optimize'); await p.add_style_tag(content=":root{--sat:47px !important;--sab:34px !important}"); await p.wait_for_timeout(300)
+    await p.click('#optimize'); await p.wait_for_selector('#optOut:not([hidden])'); await p.wait_for_timeout(400)
+    f = await p.evaluate(fit); check(f[0] <= f[1] and f[2], f'[laneopt] 390x844 with the iPhone safe area: no scroll, stat showing {f}')
+    # left-hander: the lane is mirrored, the stat's left/right are the bowler's own
+    await p.set_viewport_size({'width': 360, 'height': 780}); await p.evaluate("localStorage.setItem('ap_profile','{\"hand\":\"left\"}')"); await p.goto(BASE + '?sl5#/lane'); await p.wait_for_selector('#optimize'); await p.reload(); await p.wait_for_selector('#optimize'); await p.wait_for_timeout(500)
+    await p.click('#optimize'); await p.wait_for_selector('#optOut:not([hidden])'); await p.wait_for_timeout(400); lo = await p.evaluate(OUT)
+    check('Mirrored for left hand' in (await p.get_attribute('#lane', 'aria-label')) and lo['state'] in ('applied', 'same') and int(lo['pocket']) >= int(lo['was']) and all(x.replace('.', '').isdigit() for x in lo['room'].split('/')), f'[laneopt] left-hander: mirrored lane, Optimize works {lo["room"]}')
+    f = await p.evaluate(fit); check(f[0] <= f[1] and f[2], f'[laneopt] left-hander fits too {f}')
+    check(not errs, f'[laneopt] no page errors {errs[:2]}'); await c.close()
 
 async def armgrid_cycle(b):
     # v74 (owner t129u): My balls is a 3-across grid of picture + name tiles; tap -> the ball page with all its data; one sort control, remembered.
@@ -1506,7 +1534,7 @@ async def help_counts(p, tag):
     for name, route, sel in HELP_SCREENS:
         await p.goto(BASE + f'?{tag}{name}' + route); await p.wait_for_selector(sel); await p.wait_for_timeout(150)
         # clutter C8/C9: some terms sit in collapsed sections; their "?" shows once the section is opened
-        await p.evaluate("() => document.querySelectorAll('#ballSpecs, #bagCare, #bagLeft').forEach(d => { d.open = true; })")
+        await p.evaluate("() => document.querySelectorAll('#ballSpecs, #bagCare, #bagLeft, #laneDetails').forEach(d => { d.open = true; })")
         out[name] = await p.evaluate(VISIBLE_DOTS)
     return out
 
@@ -1541,7 +1569,7 @@ async def help_cycle(b):
     check(await p.query_selector('#tabs [aria-current=page]') is None and await p.is_visible('#tabs'), '[help] Guide is off the spine (Me / Help): no tab current, tab bar stays')
     await p.goto(BASE + '?hp3#/bowl'); await p.wait_for_selector('#tnLog')
     check(await p.query_selector('#tnLog .help-dot') is None, '[help] never inside the scoring pad')
-    await p.goto(BASE + '?hp4#/lane'); await p.wait_for_selector('.help-dot[data-help="bm-shr"]')
+    await p.goto(BASE + '?hp4#/lane'); await p.wait_for_selector('.help-dot[data-help="bm-shr"]', state='attached'); await p.evaluate(OPEN_LANE); await p.wait_for_timeout(250)
     await p.click('.help-dot[data-help="bm-shr"]'); await p.wait_for_selector('#helpSheet #helpText')
     txt = await p.text_content('#helpText'); check(txt.startswith('Every ball skids'), f'[help] Lane bubble shows the v1 text ({txt[:40]})')
     await p.keyboard.press('Escape'); await p.wait_for_timeout(300)
@@ -1586,14 +1614,14 @@ async def hand_cycle(b):
     await p.click('#handL'); await p.wait_for_selector('#tnHand')
     t = await p.text_content('#tnHand'); check(t.startswith('Left-handed') and 'change' in t, f'[hand] Tonight: "Left-handed · change" ({t})')
     pr = await p.evaluate("() => JSON.parse(localStorage.getItem('ap_profile'))"); check(pr['hand'] == 'left' and pr['handSource'] == 'user-reported', f'[hand] stored as user-reported {pr.get("hand")}/{pr.get("handSource")}')
-    await p.goto(BASE + '?hl#/lane'); await p.wait_for_selector('#deck')
+    await p.goto(BASE + '?hl#/lane'); await p.wait_for_selector('#deck', state='attached')
     check(await p.query_selector('#handAsk') is None, '[hand] asked only once')
     lbl = await p.get_attribute('#deck', 'aria-label'); check('1-2 pocket' in lbl, f'[hand] Lane pin deck follows the hand (1-2 pocket for a lefty)')
     await p.goto(BASE + '?hm#/more'); await p.wait_for_selector('#editProfile')
     check('Left-handed' in await p.text_content('#view'), '[hand] Bowler profile shows Left-handed')
     await p.goto(BASE + '?ht#/tonight'); await p.wait_for_selector('#tnHandChange'); await p.click('#tnHandChange'); await p.wait_for_selector('#handSheetR')
     await p.click('#handSheetR'); await p.wait_for_function("() => (document.querySelector('#tnHand') || {}).textContent?.startsWith('Right-handed')")
-    await p.goto(BASE + '?hr#/lane'); await p.wait_for_selector('#deck'); lbl = await p.get_attribute('#deck', 'aria-label'); check('1-3 pocket' in lbl, '[hand] change to Right: Lane follows (1-3 pocket)')
+    await p.goto(BASE + '?hr#/lane'); await p.wait_for_selector('#deck', state='attached'); lbl = await p.get_attribute('#deck', 'aria-label'); check('1-3 pocket' in lbl, '[hand] change to Right: Lane follows (1-3 pocket)')
     # "Not now": never asked again; boards read right-handed and the line says so.
     await seed(p); await p.goto(BASE + '?hn#/tonight'); await p.wait_for_selector('#noBag'); await load_sample(p); await p.wait_for_selector('#handLater')
     await p.click('#handLater'); await p.wait_for_selector('#tnHand'); t = await p.text_content('#tnHand')
@@ -1772,7 +1800,7 @@ async def aimbox_cycle(b):
     # Aim Box: default off (lane pixels unchanged, no pill); Overlays sheet turns it on; House = Baker 4.5-9.5 at 45 ft;
     # through/outside pill; Custom edges persist after reload; lefty mirror keeps the same read; Targeting + Compare show it.
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 740})
-    await seed(p); await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ovBtn'); await p.wait_for_timeout(900)
+    await seed(p); await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ovBtn', state='attached'); await p.evaluate(OPEN_LANE); await p.wait_for_timeout(900)
     px = lambda: p.evaluate("document.querySelector('#lane').toDataURL()")
     off0 = await px()
     check(await p.eval_on_selector('#aimPill', 'e => e.hidden'), '[aimbox] default off: no pill')
@@ -1791,13 +1819,13 @@ async def aimbox_cycle(b):
     # Custom: edges persist across reload
     await p.click('#ovBtn'); await p.click('#ovSheet [aria-label="Aim Box preset"] [data-v="custom"]'); await p.wait_for_selector('#ovB1')
     await p.click('#ovSheet [aria-label="Increase Outside edge (board)"]'); await p.wait_for_timeout(200)
-    await p.keyboard.press('Escape'); await p.reload(); await p.wait_for_selector('#aimPill'); await p.wait_for_timeout(700)
+    await p.keyboard.press('Escape'); await p.reload(); await p.wait_for_selector('#aimPill', state='attached'); await p.wait_for_timeout(700)
     ab = await p.evaluate("JSON.parse(localStorage.getItem('ap_prefs')).aimBox")
     check(ab['on'] and ab['preset'] == 'custom' and ab['b1'] == 5, f'[aimbox] custom box persists ({ab})')
     check('Aim Box 5' in await p.get_attribute('#lane', 'aria-label'), '[aimbox] custom box drawn after reload')
     pr = await p.text_content('#aimPill')
     await p.evaluate("localStorage.setItem('ap_profile', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('ap_profile') || '{}'), {hand: 'left'})))")
-    await p.reload(); await p.wait_for_selector('#aimPill'); await p.wait_for_timeout(700)
+    await p.reload(); await p.wait_for_selector('#aimPill', state='attached'); await p.wait_for_timeout(700)
     check(await p.text_content('#aimPill') == pr, '[aimbox] lefty mirror: same read in own boards')
     await shot(p, 'phone-aimbox-lefty')
     await p.goto(BASE + '#/target'); await p.wait_for_selector('#tgOvBtn'); await p.wait_for_timeout(700)
@@ -1812,7 +1840,7 @@ async def aimbox_cycle(b):
     await p.keyboard.press('Escape'); await p.wait_for_timeout(300)
     # Off again: lane pixels back to the default
     await p.evaluate("localStorage.setItem('ap_profile', JSON.stringify(Object.assign(JSON.parse(localStorage.getItem('ap_profile') || '{}'), {hand: 'right'})))")
-    await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ovBtn'); await p.click('#ovBtn'); await p.click('#ovSheet [aria-label="Aim Box"] [data-v="off"]')
+    await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ovBtn', state='attached'); await p.evaluate(OPEN_LANE); await p.click('#ovBtn'); await p.click('#ovSheet [aria-label="Aim Box"] [data-v="off"]')
     await p.keyboard.press('Escape'); await p.wait_for_timeout(900)
     check(await p.eval_on_selector('#aimPill', 'e => e.hidden'), '[aimbox] off again: pill hidden')
     check(not errs, '[aimbox] no page errors ' + ' | '.join(errs[:2]))
@@ -2086,7 +2114,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('account', lambda: account_cycle(b)), ('tonightfold', lambda: tonightfold_cycle(b)), ('ia5', lambda: ia5_cycle(b)), ('task12', lambda: task12_cycle(b)), ('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('export', lambda: export_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('armgrid', lambda: armgrid_cycle(b)), ('strikeline', lambda: strikeline_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('account', lambda: account_cycle(b)), ('tonightfold', lambda: tonightfold_cycle(b)), ('ia5', lambda: ia5_cycle(b)), ('task12', lambda: task12_cycle(b)), ('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('export', lambda: export_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('armgrid', lambda: armgrid_cycle(b)), ('laneopt', lambda: laneopt_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

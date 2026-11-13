@@ -2,7 +2,7 @@
  "_doc": "Limits for tests/perf_budget.py. Changelog in docs/PERF_BUDGET.md. Times: measured after the v75 pass at 4x CPU on this box x ~1.6. Bytes/counts: measured + small headroom.",
  "static": {
   "js_bytes_max": 1076000,
-  "css_bytes_max": 82500,
+  "css_bytes_max": 83500,
   "modules_max": 121,
   "sw_shell_max": 126
  },
@@ -39,9 +39,8 @@
   "score_tap_ms_max": 210,
   "arsenal_sort_ms_max": 25,
   "bag_shake_ms_max": 190,
-  "strike_find_ms_max": 80,
   "game_longtasks_max": 4,
-  "forgiving_ms_max": 150
+  "optimize_ms_max": 150
  },
  "lighthouse": {
   "performance_target": 0.85,
