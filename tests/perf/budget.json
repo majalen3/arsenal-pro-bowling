@@ -13,13 +13,13 @@
  "browser": {
   "cold_js_bytes_max": {
    "cold_bag": 321225,
-   "cold_arsenal": 307795,
+   "cold_arsenal": 281237,
    "cold_strikeline": 391352,
    "cold_log": 316413
   },
   "cold_modules_max": {
    "cold_bag": 52,
-   "cold_arsenal": 51,
+   "cold_arsenal": 46,
    "cold_strikeline": 56,
    "cold_log": 53
   },

@@ -19,7 +19,7 @@ Exit code 1 = over budget. **It is a local gate.** Wiring it into CI means editi
 | Bytes | CSS | 78,594 B | 82,500 | +5% |
 | Modules | `js/*.js` files | 119 | 121 | +2 |
 | Service worker | precache entries | 124 | 126 | every one must exist (tested) |
-| Cold load (empty app, 4x CPU, per route) | JS bytes fetched: `#/bag` 305,929 · `#/arsenal` 293,139 · `#/tonight` 372,717 · `#/results` 301,346 | | +5% each | |
+| Cold load (empty app, 4x CPU, per route) | JS bytes fetched (measured with the since-reverted preload build; the shipped build fetches ~28 KB less on `#/arsenal`, so these limits have extra room there): `#/bag` 305,929 · `#/arsenal` 293,139 · `#/tonight` 372,717 · `#/results` 301,346 | | +5% each | |
 | Cold load | modules fetched | 50 / 49 / 54 / 51 | +2 each | |
 | Cold load | first contentful paint | ~100 ms local | 400 ms | local server, relative only |
 | Event-log replay | `project()` over 9,890 events (50 balls, 500 games), Node | 5-6 ms (35 ms in Chromium at 4x) | 12 ms | ~2x |
@@ -39,6 +39,7 @@ Lighthouse is noisy here: the same build scored 0.79, 0.86, 0.88, 0.79, 0.79 on 
 | Version | Change | Reason |
 |---|---|---|
 | v75 | Budget created from the v75 measurements above | first budget |
+| v75 | Tighten `#/arsenal` cold JS to 5% over its pre-preload measurement (265,464 B, 44 modules) | the preload experiment was reverted |
 
 Rules for editing: tighten after a release if the number has room (record the new baseline here); loosen only with a line saying what feature bought the bytes or milliseconds.
 

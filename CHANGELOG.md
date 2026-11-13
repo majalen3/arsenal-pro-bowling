@@ -6,7 +6,7 @@ Versions follow [Semantic Versioning](https://semver.org). The offline build id 
 No screens, wording or saved data changed; simulatePath unchanged, equivalence 7500/0. Measured at 4x CPU throttle on 50 balls / 500 games (docs/PERF_LEARNINGS.md):
 - **Scoring tap to painted 584 -> 130 ms**, Log book render 1,648 -> 454 ms, Strike line screen 977 -> 264 ms, game page 485 -> 245 ms. Cause: the split check was recomputed for every first ball on every redraw; it is now memoised (all 1,023 leaves tested equal to the old rule).
 - Owned balls are registered once per new projection instead of on ~150,000 lookups; `legacyLineKey` no longer scans every owned ball per ball.
-- Every route's static module closure is now hinted with `modulepreload` (guarded by a test). Lighthouse effect is within its noise; not claimed as a win.
+- Tried hinting every route's static module closure with `modulepreload`; Lighthouse got worse (Log book 0.96 -> 0.88), so it was reverted and does not ship.
 - New: opt-in local perf marks (`?perf=1`, no network), profiling tools in `tests/perf/`, a budget gate `tests/perf_budget.py` with `docs/PERF_BUDGET.md`, the service-worker precache test, `docs/TECH_DEBT.md`, `docs/REMOVED_LOG.md` (5 proven-dead functions removed), `docs/PERF_LEARNINGS.md`.
 
 ## Arsenal grid — 2026-11-12 America/Chicago; offline build v74
