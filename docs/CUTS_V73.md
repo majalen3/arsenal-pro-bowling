@@ -48,6 +48,13 @@ commit. To undo one cut, use its "Restore" line.
 | 14 | Ball page and hero | Size: `.ball-orb.xl` 96 → 44 px, so the ball no longer pushes the page title down (owner t126u). | — | `css/app.css` `.ball-orb.xl` (b68037b). |
 | 15 | Add a ball | Layout, not a cut: a failed lookup is now a card (`#abMiss`) with the message, Retry, a link to the maker page or maker search, and "type the specs". Missing fields show "—" plus one "Not published" line. | 53 / 5 → 53 / 5 | 6404525. |
 
+## v76 (owner t140u): one strike line door
+
+| # | Screen | What was removed (R), changed (C) or added (N) | How to restore |
+|---|---|---|---|
+| 20 | Strike line tab | R: the "Lane view ›" button (`#tnLaneLink`) beside Find my strike line. The one button is now "Your strike line ›" (`#tnFindLine`). | Restore the `.btn-grid.tn-strike` pair in `strikeStrip()` in `js/screens/tonight.js` and its CSS. |
+| 21 | Strike line screen | N: Standard / Forgiving line switch, miss room stat, Use this line + **Adjust ›** (opens the Lane view, so Lane is 3 taps from Bag), miss-size select in Details. | Remove `#slMode`, `#slAdjust`, `#slMissSel`; `forgive()` in `js/cc/strikeline.js` can stay. |
+
 ## Not cut, on purpose
 - Strike line `#/tonight` was already one screen (57 words). Its only change is that Find my strike line opens `#/strike`.
 - In the game, `#tnFind` still opens Targeting (`#/target?find=1`) so the v70 in-game chrome and its tests stay the same.

@@ -2,6 +2,12 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## One strike line screen, optional Forgiving line — 2026-11-12 America/Chicago; offline build v76
+- **One door.** The Strike line tab has one button, **Your strike line ›**. The separate "Lane view ›" button is gone; the Lane view is the visible **Adjust ›** button on the strike line screen (3 taps from Bag; nothing deleted). Review: docs/STRIKE_LINE_REVIEW.md.
+- **Forgiving line (optional).** On the strike line screen a **Standard | Forgiving line** switch. Forgiving sweeps stand and target, throws each 200 times with small random misses (arrows, laydown, speed, rev) through the unchanged engine, and picks the line that reaches the pocket window most often, then shows the **miss room** (boards you can miss left/right) labelled an estimate. If Standard is already the best it says so. Miss size is adjustable in Details (Auto, 1, 1½, 2, 3 boards). The choice is remembered. No strike % is shown.
+- Example: Rattler Big Bite, ±1 board miss: Standard 30% -> Forgiving 42% pocket.
+- simulatePath unchanged; equivalence 7500/0. Perf budget gains a Forgiving sweep row (150 ms at 4x CPU; measured about 43-60).
+
 ## Performance and cleanup pass — 2026-11-12 America/Chicago; offline build v75
 No screens, wording or saved data changed; simulatePath unchanged, equivalence 7500/0. Measured at 4x CPU throttle on 50 balls / 500 games (docs/PERF_LEARNINGS.md):
 - **Scoring tap to painted 584 -> 130 ms**, Log book render 1,648 -> 454 ms, Strike line screen 977 -> 264 ms, game page 485 -> 245 ms. Cause: the split check was recomputed for every first ball on every redraw; it is now memoised (all 1,023 leaves tested equal to the old rule).

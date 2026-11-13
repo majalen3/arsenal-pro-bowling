@@ -10,7 +10,7 @@ The four tabs are the spine, in this order. Nothing else is a tab. This builds o
 |---|---|---|---|
 | 1 | **Bag** (front door) | `#/bag` | Packing tonight's bag. Where & lanes, Bring N, tonight's balls with Swap / Always bring, then **Pack these N**. First run lands here, empty. While a night is open it also shows **Back to the game · game N**. |
 | 2 | **Arsenal** | `#/arsenal` (old `#/bag?view=all` still works) | The arsenal manager: a 3-across grid of your balls (picture + name, sortable; tap one for all its data and Keep in bag), the Armory shelves (in the bag, at home, Old Friends) folded below, Add ball (catalog search or typed specs), a ball's specs page, compare, insights, the printable sheet. |
-| 3 | **Strike line** | `#/tonight` (was "the Building") | The strike finder for tonight. In order: where you bowl and the start line; **Find my strike line ›** (the primary button) with **Lane view ›**; the Stand · Aim chip (Targeting); who is bowling; then **Start bowling** (a plain button, v72). Tonight's bag folds under one line of ball names. Scoring (`#/bowl`) sits inside the night. |
+| 3 | **Strike line** | `#/tonight` (was "the Building") | The strike finder for tonight. In order: where you bowl and the start line; **Your strike line ›** (the one primary button, v76; the separate Lane view button is gone); the Stand · Aim chip (Targeting); who is bowling; then **Start bowling** (a plain button, v72). Tonight's bag folds under one line of ball names. Scoring (`#/bowl`) sits inside the night. |
 | 4 | **Log book** | `#/results` | Nights, games, series and history: the latest night, every night, lines, lane taps, notes, Bowler Card, Season Wrapped, CSV export (v73: these three sit under **More** below the stat tiles). **End night lands here** (`#/results?night=<id>`) with the Night saved card and the one-time share offer. |
 
 **Me** (profile, data, sync, backup, imports, appearance, About, tests and usage) and **Help "?"** stay in the top bar of every spine screen. **Learn**, the **Glossary**, oil patterns and a word search are on Me (the Learn card comes first). Learn screens show the tab bar with no tab highlighted.
@@ -20,7 +20,7 @@ The four tabs are the spine, in this order. Nothing else is a tab. This builds o
 ```
 first run: Welcome (search first; Skip is fine) ──► Bag (empty: Find my balls / Add a ball)
 Bag: where & lanes · Bring N · tonight's balls ──► Pack these N ──► Strike line
-Strike line: start line · Find my strike line (primary) · Lane · Stand·Aim · who ──► Start bowling ──► Game (#/bowl)
+Strike line: start line · Your strike line (primary) · Stand·Aim · who ──► Start bowling ──► Game (#/bowl)
 Game: no tab bar, no Help/Me/badges/share/bag tools. "← Strike line" leaves (the night stays open);
       Lane/Targeting from the game keep the game chrome ("← Game").
 Strike line or Bag while a night is open: "Back to the game · game N"
@@ -43,8 +43,8 @@ End night ──► Log book (#/results?night=…): Night saved · Open the nigh
 | Open a ball's specs | 2 | 1 | 2 | 2 |
 | Start a compare (first pick) | 2 | 1 | 2 | 2 |
 | Arsenal insights | 2 | 1 | 2 | 2 |
-| Find my strike line | 2 | 2 | 1 | 2 |
-| Lane | 2 | 2 | 1 | 2 |
+| Your strike line (Find my strike line) | 2 | 2 | 1 | 2 |
+| Lane (Adjust ›, v76) | 3 | 3 | 2 | 3 |
 | Targeting (Stand · Aim) | 2 | 2 | 1 | 2 |
 | Log a ball (Start bowling, then the pad) | 3 | 3 | 2 | 3 |
 | Open last night | 2 | 2 | 2 | 1 |
@@ -78,7 +78,7 @@ Secondary actions sit off the main chrome (top bar). They are measured too, and 
 | `#/arsenal`, `#/bag?view=all` | Arsenal (Armory): the ball grid | Arsenal |
 | `#/add-ball`, `#/ball/:id`, `#/compare`, `#/arsenal/insights`, `#/arsenal/sheet` | Arsenal screens | Arsenal |
 | `#/tonight` (`?night=<id>` still shows Night saved) | Strike line | Strike line |
-| `#/strike` (`?find=1&ball=<id>`) | Find my strike line (v73: lane picture to the pocket, stand/target/breakpoint/ball tiles, Details) | Strike line |
+| `#/strike` (`?find=1&ball=<id>`) | Find my strike line (v73: lane picture to the pocket, stand/target/breakpoint/ball tiles, Details; v76: Standard / Forgiving line switch with miss room, **Use this line**, **Adjust ›** to the Lane view) | Strike line |
 | `#/lane`, `#/target` (`?find=1` runs Find; `?game=1` = in-game) | Lane / Targeting | Strike line (in game: none) |
 | `#/bowl`, `#/game` (redirect) | Game page | none (no tab bar) |
 | `#/results`, `#/sessions` (redirect), `#/session/:id`, `#/card`, `#/wrapped` | Log book screens | Log book |

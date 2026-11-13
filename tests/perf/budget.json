@@ -40,7 +40,8 @@
   "arsenal_sort_ms_max": 25,
   "bag_shake_ms_max": 190,
   "strike_find_ms_max": 80,
-  "game_longtasks_max": 4
+  "game_longtasks_max": 4,
+  "forgiving_ms_max": 150
  },
  "lighthouse": {
   "performance_target": 0.85,

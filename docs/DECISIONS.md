@@ -388,3 +388,10 @@ The full audit also exposed pre-existing small accessibility defects: literal nu
 - **Opt-in marks only.** `js/perf.js` does nothing unless `?perf=1` or `localStorage.ap_perf='1'`; no network, no third-party script, CSP unchanged. It is in the service-worker list.
 - **Budget gate is local.** `tests/perf_budget.py`; CI wiring needs a workflow-file change (token scope risk), so it is documented, not wired. Lighthouse 0.85 is a target; the CI gate stays 0.80 because of +-0.05 run noise.
 - **Dead code needs two proofs** (static scan incl. `Namespace.fn` + Chromium coverage) and never touches migration/backup/recovery/sync. A first scan that missed namespace calls was caught before commit (docs/REMOVED_LOG.md).
+
+## v76 one strike line screen + Forgiving line (owner t140u)
+- **One door, Lane as Adjust.** The tab's "Find my strike line" and "Lane view" were two equal buttons for one answer. The tab has one button, `#tnFindLine` ("Your strike line ›"); `#/strike` carries an **Adjust ›** button to `#/lane`, so Lane stays 3 taps from Bag. `#/lane`, `#/target` and the Stand · Aim chip are kept (in-game tools, Learn, deep links).
+- **Forgiving builds on `find()`**, not a second sweep: same candidate grid, same common-random-number Monte Carlo, same pocket window; `forgive()` adds a finer target for the central stands, room per side and a tie rule. `simulatePath` is read-only.
+- **Lazy and cached.** The sweep runs on the switch tap (or when the remembered mode is Forgiving), cached by ball, miss size and conditions; never at load. Budget 150 ms at 4x CPU.
+- **Honest.** Estimate label, pocket % not strike %, miss sizes are assumptions unless LaneTrax data replaces the arrows value (Auto), and "already your most forgiving" when no line beats Standard.
+- **Not done:** inline answer on the tab (no-scroll risk), a wider pocket window (needs a cited source), miss size measured from scoring data.
