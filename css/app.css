@@ -970,3 +970,4 @@ body[data-tab=bowl] #view,body[data-ingame] #view{padding-bottom:calc(var(--sab)
 .lane-more[open]{grid-template-columns:minmax(0,1fr)}
 .lane-more>*{min-width:0}
 .lane-more .qball-row{overflow-x:auto;max-width:100%}
+.call-row{display:flex;align-items:center;gap:var(--s2)}
