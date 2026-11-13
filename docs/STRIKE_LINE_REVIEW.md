@@ -62,7 +62,8 @@ Against the spine: Bag → Arsenal → **Strike line** → Log book is untouched
 **Example** (Radical Rattler Big Bite, 16 mph, 250 rpm, house shot 38 ft, miss size set to ±1 board at the arrows):
 - Standard: stand 17 (laydown board 10), aim 10½ at the arrows → pocket **30%**.
 - Forgiving: stand 17, aim **11½** at the arrows, breakpoint board 13 at 37 ft → pocket **42%**. At the default ±1½ the same ball shows room 0 left / ½ right.
-- At the default ±1½: 25% → 30%. At ±3: 14% → 15%. For most other catalog balls the Standard search already finds the best line ("already your most forgiving").
+- In the app at the default ±1½ (screenshot `/workspace/t140-evidence/after/strike-forgiving.png`): stand 17, target 11½, breakpoint 13 at 37 ft, pocket 31% vs Standard 27%, room 0 left / ½ right.
+- Node sweep at the default ±1½: 25% → 30%. At ±3: 14% → 15%. For most other catalog balls the Standard search already finds the best line ("already your most forgiving").
 
 ## 5. What would make it better (not done)
 - **A cited, wider pocket window.** The 17-18 entry-board window is correct but harsh; a sourced "pocket zone" would give more room and more spread between lines.
