@@ -108,15 +108,15 @@ setDecorate((el, path) => {
 // Do not preload Lane + Tonight + their model tools on every Me/Welcome visit.
 // These same-origin hints shorten the selected route's graph without fetching unrelated screens.
 const routePreloads = { __proto__:null,
-  '/me':['screens/more','screens/account','screens/community','cc/community','cc/card','account','cc/bag','cc/gametotal','cc/hand','cc/night','cc/quicklog','cc/rank','cc/status','ctl','data/account','data/team','screens/gametotal'],
-  '/welcome':['screens/welcome','cc/addball','data/spec_catalog','data/match','cc/ownership','cc/bag','cc/hand','cc/model','cc/rank','ctl'],
-  '/tonight':['screens/tonight','cc/quicklog','cc/rank','cc/model','cc/advisor','cc/bag','cc/target','patdata','cc/line','cc/status','cc/bagedit','cc/card','screens/gametotal','cc/center','cc/drill','cc/fix','cc/gametotal','cc/hand','cc/league','cc/night','cc/nightdone','cc/ownpat','labels','screens/hand'],
-  '/arsenal':['screens/bag','screens/arsenal','cc/rank','cc/model','cc/armory','cc/bag','cc/status','cc/advisor','cc/bagedit','cc/hand','cc/keep','cc/night','cc/provenance','cc/quicklog','ctl','labels','patdata','screens/pickers','screens/status'],
-  '/bag':['screens/bag','screens/arsenal','cc/rank','cc/model','cc/armory','cc/bag','cc/target','cc/status','cc/bagedit','cc/advisor','cc/hand','cc/keep','cc/night','cc/provenance','cc/quicklog','ctl','labels','patdata','screens/pickers','screens/status'],
-  '/lane':['screens/lane','lane','deck','ctl','labels','screens/pickers','cc/aimbox','cc/hand','cc/line','cc/model','cc/night','cc/provenance','cc/quicklog','cc/rank','cc/target','laneseed','pinsim','screens/hand','screens/overlays'],
-  '/target':['screens/target','lane','ctl','cc/target','cc/aimbox','cc/hand','cc/line','cc/model','cc/night','cc/provenance','cc/quicklog','cc/rank','cc/strikeline','deck','labels','pinsim','screens/hand','screens/overlays'],
-  '/strike':['screens/strike','cc/strikeline','cc/target','cc/line','cc/hand','cc/model','cc/night','cc/quicklog','cc/rank','labels'],
-  '/results':['screens/sessions','cc/card','cc/bag','cc/center','cc/corner','cc/drill','cc/fix','cc/gametotal','cc/hand','cc/night','cc/nightdone','cc/quicklog','cc/rank','cc/status','data/csv','data/validate','labels','screens/corner','screens/fixgame','screens/gametotal','screens/session'], '/learn':['screens/learn']
+  '/me':['screens/more','screens/account','screens/community','cc/community','cc/card'],
+  '/welcome':['screens/welcome','cc/addball','data/spec_catalog','data/match','cc/ownership'],
+  '/tonight':['screens/tonight','cc/quicklog','cc/rank','cc/model','cc/advisor','cc/bag','cc/target','patdata','cc/line','cc/status','cc/bagedit','cc/card','screens/gametotal'],
+  '/arsenal':['screens/bag','screens/arsenal','cc/rank','cc/model','cc/armory','cc/bag','cc/status'],
+  '/bag':['screens/bag','screens/arsenal','cc/rank','cc/model','cc/armory','cc/bag','cc/target','cc/status','cc/bagedit','cc/advisor'],
+  '/lane':['screens/lane','lane','deck','ctl','labels','screens/pickers'],
+  '/target':['screens/target','lane','ctl','cc/target'],
+  '/strike':['screens/strike','cc/strikeline','cc/target','cc/line'],
+  '/results':['screens/sessions','cc/card'], '/learn':['screens/learn']
 };
 const initialPath = location.hash.replace(/^#/, '').split('?')[0] || '/bag';
 for (const name of routePreloads[initialPath === '/bowl' ? '/tonight' : initialPath] || []) {
