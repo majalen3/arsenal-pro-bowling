@@ -16,7 +16,7 @@ Exit code 1 = over budget. **It is a local gate.** Wiring it into CI means editi
 | Area | Metric | Measured v75 | Limit | Why this limit |
 |---|---|---|---|---|
 | Bytes | JS under `js/` (excl. lazy OCR vendor) | 1,044,934 B | 1,076,000 | +3% headroom: a new feature fits, a pasted library does not |
-| Bytes | CSS | 78,594 B | 82,500 | +5% |
+| Bytes | CSS | 82,575 B (v78 Lane view + Optimize row) | 83,500 | +1% |
 | Modules | `js/*.js` files | 119 | 121 | +2 |
 | Service worker | precache entries | 124 | 126 | every one must exist (tested) |
 | Cold load (empty app, 4x CPU, per route) | JS bytes fetched (measured with the since-reverted preload build; the shipped build fetches ~28 KB less on `#/arsenal`, so these limits have extra room there): `#/bag` 305,929 · `#/arsenal` 293,139 · `#/tonight` 372,717 · `#/results` 301,346 | | +5% each | |
