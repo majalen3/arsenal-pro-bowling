@@ -2,6 +2,11 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## Add a ball checks more legal sources — 2026-11-12 America/Chicago; offline build v77
+- **Find a ball: one legal source chain.** Once a name is picked, the lookup tries the maker's page, then a saved (Wayback) copy of it, then the USBC approved list (approval date only), then allowlisted public pages that republish the spec table. The four banned sites are never read. Each value shows where it came from; anything not from the maker's current page is flagged "check against the box"; nothing is saved until you tap Add. Needs the matching API release (arsenal-pro-api PR 6, live).
+- **Fix:** older Storm pages with 10 to 16 lb panels no longer show the 10 lb numbers as the 15 lb ball's RG and differential.
+- Catalogue unchanged (spec_fill.json / still_missing.csv are research output only). Details: docs/SPEC_FILL_2026-11-12.md.
+
 ## One strike line screen, optional Forgiving line — 2026-11-12 America/Chicago; offline build v76
 - **One door.** The Strike line tab has one button, **Your strike line ›**. The separate "Lane view ›" button is gone; the Lane view is the visible **Adjust ›** button on the strike line screen (3 taps from Bag; nothing deleted). Review: docs/STRIKE_LINE_REVIEW.md.
 - **Forgiving line (optional).** On the strike line screen a **Standard | Forgiving line** switch. Forgiving sweeps stand and target, throws each 200 times with small random misses (arrows, laydown, speed, rev) through the unchanged engine, and picks the line that reaches the pocket window most often, then shows the **miss room** (boards you can miss left/right) labelled an estimate. If Standard is already the best it says so. Miss size is adjustable in Details (Auto, 1, 1½, 2, 3 boards). The choice is remembered. No strike % is shown.

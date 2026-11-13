@@ -95,3 +95,40 @@ test('t123u: 900 Global Sublime is in the catalogue, flagged not-maker, engine-r
   assert.equal(e.fields.coverType.v, 'Hybrid'); assert.ok(A.engineReady(e.fields));
   const hit = A.search('Sublime'); assert.ok(JSON.stringify(hit).includes('sc-900-global-sublime'), 'typing Sublime finds it');
 });
+// ---- t139u: the legal source chain (maker → archived maker → USBC → public reference). Each field keeps its own source type.
+test('source chain: per-field provenance, archived/USBC/secondary labels, nothing invented', () => {
+  const res = fx('lookup-chain-archived.json'), m = A.fromLookup(res, 15), f = m.fields;
+  assert.equal(f.finish.prov.kind, 'manufacturer'); assert.equal(f.finish.prov.archived, undefined); assert.equal(A.sourceLabel(f.finish.prov), null, 'maker value uses the normal chip');
+  assert.equal(f.coverstock.prov.archived, true); assert.equal(A.sourceLabel(f.coverstock.prov), 'archived maker page');
+  assert.match(f.coverstock.prov.url, /^https:\/\/web\.archive\.org\/web\/\d+\/https:\/\/brunswickbowling\.com\//); assert.match(f.coverstock.prov.original, /^https:\/\/brunswickbowling\.com\//);
+  assert.equal(f.rg.v, 2.541); assert.equal(f.rg.prov.archived, true); assert.equal(f.rg.note, '15 lb');
+  assert.equal(f.usbc.v, '2023-05-02'); assert.equal(f.usbc.prov.kind, 'usbc'); assert.equal(A.sourceLabel(f.usbc.prov), 'USBC list');
+  assert.equal(f.releaseDate.v, '2022-07-16', 'the maker/archive release date is separate from the USBC approval date');
+  assert.deepEqual(A.nonMakerFields(f).sort(), ['coverstock', 'diff', 'releaseDate', 'rg']);
+  assert.equal(A.chainSummary(res), 'Maker page: no page \u00b7 Archived maker page: found \u00b7 USBC list: found');
+  assert.deepEqual(m.types, ['maker', 'archived-maker', 'usbc']);
+});
+test('source chain: secondary values are flagged "not the maker" and never override a maker or catalogue value', () => {
+  const res = { status: 'found', sourceTypes: ['secondary'], source: { url: 'https://bowlinglife.eu/900-global-sublime-review', host: 'bowlinglife.eu', fetchedAt: '2026-11-12T00:00:00Z' }, headlineWeight: null,
+    fields: { rg: { v: 2.47, raw: '2.47', src: { type: 'secondary', url: 'https://bowlinglife.eu/900-global-sublime-review', host: 'bowlinglife.eu', fetchedAt: '2026-11-12T00:00:00Z', attribution: 'bowlinglife.eu (public review; not the maker)' } } }, weights: {} };
+  const m = A.fromLookup(res, 15);
+  assert.equal(m.fields.rg.prov.secondary, true); assert.match(A.sourceLabel(m.fields.rg.prov), /^not the maker \u00b7 bowlinglife\.eu/); assert.equal(m.fields.rg.note, 'weight not stated');
+  const merged = A.merge({ rg: { v: 2.5, prov: { kind: 'manufacturer', ref: 'stormbowling.com' } } }, m.fields);
+  assert.equal(merged.conflicts.length, 1, 'a disagreement is listed, not hidden');
+});
+test('source chain: usbc-only result adds just the approval date; unsupported/not-found give nothing', () => {
+  const m = A.fromLookup({ status: 'usbc-only', chain: [], usbc: { v: '2025-04-01', dates: ['2025-04-01'], src: { type: 'usbc', url: 'https://bowl.com/approved-ball-list', host: 'bowl.com', fetchedAt: '2026-11-12T00:00:00Z' } } }, 15);
+  assert.deepEqual(Object.keys(m.fields), ['usbc']); assert.equal(m.fields.usbc.v, '2025-04-01');
+  assert.equal(A.fromLookup({ status: 'unsupported' }, 15), null); assert.equal(A.fromLookup({ status: 'not-found' }, 15), null);
+});
+test('source chain: banned sites never appear as a source in any fixture or catalog row', () => {
+  const bad = /bowlingballvideos|bowwwl|bowlingball\.com|bowlingthismonth/i;
+  for (const n of fs.readdirSync(new URL('./fixtures/', import.meta.url)).filter(x => /^lookup-/.test(x))) assert.ok(!bad.test(fs.readFileSync(new URL('./fixtures/' + n, import.meta.url), 'utf8')), n);
+});
+
+test('live Hustle Ink (Wayback, older Storm layout): 15 lb row is 2.53 / 0.030, not the 10 lb headline; weights-only archive result is labelled archived', () => {
+  const res = fx('lookup-hustle-ink-live.json'), m = A.fromLookup(res, 15);
+  assert.equal(m.fields.rg.v, 2.53); assert.equal(m.fields.diff.v, 0.03);
+  assert.ok(m.types.includes('archived-maker')); assert.equal(m.source.archived, true);
+  assert.notEqual(A.fromLookup(res, 10).fields.rg.v, 2.53);
+});

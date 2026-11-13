@@ -1,0 +1,1293 @@
+{
+ "generated": "2026-11-12",
+ "note": "Facts only. Every value has its own source URL and type. usbcApproved is an approval date, not a release date. Nothing here is applied to maker_rows.json yet.",
+ "sourceTypes": {
+  "maker": "maker page or maker spec sheet",
+  "archived-maker": "Wayback Machine copy of the maker page",
+  "usbc": "USBC Approved Ball List (bowl.com)",
+  "secondary": "public secondary source, not the maker",
+  "forum": "name-only, unverified"
+ },
+ "counts": {
+  "before": {
+   "rows": 164,
+   "anyCoreSpecMissing": 81,
+   "rgOrDiffMissing": 54,
+   "rgOrDiffMissingNonPlastic": 10,
+   "releaseMissing": 79
+  },
+  "after": {
+   "rows": 164,
+   "anyCoreSpecMissing": 79,
+   "rgOrDiffMissing": 54,
+   "rgOrDiffMissingNonPlastic": 10,
+   "releaseMissing": 78
+  },
+  "fieldsFilled": 60,
+  "fieldsBySourceType": {
+   "usbc": 57,
+   "maker": 1,
+   "archived-maker": 2
+  },
+  "rowsWithAnyFill": 57,
+  "rowsWithUsbcApproval": 57
+ },
+ "siblingSymmetryCandidates": [
+  {
+   "id": "sc-roto-grip-hustle-ink",
+   "brand": "Roto Grip",
+   "name": "Hustle Ink",
+   "field": "symmetry",
+   "value": "Symmetric",
+   "basis": "same maker, same core name (Hustle); printed as Symmetric on Roto Grip Hustle (core \"Hustle\")",
+   "applied": false
+  }
+ ],
+ "unvettedThirdParty": [
+  {
+   "id": "sc-kr-strikeforce-rise-black-silver-pearl",
+   "brand": "KR Strikeforce",
+   "name": "Rise Black Silver Pearl",
+   "fields": {
+    "rg": 2.53,
+    "diff": 0.047,
+    "weight": 15,
+    "symmetry": "Symmetric"
+   },
+   "source": "https://www.carrydown.com/balls/kr-strikeforce-rise/",
+   "sourceType": "secondary",
+   "accessed": "2026-11-12",
+   "applied": false,
+   "why": "CarryDown says its specs come from maker sites, but krstrikeforce.com prints no RG/differential/symmetry for the Rise, and the same numbers appear on a banned site (bowwwl), so their origin cannot be verified. Core \"Launch\" is printed on the maker page; its symmetric type is only stated by the third party."
+  },
+  {
+   "id": "sc-kr-strikeforce-rise-blue-teal-pearl",
+   "brand": "KR Strikeforce",
+   "name": "Rise Blue Teal Pearl",
+   "fields": {
+    "rg": 2.53,
+    "diff": 0.047,
+    "weight": 15,
+    "symmetry": "Symmetric"
+   },
+   "source": "https://www.carrydown.com/balls/kr-strikeforce-rise/",
+   "sourceType": "secondary",
+   "accessed": "2026-11-12",
+   "applied": false,
+   "why": "CarryDown says its specs come from maker sites, but krstrikeforce.com prints no RG/differential/symmetry for the Rise, and the same numbers appear on a banned site (bowwwl), so their origin cannot be verified. Core \"Launch\" is printed on the maker page; its symmetric type is only stated by the third party."
+  },
+  {
+   "id": "sc-kr-strikeforce-rise-purple-black-solid",
+   "brand": "KR Strikeforce",
+   "name": "Rise Purple Black Solid",
+   "fields": {
+    "rg": 2.53,
+    "diff": 0.047,
+    "weight": 15,
+    "symmetry": "Symmetric"
+   },
+   "source": "https://www.carrydown.com/balls/kr-strikeforce-rise/",
+   "sourceType": "secondary",
+   "accessed": "2026-11-12",
+   "applied": false,
+   "why": "CarryDown says its specs come from maker sites, but krstrikeforce.com prints no RG/differential/symmetry for the Rise, and the same numbers appear on a banned site (bowwwl), so their origin cannot be verified. Core \"Launch\" is printed on the maker page; its symmetric type is only stated by the third party."
+  },
+  {
+   "id": "sc-kr-strikeforce-rise-red-black-gold-pearl",
+   "brand": "KR Strikeforce",
+   "name": "Rise Red Black Gold Pearl",
+   "fields": {
+    "rg": 2.53,
+    "diff": 0.047,
+    "weight": 15,
+    "symmetry": "Symmetric"
+   },
+   "source": "https://www.carrydown.com/balls/kr-strikeforce-rise/",
+   "sourceType": "secondary",
+   "accessed": "2026-11-12",
+   "applied": false,
+   "why": "CarryDown says its specs come from maker sites, but krstrikeforce.com prints no RG/differential/symmetry for the Rise, and the same numbers appear on a banned site (bowwwl), so their origin cannot be verified. Core \"Launch\" is printed on the maker page; its symmetric type is only stated by the third party."
+  },
+  {
+   "id": "sc-kr-strikeforce-rise-red-black-pearl",
+   "brand": "KR Strikeforce",
+   "name": "Rise Red Black Pearl",
+   "fields": {
+    "rg": 2.53,
+    "diff": 0.047,
+    "weight": 15,
+    "symmetry": "Symmetric"
+   },
+   "source": "https://www.carrydown.com/balls/kr-strikeforce-rise/",
+   "sourceType": "secondary",
+   "accessed": "2026-11-12",
+   "applied": false,
+   "why": "CarryDown says its specs come from maker sites, but krstrikeforce.com prints no RG/differential/symmetry for the Rise, and the same numbers appear on a banned site (bowwwl), so their origin cannot be verified. Core \"Launch\" is printed on the maker page; its symmetric type is only stated by the third party."
+  }
+ ],
+ "fills": [
+  {
+   "id": "sc-900-global-honey-badger",
+   "brand": "900 Global",
+   "name": "Honey Badger",
+   "fields": {
+    "usbcApproved": {
+     "value": "2017-05-16",
+     "allDates": [
+      "2017-05-16"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"HB (Honey Badger)\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-900-global-sublime",
+   "brand": "900 Global",
+   "name": "Sublime",
+   "fields": {
+    "usbcApproved": {
+     "value": "2023-11-07",
+     "allDates": [
+      "2023-11-07"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-brunswick-fury-orange-red",
+   "brand": "Brunswick",
+   "name": "Fury Orange Red",
+   "fields": {
+    "usbcApproved": {
+     "value": "2026-06-30",
+     "allDates": [
+      "2026-06-30"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-brunswick-fury-pink-ice-silver",
+   "brand": "Brunswick",
+   "name": "Fury Pink Ice Silver",
+   "fields": {
+    "usbcApproved": {
+     "value": "2026-06-30",
+     "allDates": [
+      "2026-06-30"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-brunswick-fury-red-blue-black",
+   "brand": "Brunswick",
+   "name": "Fury Red Blue Black",
+   "fields": {
+    "usbcApproved": {
+     "value": "2026-06-30",
+     "allDates": [
+      "2026-06-30"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-brunswick-hearts",
+   "brand": "Brunswick",
+   "name": "Hearts",
+   "fields": {
+    "usbcApproved": {
+     "value": "2009-05",
+     "allDates": [
+      "2009-05"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-brunswick-prism-hybrid",
+   "brand": "Brunswick",
+   "name": "Prism Hybrid",
+   "fields": {
+    "usbcApproved": {
+     "value": "2019-09-24",
+     "allDates": [
+      "2019-09-24"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-brunswick-prism-solid",
+   "brand": "Brunswick",
+   "name": "Prism Solid",
+   "fields": {
+    "usbcApproved": {
+     "value": "2019-09-24",
+     "allDates": [
+      "2019-09-24"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-brunswick-prism-warp",
+   "brand": "Brunswick",
+   "name": "Prism Warp",
+   "fields": {
+    "usbcApproved": {
+     "value": "2020-02-04",
+     "allDates": [
+      "2020-02-04"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-brunswick-prism-warp-hybrid",
+   "brand": "Brunswick",
+   "name": "Prism Warp Hybrid",
+   "fields": {
+    "usbcApproved": {
+     "value": "2020-08-04",
+     "allDates": [
+      "2020-08-04"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-brunswick-rhino-cobalt-teal-aqua-pearl",
+   "brand": "Brunswick",
+   "name": "Rhino Cobalt Teal Aqua Pearl",
+   "fields": {
+    "usbcApproved": {
+     "value": "2018-03-20",
+     "allDates": [
+      "2018-03-20"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Rhino Cobalt/Aqua/Teal\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-brunswick-rhino-purple-black",
+   "brand": "Brunswick",
+   "name": "Rhino Purple Black",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-03-04",
+     "allDates": [
+      "2025-03-04"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-brunswick-rhino-purple-pink-berry",
+   "brand": "Brunswick",
+   "name": "Rhino Purple Pink Berry",
+   "fields": {
+    "usbcApproved": {
+     "value": "2026-04-07",
+     "allDates": [
+      "2026-04-07"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-brunswick-warning-alert",
+   "brand": "Brunswick",
+   "name": "Warning Alert",
+   "fields": {
+    "usbcApproved": {
+     "value": "2026-06-30",
+     "allDates": [
+      "2026-06-30"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-dv8-smooth-criminal",
+   "brand": "DV8",
+   "name": "Smooth Criminal",
+   "fields": {
+    "usbcApproved": {
+     "value": "2026-10-13",
+     "allDates": [
+      "2026-10-13"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-ebonite-go-time",
+   "brand": "Ebonite",
+   "name": "Go Time",
+   "fields": {
+    "usbcApproved": {
+     "value": "2026-10-13",
+     "allDates": [
+      "2026-10-13"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-ebonite-turbo-x-pearl",
+   "brand": "Ebonite",
+   "name": "Turbo X Pearl",
+   "fields": {
+    "usbcApproved": {
+     "value": "2026-09-08",
+     "allDates": [
+      "2026-09-08"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-epic-curve-candy-ice",
+   "brand": "Epic",
+   "name": "Curve Candy Ice",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-06-17",
+     "allDates": [
+      "2025-06-17"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Curve Blue-Pink-White (Candy Ice)\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-epic-curve-darkness",
+   "brand": "Epic",
+   "name": "Curve Darkness",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-06-17",
+     "allDates": [
+      "2025-06-17"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Curve Black-Blue-Purple (Darkness)\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-epic-curve-midnight-apple-gold",
+   "brand": "Epic",
+   "name": "Curve Midnight Apple Gold",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-06-17",
+     "allDates": [
+      "2025-06-17"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Curve Red-Black Gold (Midnight-Apple-Gold)\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-epic-curve-polar-ice",
+   "brand": "Epic",
+   "name": "Curve Polar Ice",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-06-17",
+     "allDates": [
+      "2025-06-17"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Curve Blue-Teal-White (Polar Ice)\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-epic-ignite-emerald-teal-purple",
+   "brand": "Epic",
+   "name": "Ignite Emerald Teal Purple",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-06-17",
+     "allDates": [
+      "2025-06-17"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-epic-ignite-hybrid-orange-smoke",
+   "brand": "Epic",
+   "name": "Ignite Hybrid Orange Smoke",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-06-17",
+     "allDates": [
+      "2025-06-17"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Ignite Orange-Black (Orange-Smoke)\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-epic-ignite-pearl-arctic-rose",
+   "brand": "Epic",
+   "name": "Ignite Pearl Arctic Rose",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-06-17",
+     "allDates": [
+      "2025-06-17"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Ignite Black-White-Pink (Arctic-Pearl-Rose)\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-epic-ignite-solid-ocean-candy-metallic",
+   "brand": "Epic",
+   "name": "Ignite Solid Ocean Candy Metallic",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-06-17",
+     "allDates": [
+      "2025-06-17"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Ignite Black-Blue-Pink (Ocean-Candy-Metallic)\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-epic-ignite-solid-red-white-black",
+   "brand": "Epic",
+   "name": "Ignite Solid Red White Black",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-06-17",
+     "allDates": [
+      "2025-06-17"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Ignite Red-White-Black\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-hammer-axe-black-smoke",
+   "brand": "Hammer",
+   "name": "Axe Black Smoke",
+   "fields": {
+    "usbcApproved": {
+     "value": "2023-04-25",
+     "allDates": [
+      "2023-04-25"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-hammer-axe-green-smoke",
+   "brand": "Hammer",
+   "name": "Axe Green Smoke",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-04-01",
+     "allDates": [
+      "2025-04-01"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-hammer-axe-purple-pink",
+   "brand": "Hammer",
+   "name": "Axe Purple Pink",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-04-01",
+     "allDates": [
+      "2025-04-01"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-hammer-axe-purple-smoke",
+   "brand": "Hammer",
+   "name": "Axe Purple Smoke",
+   "fields": {
+    "usbcApproved": {
+     "value": "2023-04-25",
+     "allDates": [
+      "2023-04-25"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-hammer-blacklist",
+   "brand": "Hammer",
+   "name": "Blacklist",
+   "fields": {
+    "usbcApproved": {
+     "value": "2026-10-13",
+     "allDates": [
+      "2026-10-13"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-hammer-raw-hammer-black-grey",
+   "brand": "Hammer",
+   "name": "Raw Hammer Black Grey",
+   "fields": {
+    "usbcApproved": {
+     "value": "2026-05-05",
+     "allDates": [
+      "2026-05-05"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-hammer-raw-hammer-black-purple-teal",
+   "brand": "Hammer",
+   "name": "Raw Hammer Black Purple Teal",
+   "fields": {
+    "usbcApproved": {
+     "value": "2024-04-30",
+     "allDates": [
+      "2024-04-30"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-hammer-raw-hammer-red-white-purple",
+   "brand": "Hammer",
+   "name": "Raw Hammer Red White Purple",
+   "fields": {
+    "usbcApproved": {
+     "value": "2026-05-05",
+     "allDates": [
+      "2026-05-05"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-hammer-raw-hammer-smoke-blue-gold",
+   "brand": "Hammer",
+   "name": "Raw Hammer Smoke Blue Gold",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-03-04",
+     "allDates": [
+      "2025-03-04"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-kr-strikeforce-rise-black-silver-pearl",
+   "brand": "KR Strikeforce",
+   "name": "Rise Black Silver Pearl",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-04-29",
+     "allDates": [
+      "2025-04-29"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-kr-strikeforce-rise-blue-teal-pearl",
+   "brand": "KR Strikeforce",
+   "name": "Rise Blue Teal Pearl",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-04-29",
+     "allDates": [
+      "2025-04-29"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-kr-strikeforce-rise-purple-black-solid",
+   "brand": "KR Strikeforce",
+   "name": "Rise Purple Black Solid",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-04-29",
+     "allDates": [
+      "2025-04-29"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Rise Black-Purple Solid\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-kr-strikeforce-rise-red-black-gold-pearl",
+   "brand": "KR Strikeforce",
+   "name": "Rise Red Black Gold Pearl",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-04-29",
+     "allDates": [
+      "2025-04-29"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-kr-strikeforce-rise-red-black-pearl",
+   "brand": "KR Strikeforce",
+   "name": "Rise Red Black Pearl",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-04-29",
+     "allDates": [
+      "2025-04-29"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-motiv-ascend-black-green-teal-pearl",
+   "brand": "Motiv",
+   "name": "Ascend Black Green Teal Pearl",
+   "fields": {
+    "usbcApproved": {
+     "value": "2024-04-30",
+     "allDates": [
+      "2024-04-30"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Ascend Black/Green/Teal\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-motiv-ascend-navy-teal-yellow-pearl",
+   "brand": "Motiv",
+   "name": "Ascend Navy Teal Yellow Pearl",
+   "fields": {
+    "usbcApproved": {
+     "value": "2024-04-30",
+     "allDates": [
+      "2024-04-30"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Ascend Navy/Teal/Yellow\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-motiv-ascend-purple-blue-pearl",
+   "brand": "Motiv",
+   "name": "Ascend Purple Blue Pearl",
+   "fields": {
+    "usbcApproved": {
+     "value": "2024-04-30",
+     "allDates": [
+      "2024-04-30"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Ascend Dark Purple/Purple/Blue\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-motiv-ascend-red-black-tangerine-pearl",
+   "brand": "Motiv",
+   "name": "Ascend Red Black Tangerine Pearl",
+   "fields": {
+    "usbcApproved": {
+     "value": "2024-04-30",
+     "allDates": [
+      "2024-04-30"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Ascend Red/Black/Tangerine\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-motiv-forge-fuel",
+   "brand": "Motiv",
+   "name": "Forge Fuel",
+   "fields": {
+    "usbcApproved": {
+     "value": "2026-08-25",
+     "allDates": [
+      "2026-08-25"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-motiv-jackal-ghost-v2",
+   "brand": "Motiv",
+   "name": "Jackal Ghost V2",
+   "fields": {
+    "usbcApproved": {
+     "value": "2026-07-14",
+     "allDates": [
+      "2026-07-14"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-motiv-raptor-pursuit",
+   "brand": "Motiv",
+   "name": "Raptor Pursuit",
+   "fields": {
+    "usbcApproved": {
+     "value": "2026-09-29",
+     "allDates": [
+      "2026-09-29"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-motiv-venom-shock",
+   "brand": "Motiv",
+   "name": "Venom Shock",
+   "fields": {
+    "usbcApproved": {
+     "value": "2014-02",
+     "allDates": [
+      "2014-02"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    },
+    "coverType": {
+     "value": "Solid",
+     "sourceType": "maker",
+     "source": "https://www.motivbowling.com/products/balls/light-medium-oil/venom-shock.html",
+     "accessed": "2026-11-12",
+     "derived": true
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field. Cover Stock line on the maker page reads \"Turmoil™ MFS Solid Reactive\"; cover type read from that printed wording (no separate Cover Type cell)."
+  },
+  {
+   "id": "sc-radical-the-spy",
+   "brand": "Radical",
+   "name": "The Spy",
+   "fields": {
+    "usbcApproved": {
+     "value": "2021-05-18",
+     "allDates": [
+      "2021-05-18"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-roto-grip-hustle-ink",
+   "brand": "Roto Grip",
+   "name": "Hustle Ink",
+   "fields": {
+    "usbcApproved": {
+     "value": "2017-06-27",
+     "allDates": [
+      "2017-06-27"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-storm-clear-teal",
+   "brand": "Storm",
+   "name": "Clear Teal",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-09-16",
+     "allDates": [
+      "2025-09-16"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Clear Storm Teal\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-storm-phaze-v",
+   "brand": "Storm",
+   "name": "Phaze V",
+   "fields": {
+    "usbcApproved": {
+     "value": "2022-09-20",
+     "allDates": [
+      "2022-09-20"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-storm-tropical-surge-black-blue-pink",
+   "brand": "Storm",
+   "name": "Tropical Surge Black Blue Pink",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-04-01",
+     "allDates": [
+      "2025-04-01"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    },
+    "symmetry": {
+     "value": "Symmetric",
+     "sourceType": "archived-maker",
+     "source": "https://web.archive.org/web/20260421164022/https://www.stormbowling.com/storm-tropical-surge-bowling-ball-black-blue-pink",
+     "original": "https://www.stormbowling.com/storm-tropical-surge-bowling-ball-black-blue-pink",
+     "accessed": "2026-11-12",
+     "capturedAt": "2026-04-21"
+    },
+    "release": {
+     "value": "2025-05-30",
+     "sourceType": "archived-maker",
+     "source": "https://web.archive.org/web/20260421164022/https://www.stormbowling.com/storm-tropical-surge-bowling-ball-black-blue-pink",
+     "original": "https://www.stormbowling.com/storm-tropical-surge-bowling-ball-black-blue-pink",
+     "accessed": "2026-11-12",
+     "capturedAt": "2026-04-21"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field. Archived maker page prints Symmetry: Symmetrical (RG 2.58 / diff 0.024 on the same page match the catalogue row). Archived maker page prints Release Date: 05/30/25."
+  },
+  {
+   "id": "sc-storm-tropical-surge-black-cherry",
+   "brand": "Storm",
+   "name": "Tropical Surge Black Cherry",
+   "fields": {
+    "usbcApproved": {
+     "value": "2019-03-12",
+     "allDates": [
+      "2019-03-12"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-storm-tropical-surge-teal-blue",
+   "brand": "Storm",
+   "name": "Tropical Surge Teal Blue",
+   "fields": {
+    "usbcApproved": {
+     "value": "2019-03-12",
+     "allDates": [
+      "2019-03-12"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "exact name match"
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-swag-dragon-cotton-candy-poly",
+   "brand": "SWAG",
+   "name": "Dragon Cotton Candy Poly",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-10-28",
+     "allDates": [
+      "2025-10-28"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Dragon Poly Cotton Candy\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  },
+  {
+   "id": "sc-swag-dragon-midnight-poly",
+   "brand": "SWAG",
+   "name": "Dragon Midnight Poly",
+   "fields": {
+    "usbcApproved": {
+     "value": "2025-10-28",
+     "allDates": [
+      "2025-10-28"
+     ],
+     "sourceType": "usbc",
+     "source": "https://bowl.com/getmedia/8b570e80-761c-4486-8628-9d50d718dd60/approved_balllist_CURRENT.pdf",
+     "listDate": "2026-11-10",
+     "accessed": "2026-11-12",
+     "derived": false,
+     "match": "matched by hand to the list's \"Dragon Poly Midnight\""
+    }
+   },
+   "notes": "usbcApproved is the USBC approval date, not the maker release date; it is not a value for the release field."
+  }
+ ]
+}

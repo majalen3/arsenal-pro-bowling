@@ -477,6 +477,7 @@ noscript p{padding:24px}
 .prov{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:var(--r-pill);font-size:.6875rem;font-weight:700;background:var(--surface-3);color:var(--text-2);vertical-align:middle;white-space:nowrap}
 .prov[data-prov=device]{background:var(--info-soft);color:var(--info)} .prov[data-prov=assumed],.prov[data-prov=model]{background:var(--warn-soft);color:var(--warn)}
 .prov[data-prov=manufacturer],.prov[data-prov=usbc],.prov[data-prov=catalog]{background:var(--good-soft);color:var(--good)}
+.prov[data-prov=archived],.prov[data-prov=secondary]{background:var(--warn-soft);color:var(--warn)}   /* t139u: not the maker's current page */
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px var(--s3);font-size:var(--fs-sm);align-items:baseline}
 .kv dt{color:var(--text-2)} .kv dd{margin:0;font-weight:700}
 .btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}

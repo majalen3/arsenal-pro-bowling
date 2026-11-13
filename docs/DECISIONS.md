@@ -395,3 +395,6 @@ The full audit also exposed pre-existing small accessibility defects: literal nu
 - **Lazy and cached.** The sweep runs on the switch tap (or when the remembered mode is Forgiving), cached by ball, miss size and conditions; never at load. Budget 150 ms at 4x CPU.
 - **Honest.** Estimate label, pocket % not strike %, miss sizes are assumptions unless LaneTrax data replaces the arrows value (Auto), and "already your most forgiving" when no line beats Standard.
 - **Not done:** inline answer on the tab (no-scroll risk), a wider pocket window (needs a cited source), miss size measured from scoring data.
+
+## Add a ball source chain (owner t139u)
+- **Add a ball** uses one legal source chain, per-field provenance, user confirms (t139u, 2026-11-12, branch spec-fill).** Maker page, archived maker page, USBC approved list (approval date only), allowlisted secondary, never the four banned sites, never forums. Fill-only merge, disagreements shown, a chip per field, nothing saved before Add. Why: owner asked that the missing-spec research live in the find-a-ball search once a name is picked. Consequence: needs the API branch `spec-chain` deployed (cache key v3); until then the app still works with the old response shape. Detail: docs/SPEC_FILL_2026-11-12.md.

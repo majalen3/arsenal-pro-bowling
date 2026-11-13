@@ -1,3 +1,8 @@
 tests/ux/out/
 tests/__pycache__/
 __pycache__/
+# spec-fill research: bulky fetched pages stay local; the small reproducible inputs are tracked
+research_cache/*
+!research_cache/wb_fills.json
+!research_cache/wayback.py
+!research_cache/missing_rows.tsv
