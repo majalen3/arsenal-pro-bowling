@@ -69,3 +69,10 @@ Against the spine: Bag → Arsenal → **Strike line** → Log book is untouched
 - **A cited, wider pocket window.** The 17-18 entry-board window is correct but harsh; a sourced "pocket zone" would give more room and more spread between lines.
 - **Option C:** put the picture and tiles on the Strike line tab so the answer is zero taps.
 - **Measured miss size from the bowler's own shots** (LaneTrax import already feeds the arrows miss; scoring-pad data could feed it too).
+
+## 6. Follow-up (v77, owner t142u/t143u): "I hate the strike line page. We only need the lane."
+The owner rejected option B's answer page. v77 takes the other branch of the review (option D, softened): **the Lane view is the strike page**, the v76 page is no longer in navigation, and **Optimize** (one button) runs the Forgiving sweep on the lane itself.
+- Taps: tab -> "Your strike line ›" = the Lane view (Bag 2 taps); Optimize is one more tap (Bag 3).
+- Optimize starts from the line on the lane, puts the best stand and target on it, shows pocket % (estimate) against the line it replaced, miss room left/right, and Undo; "Already your best line" when nothing is better.
+- The Lane view had been the 1,152 px page with 125 words; it now fits 360x780 and 390x844 with the safe area. Everything else is behind one Details. See docs/DECISIONS.md and docs/CUTS_V73.md #22-25.
+- Not deleted: `#/strike` redirects, `js/screens/strike.js` stays (restore steps in CUTS #22).

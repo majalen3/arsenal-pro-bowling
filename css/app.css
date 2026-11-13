@@ -905,3 +905,64 @@ body[data-tab=bowl] #view,body[data-ingame] #view{padding-bottom:calc(var(--sab)
 /* t123u: the lookup miss is a card; Retry and the maker link are full 44 px buttons side by side */
 .ab-miss .btn-grid{margin-top:var(--s2)}
 .ab-miss #abStatus{margin:0}
+
+/* ---- v77 (owner t143u): the Lane view is the strike page. Lane picture + pin deck + stand/aim + Optimize fit one screen; everything else is behind Details. */
+.lane-grid{grid-template-rows:auto auto 1fr auto;align-items:start;row-gap:0}
+.lane-grid>.deck-card,.lane-grid>.hand-ask{margin-bottom:10px}.lane-more{margin-top:10px}
+.lane-more{grid-area:more;display:block;padding:0 var(--s4)}
+.lane-more[open]{display:grid;gap:var(--s3);padding-bottom:var(--s3)}
+.lane-more>summary{min-height:48px}
+.lane-more .qball-row{padding:0}
+.lane-more .coach{margin:0}
+.opt-miss{display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap}
+.opt-miss select{min-height:var(--tap)}
+@media (max-width:899px){
+  .lane-canvas{height:min(calc(100dvh - 350px),440px);min-height:300px}
+  .deck-card{grid-template-columns:minmax(0,46%) 1fr;gap:6px;padding:6px}
+  .deck-h{display:none}
+  .lane-grid .line-sum{padding:6px 10px;gap:8px;min-height:48px}
+  .lane-grid .line-sum>span:nth-child(n+5){display:none}   /* mph and rpm stay on the tune chip above */
+}
+#optimize{min-height:56px;font-size:var(--fs-lg);font-weight:800}
+.opt-out{display:grid;gap:2px;font-size:.78rem;line-height:1.3;color:var(--text-2)}
+.opt-out b{color:var(--text)}
+.opt-out[data-state=same] b{color:var(--good)}
+.opt-line{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.opt-line .btn.sm{min-height:var(--tap);margin-left:auto}
+.read-col{gap:var(--s2)}
+@media (min-width:900px){
+  .lane-grid{grid-template-rows:auto auto auto 1fr;row-gap:0}
+}
+@media (max-width:899px){
+  .read-col .miss-row{gap:2px}
+  .read-col .miss-lbl{font-size:.625rem;line-height:1}
+  .read-col .miss-btns{gap:4px}
+  .read-col .miss-btn{min-height:48px;font-size:.75rem;padding:2px 0}
+  .read-col .miss-ic .ic{width:18px;height:18px}
+}
+.hand-ask.compact{grid-area:ask;display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;padding:6px 10px}
+.hand-ask.compact p{margin:0;flex:0 0 auto;font-size:.875rem}
+.hand-ask.compact .btn-grid{flex:1 1 auto;gap:6px}
+.hand-ask.compact .btn{min-height:44px;padding:0 6px}
+.lane-grid{grid-template-areas:"ask ask" "lane deck" "lane read" "more more"}
+@media (min-width:900px){.lane-grid{grid-template-areas:"ask ask" "lane deck" "lane read" "lane more"}}
+.hand-ask.compact .btn-grid,.hand-ask.compact .btn-grid.three{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:6px;width:auto;flex:1 1 0;min-width:0}
+.hand-ask.compact .btn-grid .btn{width:100%}
+.hand-ask.compact{flex-wrap:nowrap;justify-content:center}
+@media (max-width:899px){
+  .lane-canvas{height:min(calc(100dvh - 450px),380px);min-height:300px}
+  .lane-grid:has(.hand-ask) .lane-canvas{height:min(calc(100dvh - 510px),340px);min-height:280px}
+}
+.opt-row{display:grid;grid-template-columns:1fr;gap:6px}
+.opt-row.has-undo{grid-template-columns:1fr auto}
+.opt-row #optUndo{min-height:56px;min-width:56px;padding:0 10px;flex-direction:column;gap:0;font-size:.75rem;font-weight:700}
+.opt-row #optUndo .ic{width:20px;height:20px}
+@media (max-width:899px){
+  .lane-grid .line-sum .prov{display:none}
+  #optimize,.opt-row #optUndo{min-height:52px}
+}
+.hand-ask.compact{flex-direction:row!important;text-align:left}
+/* v77: the pin-deck picture lives in Details (full-size, readable); the card on the lane page keeps the call and one line of words */
+.deck-card{grid-template-columns:1fr}
+.deck-fig-detail{max-width:230px;width:100%;justify-self:center}
+.deck-card .deck-side{gap:2px}

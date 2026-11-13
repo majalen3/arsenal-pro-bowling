@@ -18,8 +18,8 @@ SCRIPTS = '--no-scripts' not in sys.argv
 WIPE = "() => { localStorage.clear(); return new Promise(r => { const q = indexedDB.deleteDatabase('arsenal-pro'); q.onsuccess = q.onerror = q.onblocked = () => r(true); setTimeout(() => r(false), 2000); }); }"
 LOAD = """async () => { const [m, f] = await Promise.all([import('./js/hub.js'), import('./tests/data/fixtures/sample_arsenal.mjs')]);
   await m.ready(); await m.loadStarter(f.sampleEvents, f.SAMPLE_ID); }"""
-ROUTES = [('bag', '#/bag'), ('arsenal', '#/arsenal'), ('strike-line', '#/tonight'), ('strike-finder', '#/strike'), ('log-book', '#/results'), ('add-ball', '#/add-ball')]
-if '--legacy' in sys.argv: ROUTES = [(n, '#/target?find=1' if n == 'strike-finder' else h) for n, h in ROUTES]   # v72 baseline: Find ran on Targeting
+ROUTES = [('bag', '#/bag'), ('arsenal', '#/arsenal'), ('strike-line', '#/tonight'), ('strike-lane', '#/lane'), ('log-book', '#/results'), ('add-ball', '#/add-ball')]
+if '--legacy' in sys.argv: ROUTES = [(n, '#/target?find=1' if n == 'strike-lane' else h) for n, h in ROUTES]   # v72 baseline: Find ran on Targeting
 SAFE = ":root{--sat:47px !important;--sab:34px !important}"   # css/app.css reads the iOS insets through --sat/--sab
 MEASURE = """() => {
   const view = document.querySelector('#view .screen') || document.querySelector('#view');
@@ -40,7 +40,8 @@ MEASURE = """() => {
 TAB = "(document.querySelector('#tabs') && getComputedStyle(document.querySelector('#tabs')).display !== 'none' ? document.querySelector('#tabs').getBoundingClientRect().top : innerHeight)"
 FIT = {
   'bag': "() => { const t = document.querySelector('#bagTonight').getBoundingClientRect(), d = document.querySelector('#bagPackGo').getBoundingClientRect(), lim = " + TAB + ", d2 = document.querySelector('#bagDock').getBoundingClientRect(); const open = [...document.querySelectorAll('#bagBody > :not(#bagTonight):not(#bagDock):not(details):not(.warn-line)')].filter(e => e.getBoundingClientRect().height > 0).map(e => e.id || e.className); return [t.bottom <= d2.top + 1 && d.bottom <= lim + 1 && !open.length, {bagBottom: Math.round(t.bottom), packBottom: Math.round(d.bottom), tabTop: Math.round(lim), openBlocks: open}]; }",
-  'strike-finder': "() => { const lim = " + TAB + ", last = document.querySelector('#slDetails'); const b = last ? last.getBoundingClientRect().bottom : 1e9; return [!!last && b <= lim + 1, {detailsBottom: Math.round(b), tabTop: Math.round(lim), scroll: document.documentElement.scrollHeight}]; }",
+  # v77 (owner t143u): the Lane view is the strike page: Details (the last control, collapsed) above the tab bar and no document scroll
+  'strike-lane': "() => { const lim = " + TAB + ", last = document.querySelector('#laneDetails'); const b = last ? last.getBoundingClientRect().bottom : 1e9; return [!!last && b <= lim + 1 && document.documentElement.scrollHeight <= innerHeight + 1, {detailsBottom: Math.round(b), tabTop: Math.round(lim), scroll: document.documentElement.scrollHeight}]; }",
 }
 fails = []
 def check(ok, msg):
@@ -60,8 +61,8 @@ async def measure(b, vp, tag, safe=False):
     c, p = await fresh(b, vp, safe); out = {}
     for name, hsh in ROUTES:
         await p.goto(BASE + f'?m{name}{tag}' + hsh); await p.wait_for_timeout(900)
-        if name == 'strike-finder':
-            try: await p.wait_for_selector('#slTiles, #tgFindCard', timeout=20000)
+        if name == 'strike-lane':
+            try: await p.wait_for_selector('#optimize, #tgFindCard', timeout=20000)
             except Exception: pass
         if safe: await p.add_style_tag(content=SAFE)
         await p.evaluate("() => document.querySelectorAll('.toast').forEach(t => t.remove())")
@@ -102,14 +103,14 @@ async def scripts(b):
     pinned = await p.evaluate("() => document.querySelector('#ballKeep').getAttribute('aria-pressed') === 'true'"); dt = time.time() - t0
     res['arsenal'] = {'taps': taps, 'seconds': round(dt, 1), 'pinned': pinned}
     check(pinned and taps <= 2 and dt < 15, f'[script] Arsenal: tap a ball, keep it in the bag in {taps} taps, {dt:.1f}s')
-    # Strike line: 1 tap -> stand / target / breakpoint / ball, line ends at the pocket
+    # Strike line (v77): 1 tap on the tab button opens the Lane view, 1 tap on Optimize = stand, target, pocket %, room. 2 taps from the tab.
     t0 = time.time(); await p.goto(BASE + '?s3#/tonight'); await p.wait_for_selector('#tnFindLine')
-    await p.click('#tnFindLine'); await p.wait_for_selector('#slTiles [data-tile]', timeout=20000); dt = time.time() - t0
-    tiles = await p.eval_on_selector_all('#slTiles [data-tile]', 'e => e.map(x => [x.dataset.tile, x.getBoundingClientRect().bottom <= innerHeight])')
-    pocket = await p.evaluate("() => { const s = document.querySelector('#slDiagram'); return s ? s.dataset.endsAtPocket : null; }")
-    res['strike'] = {'taps': 1, 'seconds': round(dt, 1), 'tiles': tiles, 'ends_at_pocket': pocket}
-    names = [t[0] for t in tiles]
-    check(all(x in names for x in ('stand', 'target', 'breakpoint', 'ball')) and all(t[1] for t in tiles) and pocket == 'true' and dt < 10, f'[script] Strike line: 1 tap -> {names} on screen, line ends at the pocket ({pocket}), {dt:.1f}s')
+    await p.click('#tnFindLine'); await p.wait_for_selector('#optimize', timeout=20000); await p.wait_for_timeout(500)
+    await p.click('#optimize'); await p.wait_for_selector('#optOut:not([hidden])', timeout=20000); dt = time.time() - t0
+    seen = await p.evaluate("() => ['#lineSum', '#optOut', '#optimize', '#lane'].map(s => { const r = document.querySelector(s).getBoundingClientRect(); return [s, r.bottom <= innerHeight && r.top >= 0]; })")
+    o = await p.evaluate("() => ({...document.querySelector('#optOut').dataset})")
+    res['strike'] = {'taps': 2, 'seconds': round(dt, 1), 'on_screen': seen, 'pocket': o.get('pocket'), 'was': o.get('was'), 'room': o.get('room')}
+    check(all(x[1] for x in seen) and o.get('pocket') and int(o['pocket']) >= int(o['was']) and dt < 10, f'[script] Strike line: tab button + Optimize = 2 taps -> stand, aim, pocket {o.get("pocket")}% (was {o.get("was")}%), room {o.get("room")} all on screen, {dt:.1f}s')
     # Log book: tonight's games + one key stat in 1 tap
     await p.goto(BASE + '?s4#/bag'); await p.wait_for_selector('#tabs'); t0 = time.time()
     await p.click('#tabs a[href="#/results"]'); await p.wait_for_selector('#lbStat', timeout=10000); dt = time.time() - t0

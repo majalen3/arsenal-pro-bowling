@@ -54,3 +54,15 @@ test('no line for a ball without verified specs, and no strike % anywhere in the
 test('cheap: the sweep stays well inside the phone budget (Node here is ~4x faster than the throttled phone profile; limit 150 ms)', () => {
   run(1.5); const t = performance.now(); run(1.5, { seed: 5 }); assert.ok(performance.now() - t < 150, `${performance.now() - t} ms`);
 });
+
+test('Optimize from any line on the lane (v77): the "before" is that exact line, the result is at least as good, and Optimize again changes nothing', () => {
+  const bad = F.forgive(ball, { speed: 16, rev: 250, ft: 38, start: { lay: 14, arr: 14 } });
+  assert.equal(bad.standard.lay, 14); assert.equal(bad.standard.arrows, 14);
+  assert.ok(bad.forgiving.pocket >= bad.standard.pocket);
+  if (!bad.same) {
+    assert.ok(bad.forgiving.pocket > bad.standard.pocket);
+    const again = F.forgive(ball, { speed: 16, rev: 250, ft: 38, start: { lay: bad.forgiving.lay, arr: bad.forgiving.arrows } });
+    assert.equal(again.same, true, 'the optimized line is already the best line');
+    assert.equal(again.forgiving.lay, bad.forgiving.lay); assert.equal(again.forgiving.arrows, bad.forgiving.arrows);
+  }
+});

@@ -520,7 +520,7 @@ export async function render(o = {}) {
     const id = c && (c.id || c.catalogId);
     // v76 (owner t140u): ONE button. "Find my strike line" and "Lane view" were two doors to the same answer; the answer screen (#/strike)
     // now has Standard | Forgiving line and an Adjust button to the Lane view. The id stays for deep links and tests.
-    return h('div', { class: 'tn-strike', id: 'tnStrike' }, h('a', { class: 'btn primary block', id: 'tnFindLine', href: '#/strike?find=1' + (id ? '&ball=' + encodeURIComponent(id) : '') }, 'Your strike line \u203a'));
+    return h('div', { class: 'tn-strike', id: 'tnStrike' }, h('a', { class: 'btn primary block', id: 'tnFindLine', href: '#/lane' + (id ? '?ball=' + encodeURIComponent(id) : '') }, 'Your strike line \u203a'));
   }
   function arsenalStrip(P, packedN) {
     const owned = Object.values(P.owned || {}).filter(o => ST.statusOf(o) !== 'retired').length;

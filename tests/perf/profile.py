@@ -96,6 +96,7 @@ async def data_run(b):
     await visit('#/arsenal', 'route_arsenal', '#armList [data-own]')
     await visit('#/results', 'route_log', '#view .screen')
     await visit('#/tonight', 'route_strikeline', '#tnFindLine')
+    await visit('#/lane', 'route_lane', '#optimize')
     await visit('#/me', 'route_me', '#view .screen')
     await visit('#/bowl', 'route_game', '#qlStrike, #qlSpare, #noBag')
     # replay in the page itself: the cost of one projection of the whole log
@@ -116,19 +117,13 @@ async def data_run(b):
     for i in range(RUNS):
         await p.evaluate("() => { window.__perf.entries.length = 0; }"); await p.click('#bagShake'); shakes.append(await settle(p, 500))
     res['bag'] = {'shake_tap_settle_ms': med(shakes), 'draw_ms': med([e[1] for e in await entries(p, 'bag.draw')])}
-    # Strike finder (compute + draw)
-    fl = []
-    for i in range(RUNS):
-        SEQ[0] += 1; await p.goto(BASE + f'?perf=1&f={SEQ[0]}#/strike?find=1'); await p.wait_for_selector('#slTiles [data-tile]', timeout=30000); await p.wait_for_timeout(200)
-        E = await entries(p, 'strike.find'); fl += [e[1] for e in E]
-    res['strike'] = {'find_ms': med(fl)}
-    # v76 Forgiving line: the sweep runs only when the toggle is tapped, so it is measured on its own (and the second tap is a cache hit)
+    # v77 (owner t143u): the strike page is the Lane view; Optimize runs the Forgiving sweep on the tap (never on load). Measured on the tap.
     ff = []
     for i in range(RUNS):
-        SEQ[0] += 1; await p.goto(BASE + f'?perf=1&g={SEQ[0]}#/strike?find=1'); await p.wait_for_selector('#slTiles [data-tile]', timeout=30000); await p.wait_for_timeout(200)
-        await p.evaluate("() => { window.__perf.entries.length = 0; }"); await p.click('#slForg'); await p.wait_for_function("() => document.querySelector('#slDiagram')?.dataset.mode === 'forgiving'", timeout=30000); await p.wait_for_timeout(200)
-        ff += [e[1] for e in await entries(p, 'strike.forgiving')]; await p.click('#slStd'); await p.wait_for_timeout(300)
-    res['strike']['forgiving_ms'] = med(ff)
+        SEQ[0] += 1; await p.goto(BASE + f'?perf=1&g={SEQ[0]}#/lane'); await p.wait_for_selector('#optimize', timeout=30000); await p.wait_for_timeout(300)
+        await p.evaluate("() => { window.__perf.entries.length = 0; }"); await p.click('#optimize'); await p.wait_for_selector('#optOut:not([hidden])', timeout=30000); await p.wait_for_timeout(200)
+        ff += [e[1] for e in await entries(p, 'lane.optimize')]
+    res['strike'] = {'optimize_ms': med(ff)}
     # scoring tap-to-paint: on the game page, a strike every ~600 ms
     await p.goto(BASE + '?perf=1#/tonight'); await p.wait_for_timeout(500)
     try:

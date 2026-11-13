@@ -2,6 +2,12 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## The Lane view is the strike page, with Optimize — 2026-11-12 America/Chicago; offline build v77
+- **One screen.** The Strike line tab button ("Your strike line ›") opens the **Lane view**. The v76 strike line page is retired from navigation (`#/strike` redirects to `#/lane`; the code is kept, see docs/CUTS_V73.md #22).
+- **Optimize.** One big button on the Lane view runs the Forgiving sweep from the line on the lane, puts the best stand and target on the lane (the line ends at the pocket) and shows an estimate chip: pocket % against the line it replaced, miss room left/right, and **Undo**. If nothing beats your line it says "Already your best line". Miss size stays in Details (default Auto). No strike % is shown.
+- The Lane view now fits one screen at 360x780 and 390x844 with the safe area: lane picture, pin deck, stand/aim, Optimize and the miss buttons. Conditions, quick-switch balls, entry/angle/break, margin, skid/hook/roll and the miss size are under one **Details**. The one-time "Which hand?" question is one row here.
+- simulatePath unchanged; equivalence 7500/0. Perf budget: the Optimize tap replaces the old strike-finder rows.
+
 ## One strike line screen, optional Forgiving line — 2026-11-12 America/Chicago; offline build v76
 - **One door.** The Strike line tab has one button, **Your strike line ›**. The separate "Lane view ›" button is gone; the Lane view is the visible **Adjust ›** button on the strike line screen (3 taps from Bag; nothing deleted). Review: docs/STRIKE_LINE_REVIEW.md.
 - **Forgiving line (optional).** On the strike line screen a **Standard | Forgiving line** switch. Forgiving sweeps stand and target, throws each 200 times with small random misses (arrows, laydown, speed, rev) through the unchanged engine, and picks the line that reaches the pocket window most often, then shows the **miss room** (boards you can miss left/right) labelled an estimate. If Standard is already the best it says so. Miss size is adjustable in Details (Auto, 1, 1½, 2, 3 boards). The choice is remembered. No strike % is shown.

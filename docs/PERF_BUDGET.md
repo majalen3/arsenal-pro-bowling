@@ -26,8 +26,8 @@ Exit code 1 = over budget. **It is a local gate.** Wiring it into CI means editi
 | Event-log replay | small log (659 events) | 0.2 ms | 1.0 ms | |
 | Route to painted (50 balls / 500 games, 4x CPU) | Bag 442 · Arsenal 509 · Log book 643 · Strike line 446 · Game 423 ms | | x1.6 | |
 | Tap to painted | scoring tap (Strike button), median | 130 ms | 210 ms | x1.6 |
-| Tap to settled | Arsenal sort change 5 ms · Shake it up 115 ms · Strike finder 45 ms | | 25 / 190 / 80 ms | |
-| Tap to settled (v76) | Forgiving line sweep (switch tap) | 43-60 ms | 150 ms | runs only on the tap, cached |
+| Tap to settled | Arsenal sort change 5 ms · Shake it up 115 ms (v76: Strike finder 45 ms, retired in v77) | | 25 / 190 ms | |
+| Tap to settled (v77) | Lane Optimize tap (the Forgiving sweep) | 43-60 ms | 150 ms | runs only on the tap, cached; the Strike finder row (80 ms) is retired with its screen |
 | Long tasks | game page, count | 2 | 4 | |
 | Lighthouse | performance per route (mobile defaults) | 0.79-0.96, noisy | **>= 0.85 target** | see below |
 
@@ -41,6 +41,7 @@ Lighthouse is noisy here: the same build scored 0.79, 0.86, 0.88, 0.79, 0.79 on 
 |---|---|---|
 | v75 | Budget created from the v75 measurements above | first budget |
 | v75 | Tighten `#/arsenal` cold JS to 5% over its pre-preload measurement (265,464 B, 44 modules) | the preload experiment was reverted |
+| v77 | The Forgiving row became the Lane Optimize tap row (150 ms, same sweep); removed the Strike finder (80 ms) row because `#/strike` is retired |
 | v76 | Added the Forgiving line sweep row (150 ms) | owner t140u optional miss model; the Strike finder limit (80 ms) is unchanged because the sweep never runs on load |
 
 Rules for editing: tighten after a release if the number has room (record the new baseline here); loosen only with a line saying what feature bought the bytes or milliseconds.

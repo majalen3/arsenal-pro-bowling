@@ -48,8 +48,7 @@ if opt('--browser'):
     check('score tap to painted (4x CPU, big data)', D['score'].get('tap_to_paint_ms'), H['score_tap_ms_max'], ' ms')
     check('Arsenal sort settle', D['arsenal']['sort_tap_settle_ms'], H['arsenal_sort_ms_max'], ' ms')
     check('Bag: Shake it up settle', D['bag']['shake_tap_settle_ms'], H['bag_shake_ms_max'], ' ms')
-    check('Strike finder compute + draw', D['strike']['find_ms'], H['strike_find_ms_max'], ' ms')
-    check('Forgiving line sweep (toggle tap, 4x CPU)', D['strike'].get('forgiving_ms'), H['forgiving_ms_max'], ' ms')
+    check('Lane Optimize tap: the Forgiving sweep (4x CPU)', D['strike'].get('optimize_ms'), H['optimize_ms_max'], ' ms')
     check('long tasks on the game page (count)', D['route_game']['longtasks'], H['game_longtasks_max'])
 # 4. Lighthouse
 if opt('--lighthouse'):

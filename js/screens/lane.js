@@ -10,7 +10,10 @@ import { createDeck, describe } from '../deck.js';
 const isLefty = HAND.isLefty;   // explicit hand only (cc/hand.js)
 const mirrorWords = t => t.replace(/\b(left|right|Left|Right)\b/g, w => ({ left:'right', right:'left', Left:'Right', Right:'Left' })[w]);
 const DEFL_DOC = 'https://github.com/majalen3/arsenal-pro-bowling/blob/main/docs/DEFLECTION.md';
-import { adjust, miss, restore, target, modelIn, MISSES, setBall, quickBalls } from '../ctl.js';
+import { adjust, miss, restore, snapshot, target, modelIn, MISSES, setBall, quickBalls } from '../ctl.js';
+import * as PERF from '../perf.js';
+import { ballFor } from '../cc/cats.js';
+import { OIL_LEN } from '../engine.js';
 import { balls } from '../data.js';
 import { openBallSheet, openConditions, openTune, openLines, tunePanel } from './pickers.js';
 import { PATTERN_LABEL, FINISH_LABEL, CALL_LABEL, CALL_TONE, f1, fmtBoard, fmtHalf } from '../labels.js';
@@ -28,7 +31,9 @@ import { helpDot } from './help.js';
 import * as HAND from '../cc/hand.js';
 import { handAsk } from './hand.js';
 import { seedLine as seedShared, keepMoved as keepShared } from '../laneseed.js';
-export function render() {
+export function render({ query } = {}) {
+  // v77 (owner t143u): the strike line tab opens THIS screen. #/strike redirects here with ?ball=<id>, so honour it.
+  const qb = query && query.get('ball') && ballFor(query.get('ball')); if (qb && modelOK(qb)) setBall(qb);
   const ballBtn = h('button', { class:'ball-btn', id:'ballBtn', 'aria-haspopup':'dialog', onclick:openBallSheet });
   const saveBtn = h('button', { class:'icon-btn', id:'saveBtn', 'aria-label':'Save this line', onclick:quickSave });
   const tgBtn = h('button', { class:'icon-btn', id:'targetBtn', 'aria-label':'Targeting: feet, eyes, break box', html:icon('target'), onclick:() => go('#/target') });
@@ -70,21 +75,30 @@ export function render() {
     return { preset: S.pattern, ft: ft != null && presetFor(ft) === S.pattern ? ft : null }; };
   const aimCtx = () => ({ cat: app.ball, speed: +S.speed, rev: +S.rev, finish: S.finish, oil: +S.oil });
   const missing = h('p', { class:'card', id:'laneMissing', hidden:true, text:'Specs unverified or cover not supported. No model path: choose another ball, or check your specs in Bag.' });
+  // ---- v77 Optimize (owner t143u): one tap runs the existing Forgiving sweep (cc/strikeline.js forgive(), simulatePath unchanged) from the line
+  // on the lane, puts the best stand and target on the lane and shows pocket % (estimate) vs the line it replaced, the miss room, and Undo.
+  const optBtn = h('button', { class:'btn primary block', id:'optimize', type:'button', onclick:() => optimize() }, h('span', { id:'optLbl', text:'Optimize' }));
+  const optRow = h('div', { class:'opt-row', id:'optRow' }, optBtn);
+  const optOut = h('div', { class:'opt-out', id:'optOut', 'aria-live':'polite', hidden:true });
+  const MISS_AUTO = 'auto', fmtMiss = v => v === 1.5 ? '1\u00bd' : String(v);
+  const optMiss = h('select', { id:'optMissSel', onchange:e => { setPrefs({ slMiss:e.target.value === MISS_AUTO ? null : +e.target.value }); opt = null; paintOpt(); } });
   const el = h('section', { class:'screen lane-screen' },
     h('header', { class:'appbar' }, h('h1', { class:'sr-only', id:'laneH1' }), ballBtn, h('div', { class:'appbar-actions' }, syncDot, tgBtn, linesBtn, saveBtn)),
-    h('div', { class:'ctl-bar' }, qRow,
+    h('div', { class:'ctl-bar' },
     h('div', { class:'cond-row' }, backBtn, h('div', { class:'cond-grp', role:'group', 'aria-label':'Lane conditions' }, patChip, surfChip, oilChip, tuneChip))),
     missing, h('div', { class:'lane-grid' },
-      h('div', { class:'lane-col' }, canvas,
-        h('div', { class:'legend', 'aria-hidden':'true' }, h('span', { html:`<i style="background:${C_SKID}"></i>Skid` }), h('span', { html:`<i style="background:${C_HOOK}"></i>Hook` }), h('span', { html:`<i style="background:${C_ROLL}"></i>Roll` }), h('span', { html:'<i class="bp"></i>Breakpoint' })),
-        h('div', { class:'row lane-tools' }, overlaysBtn(patNow), aimPill, helpDot('bm-shr', 'Skid, hook, roll')), aimWhy),
-      h('section', { class:'deck-card', id:'deckCard', 'aria-labelledby':'deckH' }, h('figure', { class:'deck-fig' }, deckCv), h('div', { class:'deck-side' }, h('h2', { class:'deck-h', id:'deckH', text:'Pin deck' }), callBadge, coach, deckRead,
-        // Clutter audit C1: the contact and "Model: …" sentences and the pin-action caveat sit behind How it works (progressive disclosure).
-        h('details', { class:'deck-how', id:'deckHow' }, h('summary', { text:'How it works' }), h('div', { id:'deckHowBody' }), h('p', { class:'deck-cap', id:'deckCap' })),
+      h('div', { class:'lane-col' }, canvas),
+      h('section', { class:'deck-card', id:'deckCard', 'aria-labelledby':'deckH' }, h('div', { class:'deck-side' }, h('h2', { class:'deck-h', id:'deckH', text:'Pin deck' }), callBadge, deckRead,
         h('p', { class:'deck-cap', id:'deckMirror', hidden:true, text:'Mirrored for left hand.' }))),
-      h('div', { class:'read-col' },
-        pathSum, h('div', { class:'tiles' }, tEntry, tAngle, tBp),
-        handAsk(), lineSum, modelNote, hold, missRow, moreBox, inlineTune)));
+      handAsk({ compact:true }), h('div', { class:'read-col' }, lineSum, optRow, optOut, missRow),
+      h('details', { class:'card more-fold lane-more', id:'laneDetails' }, h('summary', { text:'Details' }),
+        qRow, modelNote, pathSum, h('div', { class:'tiles' }, tEntry, tAngle, tBp), coach, hold,
+        h('div', { class:'legend', 'aria-hidden':'true' }, h('span', { html:`<i style="background:${C_SKID}"></i>Skid` }), h('span', { html:`<i style="background:${C_HOOK}"></i>Hook` }), h('span', { html:`<i style="background:${C_ROLL}"></i>Roll` }), h('span', { html:'<i class="bp"></i>Breakpoint' })),
+        h('div', { class:'row lane-tools' }, overlaysBtn(patNow), aimPill, helpDot('bm-shr', 'Skid, hook, roll')), aimWhy,
+        h('label', { class:'small opt-miss', for:'optMissSel' }, 'Optimize miss size at the arrows (1 SD) ', optMiss),
+        h('figure', { class:'deck-fig deck-fig-detail' }, deckCv),
+        h('details', { class:'deck-how', id:'deckHow' }, h('summary', { text:'How the pin deck works' }), h('div', { id:'deckHowBody' }), h('p', { class:'deck-cap', id:'deckCap' })),
+        moreBox, inlineTune)));
   let tune = null;
   const lane = createLane(canvas, { onAdjust:ch => adjust(ch), lefty:isLefty, aimBox:aimLayer(patNow), eyes:target });
   const half2 = v => Math.round(v * 2) / 2;
@@ -103,7 +117,7 @@ export function render() {
     oilChip.innerHTML = `<span class="chip-k">Oil</span> ×${(+S.oil).toFixed(1)}`; oilChip.setAttribute('aria-label', `Oil ×${(+S.oil).toFixed(1)}. Change oil volume`);
     const bw = (proj() || {}).bowler || {}, sp = releaseSource(bw.speed, S.speed), rv = releaseSource(bw.rev, S.rev);
     tuneChip.replaceChildren(h('span', { html:icon('tune') }), `${S.speed} mph `, chip(...sp), ` · ${S.rev} rpm `, chip(...rv)); tuneChip.setAttribute('aria-label', `${S.speed} mph ${sp[1]} · ${S.rev} rpm ${rv[1]}. Tune shot`);
-    const supported = modelOK(b); missing.hidden = supported; el.querySelector('.lane-grid').hidden = !supported;
+    const supported = modelOK(b); missing.hidden = supported; if (!supported) opt = null; el.querySelector('.lane-grid').hidden = !supported;
     if (!supported) { if (qKey !== b.id) { qKey = b.id; drawQuick(); } return; }
     const a = analyze(b, { release:mi.release, aim:mi.aim });
     const tone = CALL_TONE[a.call]; callBadge.textContent = CALL_LABEL[a.call]; 
@@ -151,7 +165,51 @@ export function render() {
     el.querySelector('#deckMirror').hidden = !lefty;
     el.querySelector('#deckCard').dataset.tone = tone;
     el.querySelector('#deckCap').innerHTML = `Pin action: approximate 2-D model, assumed 15 lb ball, no spin. <a href="${DEFL_DOC}" target="_blank" rel="noopener">Full write-up</a>`;
-    lastKey = key;
+    lastKey = key; paintOpt(); optBtn.disabled = optBtn.hasAttribute('aria-busy');
+  }
+  // ---- Optimize state. `opt` = what the last tap did on THIS ball + conditions + line; it is dropped the moment any of those change.
+  let opt = null, F = null;   // F = cc/strikeline.js, loaded after the first paint (the Lane view does not need it until Optimize or Details)
+  const loadF = () => F ? Promise.resolve(F) : import('../cc/strikeline.js').then(m => (F = m));
+  const half = n => n === 0 ? '0' : n === 0.5 ? '\u00bd' : String(n).replace('.5', '\u00bd');
+  const optKey = () => [ballKey(app.ball), S.pattern, S.finish, +S.oil, +S.speed, +S.rev, isLefty()].join('|');
+  const missPref = () => { const v = +prefs().slMiss; return Number.isFinite(v) && v ? v : null; };
+  const forgCache = new Map();
+  function paintOpt() {
+    if (opt && (opt.key !== optKey() || opt.rel !== +S.release || opt.tgt !== target())) opt = null;   // anything moved: the stat no longer describes the lane
+    if (F) { const a = F.spreadFrom(proj()).arrows, have = prefs().slMiss ? String(prefs().slMiss) : MISS_AUTO;
+      optMiss.replaceChildren(h('option', { value:MISS_AUTO, text:`Auto (${a.src === 'device' ? 'your LaneTrax' : 'assumed'} \u00b1${fmtMiss(a.v)})` }), ...F.MISS_CHOICES.map(v => h('option', { value:String(v), text:`\u00b1${fmtMiss(v)} boards` })));
+      optMiss.value = have; }
+    optRow.querySelector('#optUndo')?.remove();
+    optRow.classList.toggle('has-undo', !!opt && !opt.same);
+    optOut.hidden = !opt; optOut.dataset.state = opt ? (opt.same ? 'same' : 'applied') : '';
+    if (!opt) { optOut.replaceChildren(); return; }
+    optOut.dataset.pocket = String(opt.pocket); optOut.dataset.was = String(opt.was); optOut.dataset.room = `${opt.room.left}/${opt.room.right}`;
+    const room = h('span', { class:'opt-room', text:`Room ${half(opt.room.left)} left \u00b7 ${half(opt.room.right)} right` });
+    optOut.replaceChildren(
+      h('div', { class:'opt-line' }, h('span', { class:'prov', 'data-prov':'model', text:'estimate' }), ' ', opt.same ? h('b', { text:'Already your best line' }) : h('b', { text:`${opt.pocket}% pocket` }), opt.same ? null : ` (was ${opt.was}%)`),
+      h('div', { class:'opt-line' }, opt.same ? `${opt.pocket}% pocket \u00b7 ` : null, room));
+    optRow.querySelector('#optUndo')?.remove();
+    if (!opt.same) optRow.append(h('button', { class:'btn ghost', id:'optUndo', type:'button', 'aria-label':'Undo: back to the line before Optimize', onclick:undoOpt }, h('span', { html:icon('undo') }), h('span', { text:'Undo' })));
+    optOut.setAttribute('aria-label', `Estimate from the model, not a measurement. ${opt.same ? 'Already your best line. ' : ''}Pocket ${opt.pocket} percent, ${opt.was} before. You can miss ${half(opt.room.left)} board left or ${half(opt.room.right)} right at the arrows and still enter the pocket window.`);
+  }
+  function undoOpt() { if (!opt || !opt.before) return; restore(opt.before); opt = null; paintOpt(); toast('Back on your previous line'); }
+  function optimize() {
+    const cat = app.ball; if (!modelOK(cat) || optBtn.disabled) return;
+    optBtn.disabled = true; optBtn.setAttribute('aria-busy', 'true'); optBtn.querySelector('#optLbl').textContent = 'Optimizing\u2026';
+    loadF().then(() => new Promise(r => setTimeout(r, 20))).then(() => {
+      try {
+        const P = proj(), pn = patNow(), ft = pn.ft != null ? pn.ft : (OIL_LEN[S.pattern] || 38), miss = missPref(), lefty = isLefty();
+        const start = { lay:+S.release, arr:target() }, speed = +S.speed, rev = +S.rev;
+        const ck = [ballKey(cat), miss, ft, speed, rev, start.lay, start.arr].join('|');
+        if (!forgCache.has(ck)) { const end = PERF.span('lane.optimize'); forgCache.set(ck, F.forgive(cat, { speed, rev, ft, spread:F.spreadFrom(P), miss, start })); end(); PERF.count('cache.forgiving.miss'); } else PERF.count('cache.forgiving.hit');
+        const r = forgCache.get(ck);
+        if (r.none) { opt = null; optOut.hidden = false; optOut.dataset.state = 'none'; optOut.replaceChildren(h('div', { class:'opt-line', text:r.reason })); return; }
+        const c = r.forgiving, before = Object.assign(snapshot(), { eyes:app.eyes }), was = r.standard.pocket;
+        if (!r.same) adjust({ release:c.lay, target:c.arrows }, { animate:true });
+        opt = { key:optKey(), rel:+S.release, tgt:target(), before, pocket:c.pocket, was, same:r.same, room:F.missRoom(c, lefty) };
+        paintOpt();
+      } finally { optBtn.disabled = false; optBtn.removeAttribute('aria-busy'); optBtn.querySelector('#optLbl').textContent = 'Optimize'; }
+    });
   }
   let qKey = '';
   function drawQuick() {
@@ -184,6 +242,6 @@ export function render() {
   const keepMoved = () => { if (seeded) keepShared(); };
   ready().then(seedLine).catch(() => {});
   const offs = [on('ball', seedLine), on('state', d => { keepMoved(); queue(d); }), on('lines', () => update()), on('prefs', () => { qKey = ''; queue(); }), on('status', drawSync)];
-  return { el, title:'Lane', mounted() { update({ animate:true }); drawSync(); }, destroy() { cancelAnimationFrame(rq); offs.forEach(f => f()); lane.destroy(); deck.destroy(); } };
+  return { el, title:'Lane', mounted() { update({ animate:true }); drawSync(); setTimeout(() => loadF().then(paintOpt), 0); }, destroy() { cancelAnimationFrame(rq); offs.forEach(f => f()); lane.destroy(); deck.destroy(); } };
 }
 
