@@ -951,8 +951,8 @@ body[data-tab=bowl] #view,body[data-ingame] #view{padding-bottom:calc(var(--sab)
 .hand-ask.compact .btn-grid .btn{width:100%}
 .hand-ask.compact{flex-wrap:nowrap;justify-content:center}
 @media (max-width:899px){
-  .lane-canvas{height:min(calc(100dvh - 450px),380px);min-height:300px}
-  .lane-grid:has(.hand-ask) .lane-canvas{height:min(calc(100dvh - 510px),340px);min-height:280px}
+  .lane-canvas{height:min(calc(100dvh - 420px),400px);min-height:300px}
+  .lane-grid:has(.hand-ask) .lane-canvas{height:min(calc(100dvh - 480px),360px);min-height:280px}
 }
 .opt-row{display:grid;grid-template-columns:1fr;gap:6px}
 .opt-row.has-undo{grid-template-columns:1fr auto}
