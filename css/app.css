@@ -967,3 +967,6 @@ body[data-tab=bowl] #view,body[data-ingame] #view{padding-bottom:calc(var(--sab)
 .deck-card{grid-template-columns:1fr}
 .deck-fig-detail{max-width:230px;width:100%;justify-self:center}
 .deck-card .deck-side{gap:2px}
+.lane-more[open]{grid-template-columns:minmax(0,1fr)}
+.lane-more>*{min-width:0}
+.lane-more .qball-row{overflow-x:auto;max-width:100%}

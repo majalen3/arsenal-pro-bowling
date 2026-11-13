@@ -82,6 +82,7 @@ async def run(b, kind):
     check('approximate 2-D model' in cap and await p.query_selector('#deckCap a[href*="DEFLECTION"]') is not None, t + 'pin action labelled as an approximate model with a sources link')
     check(await p.get_attribute('#deckCard', 'data-tone') in ('good', 'warn', 'info', 'bad'), t + 'pin deck coloured by result')
     if SHOTS: await (await p.query_selector('#deckCard')).screenshot(path=os.path.join(SHOTS, f'{kind}-deck.png'))
+    await p.evaluate("() => window.scrollTo(0, 0)"); await p.wait_for_timeout(150)
     # J1 change ball: 2 taps
     before = await p.text_content('.ball-btn-name')
     await p.click('#ballBtn'); await p.wait_for_selector('#ballSheet')
@@ -161,7 +162,7 @@ async def run(b, kind):
 async def deck_cases(b):
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs)
     await p.goto(BASE); await p.evaluate("localStorage.clear();localStorage.setItem('ap_prefs','{\"onboarded\":true}');localStorage.setItem('ap_profile','{\"hand\":\"left\"}')")
-    await p.goto(BASE + '#/lane'); await p.wait_for_selector('#deck'); await p.wait_for_timeout(400)
+    await p.goto(BASE + '#/lane'); await p.wait_for_selector('#deck', state='attached'); await p.wait_for_timeout(400)
     lbl = await p.get_attribute('#deck', 'aria-label')
     check('1-2 pocket' in lbl and 'then the 2 pin' in lbl, '[deck] left hand highlights the 1-2 pocket')
     # cycle 6: full lane mirror for left-handers
@@ -178,8 +179,8 @@ async def deck_cases(b):
     await p.evaluate(tap, [.2]); rl = await p.evaluate(rel); await p.evaluate(tap, [.8]); rr = await p.evaluate(rel)
     check(rl < 15 < rr, f'[lefty] press near the foul line: screen left = low boards, screen right = high boards {rl} {rr}')
     await p.evaluate("localStorage.clear();localStorage.setItem('ap_prefs','{\"onboarded\":true}');localStorage.setItem('ap_profile','{\"hand\":\"left\"}')")
-    await p.reload(); await p.wait_for_selector('#deck'); await p.wait_for_timeout(800)   # let the 300 ms saveState debounce land first
-    await p.evaluate("localStorage.removeItem('ap_state');localStorage.setItem('ap_profile','{\"hand\":\"right\",\"speed\":15,\"rev\":220}')"); await p.reload(); await p.wait_for_selector('#deck')
+    await p.reload(); await p.wait_for_selector('#deck', state='attached'); await p.wait_for_timeout(800)   # let the 300 ms saveState debounce land first
+    await p.evaluate("localStorage.removeItem('ap_state');localStorage.setItem('ap_profile','{\"hand\":\"right\",\"speed\":15,\"rev\":220}')"); await p.reload(); await p.wait_for_selector('#deck', state='attached')
     # neutral start ball (de-brand): keep missing right until the model reads light (at most 4 moves)
     for _ in range(4):
         await p.click('[data-miss=right]'); await p.wait_for_timeout(400)
@@ -1613,14 +1614,14 @@ async def hand_cycle(b):
     await p.click('#handL'); await p.wait_for_selector('#tnHand')
     t = await p.text_content('#tnHand'); check(t.startswith('Left-handed') and 'change' in t, f'[hand] Tonight: "Left-handed · change" ({t})')
     pr = await p.evaluate("() => JSON.parse(localStorage.getItem('ap_profile'))"); check(pr['hand'] == 'left' and pr['handSource'] == 'user-reported', f'[hand] stored as user-reported {pr.get("hand")}/{pr.get("handSource")}')
-    await p.goto(BASE + '?hl#/lane'); await p.wait_for_selector('#deck')
+    await p.goto(BASE + '?hl#/lane'); await p.wait_for_selector('#deck', state='attached')
     check(await p.query_selector('#handAsk') is None, '[hand] asked only once')
     lbl = await p.get_attribute('#deck', 'aria-label'); check('1-2 pocket' in lbl, f'[hand] Lane pin deck follows the hand (1-2 pocket for a lefty)')
     await p.goto(BASE + '?hm#/more'); await p.wait_for_selector('#editProfile')
     check('Left-handed' in await p.text_content('#view'), '[hand] Bowler profile shows Left-handed')
     await p.goto(BASE + '?ht#/tonight'); await p.wait_for_selector('#tnHandChange'); await p.click('#tnHandChange'); await p.wait_for_selector('#handSheetR')
     await p.click('#handSheetR'); await p.wait_for_function("() => (document.querySelector('#tnHand') || {}).textContent?.startsWith('Right-handed')")
-    await p.goto(BASE + '?hr#/lane'); await p.wait_for_selector('#deck'); lbl = await p.get_attribute('#deck', 'aria-label'); check('1-3 pocket' in lbl, '[hand] change to Right: Lane follows (1-3 pocket)')
+    await p.goto(BASE + '?hr#/lane'); await p.wait_for_selector('#deck', state='attached'); lbl = await p.get_attribute('#deck', 'aria-label'); check('1-3 pocket' in lbl, '[hand] change to Right: Lane follows (1-3 pocket)')
     # "Not now": never asked again; boards read right-handed and the line says so.
     await seed(p); await p.goto(BASE + '?hn#/tonight'); await p.wait_for_selector('#noBag'); await load_sample(p); await p.wait_for_selector('#handLater')
     await p.click('#handLater'); await p.wait_for_selector('#tnHand'); t = await p.text_content('#tnHand')

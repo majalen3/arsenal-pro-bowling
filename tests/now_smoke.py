@@ -53,7 +53,7 @@ async def main():
   boxes=await p.locator('.badge-card, #armNext').evaluate_all('(es)=>es.map(e=>({w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height}))')
   assert all(x['w']>=44 and x['h']>=44 for x in boxes),boxes
   await p.evaluate("async () => (await import('./js/hub.js')).add('bowler.edited','me',{fields:{speed:{v:16,unit:'mph',prov:{kind:'device',ref:'lanetrax'}}}})")
-  await flag('laneView','summary');await goto('lane','#laneSum')
+  await flag('laneView','summary');await goto('lane','#ballBtn');await p.evaluate("document.querySelector('#laneDetails').open=true");await p.wait_for_selector('#laneSum')   # v78: the path line is under Details
   assert 'model' in await p.inner_text('#laneSum')
   assert await p.locator('#laneSum [data-prov=model]').count()
   await shot('lane-summary');await shot('lane-summary-full',True)
