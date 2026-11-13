@@ -125,3 +125,10 @@ test('source chain: banned sites never appear as a source in any fixture or cata
   const bad = /bowlingballvideos|bowwwl|bowlingball\.com|bowlingthismonth/i;
   for (const n of fs.readdirSync(new URL('./fixtures/', import.meta.url)).filter(x => /^lookup-/.test(x))) assert.ok(!bad.test(fs.readFileSync(new URL('./fixtures/' + n, import.meta.url), 'utf8')), n);
 });
+
+test('live Hustle Ink (Wayback, older Storm layout): 15 lb row is 2.53 / 0.030, not the 10 lb headline; weights-only archive result is labelled archived', () => {
+  const res = fx('lookup-hustle-ink-live.json'), m = A.fromLookup(res, 15);
+  assert.equal(m.fields.rg.v, 2.53); assert.equal(m.fields.diff.v, 0.03);
+  assert.ok(m.types.includes('archived-maker')); assert.equal(m.source.archived, true);
+  assert.notEqual(A.fromLookup(res, 10).fields.rg.v, 2.53);
+});

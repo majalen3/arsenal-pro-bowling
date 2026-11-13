@@ -204,7 +204,7 @@ export function fromLookup(res, weight = 15) {
   // USBC: an approval date, shown as "USBC approval" (never a release date). Several listings: the first date.
   if (res.usbc && res.usbc.v) out.usbc = { v: res.usbc.v, prov: provOfSrc(res.usbc.src, USBC_SRC), note: res.usbc.dates && res.usbc.dates.length > 1 ? `first of ${res.usbc.dates.length} listings` : null };
   if (out.usbc && !out.usbc.note) delete out.usbc.note;
-  return { fields: out, weights: Object.keys(ws).map(Number).sort((a, b) => b - a), source: pOf({ src }) || p0, title: src.title || null, types: res.sourceTypes || (res.status === 'found' ? ['maker'] : []), chain: res.chain || null, conflicts: res.conflicts || [] };
+  return { fields: out, weights: Object.keys(ws).map(Number).sort((a, b) => b - a), source: pOf({ src }) || p0, title: src.title || null, types: [...new Set([...(res.sourceTypes || (res.status === 'found' ? ['maker'] : [])), ...(res.weightsSrc && res.weightsSrc.type && Object.keys(ws).length ? [res.weightsSrc.type] : [])])], chain: res.chain || null, conflicts: res.conflicts || [] };
 }
 // Maker wins; a catalogue value that disagrees is kept as a visible conflict, never silently dropped.
 const NUM_TOL = { rg: 0.005, diff: 0.002, intDiff: 0.002 };
