@@ -55,7 +55,7 @@ commit. To undo one cut, use its "Restore" line.
 | 20 | Strike line tab | R: the "Lane view ›" button (`#tnLaneLink`) beside Find my strike line. The one button is now "Your strike line ›" (`#tnFindLine`). | Restore the `.btn-grid.tn-strike` pair in `strikeStrip()` in `js/screens/tonight.js` and its CSS. |
 | 21 | Strike line screen | N: Standard / Forgiving line switch, miss room stat, Use this line + **Adjust ›** (opens the Lane view, so Lane is 3 taps from Bag), miss-size select in Details. | Remove `#slMode`, `#slAdjust`, `#slMissSel`; `forgive()` in `js/cc/strikeline.js` can stay. |
 
-## v77 (owner t143u): the Lane view is the strike page
+## v78 (owner t143u): the Lane view is the strike page
 
 Measured at 360x780 with the sample arsenal. Before = v76 (`origin/main` 01d5a97).
 
@@ -63,11 +63,11 @@ Measured at 360x780 with the sample arsenal. Before = v76 (`origin/main` 01d5a97
 |---|---|---|---|
 | 22 | Strike line page `#/strike` | R from navigation: the v73/v76 strike line page (picture + four tiles + Standard/Forgiving switch + Use this line + Adjust). `#/strike` redirects to `#/lane`. The file `js/screens/strike.js` stays (and stays in `sw.js` SHELL). | In `js/main.js` re-add `route(/^\/strike$/, 'tonight', () => import('./screens/strike.js'));`, delete `redirect(/^\/strike$/, '/lane');`, point `#tnFindLine` in `js/screens/tonight.js` back to `#/strike?find=1&ball=<id>`, restore the old `strikeline_cycle` e2e (commit 01d5a97) and the product_spine/thirty_second rows. |
 | 23 | Strike line tab | C: "Your strike line ›" now opens `#/lane?ball=<id>` (was `#/strike`). | Same as #22. |
-| 24 | Lane view | N: **Optimize** button with the pocket % / miss room stat and Undo; miss-size select (Details). M into one **Details**: quick-switch balls, entry/angle/break tiles, coach line, margin bar, legend, aim box + pill, skid/hook/roll, tune panel, pin-deck explainer. The mph/rpm and "input" chips of the stand/aim summary are hidden on phones. The "Which hand?" ask is one row (`handAsk({compact})`). Page height 1,152 px (scrolled) -> one screen. | `git revert` of the v77 commit restores the v76 Lane layout; the Lane DOM ids are unchanged, so tests that use them still work (open Details first for quick balls). |
+| 24 | Lane view | N: **Optimize** button with the pocket % / miss room stat and Undo; miss-size select (Details). M into one **Details**: quick-switch balls, entry/angle/break tiles, coach line, margin bar, legend, aim box + pill, skid/hook/roll, tune panel, pin-deck explainer. The mph/rpm and "input" chips of the stand/aim summary are hidden on phones. The "Which hand?" ask is one row (`handAsk({compact})`). Page height 1,152 px (scrolled) -> one screen. | `git revert` of the v78 commit restores the v76 Lane layout; the Lane DOM ids are unchanged, so tests that use them still work (open Details first for quick balls). |
 | 25 | Perf budget | R: "Strike finder compute + draw" (80 ms; its screen is retired). C: the Forgiving row is now "Lane Optimize tap" (150 ms). | `tests/perf/budget.json`, `tests/perf_budget.py`, `tests/perf/profile.py`. |
 
 ## Not cut, on purpose
-- Strike line `#/tonight` was already one screen (57 words). Its only change is that Your strike line opens the Lane view (v77).
+- Strike line `#/tonight` was already one screen (57 words). Its only change is that Your strike line opens the Lane view (v78).
 - In the game, `#tnFind` still opens Targeting (`#/target?find=1`) so the v70 in-game chrome and its tests stay the same.
 
 

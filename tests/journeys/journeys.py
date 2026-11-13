@@ -438,7 +438,7 @@ async def j06_between_games(j):
         s.check(not clip, f'clipped ball names: {clip}')
     async with j.step('Aim Box on: same box on Lane and Targeting', task='aimbox', target_taps=3) as s:
         await j.goto('/lane'); await j.wait('#lane')
-        await j.data("() => { const d = document.querySelector('#laneDetails'); if (d) d.open = true; }")   # v77: Aim Box lives under Details
+        await j.data("() => { const d = document.querySelector('#laneDetails'); if (d) d.open = true; }")   # v78: Aim Box lives under Details
         if await j.visible('#ovBtn'):
             await j.tap('#ovBtn'); await j.wait('#ovSheet')
             await j.tap('#ovSheet [aria-label="Aim Box"] [data-v="on"]'); await j.wait('#ovBoxTxt')

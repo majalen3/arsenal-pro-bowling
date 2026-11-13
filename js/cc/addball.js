@@ -156,21 +156,55 @@ export function oilFromCondition(txt) {
   if (/heavy/.test(t)) o.push('heavy'); if (/medium/.test(t)) o.push('medium'); if (/light|dry/.test(t)) o.push('light');
   return o.length && o.length < 3 ? o : null;
 }
+// Source chain (owner t139u; arsenal-pro-api lib/specchain.js): every field of a lookup result may carry its own `src`
+// {type: maker | archived-maker | usbc | secondary, url, host, fetchedAt, original?, attribution?}. Older results (no src) are the maker page.
+// Maker wins, then the archived maker page, then USBC (approval date only), then a public reference; a later source only fills gaps.
+const SRC_TYPES = ['maker', 'archived-maker', 'usbc', 'secondary'];
+export function provOfSrc(src, fallback) {
+  const date = ((src && src.fetchedAt) || '').slice(0, 10) || (fallback && fallback.date) || null;
+  if (!src || !SRC_TYPES.includes(src.type)) return fallback;
+  const url = src.url || null;
+  if (src.type === 'maker') return { kind: 'manufacturer', ref: src.host || 'maker page', url, date };
+  if (src.type === 'archived-maker') return { kind: 'manufacturer', ref: 'archived ' + hostOf(src.original || url), url, original: src.original || null, date, archived: true, capturedAt: src.capturedAt || null };
+  if (src.type === 'usbc') return { kind: 'usbc', ref: 'USBC Approved Ball List', url, date, listDate: src.listDate || null };
+  return { kind: 'catalog', ref: src.attribution || src.host || 'public reference', url, date, secondary: true };
+}
+// Short, plain chip text for one field's provenance (the screen shows it next to the value).
+export function sourceLabel(p) {
+  if (!p) return null;
+  if (p.archived) return 'archived maker page';
+  if (p.secondary) return 'not the maker \u00b7 ' + String(p.ref || 'public reference').replace(/\s*\(.*$/, '');
+  if (p.kind === 'usbc') return 'USBC list';
+  return null;   // maker + everything else: schema.chip()
+}
+const STEP_LABEL = { maker: 'Maker page', 'archived-maker': 'Archived maker page', usbc: 'USBC list', secondary: 'Public reference' };
+const STEP_OUT = { found: 'found', 'nothing-new': 'nothing new', 'not-found': 'no page', 'no-specs': 'no specs', 'not-listed': 'not listed', skipped: 'not needed', blocked: 'not allowed', busy: 'busy', error: 'unavailable', 'out-of-time': 'ran out of time' };
+// "Maker page: no page · Archived maker page: found · USBC list: found" (what was checked, in order; plain words).
+export function chainSummary(res) {
+  const c = res && Array.isArray(res.chain) ? res.chain : null; if (!c) return null;
+  return c.filter(x => x.outcome !== 'skipped').map(x => `${STEP_LABEL[x.step] || x.step}: ${STEP_OUT[x.outcome] || x.outcome}`).join(' \u00b7 ') || null;
+}
+// Fields that did not come from the maker's own live page (the user is asked to check these against the box).
+export function nonMakerFields(fields) { return Object.entries(fields || {}).filter(([k, x]) => x && x.prov && (x.prov.archived || x.prov.secondary || (x.prov.kind === 'usbc' && k !== 'usbc'))).map(([k]) => k); }
 export function fromLookup(res, weight = 15) {
-  if (!res || res.status !== 'found') return null;
-  const src = res.source || {}, p = { kind: 'manufacturer', ref: src.host || 'maker page', url: src.url || null, date: (src.fetchedAt || '').slice(0, 10) || null };
-  const d = Object.assign({}, p, { kind: 'derived', ref: 'read from the maker\u2019s wording' }), f = res.fields || {}, out = {};
-  const put = (k, x) => { if (x && x.v != null && x.v !== '') out[k] = { v: x.v, prov: x.derived ? Object.assign({}, d, { ref: x.label }) : p }; };
+  if (!res || (res.status !== 'found' && res.status !== 'usbc-only')) return null;
+  const src = res.source || {}, p0 = { kind: 'manufacturer', ref: src.host || 'maker page', url: src.url || null, date: (src.fetchedAt || '').slice(0, 10) || null };
+  const d = Object.assign({}, p0, { kind: 'derived', ref: 'read from the maker\u2019s wording' }), f = res.fields || {}, out = {};
+  const pOf = x => provOfSrc(x && x.src, p0), dOf = (x, label) => Object.assign({}, pOf(x), { kind: 'derived', ref: label });
+  const put = (k, x) => { if (x && x.v != null && x.v !== '') out[k] = { v: x.v, prov: x.derived ? dOf(x, x.label) : pOf(x) }; };
   ['coverstock', 'finish', 'core', 'symmetry', 'releaseDate', 'condition'].forEach(k => put(k, f[k]));
-  if (f.coverType) out.coverType = { v: coverTypeOf(f.coverType.v) || f.coverType.v, prov: f.coverType.derived ? Object.assign({}, d, { ref: f.coverType.label }) : p };
-  const ws = res.weights || {}, row = ws[String(weight)], hw = res.headlineWeight;
-  if (row) { for (const k of ['rg', 'diff', 'intDiff']) if (row[k] != null) out[k] = { v: row[k], prov: p, note: `${weight} lb` }; }
+  if (f.coverType) out.coverType = { v: coverTypeOf(f.coverType.v) || f.coverType.v, prov: f.coverType.derived ? dOf(f.coverType, f.coverType.label) : pOf(f.coverType) };
+  const ws = res.weights || {}, row = ws[String(weight)], hw = res.headlineWeight, pw = provOfSrc((res.extraWeightSrc && res.extraWeightSrc[weight]) || res.weightsSrc, p0);
+  if (row) { for (const k of ['rg', 'diff', 'intDiff']) if (row[k] != null) out[k] = { v: row[k], prov: pw, note: `${weight} lb` }; }
   if (!row || row.intDiff == null) for (const k of ['rg', 'diff', 'intDiff']) if (!out[k] && f[k] && f[k].v != null) {
     const note = hw == null ? 'weight not stated' : hw === weight ? `${hw} lb` : `${hw} lb value; ${weight} lb not printed`;
-    out[k] = { v: f[k].v, prov: p, note }; if (hw != null && hw !== weight) out[k].weightMismatch = true;
+    out[k] = { v: f[k].v, prov: pOf(f[k]), note }; if (hw != null && hw !== weight) out[k].weightMismatch = true;
   }
   if (out.condition) { const o = oilFromCondition(out.condition.v); if (o) out.oil = { v: o, prov: Object.assign({}, d, { ref: 'maker condition' }) }; }
-  return { fields: out, weights: Object.keys(ws).map(Number).sort((a, b) => b - a), source: p, title: src.title || null };
+  // USBC: an approval date, shown as "USBC approval" (never a release date). Several listings: the first date.
+  if (res.usbc && res.usbc.v) out.usbc = { v: res.usbc.v, prov: provOfSrc(res.usbc.src, USBC_SRC), note: res.usbc.dates && res.usbc.dates.length > 1 ? `first of ${res.usbc.dates.length} listings` : null };
+  if (out.usbc && !out.usbc.note) delete out.usbc.note;
+  return { fields: out, weights: Object.keys(ws).map(Number).sort((a, b) => b - a), source: pOf({ src }) || p0, title: src.title || null, types: [...new Set([...(res.sourceTypes || (res.status === 'found' ? ['maker'] : [])), ...(res.weightsSrc && res.weightsSrc.type && Object.keys(ws).length ? [res.weightsSrc.type] : [])])], chain: res.chain || null, conflicts: res.conflicts || [] };
 }
 // Maker wins; a catalogue value that disagrees is kept as a visible conflict, never silently dropped.
 const NUM_TOL = { rg: 0.005, diff: 0.002, intDiff: 0.002 };
@@ -180,7 +214,7 @@ export function merge(base = {}, maker = {}) {
     const b = base[k];
     if (b && b.v != null && k !== 'oil') {
       const differ = typeof x.v === 'number' && typeof b.v === 'number' ? Math.abs(x.v - b.v) > (NUM_TOL[k] || 0) : ['coverType', 'symmetry'].includes(k) && String(x.v) !== String(b.v);
-      if (differ) conflicts.push({ field: k, maker: x.v, other: b.v, otherProv: b.prov, note: x.note || null });
+      if (differ) conflicts.push({ field: k, maker: x.v, other: b.v, otherProv: b.prov, newProv: x.prov || null, note: x.note || null });
     }
     fields[k] = x;
   }

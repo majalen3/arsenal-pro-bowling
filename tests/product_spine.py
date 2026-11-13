@@ -31,8 +31,8 @@ CORE = [
     ('Open a ball\u2019s specs', 'arsenal', ['#view a[href^="#/ball/"] >> nth=0'], "() => location.hash.startsWith('#/ball/')"),
     ('Start a compare (pick a ball)', 'arsenal', ['#armMoreD summary', '#view .cmp-btn >> nth=0'], "() => !!document.querySelector('#tray:not([hidden])')"),
     ('Arsenal insights', 'arsenal', ['#view a[href="#/arsenal/insights"]'], "() => location.hash === '#/arsenal/insights'"),
-    ('Your strike line = the Lane view (v77)', 'tonight', ['#tnFindLine'], "() => location.hash.startsWith('#/lane') && !!document.querySelector('#ballBtn') && !!document.querySelector('#optimize')"),
-    ('Optimize (v77)', 'tonight', ['#tnFindLine', '#optimize'], "() => !!document.querySelector('#optOut:not([hidden])')"),
+    ('Your strike line = the Lane view (v78)', 'tonight', ['#tnFindLine'], "() => location.hash.startsWith('#/lane') && !!document.querySelector('#ballBtn') && !!document.querySelector('#optimize')"),
+    ('Optimize (v78)', 'tonight', ['#tnFindLine', '#optimize'], "() => !!document.querySelector('#optOut:not([hidden])')"),
     ('Targeting (Stand \u00b7 Aim)', 'tonight', ['#tnAimChip'], "() => location.hash.startsWith('#/target') && !!document.querySelector('#tgBall')"),
     ('Open last night', 'results', ['#resRecap'], "() => location.hash.startsWith('#/session/')"),
     ('Fix a frame', 'results', ['#resFix'], "() => location.hash.includes('fix=1')"),
@@ -95,8 +95,8 @@ async def main():
         await p.click('#tnFindLine'); await p.wait_for_selector('#optimize', timeout=20000); await p.wait_for_timeout(500)
         await p.click('#optimize'); await p.wait_for_selector('#optOut:not([hidden])', timeout=20000); await p.wait_for_timeout(300)
         sl = await p.evaluate("() => ({ pocket: document.querySelector('#optOut').dataset.pocket, was: document.querySelector('#optOut').dataset.was, est: !!document.querySelector('#optOut [data-prov=model]'), strikePct: /strike/i.test(document.querySelector('#optOut').innerText), lineSum: !!document.querySelector('#lineSum'), deck: !!document.querySelector('#deck'), old: !!document.querySelector('#slTiles'), scroll: document.documentElement.scrollHeight, h: innerHeight })")
-        check(p.url.split('#')[-1].startswith('/lane') and await cur() == 'tonight' and sl['est'] and not sl['strikePct'] and int(sl['pocket']) >= int(sl['was']) and sl['lineSum'] and sl['deck'] and not sl['old'] and sl['scroll'] <= sl['h'] + 1, f'v77 Your strike line = the Lane view, Optimize: stand/aim + pocket % (estimate) vs the line before, no strike %, no scroll {sl}')
-        await shot(p, '04b-lane-optimize.png', 'v77 Your strike line = the Lane view: lane picture, pin deck, stand/aim, one Optimize button with the pocket % (estimate) and miss room, Undo; everything else behind Details')
+        check(p.url.split('#')[-1].startswith('/lane') and await cur() == 'tonight' and sl['est'] and not sl['strikePct'] and int(sl['pocket']) >= int(sl['was']) and sl['lineSum'] and sl['deck'] and not sl['old'] and sl['scroll'] <= sl['h'] + 1, f'v78 Your strike line = the Lane view, Optimize: stand/aim + pocket % (estimate) vs the line before, no strike %, no scroll {sl}')
+        await shot(p, '04b-lane-optimize.png', 'v78 Your strike line = the Lane view: lane picture, pin deck, stand/aim, one Optimize button with the pocket % (estimate) and miss room, Undo; everything else behind Details')
         # ---- the game: focused chrome; in-game Lane/Targeting keep it
         await p.click(TAB('tonight')); await p.wait_for_selector('#tnStartBowl'); await p.click('#tnStartBowl'); await p.wait_for_selector('#qlStrike')
         for _ in range(3): await p.click('#qlStrike'); await p.wait_for_timeout(450)

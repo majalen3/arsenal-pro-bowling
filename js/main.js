@@ -20,7 +20,7 @@ listenInstall(); if (isStandalone()) askPersist();
 // Lane and Target are tools (no tab of their own): they open from the Stand · Aim chip in the Building and the game, and from Learn.
 route(/^\/lane$/, 'tonight', () => import('./screens/lane.js'));
 route(/^\/target$/, 'tonight', () => import('./screens/target.js'));
-// v77 (owner t143u): the strike line page (#/strike, screens/strike.js) is retired from navigation; the Lane view is the strike page and
+// v78 (owner t143u): the strike line page (#/strike, screens/strike.js) is retired from navigation; the Lane view is the strike page and
 // the Optimize button on it runs the Forgiving sweep. To restore the page: re-add the route below and drop the redirect (docs/CUTS_V73.md #22).
 // route(/^\/strike$/, 'tonight', () => import('./screens/strike.js'));
 redirect(/^\/strike$/, '/lane');

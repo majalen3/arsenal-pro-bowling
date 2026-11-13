@@ -32,7 +32,7 @@ import * as HAND from '../cc/hand.js';
 import { handAsk } from './hand.js';
 import { seedLine as seedShared, keepMoved as keepShared } from '../laneseed.js';
 export function render({ query } = {}) {
-  // v77 (owner t143u): the strike line tab opens THIS screen. #/strike redirects here with ?ball=<id>, so honour it.
+  // v78 (owner t143u): the strike line tab opens THIS screen. #/strike redirects here with ?ball=<id>, so honour it.
   const qb = query && query.get('ball') && ballFor(query.get('ball')); if (qb && modelOK(qb)) setBall(qb);
   const ballBtn = h('button', { class:'ball-btn', id:'ballBtn', 'aria-haspopup':'dialog', onclick:openBallSheet });
   const saveBtn = h('button', { class:'icon-btn', id:'saveBtn', 'aria-label':'Save this line', onclick:quickSave });
@@ -75,7 +75,7 @@ export function render({ query } = {}) {
     return { preset: S.pattern, ft: ft != null && presetFor(ft) === S.pattern ? ft : null }; };
   const aimCtx = () => ({ cat: app.ball, speed: +S.speed, rev: +S.rev, finish: S.finish, oil: +S.oil });
   const missing = h('p', { class:'card', id:'laneMissing', hidden:true, text:'Specs unverified or cover not supported. No model path: choose another ball, or check your specs in Bag.' });
-  // ---- v77 Optimize (owner t143u): one tap runs the existing Forgiving sweep (cc/strikeline.js forgive(), simulatePath unchanged) from the line
+  // ---- v78 Optimize (owner t143u): one tap runs the existing Forgiving sweep (cc/strikeline.js forgive(), simulatePath unchanged) from the line
   // on the lane, puts the best stand and target on the lane and shows pocket % (estimate) vs the line it replaced, the miss room, and Undo.
   const optBtn = h('button', { class:'btn primary block', id:'optimize', type:'button', onclick:() => optimize() }, h('span', { id:'optLbl', text:'Optimize' }));
   const optRow = h('div', { class:'opt-row', id:'optRow' }, optBtn);

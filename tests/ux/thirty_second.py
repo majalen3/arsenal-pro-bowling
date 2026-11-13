@@ -40,7 +40,7 @@ MEASURE = """() => {
 TAB = "(document.querySelector('#tabs') && getComputedStyle(document.querySelector('#tabs')).display !== 'none' ? document.querySelector('#tabs').getBoundingClientRect().top : innerHeight)"
 FIT = {
   'bag': "() => { const t = document.querySelector('#bagTonight').getBoundingClientRect(), d = document.querySelector('#bagPackGo').getBoundingClientRect(), lim = " + TAB + ", d2 = document.querySelector('#bagDock').getBoundingClientRect(); const open = [...document.querySelectorAll('#bagBody > :not(#bagTonight):not(#bagDock):not(details):not(.warn-line)')].filter(e => e.getBoundingClientRect().height > 0).map(e => e.id || e.className); return [t.bottom <= d2.top + 1 && d.bottom <= lim + 1 && !open.length, {bagBottom: Math.round(t.bottom), packBottom: Math.round(d.bottom), tabTop: Math.round(lim), openBlocks: open}]; }",
-  # v77 (owner t143u): the Lane view is the strike page: Details (the last control, collapsed) above the tab bar and no document scroll
+  # v78 (owner t143u): the Lane view is the strike page: Details (the last control, collapsed) above the tab bar and no document scroll
   'strike-lane': "() => { const lim = " + TAB + ", last = document.querySelector('#laneDetails'); const b = last ? last.getBoundingClientRect().bottom : 1e9; return [!!last && b <= lim + 1 && document.documentElement.scrollHeight <= innerHeight + 1, {detailsBottom: Math.round(b), tabTop: Math.round(lim), scroll: document.documentElement.scrollHeight}]; }",
 }
 fails = []
@@ -103,7 +103,7 @@ async def scripts(b):
     pinned = await p.evaluate("() => document.querySelector('#ballKeep').getAttribute('aria-pressed') === 'true'"); dt = time.time() - t0
     res['arsenal'] = {'taps': taps, 'seconds': round(dt, 1), 'pinned': pinned}
     check(pinned and taps <= 2 and dt < 15, f'[script] Arsenal: tap a ball, keep it in the bag in {taps} taps, {dt:.1f}s')
-    # Strike line (v77): 1 tap on the tab button opens the Lane view, 1 tap on Optimize = stand, target, pocket %, room. 2 taps from the tab.
+    # Strike line (v78): 1 tap on the tab button opens the Lane view, 1 tap on Optimize = stand, target, pocket %, room. 2 taps from the tab.
     t0 = time.time(); await p.goto(BASE + '?s3#/tonight'); await p.wait_for_selector('#tnFindLine')
     await p.click('#tnFindLine'); await p.wait_for_selector('#optimize', timeout=20000); await p.wait_for_timeout(500)
     await p.click('#optimize'); await p.wait_for_selector('#optOut:not([hidden])', timeout=20000); dt = time.time() - t0

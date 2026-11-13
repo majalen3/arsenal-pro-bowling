@@ -76,7 +76,7 @@ async def main():
         await p.evaluate("() => scrollTo(0, 0)")
         await shot(p, '04-packing-tonight.png', "Bag: plain 'Tonight\u2019s bag vs All my balls' line; Bring 3 after 4 -> 2 -> 3, additive, a ball with specs kept")
         await p.click('#bagPackGo'); await p.wait_for_function("() => location.hash.startsWith('#/tonight')"); await p.wait_for_selector('#tnStartBowl')
-        check(await p.locator('#tnFindLine').count() == 1 and await p.locator('#tnLaneLink').count() == 0, 'Pack -> Strike line: ONE strike-line button (v77: it opens the Lane view, which has Optimize)')
+        check(await p.locator('#tnFindLine').count() == 1 and await p.locator('#tnLaneLink').count() == 0, 'Pack -> Strike line: ONE strike-line button (v78: it opens the Lane view, which has Optimize)')
         await p.click('#tnStartBowl'); await p.wait_for_selector('#qlStrike')
         for _ in range(3): await p.click('#qlStrike'); await p.wait_for_timeout(450)
         g = await p.evaluate("() => ({ h: location.hash, tab: getComputedStyle(document.querySelector('#tabs')).display, me: !!document.querySelector('#meBtn'), help: !!document.querySelector('#helpToggle'), leave: !!document.querySelector('#tnLeave:not([hidden])'), title: document.querySelector('#tnTitle').textContent, extras: [...document.querySelectorAll('#view .milestone, #view [data-badge], #tnShareNight, #tnBagLink, #advEvent, #tnArsenal')].filter(x => x.offsetParent).map(x => x.id || x.className) })")

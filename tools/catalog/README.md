@@ -50,3 +50,6 @@ bowwwl, bowlingball.com or BowlingThisMonth (the generator rejects them). Search
 
 Not added: league-only or other family members nobody asked for (Zen Master, Zen U, Honey Badger Intensity/Revival, other Hustles,
 !Q Tour Pearl/Emerald/Sapphire). 163 rows: 160 maker, 3 archive, 0 secondary, 0 community, 0 unverified. Existing rows unchanged.
+
+## Spec fill (2026-11-12)
+`spec_fill.json`, `still_missing.csv` and `tools/catalog/spec_fill_build.mjs` record the legal search for rows with unpublished specs (maker page → archived maker → USBC list → secondary). It never edits `maker_rows.json`. See `docs/SPEC_FILL_2026-11-12.md`. Banned sources: bowlingballvideos, bowwwl, bowlingball.com, BowlingThisMonth.

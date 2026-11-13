@@ -18,7 +18,7 @@ def hb(s):   # "10\u00bd" -> 10.5 (bowler half boards, owner aim fix 2026-10-24)
 def check(cond, name):
     (passes if cond else fails).append(name); print(('PASS ' if cond else 'FAIL ') + name)
 
-OPEN_LANE = "() => { const d = document.querySelector('#laneDetails'); if (d) d.open = true; }"   # v77: the Lane view keeps its secondary tools under Details
+OPEN_LANE = "() => { const d = document.querySelector('#laneDetails'); if (d) d.open = true; }"   # v78: the Lane view keeps its secondary tools under Details
 async def ctx_for(b, kind, **kw):
     vp = {'width': 390, 'height': 844} if kind == 'phone' else {'width': 1280, 'height': 800}
     c = await b.new_context(viewport=vp, is_mobile=kind == 'phone', has_touch=kind == 'phone', device_scale_factor=2 if kind == 'phone' else 1, **kw)
@@ -73,7 +73,7 @@ async def run(b, kind):
     await p.goto(BASE + '#/lane'); await p.wait_for_selector('#ballBtn')
     await shot(p, f'{kind}-lane')
     # pin deck close-up: readable size, real pocket, text alternative, tone by result
-    await p.evaluate(OPEN_LANE); await p.wait_for_timeout(250)   # v77: the full-size pin deck is in Details
+    await p.evaluate(OPEN_LANE); await p.wait_for_timeout(250)   # v78: the full-size pin deck is in Details
     bb = await (await p.query_selector('#deck')).bounding_box()
     check(bb['width'] >= 180, t + f"pin deck is large enough ({round(bb['width'])}px wide)")
     lbl = await p.get_attribute('#deck', 'aria-label')
@@ -1402,7 +1402,7 @@ HELP_SCREENS = [('tonight', '#/tonight', '#tnAdvisor'), ('lane', '#/lane', '#opt
 VISIBLE_DOTS = "() => [...document.querySelectorAll('.help-dot')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && !e.closest('details:not([open]) > :not(summary)'); }).length"
 
 async def laneopt_cycle(b):
-    # v77 (owner t143u): the strike-line tab opens the Lane view; one Optimize button runs the Forgiving sweep on it; #/strike redirects here.
+    # v78 (owner t143u): the strike-line tab opens the Lane view; one Optimize button runs the Forgiving sweep on it; #/strike redirects here.
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
     await seed(p); await p.goto(BASE + '?sl#/bowl'); await p.wait_for_selector('#noBag'); await load_sample(p)
     await p.goto(BASE + '?sl1#/tonight'); await p.wait_for_selector('#tnFindLine')

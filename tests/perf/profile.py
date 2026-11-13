@@ -117,7 +117,7 @@ async def data_run(b):
     for i in range(RUNS):
         await p.evaluate("() => { window.__perf.entries.length = 0; }"); await p.click('#bagShake'); shakes.append(await settle(p, 500))
     res['bag'] = {'shake_tap_settle_ms': med(shakes), 'draw_ms': med([e[1] for e in await entries(p, 'bag.draw')])}
-    # v77 (owner t143u): the strike page is the Lane view; Optimize runs the Forgiving sweep on the tap (never on load). Measured on the tap.
+    # v78 (owner t143u): the strike page is the Lane view; Optimize runs the Forgiving sweep on the tap (never on load). Measured on the tap.
     ff = []
     for i in range(RUNS):
         SEQ[0] += 1; await p.goto(BASE + f'?perf=1&g={SEQ[0]}#/lane'); await p.wait_for_selector('#optimize', timeout=30000); await p.wait_for_timeout(300)

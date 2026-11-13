@@ -5,7 +5,7 @@ import * as H from '../cc/hand.js';
 const rerender = () => go(location.hash, { replace: true });
 function pick(v, close) { H.setHand(v); toast(`${H.HAND_LABEL[v]}. Change it any time in Me \u203a Bowler profile.`); if (close) { close(); setTimeout(rerender, 80); } else rerender(); }
 // Shown on the first hand-dependent screen while the hand is unset; gone for good after an answer or "Not now".
-export function handAsk({ compact = false } = {}) {   // v77: compact = one row (the Lane view has no room for the long card)
+export function handAsk({ compact = false } = {}) {   // v78: compact = one row (the Lane view has no room for the long card)
   if (!H.needsAsk()) return null;
   return h('div', { class: 'card hand-ask' + (compact ? ' compact' : ''), id: 'handAsk', role: 'group', 'aria-labelledby': 'handAskQ' },
     h('p', { id: 'handAskQ' }, h('b', { text: compact ? 'Which hand?' : 'Which hand do you bowl with?' }), compact ? null : ' Lane views and spare moves follow it.'),
