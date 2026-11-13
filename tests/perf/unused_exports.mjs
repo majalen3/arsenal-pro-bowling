@@ -11,6 +11,6 @@ for (const f of Object.keys(txt)) { if (!f.includes('/js/') || !f.endsWith('.js'
   for (const m of s.matchAll(/export\s*\{([^}]+)\}/g)) for (const n of m[1].split(',')) { const k = n.trim().split(/\s+as\s+/).pop(); if (k && k !== 'default') names.add(k); }
   for (const m of s.matchAll(/export\s+const\s*\{([^}]+)\}/g)) for (const n of m[1].split(',')) names.add(n.trim().split(':').pop().trim());
   for (const m of s.matchAll(/export\s+const\s+([A-Za-z_$][\w$]*)\s*=\s*[^;\n]*?,\s*([A-Za-z_$][\w$]*)\s*=/g)) names.add(m[2]);
-  for (const n of names) { const w = new RegExp('(?<![\\w$.])' + n.replace(/\$/g, '\\$') + '(?![\\w$])', 'g'); let elsewhere = 0; for (const g of Object.keys(txt)) if (g !== f && w.test(txt[g])) { elsewhere++; w.lastIndex = 0; } const own = (s.match(w) || []).length;
+  for (const n of names) { const w = new RegExp('(?<![\\w$])' + n.replace(/\$/g, '\\$') + '(?![\\w$])', 'g'); let elsewhere = 0; for (const g of Object.keys(txt)) if (g !== f && w.test(txt[g])) { elsewhere++; w.lastIndex = 0; } const own = (s.match(w) || []).length;
     if (!elsewhere && own <= 1) out.push([path.relative(ROOT, f), n]); } }
 console.log(out.length + ' exported names with no use outside their own definition:'); for (const [f, n] of out) console.log('  ' + f + '  ' + n);

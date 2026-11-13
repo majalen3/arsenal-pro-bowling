@@ -22,7 +22,6 @@ export function keepLine(id, { lay, eyes }) {
   if (cur && cur.lay === nx.lay && cur.eyes === nx.eyes) return;
   setPrefs({ myLines: Object.assign({}, prefs().myLines, { [id]: Object.assign(nx, { ts: Date.now() }) }) });
 }
-export function clearKept(id) { const m = Object.assign({}, prefs().myLines); if (!(id in m)) return; delete m[id]; setPrefs({ myLines: m }); }
 // The line for a catalog ball: {ml, stand, ft, kept}. ft = tonight's pattern length (null → assumed house shot).
 // ml is the 2-D model line; when the bowler kept their own line, ml.feet/ml.target are theirs (ml.kept = true) and the
 // model's breakpoint/holds numbers are dropped, because they describe the model's line, not this one.

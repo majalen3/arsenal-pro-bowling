@@ -19,7 +19,6 @@ export function parseFrac(s) {
   if (v == null || !Number.isFinite(v)) return null;
   return { v: Math.round(sign * v * 1e6) / 1e6, txt: (sign < 0 ? '-' : sm && sm[1] === '+' ? '+' : '') + t + (plus ? '+' : ''), plus };
 }
-export const fracText = f => (f ? f.txt : '');
 
 // PAP sign convention (explicit, shown on the form): "over" is inches from the centre of the grip toward the bowling side,
 // always positive; "up/down" is + when the PAP is above the horizontal midline of the grip, - when below (as printed

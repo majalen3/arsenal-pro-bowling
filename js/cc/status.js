@@ -62,7 +62,6 @@ export function itemOfOwned(P, id) {
   const o = P.owned[id]; if (!o) return null; const c = catOf(o.catalogId);
   return { ownedId: id, catalogId: o.catalogId || null, cat: c, name: shortName(o.name || (c && c.name) || 'Ball'), status: statusOf(o), benchmark: !!o.benchmark, finish: o.finish || 'factory', note: o.note || null };
 }
-export const bagIds = bag => (bag ? bag.slots.map(s => s.owned) : []);
 // What actually gets packed: slots whose ball is In my bag, or At home but swapped in on purpose (slot.fromHome).
 // Moving a ball to At home / the pro shop / Retired anywhere takes it out of the bag (and the ball chip) at once.
 export function packedIds(P, bag) {
