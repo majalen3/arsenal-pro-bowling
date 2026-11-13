@@ -40,7 +40,11 @@ const AIMS = []; for (let x = -AIM_MAX; x <= AIM_MAX; x += 0.5) AIMS.push(x);
 // start = { lay, arr }: the bowler's starting line from js/cc/line.js (sim2 #1: ONE answer to "where do I stand"). When given,
 // it is scored the same way and leads the result; the search's best line becomes a labelled alternative only when its
 // model pocket % is more than 3 points higher.
-export function find(cat, { speed = 15, rev = 220, ft = 38, spread, n = 200, seed = 31, top = 10, start = null } = {}) {
+// v76 (owner t140u) Forgiving line: the same search with a wider pool and a strict "highest pocket %" pick.
+//   top      how many laydowns (most central first) get a Monte Carlo score; 10 = the standard search
+//   tie      a line within `tie` points of the top pocket % may win on miss room instead (3 = standard; 0 = highest % only)
+//   variants also score the target half a board either side of each nominal line for the `variants` most central laydowns
+export function find(cat, { speed = 15, rev = 220, ft = 38, spread, n = 200, seed = 31, top = 10, start = null, tie = 3, variants = 0 } = {}) {
   if (!cat || !specOK(cat)) return { none: true, reason: 'Specs unverified or cover not supported: no model line' };
   const sd = spread || spreadFrom(null), keep = { pattern: S.pattern, finish: S.finish, oil: S.oil }, preset = presetFor(ft), t0 = Date.now();
   try {
@@ -58,8 +62,11 @@ export function find(cat, { speed = 15, rev = 220, ft = 38, spread, n = 200, see
     const pool = [...byLay.values()].map(c => { const arr = Math.round(c.arr * 2) / 2; if (arr === c.arr) return c; const a = shot(cat, c.lay, arr, speed, rev);
       return inWin(a) ? { lay: c.lay, arr, entry: a.entryBoard, angle: a.angle, bp: a.bpBoard, bpFt: a.bpFeet } : null; }).filter(Boolean);
     if (!pool.length) pool.push(...byLay.values());
-    for (const c of pool) { c.room = room(cat, c, speed, rev); }
-    pool.sort((a, b) => b.room - a.room); const pick = pool.slice(0, top);
+    for (const c of pool) setRoom(cat, c, speed, rev);
+    pool.sort((a, b) => b.room - a.room);
+    if (variants > 0) for (const c of pool.slice(0, variants)) for (const d of [-0.5, 0.5]) { const arr = c.arr + d, a = shot(cat, c.lay, arr, speed, rev);
+      if (inWin(a)) { const v = { lay: c.lay, arr, entry: a.entryBoard, angle: a.angle, bp: a.bpBoard, bpFt: a.bpFeet }; setRoom(cat, v, speed, rev); pool.push(v); } }
+    const pick = pool.slice(0, top + variants * 2);
     const mc = c => {
       const r = rng(seed); let hit = 0, angs = 0, k = 0;     // same seed per candidate: common random numbers, fair comparison
       for (let i = 0; i < n; i++) {
@@ -71,7 +78,7 @@ export function find(cat, { speed = 15, rev = 220, ft = 38, spread, n = 200, see
     for (const c of pick) mc(c);
     // best = max pocket %; within 3 points prefer more room (margin)
     pick.sort((a, b) => b.pocket - a.pocket || b.room - a.room);
-    const top1 = pick[0], close = pick.filter(c => top1.pocket - c.pocket <= 3).sort((a, b) => b.room - a.room || b.pocket - a.pocket);
+    const top1 = pick[0], close = pick.filter(c => top1.pocket - c.pocket <= tie).sort((a, b) => b.room - a.room || b.pocket - a.pocket);
     const best = close[0];
     const others = pick.filter(c => c !== best && Math.abs(c.lay - best.lay) >= 2);
     const roomier = others.filter(c => c.room > best.room).sort((a, b) => b.pocket - a.pocket)[0];
@@ -79,7 +86,7 @@ export function find(cat, { speed = 15, rev = 220, ft = 38, spread, n = 200, see
     if (start && Number.isFinite(+start.lay) && Number.isFinite(+start.arr)) {
       const st = { lay: +start.lay, arr: +start.arr, kind: 'start' }, a = shot(cat, st.lay, st.arr, speed, rev);
       Object.assign(st, { entry: a ? a.entryBoard : null, angle: a ? a.angle : null, bp: a ? a.bpBoard : null, bpFt: a ? a.bpFeet : null });
-      st.room = room(cat, st, speed, rev); mc(st);
+      setRoom(cat, st, speed, rev); mc(st);
       const better = best.pocket - st.pocket > 3 && (Math.abs(best.lay - st.lay) >= 1 || Math.abs(best.arr - st.arr) >= 0.5);
       const sens = sensAt(cat, st, speed, rev, sd), angleWin = ANG; ANG = true;
       return { none: false, angleWin, best: fmt(st), alt: better ? fmt(Object.assign({}, best, { kind: 'higher' })) : null, search: fmt(Object.assign({}, best, { kind: 'search' })),
@@ -90,10 +97,32 @@ export function find(cat, { speed = 15, rev = 220, ft = 38, spread, n = 200, see
     return { none: false, angleWin, best: fmt(best), alt: alt ? fmt(alt) : null, preset, n, seed, spread: sd, sens, ms: Date.now() - t0, tried: cands.length, scored: pick.length };
   } finally { ANG = true; Object.assign(S, keep); }
 }
-// miss room: how many boards at the arrows (either side, 0.5 steps) the shot can miss and still enter 17–18 (min of both sides)
-function room(cat, c, speed, rev) {
+// miss room: how many boards at the arrows (0.5 steps, up to 4) the shot can miss on each side and still enter 17–18. `Hi` = toward higher
+// board numbers (the bowler's left for a right-hander, right for a left-hander: boards count from the bowler's own gutter); `room` = the smaller side.
+function sides(cat, c, speed, rev) {
   const side = d => { let k = 0; for (let m = 0.5; m <= 4; m += 0.5) { const a = shot(cat, c.lay, c.arr + d * m, speed, rev); if (!inWin(a)) break; k = m; } return k; };
-  return Math.min(side(1), side(-1));
+  return { hi: side(1), lo: side(-1) };
+}
+function setRoom(cat, c, speed, rev) { const s = sides(cat, c, speed, rev); c.roomHi = s.hi; c.roomLo = s.lo; c.room = Math.min(s.hi, s.lo); }
+// Pure: the miss room in the bowler's own words. Right-hander: higher boards are to the left. Left-hander: to the right.
+export const missRoom = (c, lefty = false) => ({ left: lefty ? c.roomLo : c.roomHi, right: lefty ? c.roomHi : c.roomLo });
+// v76 (owner t140u) Forgiving line. Where to stand and aim so the most simulated shots still reach the pocket, for the bowler's own miss size.
+// Reads the engine only through find()/shot() (analyze -> simulatePath, unchanged). `miss` = 1 SD of the miss at the arrows in boards (null = measured
+// LaneTrax value, else the assumed 1.5); laydown, speed and rev variability stay as in find(). Returns the Standard line (the bowler's start line when
+// given) and the Forgiving line scored with the SAME shots (common random numbers), so the two percentages are comparable. If no line beats the
+// Standard one, Forgiving IS the Standard line (`same: true`): we say so instead of inventing a gain.
+export const MISS_CHOICES = [1, 1.5, 2, 3], MISS_MIN = 0.5, MISS_MAX = 4;
+export function withMiss(sd, miss) {
+  const base = sd || spreadFrom(null); if (miss == null || !Number.isFinite(+miss)) return base;
+  const v = Math.max(MISS_MIN, Math.min(MISS_MAX, +miss)); return Object.assign({}, base, { arrows: { v, src: 'user', label: `\u00b1${v} bds (your setting)` } });
+}
+export function forgive(cat, { speed = 15, rev = 220, ft = 38, spread, miss = null, start = null, n = 200, seed = 31 } = {}) {
+  const sd = withMiss(spread, miss), t0 = Date.now();
+  const wide = find(cat, { speed, rev, ft, spread: sd, start, n, seed, top: 40, tie: 0, variants: 8 });
+  if (wide.none) return wide;
+  const std = start ? wide.best : find(cat, { speed, rev, ft, spread: sd, n, seed }).best, found = start ? wide.search : wide.best;
+  const gain = found && found.pocket > std.pocket, forg = gain ? Object.assign({}, found, { kind: 'forgiving' }) : Object.assign({}, std, { kind: 'forgiving' });
+  return { none: false, standard: std, forgiving: forg, same: !gain, spread: sd, preset: wide.preset, angleWin: wide.angleWin, n, seed, ms: Date.now() - t0 };
 }
 // which 1-SD miss moves the entry most (for the "why not higher" note)
 function sensAt(cat, c, speed, rev, sd) {
@@ -102,7 +131,7 @@ function sensAt(cat, c, speed, rev, sd) {
     d(s => [c.lay, c.arr, speed + s * sd.speed.v, rev], 'speed'), d(s => [c.lay, c.arr, speed, rev + s * sd.rev.v], 'rev')];
   return all.sort((a, b) => b.v - a.v);
 }
-const fmt = c => ({ kind: c.kind || 'best', lay: c.lay, arrows: c.arr, entry: r1(c.entry), angle: r1(c.angle), bp: c.bp == null ? null : r1(c.bp), bpFt: c.bpFt == null ? null : Math.round(c.bpFt), room: c.room, pocket: c.pocket, angleAvg: c.angleAvg });
+const fmt = c => ({ kind: c.kind || 'best', lay: c.lay, arrows: c.arr, entry: r1(c.entry), angle: r1(c.angle), bp: c.bp == null ? null : r1(c.bp), bpFt: c.bpFt == null ? null : Math.round(c.bpFt), room: c.room, roomHi: c.roomHi, roomLo: c.roomLo, pocket: c.pocket, angleAvg: c.angleAvg });
 // coach voice, numbers first. feet = laydown + ball offset − drift (Breakdown Bowling); dots = straight line laydown → arrows.
 export function say(res, { offset = 7, drift = 0, mode = 'arrows', ball = '', kept = false } = {}) {
   if (res.none) return { line: res.reason, alt: '', why: '' };

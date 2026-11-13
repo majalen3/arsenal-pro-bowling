@@ -1399,6 +1399,42 @@ HELP_SCREENS = [('tonight', '#/tonight', '#tnAdvisor'), ('lane', '#/lane', '.lan
     ('card', '#/card', '#bcHead'), ('bag', '#/bag', '#bagCare')]
 VISIBLE_DOTS = "() => [...document.querySelectorAll('.help-dot')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && !e.closest('details:not([open]) > :not(summary)'); }).length"
 
+async def strikeline_cycle(b):
+    # v76 (owner t140u): ONE strike-line door on the tab, Standard | Forgiving line on the answer screen, miss room, Adjust -> Lane, no scroll.
+    errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
+    await seed(p); await p.goto(BASE + '?sl#/bowl'); await p.wait_for_selector('#noBag'); await load_sample(p)
+    await p.goto(BASE + '?sl1#/tonight'); await p.wait_for_selector('#tnFindLine')
+    check(await p.locator('#tnLaneLink').count() == 0 and (await p.inner_text('#tnFindLine')).startswith('Your strike line') and await p.locator('#tnStrike a').count() == 1, '[strikeline] the tab has ONE strike-line button (no separate Lane view button)')
+    await p.click('#tnFindLine'); await p.wait_for_selector('#slTiles [data-tile]'); await p.wait_for_timeout(200)
+    TILES = "() => [...document.querySelectorAll('#slTiles [data-tile]')].map(t => [t.dataset.tile, t.querySelector('.sl-v').textContent])"
+    POCKET = "() => { const m = document.querySelector('#slTag').textContent.match(/Pocket (\\d+)%/); return m ? +m[1] : null; }"
+    std_tiles = await p.evaluate(TILES); std_pocket = await p.evaluate(POCKET)
+    st = await p.evaluate("() => ({ std: document.querySelector('#slStd').getAttribute('aria-checked'), forg: document.querySelector('#slForg').getAttribute('aria-checked'), mode: document.querySelector('#slDiagram').dataset.mode, ends: document.querySelector('#slDiagram').dataset.endsAtPocket, group: document.querySelector('#slMode').getAttribute('role') })")
+    check(st == {'std': 'true', 'forg': 'false', 'mode': 'standard', 'ends': 'true', 'group': 'radiogroup'} and [t[0] for t in std_tiles] == ['stand', 'target', 'breakpoint', 'ball'], f'[strikeline] opens on Standard: 4 tiles, line ends at the pocket {st}')
+    fit = "() => { const d = document.querySelector('#slDetails').getBoundingClientRect().bottom, t = document.querySelector('#tabs').getBoundingClientRect().top; return [Math.round(d), Math.round(t), document.documentElement.scrollHeight <= innerHeight + 1]; }"
+    f = await p.evaluate(fit); check(f[0] <= f[1] and f[2], f'[strikeline] no scroll at 360x780, Details above the tab bar {f}')
+    sizes = await p.evaluate("() => ['#slStd', '#slForg', '#slUse', '#slAdjust'].map(s => Math.round(document.querySelector(s).getBoundingClientRect().height))")
+    check(min(sizes) >= 44, f'[strikeline] toggle, Use and Adjust are at least 44 px {sizes}')
+    await p.click('#slForg'); await p.wait_for_function("() => document.querySelector('#slDiagram')?.dataset.mode === 'forgiving'"); await p.wait_for_timeout(200)
+    fg_tiles = await p.evaluate(TILES); fg_pocket = await p.evaluate(POCKET); tag = await p.inner_text('#slTag')
+    check(len(fg_tiles) == 4 and await p.evaluate("() => document.querySelector('#slDiagram').dataset.endsAtPocket") == 'true' and await p.locator('#slDiagram .sl-miss').count() == 1, f'[strikeline] Forgiving: 4 tiles, line ends at the pocket, miss band drawn {fg_tiles}')
+    check(fg_pocket is not None and std_pocket is not None and fg_pocket >= std_pocket and 'Standard' in tag and 'room' in tag and 'estimate' in tag and 'strike' not in tag.lower(), f'[strikeline] Forgiving pocket {fg_pocket}% >= Standard {std_pocket}%, shows miss room, labelled estimate, no strike % [{tag}]')
+    f = await p.evaluate(fit); check(f[0] <= f[1] and f[2], f'[strikeline] Forgiving also fits without scroll {f}')
+    await p.reload(); await p.wait_for_selector('#slTiles [data-tile]'); await p.wait_for_timeout(300)
+    check(await p.evaluate("() => document.querySelector('#slForg').getAttribute('aria-checked')") == 'true', '[strikeline] the toggle is remembered')
+    await p.click('#slDetails summary'); await p.select_option('#slMissSel', '3'); await p.wait_for_timeout(500)
+    big_pocket = await p.evaluate(POCKET); check(big_pocket is not None and big_pocket <= fg_pocket, f'[strikeline] a bigger miss size (3 boards) never raises the pocket % ({fg_pocket} -> {big_pocket})')
+    check(await p.evaluate("() => !!document.querySelector('#slRoom') && document.querySelector('#slMissSel').value === '3'"), '[strikeline] Details: miss-size setting and the plain-words miss room')
+    await p.select_option('#slMissSel', 'auto'); await p.wait_for_timeout(400); await p.click('#slStd'); await p.wait_for_function("() => document.querySelector('#slDiagram')?.dataset.mode === 'standard'"); await p.wait_for_timeout(200)
+    check(await p.evaluate(TILES) == std_tiles, '[strikeline] back on Standard: the same line as before (nothing changed for anyone who does not use Forgiving)')
+    await p.click('#slForg'); await p.wait_for_timeout(300); await p.click('#slUse'); await p.wait_for_function("() => location.hash.startsWith('#/tonight')")
+    chip = await p.inner_text('#tnAimChip'); check(f"Stand {fg_tiles[0][1]}" in chip and fg_tiles[1][1] in chip.replace('\u00bd', '\u00bd'), f'[strikeline] Use this line keeps the Forgiving line on Tonight {chip} vs {fg_tiles[:2]}')
+    await p.goto(BASE + '?sl2#/strike'); await p.wait_for_selector('#slAdjust'); await p.click('#slAdjust'); await p.wait_for_selector('#ballBtn')
+    check('#/lane' in p.url, '[strikeline] Adjust opens the Lane view (Bag -> tab -> strike line -> Adjust = 3 taps)')
+    await p.set_viewport_size({'width': 390, 'height': 844}); await p.goto(BASE + '?sl3#/strike'); await p.wait_for_selector('#slTiles [data-tile]'); await p.add_style_tag(content=":root{--sat:47px !important;--sab:34px !important}"); await p.wait_for_timeout(200)
+    f = await p.evaluate(fit); check(f[0] <= f[1] and f[2], f'[strikeline] 390x844 with the iPhone safe area: no scroll {f}')
+    check(not errs, f'[strikeline] no page errors {errs[:2]}'); await c.close()
+
 async def armgrid_cycle(b):
     # v74 (owner t129u): My balls is a 3-across grid of picture + name tiles; tap -> the ball page with all its data; one sort control, remembered.
     errs = []; c = await ctx_for(b, 'phone'); p = await page(c, errs); await p.set_viewport_size({'width': 360, 'height': 780})
@@ -2050,7 +2086,7 @@ async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('account', lambda: account_cycle(b)), ('tonightfold', lambda: tonightfold_cycle(b)), ('ia5', lambda: ia5_cycle(b)), ('task12', lambda: task12_cycle(b)), ('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('export', lambda: export_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('armgrid', lambda: armgrid_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('account', lambda: account_cycle(b)), ('tonightfold', lambda: tonightfold_cycle(b)), ('ia5', lambda: ia5_cycle(b)), ('task12', lambda: task12_cycle(b)), ('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('export', lambda: export_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('armgrid', lambda: armgrid_cycle(b)), ('strikeline', lambda: strikeline_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)

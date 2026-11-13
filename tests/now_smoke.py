@@ -86,7 +86,7 @@ async def main():
   st=await p.evaluate("async () => (await import('./js/cc/ux.js')).load()")
   assert len(st['taps'])==1 and st['taps'][0]['ball']
   # SW caches v73 and new display helper; local flags are not event-log/sync records.
-  await p.wait_for_function("async () => (await caches.keys()).includes('arsenal-pro-v75') && !!navigator.serviceWorker.controller",timeout=30000)   # installed and controlling, not just opened
+  await p.wait_for_function("async () => (await caches.keys()).includes('arsenal-pro-v76') && !!navigator.serviceWorker.controller",timeout=30000)   # installed and controlling, not just opened
   await c.set_offline(True);await goto('bag?view=all','#armMilestones');assert await p.locator('[data-badge]').count()==3
   await shot('armory-offline',True);await c.set_offline(False)
   assert not errors,errors

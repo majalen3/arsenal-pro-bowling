@@ -122,6 +122,13 @@ async def data_run(b):
         SEQ[0] += 1; await p.goto(BASE + f'?perf=1&f={SEQ[0]}#/strike?find=1'); await p.wait_for_selector('#slTiles [data-tile]', timeout=30000); await p.wait_for_timeout(200)
         E = await entries(p, 'strike.find'); fl += [e[1] for e in E]
     res['strike'] = {'find_ms': med(fl)}
+    # v76 Forgiving line: the sweep runs only when the toggle is tapped, so it is measured on its own (and the second tap is a cache hit)
+    ff = []
+    for i in range(RUNS):
+        SEQ[0] += 1; await p.goto(BASE + f'?perf=1&g={SEQ[0]}#/strike?find=1'); await p.wait_for_selector('#slTiles [data-tile]', timeout=30000); await p.wait_for_timeout(200)
+        await p.evaluate("() => { window.__perf.entries.length = 0; }"); await p.click('#slForg'); await p.wait_for_function("() => document.querySelector('#slDiagram')?.dataset.mode === 'forgiving'", timeout=30000); await p.wait_for_timeout(200)
+        ff += [e[1] for e in await entries(p, 'strike.forgiving')]; await p.click('#slStd'); await p.wait_for_timeout(300)
+    res['strike']['forgiving_ms'] = med(ff)
     # scoring tap-to-paint: on the game page, a strike every ~600 ms
     await p.goto(BASE + '?perf=1#/tonight'); await p.wait_for_timeout(500)
     try:
