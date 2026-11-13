@@ -25,6 +25,9 @@ const LABEL = { rg: 'RG', diff: 'Differential', intDiff: 'Int. diff / mass bias'
 const ORDER = ['rg', 'diff', 'intDiff', 'coverstock', 'coverType', 'finish', 'core', 'symmetry', 'releaseDate', 'usbc', 'condition'];
 const LEVEL_OIL = { 5: ['heavy'], 4: ['heavy', 'medium'], 3: ['medium'], 2: ['medium', 'light'], 1: ['light'] };
 const OFFLINE_MSG = 'Can\u2019t reach the maker list offline. Type the name and specs.';
+// "Found on the maker page" / "Found in a saved copy of the maker page" / "Found from USBC and a public reference (not the maker)".
+const TYPE_WORDS = { maker: 'the maker page', 'archived-maker': 'a saved copy of the maker page', usbc: 'the USBC list', secondary: 'a public reference (not the maker)' };
+const foundWhere = res => { const t = (res.sourceTypes && res.sourceTypes.length ? res.sourceTypes : ['maker']); return 'Found on ' + (t.length === 1 && t[0] === 'maker' && res.source && res.source.host ? res.source.host : t.map(x => TYPE_WORDS[x] || x).join(' and ')); };
 const offline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
 // Typed specs (offline or no maker page). USBC limits: RG 2.430-2.890, differential up to 0.060; outside them it is a typo.
 const TYPE = { rg: { lab: 'RG', min: 2.43, max: 2.89, ph: 'e.g. 2.50' }, diff: { lab: 'Differential', min: 0, max: 0.06, ph: 'e.g. 0.045' } };
@@ -85,14 +88,20 @@ export async function render() {
     if (st.ctl) st.ctl.abort();
     const e = st.pick, supported = A.LOOKUP_BRANDS.includes(e.brand);
     if (offline()) { st.ctl = null; st.lookState = 'miss'; st.lookMsg = OFFLINE_MSG; draw(); return; }
-    if (!supported) { st.lookState = 'skip'; st.lookMsg = A.UNSUPPORTED[e.brand] || `No maker lookup for ${e.brand} yet; showing catalogue values.`; draw(); return; }
-    const ctl = st.ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 25000), t0 = performance.now();
-    st.missSource = null; st.missSearch = null;
-    st.lookState = 'busy'; st.lookMsg = `Looking up ${e.brand} ${e.name} on the maker site\u2026`; draw();
+    // t139u: the server runs the whole legal source chain (maker page, archived maker page, USBC list, public reference), so a brand
+    // without a maker route (e.g. KR Strikeforce, Epic) is still looked up; the server says 'unsupported' when nothing at all was found.
+    if (!supported && !e.brand) { st.lookState = 'skip'; st.lookMsg = A.UNSUPPORTED[e.brand] || `No maker lookup for ${e.brand} yet; showing catalogue values.`; draw(); return; }
+    const ctl = st.ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 35000), t0 = performance.now();
+    st.missSource = null; st.missSearch = null; st.chainText = null;
+    st.lookState = 'busy'; st.lookMsg = `Looking up ${e.brand} ${e.name}: maker page, archived copy, USBC list\u2026`; draw();
     try {
       const res = await lookup(qs, ctl.signal); if (ctl !== st.ctl) return;
       const ms = Math.round(performance.now() - t0);
-      if (res.status === 'found') { st.look = res; st.lookState = 'found'; st.lookMsg = `Found on ${res.source.host} in ${(ms / 1000).toFixed(1)} s${res.cached ? ' (cached)' : ''}.`; }
+      st.chainText = A.chainSummary(res);
+      if (res.status === 'found') { st.look = res; st.lookState = 'found'; st.lookMsg = `${foundWhere(res)} in ${(ms / 1000).toFixed(1)} s${res.cached ? ' (cached)' : ''}.`; }
+      else if (res.status === 'usbc-only') { st.look = res; st.lookState = 'miss'; st.missSearch = res.searchUrl || null;
+        st.lookMsg = `No maker page or saved copy lists specs for this ball. The USBC list approves it (${res.usbc.v}).` + (e.src === 'maker' ? '' : ' Showing catalogue values.'); }
+      else if (res.status === 'unsupported' && !(res.chain || []).some(x => x.outcome === 'found')) { st.lookState = 'skip'; st.lookMsg = A.UNSUPPORTED[e.brand] || res.why || `No maker lookup for ${e.brand} yet; showing catalogue values.`; }
       else if (res.status === 'candidates') { st.makerCands = res.candidates || []; st.lookState = 'cands'; st.lookMsg = `${st.makerCands.length} pages on the ${e.brand} site could be this ball. Pick one.`; }
       else { st.lookState = 'miss'; st.missSource = res.source && res.source.url || null; st.missSearch = res.searchUrl || null;
         st.lookMsg = (res.noSpecs || (res.source && res.source.url) ? 'Found the maker page, but it lists no RG or differential for this ball.' : res.why || 'No maker page found.') + (e.src === 'maker' ? '' : ' Showing catalogue values.'); }
@@ -133,20 +142,23 @@ export async function render() {
     for (const k of ORDER) {
       const x = fields[k]; if (!x && (k === 'year' || k === 'condition' || k === 'intDiff' && !made)) continue;
       dl.append(h('dt', { text: LABEL[k] }), h('dd', { 'data-f': k }, x ? fmt(k, x.v) : h('span', { class: 'muted', 'data-missing': '', title: 'not published', text: '\u2014' }),
-        x && x.note ? h('span', { class: 'muted small', text: ' ' + x.note }) : null, x ? prov(x.prov && x.prov.kind, chip(x.prov)) : null,
+        x && x.note ? h('span', { class: 'muted small', text: ' ' + x.note }) : null, x ? prov(x.prov && (x.prov.archived ? 'archived' : x.prov.secondary ? 'secondary' : x.prov.kind), A.sourceLabel(x.prov) || chip(x.prov)) : null,
         x && x.weightMismatch ? prov('assumed', 'other weight') : null));
     }
     const gone = ORDER.filter(k => !fields[k] && !(k === 'year' || k === 'condition' || k === 'intDiff' && !made)).map(k => LABEL[k]);
     const specNote = gone.length ? h('p', { class: 'small muted', id: 'abSpecNote', text: `Not published: ${gone.join(', ')}. Type them from the box if you have them.` }) : null;
-    const lvl = G.cellOfCat(cat).level;
+    const nonMaker = A.nonMakerFields(fields), lvl = G.cellOfCat(cat).level;
     const srcOf = made && made.source.url ? { url: made.source.url, ref: made.source.ref, date: made.source.date } : e.source ? { url: e.source, ref: e.specStatus === 'archive' && e.original ? `archived copy of ${new URL(e.original).host.replace(/^www\./, '')} (Wayback Machine)` : e.specStatus === 'secondary' && e.attribution ? e.attribution : new URL(e.source).host.replace(/^www\./, ''), date: e.checked } : null;
     const src = srcOf ? h('p', { class: 'small', id: 'abSource' }, 'Source: ', h('a', { class: 'srclink', href: srcOf.url, target: '_blank', rel: 'noopener noreferrer', text: srcOf.ref }), srcOf.date ? ` \u00b7 read ${srcOf.date}` : '') : null;
     detail.append(h('div', { class: 'card', id: 'abConfirm' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: `2. Check ${e.brand} ${e.name}` }), helpDot('eq-cover-types', 'Cover types')),
       h('div', { class: 'fld' }, h('span', {}, 'Ball weight ', st.weightSet ? null : prov('assumed', 'assumed 15 lb')),
         segmented('Ball weight', wts.map(w => [String(w), w + ' lb']), String(st.weight), v => { st.weight = +v; st.weightSet = true; draw(); }, 'wide')),
-      dl, specNote, src, e.flag ? h('p', { class: 'small', id: 'abFlag', text: e.flag }) : null,
+      dl, specNote, src,
+      st.chainText ? h('p', { class: 'small muted', id: 'abChain', text: 'Checked: ' + st.chainText }) : null,
+      nonMaker.length ? h('p', { class: 'small', id: 'abNonMaker', role: 'note', text: `${nonMaker.map(k => LABEL[k]).join(', ')}: not from the maker\u2019s current page (see each chip). Check against the box, then tap Add.` }) : null,
+      e.flag ? h('p', { class: 'small', id: 'abFlag', text: e.flag }) : null,
       conflicts.length ? h('div', { id: 'abConflicts' }, h('p', { class: 'small' }, h('b', { text: 'Sources disagree; maker value used.' })),
-        h('ul', { class: 'plain small' }, ...conflicts.map(c => h('li', { 'data-conflict': c.field, text: `${LABEL[c.field]}: maker ${fmt(c.field, c.maker)}${c.note ? ' (' + c.note + ')' : ''} vs ${chip(c.otherProv)} ${fmt(c.field, c.other)}` })))) : null,
+        h('ul', { class: 'plain small' }, ...conflicts.map(c => h('li', { 'data-conflict': c.field, text: `${LABEL[c.field]}: ${c.newProv && (c.newProv.archived || c.newProv.secondary) ? (A.sourceLabel(c.newProv)) : 'maker'} ${fmt(c.field, c.maker)}${c.note ? ' (' + c.note + ')' : ''} vs ${chip(c.otherProv)} ${fmt(c.field, c.other)}` })))) : null,
       lvl == null ? h('div', { class: 'fld', id: 'abLevel' }, h('span', { text: 'No oil condition printed. Where would you use it?' }),
         segmented('Oil strength', [['5', 'Heavy'], ['4', 'Med-hvy'], ['3', 'Medium'], ['2', 'Med-lt'], ['1', 'Light']], st.level ? String(st.level) : null, v => { st.level = +v; draw(); }, 'wide')) : null));
     // ---- 3. engine card
