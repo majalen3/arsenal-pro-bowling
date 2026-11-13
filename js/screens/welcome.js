@@ -27,12 +27,6 @@ function unknownStepper(k, p, set, opts) {
   return row;
 }
 // Kept for older importers: empty always means empty, including a deliberate all-selected array.
-export function ownedPicker(p) {
-  const sel = new Set(Array.isArray(p.owned) ? p.owned : []);
-  const list = h('div', { class:'own-grid' });
-  for (const b of balls) list.append(h('button', { class:'own', type:'button', 'aria-pressed':String(sel.has(b.id)), onclick:e => { sel.has(b.id) ? sel.delete(b.id) : sel.add(b.id); e.currentTarget.setAttribute('aria-pressed', String(sel.has(b.id))); p.owned = [...sel]; p.ownedVersion = 1; } }, b.name));
-  return list;
-}
 export async function render({ query } = {}) {
   const db = await ready(), reviewLegacy = !!query?.has('review') && db.meta.ownershipReview?.needed;
   const draft = [], batchId = 'onboard-' + uuid(); let limit = 6, saving = false, reviewing = false;

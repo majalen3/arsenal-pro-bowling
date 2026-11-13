@@ -381,3 +381,10 @@ The full audit also exposed pre-existing small accessibility defects: literal nu
 - **Sort uses only real data:** Name, Brand (catalogue maker; balls with no catalogue match go last), Strongest to weakest (the app's oil-tag level 1-5; unknown last), Newest (when the ball was added), Most used (games logged). The choice is kept in `ap_prefs.armSort`. The search stays.
 - **Shelves unchanged.** Shelf view, milestones and Old Friends stay folded below (v73). The Bag, Score page and Find my strike line no-scroll budgets are untouched.
 - **Test note.** The SW upgrade test serves a v73 and a v74 checkout from the same server. If the v73 checkout's `sw.js` is newer than the v74 one, the server answers 304 and no update is seen. That is a test artefact; production serves the current file.
+
+## v75 performance pass (owner t134u)
+- **Measure, then change.** Every change has a before/after in docs/PERF_LEARNINGS.md; the first guess (replay cost) was wrong, the profile found `isSplit`.
+- **Memoise pure functions, do not cache shared state.** `isSplit` is keyed by a pin bitmask (max 1,023 entries, cannot go stale). The projection cache already existed; `proj()` now keys `registerOwned` on projection identity.
+- **Opt-in marks only.** `js/perf.js` does nothing unless `?perf=1` or `localStorage.ap_perf='1'`; no network, no third-party script, CSP unchanged. It is in the service-worker list.
+- **Budget gate is local.** `tests/perf_budget.py`; CI wiring needs a workflow-file change (token scope risk), so it is documented, not wired. Lighthouse 0.85 is a target; the CI gate stays 0.80 because of +-0.05 run noise.
+- **Dead code needs two proofs** (static scan incl. `Namespace.fn` + Chromium coverage) and never touches migration/backup/recovery/sync. A first scan that missed namespace calls was caught before commit (docs/REMOVED_LOG.md).

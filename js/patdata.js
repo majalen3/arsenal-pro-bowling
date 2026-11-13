@@ -12,4 +12,3 @@ export async function loadSteps(slug) {
   if (!steps) { const r = await fetch('data/patterns-steps.json'); if (!r.ok) throw new Error('HTTP ' + r.status); steps = await r.json(); }
   return (steps[slug] || []).map(([dir, bl, br, loads, ft0, ft1, mics]) => ({ dir, bl, br, loads, ft0, ft1, mics }));
 }
-export const lenOf = ft => ft == null ? '' : ft < 36 ? 'Short' : ft <= 41 ? 'Medium' : 'Long';

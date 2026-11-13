@@ -45,6 +45,7 @@ function pedestal(it, why) {
 // page has all of it (specs, layout, surface, games, Keep in bag, edit, status/retire). One sort control, remembered. Keep is a
 // corner badge only, so the page stays Arsenal -> ball = 2 taps. The shelves, milestones and Old Friends stay folded below (v73).
 import { levelOf } from '../cc/rank.js';
+import * as PERF from '../perf.js';
 import { prefs, setPrefs } from '../store.js';
 import * as KP from '../cc/keep.js';
 function mine(P, rerender) {
@@ -55,6 +56,7 @@ function mine(P, rerender) {
   const sel = h('select', { id:'armSort', class:'arm-sort', 'aria-label':'Sort my balls' }, ...A.SORTS.map(([k, l]) => h('option', { value:k, selected:k === sort, text:l })));
   const grid = h('ul', { class:'plain arm-grid', id:'armList', 'aria-label':'My balls' });
   const fill = () => {
+    const endFill = PERF.span('arsenal.grid', list.length);
     const q = (st.mq || '').trim().toLowerCase(), key = sel.value;
     const rows = A.sortBalls(list.filter(it => !q || it.name.toLowerCase().includes(q)), key, { level:it => levelOf(it.cat), created:it => (P.owned[it.id] || {}).createdTs || 0 });
     grid.replaceChildren(...rows.map(it => {
@@ -66,6 +68,7 @@ function mine(P, rerender) {
           on ? h('span', { class:'arm-tile-keep', 'data-kept':'', 'aria-hidden':'true', html:icon('pin', 'pin-on') }) : null));
     }));
     if (q && !rows.length) grid.append(h('li', { class:'muted small arm-none', text:'No ball by that name.' }));
+    endFill();
   };
   find.oninput = () => { st.mq = find.value; fill(); };
   sel.onchange = () => { setPrefs({ armSort:sel.value }); fill(); };

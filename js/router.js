@@ -1,6 +1,7 @@
 // Hash router (IA P2): #/tonight, #/bowl, #/results, #/bag, #/learn, #/me, tools #/lane and #/target, details (#/ball/:id, #/session/:id, #/pattern/:slug, ...). Old hashes redirect.
 // Browser/Android back works through history; sheets push a history entry so back closes them first.
 import { nav, topSheet, closeAllSheets, $ } from './ui.js';
+import * as PERF from './perf.js';
 const routes = [];
 let cur = null, latest = null, first = true, mountEl = null, onTab = null, decorate = null, popped = false, scrollT = 0;
 try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) { /* older browsers */ }
@@ -44,14 +45,15 @@ async function render() {
   let m = null, r = routes.find(x => (m = path.match(x.re)));
   if (!r) { r = routes.find(x => x.re.test('/bag')) || routes[0]; m = ['/bag']; }
   const token = {}; latest = token;
-  const mod = await r.load();
+  const pLoad = PERF.span('route.load', path), mod = await r.load(); pLoad();
   if (latest !== token) return;
   const tab = typeof r.tab === 'function' ? r.tab(path, query) : r.tab;   // a route may pick its tab from the query (#/bag?view=all = Arsenal)
   const prev = cur; cur = { token, tab, path };
-  const scr = await mod.render({ params:m.slice(1).map(decodeURIComponent), query });
+  const pRender = PERF.span('route.render', path), scr = await mod.render({ params:m.slice(1).map(decodeURIComponent), query }); pRender();
   if (latest !== token) { scr.destroy && scr.destroy(); return; }
   if (prev && prev.scr && prev.scr.destroy) prev.scr.destroy();
   cur.scr = scr;
+  const pMount = PERF.span('route.mount', path);
   mountEl.replaceChildren(scr.el);
   if (decorate) { try { decorate(scr.el, path); } catch (e) { console.error(e); } }
   document.title = scr.title ? `${scr.title} · Arsenal Pro` : 'Arsenal Pro';
@@ -64,4 +66,5 @@ async function render() {
   if (!first) { if (!back) { window.scrollTo(0, 0); requestAnimationFrame(() => { if (scrollY) window.scrollTo(0, 0); }); } const hd = scr.el.querySelector('h1'); if (hd) { hd.tabIndex = -1; hd.focus({ preventScroll:true }); } }
   first = false;
   scr.mounted && scr.mounted();
+  pMount(); if (PERF.ON) requestAnimationFrame(() => requestAnimationFrame(() => PERF.mark('screen.painted ' + path)));
 }

@@ -2,6 +2,7 @@
 // A lane picture whose drawn line ends at the pocket, four big tiles (stand, target, breakpoint, ball) and an "estimate" tag;
 // one primary button (Use this line). Everything else (why, alternative line, inputs, model limits, hand edit) is behind Details.
 // Values come straight from cc/strikeline.js find() (the same search Targeting runs); nothing here changes simulatePath.
+import * as PERF from '../perf.js';
 import { h, toast } from '../ui.js';
 import { go } from '../router.js';
 import { ready, proj } from '../hub.js';
@@ -62,7 +63,7 @@ export async function render({ query } = {}) {
     out.replaceChildren(h('p', { class: 'muted', text: 'Finding your line\u2026' }));
     setTimeout(() => {
       const L = lineFor(cat, { speed, rev, ft: sess.ft != null ? +sess.ft : null }), st = L && L.ml && !L.ml.none ? L.ml : null;
-      const res = F.find(cat, { speed, rev, ft, spread: F.spreadFrom(P), start: st ? { lay: st.feet, arr: st.target } : null });
+      const endFind = PERF.span('strike.find'), res = F.find(cat, { speed, rev, ft, spread: F.spreadFrom(P), start: st ? { lay: st.feet, arr: st.target } : null }); endFind();
       if (res.none) { out.replaceChildren(h('p', { class: 'coach', id: 'slNone', text: res.reason })); return; }
       const w = F.say(res, { offset, drift, mode: 'arrows', ball: cat.name, kept: !!keptLine(ballKey(cat)) }), c = res.best;
       const pts = lanePoints(c, { lefty }), end = pts[pts.length - 1], pk = lanePoints({ lay: 0, arrows: 0, bp: null, bpFt: null }, { lefty }).pop();

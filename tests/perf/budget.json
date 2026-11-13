@@ -1,0 +1,49 @@
+{
+ "_doc": "Limits for tests/perf_budget.py. Changelog in docs/PERF_BUDGET.md. Times: measured after the v75 pass at 4x CPU on this box x ~1.6. Bytes/counts: measured + small headroom.",
+ "static": {
+  "js_bytes_max": 1076000,
+  "css_bytes_max": 82500,
+  "modules_max": 121,
+  "sw_shell_max": 126
+ },
+ "replay": {
+  "project_large_ms_max": 12,
+  "project_small_ms_max": 1.0
+ },
+ "browser": {
+  "cold_js_bytes_max": {
+   "cold_bag": 321225,
+   "cold_arsenal": 281237,
+   "cold_strikeline": 391352,
+   "cold_log": 316413
+  },
+  "cold_modules_max": {
+   "cold_bag": 52,
+   "cold_arsenal": 46,
+   "cold_strikeline": 56,
+   "cold_log": 53
+  },
+  "cold_fcp_ms_max": {
+   "cold_bag": 400,
+   "cold_arsenal": 400,
+   "cold_strikeline": 400,
+   "cold_log": 400
+  },
+  "route_painted_ms_max": {
+   "route_bag": 710,
+   "route_arsenal": 820,
+   "route_log": 1030,
+   "route_strikeline": 720,
+   "route_game": 680
+  },
+  "score_tap_ms_max": 210,
+  "arsenal_sort_ms_max": 25,
+  "bag_shake_ms_max": 190,
+  "strike_find_ms_max": 80,
+  "game_longtasks_max": 4
+ },
+ "lighthouse": {
+  "performance_target": 0.85,
+  "note": "target for the local run; the CI journeys gate stays at 0.80 (tests/journeys/lighthouse.py) because Lighthouse varies by +-0.05 run to run"
+ }
+}

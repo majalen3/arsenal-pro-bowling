@@ -2,6 +2,13 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## Performance and cleanup pass — 2026-11-12 America/Chicago; offline build v75
+No screens, wording or saved data changed; simulatePath unchanged, equivalence 7500/0. Measured at 4x CPU throttle on 50 balls / 500 games (docs/PERF_LEARNINGS.md):
+- **Scoring tap to painted 584 -> 130 ms**, Log book render 1,648 -> 454 ms, Strike line screen 977 -> 264 ms, game page 485 -> 245 ms. Cause: the split check was recomputed for every first ball on every redraw; it is now memoised (all 1,023 leaves tested equal to the old rule).
+- Owned balls are registered once per new projection instead of on ~150,000 lookups; `legacyLineKey` no longer scans every owned ball per ball.
+- Tried hinting every route's static module closure with `modulepreload`; Lighthouse got worse (Log book 0.96 -> 0.88), so it was reverted and does not ship.
+- New: opt-in local perf marks (`?perf=1`, no network), profiling tools in `tests/perf/`, a budget gate `tests/perf_budget.py` with `docs/PERF_BUDGET.md`, the service-worker precache test, `docs/TECH_DEBT.md`, `docs/REMOVED_LOG.md` (5 proven-dead functions removed), `docs/PERF_LEARNINGS.md`.
+
 ## Arsenal grid — 2026-11-12 America/Chicago; offline build v74
 - **My balls is a grid**: 3 tiles across at 360-414 px, each only the ball picture (our own preview) and its name. A kept ball has a small pin badge in the corner.
 - **Tap a ball, get everything**: the ball page now opens with **Keep in bag** (on/off), then Record (layout, surface, games logged, best game), specs open, status incl. Retired, edit and the surface log. Arsenal then ball is 2 taps; pinning is 2 taps.
