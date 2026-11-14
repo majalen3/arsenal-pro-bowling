@@ -30,7 +30,7 @@ sheet = Image.new('RGB', (GAP + ICON + GAP + len(COLS) * (W + GAP), top + len(BR
 g.text((GAP, 8), 'Arsenal Pro looks at 390x844, half size.   Columns: dark Bag, Lane, Score, Arsenal  |  light Bag, Lane, Score, Arsenal  |  Me > Look picker.', fill='#ddd', font=F2)
 g.text((GAP, 26), 'Icon A is the built v79 mark. B and C are the same mark recolored as concepts (not shipped).', fill='#aaa', font=F2)
 for r, (b, label) in enumerate(BR):
-    y = top + r * (H + LAB + GAP); g.text((GAP, y + 4), label, fill='#fff', font=F)
+    y = top + r * (H + LAB + GAP); g.text((GAP, y + LAB + ICON + 8), label.replace(' (default)', '\n(default)').replace('. ', '.\n'), fill='#fff', font=F)
     sheet.paste(IC[b].resize((ICON, ICON)), (GAP, y + LAB))
     for c, (mode, scr) in enumerate(COLS):
         x = GAP + ICON + GAP + c * (W + GAP); im = Image.open(os.path.join(d, f'{b}_{mode}_{scr}.png')).convert('RGB').resize((W, H), Image.LANCZOS)

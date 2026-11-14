@@ -41,6 +41,7 @@ Lighthouse is noisy here: the same build scored 0.79, 0.86, 0.88, 0.79, 0.79 on 
 |---|---|---|
 | v75 | Budget created from the v75 measurements above | first budget |
 | v75 | Tighten `#/arsenal` cold JS to 5% over its pre-preload measurement (265,464 B, 44 modules) | the preload experiment was reverted |
+| v79 (measured) | `--browser --runs 3`: 29/29 within budget; cold FCP 92-96 ms; Bag 411 ms, Arsenal 412, Log book 652, Strike line 378, Game 402; Optimize tap 47 ms; JS 1,066,756 B, 119 modules | no regression from the look tokens |
 | v79 | CSS limit 83,500 -> 85,000; precache 125 | owner t144u: `css/theme.css` (3 looks x light/dark as tokens). Second render-blocking stylesheet on the same origin, parallel with app.css; no JS module added |
 | v78 | The Forgiving row became the Lane Optimize tap row (150 ms, same sweep); removed the Strike finder (80 ms) row because `#/strike` is retired |
 | v76 | Added the Forgiving line sweep row (150 ms) | owner t140u optional miss model; the Strike finder limit (80 ms) is unchanged because the sweep never runs on load |
