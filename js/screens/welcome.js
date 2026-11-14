@@ -67,7 +67,8 @@ export async function render({ query } = {}) {
       h('details', { class:'card', id:'welManual' }, h('summary', { text:'Ball not found? Add by name' }), manualForm()),
       h('p', { class:'small', text:`${A.catalog().length} searchable catalog models, not every ball ever made. Catalog facts may describe a reference weight; your weight stays unknown. Missing or unsupported specs have no model path.` }),
       h('div', { class:'btn-grid' }, h('a', { class:'btn ghost', id:'welMaker', href:'#/add-ball' }, 'Maker lookup / typed specs'), h('a', { class:'btn ghost', href:'#/drill-card' }, 'Existing drill-card scan')),
-      h('a', { class:'btn ghost block', href:'#/me' }, 'Restore a file or sign in'));
+      h('a', { class:'btn ghost block', href:'#/me' }, 'Restore a file or sign in'),
+      h('p', { class:'small muted', id:'welLegal' }, 'Your data stays on this phone unless you choose otherwise. ', h('a', { href:'privacy.html', id:'welPrivacy' }, 'Privacy'), ' \u00b7 ', h('a', { href:'terms.html', id:'welTerms' }, 'Terms')));
       drawResults(); }
     paintChosen();
   }

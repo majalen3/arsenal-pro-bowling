@@ -151,15 +151,15 @@ Generated from `tools/zones/zones.json` (`node tools/zones/zonedoc.mjs --write`)
 - **Owns:** `js/store.js`, `js/hub.js`, `js/sync.js`, `js/account.js`, `js/data/db.js`, `js/data/idb.js`, `js/data/backup.js`, `js/data/local_recovery.js`, `js/data/privacy.js`, `js/data/foundation.js`, `js/data/seed.js`, `js/data/sync.js`, `js/data/account.js`, `js/data/team.js`, `js/cc/protect.js`, `js/screens/recovery.js`, `js/screens/account.js`, `js/cc/hand.js`, `js/screens/hand.js`, `js/cc/wake.js`
 - **Public interface:** `js/store.js`, `js/hub.js`, `js/sync.js`, `js/account.js`, `js/data/backup.js`, `js/data/local_recovery.js`, `js/data/team.js`, `js/data/account.js`, `js/data/db.js`, `js/data/seed.js`, `js/data/foundation.js`, `js/cc/protect.js`, `js/screens/recovery.js`, `js/screens/account.js`, `js/cc/hand.js`, `js/screens/hand.js`, `js/cc/wake.js`
 - **May import:** EVENT_LOG, CATALOG, ENGINE, SHELL
-- **Tests that cover it:** `account.test.mjs`, `account_races.test.mjs`, `account_recovery.test.mjs`, `d3.test.mjs`, `foundation.test.mjs`, `local_recovery.test.mjs`, `restore_safety.test.mjs`, `protect.test.mjs`, `hand.test.mjs`, `wake.test.mjs`, Journey J11 data trust, Local recovery review (local_recovery_smoke.py), Launch foundation smoke (foundation_smoke.py)
+- **Tests that cover it:** `account.test.mjs`, `account_races.test.mjs`, `account_recovery.test.mjs`, `d3.test.mjs`, `foundation.test.mjs`, `local_recovery.test.mjs`, `restore_safety.test.mjs`, `protect.test.mjs`, `hand.test.mjs`, `wake.test.mjs`, `team_moderation.test.mjs`, Journey J11 data trust, Local recovery review (local_recovery_smoke.py), Launch foundation smoke (foundation_smoke.py)
 
 #### ME: Me: profile, settings, account card, learn, team, handedness
 
-- **Owns:** `js/screens/more.js`, `js/screens/usage.js`, `js/screens/learn.js`, `js/screens/patterns.js`, `js/screens/conduct.js`, `js/screens/team.js`, `js/screens/welcome.js`
+- **Owns:** `js/screens/more.js`, `js/screens/usage.js`, `js/screens/learn.js`, `js/screens/patterns.js`, `js/screens/conduct.js`, `js/screens/team.js`, `js/screens/welcome.js`, `privacy.html`, `terms.html`
 - **Public interface:** `js/screens/more.js`
 - **Route entries (only the SHELL router imports these):** `js/screens/more.js`, `js/screens/welcome.js`, `js/screens/team.js`, `js/screens/conduct.js`, `js/screens/learn.js`, `js/screens/patterns.js`, `js/screens/usage.js`
 - **May import:** CATALOG, ENGINE, PERSISTENCE, EVENT_LOG, SHELL, LANE, LOGBOOK, ADD_BALL, ARSENAL, GAME
-- **Tests that cover it:** `J01`, Journey J09 learning, Journey J16 team
+- **Tests that cover it:** `legal_pages.test.mjs`, `J01`, Journey J09 learning, Journey J16 team
 
 #### SHELL: App shell: index.html, main, router, UI kit, service worker, help, CI
 

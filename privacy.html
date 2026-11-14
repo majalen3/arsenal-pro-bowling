@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="dark light">
+<title>Privacy · Arsenal Pro</title>
+<style>
+:root{color-scheme:dark light;--bg:#0B0F0D;--fg:#E8EEEA;--mut:#A9B5AE;--card:#121915;--line:#24312A;--accent:#E0B53F;--ph-bg:#3a2f0a;--ph-fg:#FFE08A}
+@media (prefers-color-scheme:light){:root{--bg:#F6F5F0;--fg:#1B241F;--mut:#4F5B54;--card:#FFFFFF;--line:#D9D7CB;--accent:#7A5B00;--ph-bg:#FFF1BF;--ph-fg:#4A3700}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,system-ui,sans-serif;padding:env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom))}
+main{max-width:42rem;margin:0 auto}
+a{color:var(--accent)}
+.back{display:inline-flex;align-items:center;min-height:44px;margin:8px 0}
+h1{font-size:1.6rem;line-height:1.2;margin:.4em 0 .2em}
+h2{font-size:1.15rem;margin:1.6em 0 .3em}
+p,li{margin:.5em 0}ul{padding-left:1.2em}
+.draft{background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:12px 14px;margin:12px 0}
+.draft b{color:var(--accent)}
+.sum{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px 14px 8px;margin:14px 0}
+.ph{background:var(--ph-bg);color:var(--ph-fg);padding:0 .3em;border-radius:4px;font-weight:600}
+.muted{color:var(--mut);font-size:.9rem}
+table{border-collapse:collapse;width:100%;font-size:.92rem;margin:.6em 0}
+th,td{border-top:1px solid var(--line);padding:6px 8px 6px 0;text-align:left;vertical-align:top}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="./#/me">&larr; Back to Arsenal Pro</a>
+<h1>Privacy</h1>
+<div class="draft" id="draft"><b>Draft, not legal advice. Have an attorney review before launch.</b> This page was written from what the app and its server actually do on <mark class="ph">[EFFECTIVE DATE]</mark>. The yellow parts are blanks the owner must fill in.</div>
+
+<div class="sum" id="summary">
+<h2 style="margin-top:.6em">The short version</h2>
+<ul>
+<li>Your balls, games, bag and notes are saved <b>on your phone first</b>. The app works fully offline.</li>
+<li>Nothing is sent to our server unless you turn on an account, an optional backup code, My Team, or look up a ball's specs.</li>
+<li>No ads, no analytics, no tracking, no third-party scripts, and the app sets no cookies.</li>
+<li>You can export or delete an account and its server copy in the app. You can delete everything on your phone by clearing the site's data.</li>
+</ul>
+</div>
+
+<h2>1. What stays on your phone</h2>
+<p>Arsenal Pro is a web app. It keeps this in your browser's storage on your device:</p>
+<ul>
+<li><b>Your arsenal and games:</b> balls you add, layouts, bags, nights, games, shots, centers, notes, and any LaneTrax or file imports you choose to make (stored as the events the app builds from them). This lives in IndexedDB.</li>
+<li><b>Your profile and settings</b> (localStorage): hand, style, ball speed, rev rate and the optional PAP and axis tilt you type in, look and text size, flags such as "onboarded", and the teammates you block (the server is never told who you block).</li>
+<li><b>A private device code</b> (localStorage). It is only used if you turn on backup-code sync (section 3).</li>
+<li><b>Account sign-in and team cache</b> (localStorage), only if you sign in: a sign-in token (not your password) and the last team view so My Team opens offline.</li>
+<li><b>On-device counters</b> (localStorage, "Tests and usage" in Me): how often screens were opened. These are never sent anywhere.</li>
+<li><b>Short-lived tab state</b> (sessionStorage): where you were and whether a game is open.</li>
+<li><b>Offline files</b> (service worker cache): the app's own code and pictures. If you use the drill-card reader, its reading tools (about 5 MB) are saved too.</li>
+</ul>
+<p>The app sets <b>no cookies</b>. Photos of a drill card are read <b>on your phone</b> and are never uploaded; only text you confirm is saved.</p>
+
+<h2>2. Lookups: what leaves your phone when you add a ball</h2>
+<p>When you search for a ball's specs, the app sends the <b>brand and ball name</b> (or a maker link you paste) to our server. The server reads public maker pages and public references and sends back the specs and where each came from. Your account or device code is not attached to this request. The server keeps a shared cache of those <b>public</b> pages, with nothing about you in it.</p>
+
+<h2>3. What goes to our server, and only if you choose it</h2>
+<table>
+<tr><th>If you…</th><th>We store</th></tr>
+<tr><td>Create an account</td><td>Your email, a one-way scrambled form of your password (scrypt) and of your recovery key, and sign-in sessions (the token is stored only as a keyed hash; a session lasts 30 days). A synced copy of your event log: balls, bags, games, shots, profile.</td></tr>
+<tr><td>Turn on backup-code sync</td><td>The same event log, filed under the private code. <b>Anyone who has the code can read it.</b> Treat it like a password.</td></tr>
+<tr><td>Use My Team</td><td>Team name, league night and time, the name you choose on the team, and only the items you switch on (tonight's bag, plain counts, tags, home center badge). Lane-pair notes you write (up to 280 characters). Invite codes (stored only as a keyed hash). Reports a teammate files. Teammates see the name you chose on the team, never your email.</td></tr>
+</table>
+<p>Everything else, including the whole app without an account, works without any of this. Team moderation: the team's secretary can see reports about members and notes, and can hide or remove content. Hiding keeps the content; removing deletes it.</p>
+
+<h2>4. Who else is involved</h2>
+<ul>
+<li><b>GitHub Pages</b> hosts the app's files. GitHub receives your IP address and browser details when you load the app, under <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">its own privacy statement</a>.</li>
+<li><b>Render</b> hosts our server and database (US, Oregon region). It handles the requests described above and keeps its own standard server logs, under <a href="https://render.com/privacy">its own privacy policy</a>.</li>
+<li><b>Maker websites and public references</b> are read by our server, not by your phone, when you look up a ball.</li>
+<li>The app has <b>no analytics, advertising, social, payment or font services</b>. The share button uses your phone's own share sheet; what you share goes where you send it.</li>
+<li>Our server's own request log records the method, path, status and time of each request. It does not log request contents. A short-lived in-memory counter uses your IP address (and, for sync, your device or account) to limit abuse; it is not saved to the database. The server log also holds the standard connection details Render keeps.</li>
+</ul>
+
+<h2>5. Keeping, exporting and deleting your data</h2>
+<ul>
+<li><b>On your phone:</b> "Download backup" in Me saves everything as a file. To delete it all, clear this site's data in your browser settings (or remove the installed app). We cannot do that for you.</li>
+<li><b>Account:</b> in Me, "Export my data" downloads your account copy and team footprint; "Delete account and server data" deletes your account, every sign-in and the server copy. Your phone keeps its own data.</li>
+<li><b>Teams:</b> leaving a team removes what you shared and your notes. Deleting your account does the same on every team. If the secretary leaves, the longest-standing member takes over.</li>
+<li><b>Backup-code copy:</b> the app has no delete button for this yet. Ask us to delete it using the contact above and give us the code. <mark class="ph">[OWNER: decide whether to add an in-app delete button before launch]</mark></li>
+<li><b>Backups and retention:</b> the database host may keep routine backups for a while after deletion. A server copy is not a promise of permanent storage; keep your own backup file. <mark class="ph">[ATTORNEY/OWNER: confirm backup retention period]</mark></li>
+</ul>
+
+<h2>6. Children</h2>
+<p>Arsenal Pro does not ask your age and is not aimed at children under 13. Accounts and My Team are for people <mark class="ph">[ATTORNEY: confirm age rule, e.g. 13+]</mark> and over. We do not knowingly collect personal information from children. If you think a child has made an account, contact us and we will delete it.</p>
+
+<h2>7. Your rights and choices</h2>
+<p>Depending on where you live you may have rights to see, correct, delete or move your data. The export and delete tools above cover the data we hold for an account; for anything else use the contact above. <mark class="ph">[ATTORNEY: add region-specific rights and legal bases if required]</mark></p>
+
+<h2>8. Security</h2>
+<p>Traffic to our server uses HTTPS. Passwords and recovery keys are stored only as one-way hashes, and session tokens only as keyed hashes. No system is perfectly secure, and we cannot promise it. If you lose your password and recovery key we cannot restore the account.</p>
+
+<h2>9. Changes</h2>
+<p>If we change what the app collects we will update this page and the date above. <mark class="ph">[OWNER: how you will tell people about material changes]</mark></p>
+
+<p class="muted">See also: <a href="terms.html">Terms of use</a>. Operator: <mark class="ph">[OPERATOR NAME]</mark>. Contact: <mark class="ph">[CONTACT EMAIL]</mark>.</p>
+</main>
+</body>
+</html>

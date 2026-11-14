@@ -617,7 +617,8 @@
         "tests/data/restore_safety.test.mjs",
         "tests/data/protect.test.mjs",
         "tests/data/hand.test.mjs",
-        "tests/data/wake.test.mjs"
+        "tests/data/wake.test.mjs",
+        "tests/data/team_moderation.test.mjs"
       ],
       "browser": [
         "J11",
@@ -635,7 +636,9 @@
         "js/screens/patterns.js",
         "js/screens/conduct.js",
         "js/screens/team.js",
-        "js/screens/welcome.js"
+        "js/screens/welcome.js",
+        "privacy.html",
+        "terms.html"
       ],
       "public": [
         "js/screens/more.js"
@@ -652,7 +655,9 @@
         "ARSENAL",
         "GAME"
       ],
-      "unit": [],
+      "unit": [
+        "tests/data/legal_pages.test.mjs"
+      ],
       "browser": [
         "J01",
         "J09",
