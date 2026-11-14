@@ -32,6 +32,7 @@ async def main():
                 for name, route in SCREENS:
                     await page.evaluate("r => { location.hash = r; }", route); await page.wait_for_timeout(900)
                     await page.evaluate("() => document.querySelectorAll('.toast,#toast,.toasts').forEach(e => e.remove())")
+                    if name == 'me': await page.evaluate("() => document.querySelector('#lookFld')?.scrollIntoView({block: 'center'})"); await page.wait_for_timeout(300)
                     await page.screenshot(path=os.path.join(out, f'{brand}_{mode}_{name}.png'), animations='disabled', caret='hide')
                     ov = await page.evaluate("() => ({sh: document.documentElement.scrollHeight, ih: innerHeight, sw: document.documentElement.scrollWidth, iw: innerWidth})")
                     print(brand, mode, name, ov)
