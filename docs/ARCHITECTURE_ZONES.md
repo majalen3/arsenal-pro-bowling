@@ -245,7 +245,22 @@ node tools/check.mjs --files a,b    # pretend exactly these files changed
 
 **Full suite** = what CI runs: engine equivalence, all unit tests, `e2e.py`, the local recovery smoke, the journeys with the visual baselines, plus the performance budget. CI still runs everything on every push; `tools/check.mjs` is the local pre-push loop. A Lighthouse-only failure in CI is not part of the local check.
 
-TIMINGS_PLACEHOLDER
+### Timings (measured 2026-11-13 on the build box, 8 cores, Chromium via Playwright; the branding job was running alongside)
+
+**Before:** every change ran the full suite. **After:** a small change runs its zone.
+
+| Change | Mode | Time | What ran |
+|---|---|---:|---|
+| Any change, before this work | full suite | **8 min 53 s** | equivalence 0.7 s, unit 1.0 s, `e2e.py` 4 min 55 s, local recovery 7 s, journeys + visual 3 min 46 s |
+| Docs, README, notes only | quick | **1 s** | boundaries, locks, equivalence |
+| Small Lane tweak (`js/cc/target.js`) | quick | **31 s** | boundaries, locks, syntax, equivalence, 11 of 52 unit files, perf budget, home flow smoke 16 s, journeys J03 + J12 13.5 s |
+| Small Bag tweak (`js/cc/bag.js`, `js/screens/bag.js`) | quick | **36 s** | the same plus 13 unit files, journeys J02 + J14 18 s |
+| CSS / theme tweak (`css/app.css`) | quick | **44 s** | home flow smoke 16 s and the 13-screen visual baselines 27 s |
+| Locked zone, SHELL or `sw.js`, or 4+ feature zones | full (automatic) | about 9 min | the same as before |
+
+So a typical small change goes from about 9 minutes to about 30 to 45 seconds locally (roughly 15x faster); docs-only changes are instant. The two long jobs (`e2e.py`, 5 minutes, and the full journeys run, almost 4 minutes) are now reserved for the changes that can break them. CI is unchanged and still runs everything on every push, so the quick check is a pre-push loop, not a replacement for the merge gate. What the quick check does *not* cover: the 800-assertion `e2e.py` suite and journeys outside the touched zones. A change that behaves differently from its zone's description (a Lane edit that breaks the Log book, say) is caught by the dependents rule for unit tests and by CI for the rest.
+
+The old full numbers come from this run and the earlier `e2e.py`-only measurement (4 min 54 s); the earlier note that online CI checks take 6 to 10 minutes per run is consistent with them.
 
 ## 6. Working with the zones
 
