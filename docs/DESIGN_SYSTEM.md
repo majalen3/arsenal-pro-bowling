@@ -1,12 +1,12 @@
 # Arsenal Pro 2.0 — Design system
 
-Source of truth: `css/app.css` (`:root` tokens). Brand: Arsenal Pro forest/gold/black. Dark is default; light theme via `[data-theme=light]` (More → Appearance, or system).
+Source of truth for color: `css/theme.css` (v79; every color is a token). Layout/type/space tokens stay in `css/app.css`. Two switches on `<html>`: `data-theme` = dark | light (Me → Appearance → Mode: Dark, Light, Auto) and `data-brand` = pine | maple | night (Look; default pine, `DEFAULT_BRAND` in `js/main.js`). Brand/contrast/team notes: BRAND_TEAM_FINDINGS.md.
 All text/surface pairs below meet WCAG AA (4.5:1 body, 3:1 large/UI) — verified by axe in `tests/e2e.py` on every route.
 
 ## Tokens
 | Group | Tokens |
 |---|---|
-| Brand | `--forest #0F4D34`, `--forest-2 #17694A`, `--gold #DAAF37`, `--black #000` |
+| Brand anchors (mode-independent; print sheet, share cards, icon, theme-color) | `--brand`, `--brand-2`, `--brand-hi`; pine = `#0F4D34` / `#17694A` / `#DAAF37`. `--gold` = `--accent`. Lane marks: `--lane-mark` |
 | Surfaces (dark) | `--bg #0B0F0D`, `--surface #131916`, `--surface-2 #1A221E`, `--surface-3 #232D28`, hairlines `--line`/`--line-2` |
 | Text (dark) | `--text #EEF2EF`, `--text-2 #A9B5AE`, `--text-3 #7F8C85` |
 | Accent | dark: gold `--accent`, ink `--accent-ink #E6C45F`; light: `--accent #B8901F`, ink `#7A5E0E`, primary = forest |
