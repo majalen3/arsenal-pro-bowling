@@ -5,6 +5,20 @@ export const CACHE_KEY = 'ap_team_cache';
 export const KINDS = ['bag', 'stats', 'tags', 'regular'];
 export const NIGHTS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 export const CODE_RE = /^[A-HJ-NP-Z2-9]{4}-?[A-HJ-NP-Z2-9]{4}$/;
+// Moderation v2 (owner t150u). The server tells the app it can hide and un-hide (`moderation: 2` on the team view); until the API
+// that does is live, the app shows no Hide buttons and keeps the existing Report / Remove / Leave.
+export const canHide = V => !!V && Number(V.moderation) >= 2;
+// Block is private to this phone (prefs.teamBlocked = { [teamId]: [memberId] }); the server never learns who blocked whom.
+export const blockedIds = (prefs, tid) => new Set(((prefs && prefs.teamBlocked) || {})[tid] || []);
+export function setBlocked(prefs, tid, memberId, on) {
+  const all = { ...((prefs && prefs.teamBlocked) || {}) }, cur = new Set(all[tid] || []);
+  if (on) cur.add(memberId); else cur.delete(memberId);
+  if (cur.size) all[tid] = [...cur].slice(0, 80); else delete all[tid];
+  return all;
+}
+// Notes the viewer should see: not by a blocked teammate.
+export const visibleNotes = (V, blocked) => ((V && V.notes) || []).filter(n => !blocked.has(n.memberId));
+export const REPORT_ITEMS = [['', 'The whole card'], ['bag', 'Tonight I\u2019m bringing'], ['stats', 'Counts'], ['tags', 'Tags'], ['regular', 'Home center badge']];
 export const normCode = c => { const s = String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); return s.length === 8 ? s.slice(0, 4) + '-' + s.slice(4) : s; };
 export const joinLink = (code, base = 'https://majalen3.github.io/arsenal-pro-bowling/') => `${base}#/team?join=${encodeURIComponent(normCode(code))}`;
 const clip = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
@@ -46,6 +60,8 @@ export function createTeamClient({ account, storage = globalThis.localStorage, n
     deleteNote: (tid, nid) => R(`/${tid}/notes/${encodeURIComponent(nid)}`, { method: 'DELETE' }),
     report: (tid, b) => R(`/${tid}/reports`, { method: 'POST', body: b }),
     dismiss: (tid, rid) => R(`/${tid}/reports/${encodeURIComponent(rid)}`, { method: 'DELETE' }),
+    hide: (tid, mid, hidden) => R(`/${tid}/members/${encodeURIComponent(mid)}/hide`, { method: 'POST', body: { hidden: !!hidden } }),
+    hideNote: (tid, nid, hidden) => R(`/${tid}/notes/${encodeURIComponent(nid)}/hide`, { method: 'POST', body: { hidden: !!hidden } }),
     remove: (tid, mid) => R(`/${tid}/members/${encodeURIComponent(mid)}`, { method: 'DELETE' }),
     async leave(tid) { const r = await R(`/${tid}/members/me`, { method: 'DELETE' }); if (r.ok) put(c => { delete c.views[tid]; if (c.list) c.list.teams = c.list.teams.filter(t => t.id !== tid); }); return r; },
     async destroy(tid) { const r = await R('/' + tid, { method: 'DELETE' }); if (r.ok) put(c => { delete c.views[tid]; if (c.list) c.list.teams = c.list.teams.filter(t => t.id !== tid); }); return r; },

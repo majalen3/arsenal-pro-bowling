@@ -950,6 +950,33 @@ async def j16_team(j):
             j.api.online = False; await j.page.reload(); await j.settle(800); await j.wait('#tmHead', timeout=10000)
             s.check(await j.visible('#teamOffline') or await j.visible('#tmStale'), 'offline chip / last-synced line shown')
             j.api.online = True
+        async with j.step('My Team moderation: Hide stays away on an older API; Report and Block work either way') as s:
+            P = j.page; await P.reload(); await j.settle(500); await j.wait('#tmHead')
+            s.check(await P.locator('[data-hide], [data-hide-note]').count() == 0, 'no Hide buttons while the API cannot hide (older API)')
+            s.check(await P.locator('[data-block]').count() >= 1 and await P.locator('[data-report]').count() >= 1, 'Report and Block are there')
+            await P.locator('[data-block]').first.click(); await P.wait_for_selector('.confirm button.primary'); await P.click('.confirm button.primary'); await P.wait_for_selector('.tm-blocked')
+            s.check('Left lane hooks early' not in await P.inner_text('#tmNotes'), 'a blocked teammate\u2019s note is hidden on this phone')
+            s.check(len([m for m in j.api.acct.members if m['dn'] == 'Sam']) == 1, 'blocking changed nothing on the server')
+            await P.click('[data-unblock]'); await P.wait_for_timeout(500)
+            s.check(await P.locator('.tm-blocked').count() == 0 and 'Left lane hooks early' in await P.inner_text('#tmNotes'), 'unblock brings them back')
+        async with j.step('My Team moderation v2: the secretary hides a teammate (confirm, Undo), the teammate is told; remove still confirms') as s:
+            j.api.acct.moderation = 2
+            await j.page.reload(); await j.settle(500); await j.wait('#tmHead')
+            s.check(await j.page.locator('[data-hide]').count() >= 1, 'Hide shows once the API reports moderation 2')
+            await j.page.locator('[data-hide]').first.click(); await j.page.wait_for_selector('.confirm button.primary'); await j.page.click('.confirm button.primary'); await j.page.wait_for_selector('[data-hidden-pill]')
+            sam = [m for m in j.api.acct.members if m['dn'] == 'Sam'][0]
+            s.check(sam.get('hidden') is True, 'the server marked the teammate hidden (nothing deleted)')
+            await b.reload(); await b.wait_for_selector('#tmHiddenNote', timeout=10000)
+            s.check(await b.locator('#tmHiddenNote').count() == 1, 'the hidden teammate sees a plain notice')
+            await j.page.click('.toast-act'); await j.page.wait_for_timeout(500)
+            s.check(not sam.get('hidden'), 'Undo in the toast shows them again')
+            await j.page.locator('[data-remove]').first.click(); await j.page.wait_for_selector('.confirm')
+            s.check('cannot be undone' in await j.page.inner_text('.confirm'), 'Remove says it cannot be undone')
+            await j.page.click('.confirm button.ghost')
+            await j.page.locator('[data-report]').first.click(); await j.page.wait_for_selector('#tmReportItem')
+            await j.page.select_option('#tmReportItem', 'bag'); await j.page.fill('#tmReportWhy', 'test'); await j.page.click('#tmReportSend'); await j.page.wait_for_timeout(500)
+            s.check(any(r.get('kind') == 'bag' for r in j.api.acct.reports), 'a report can name the shared item')
+            j.api.acct.moderation = 0; j.api.acct.reports.clear()
         async with j.step('Teammate leaves; their shares go with them', task='team') as s:
             await b.reload(); await b.wait_for_selector('#tmLeave', state='attached'); await b.locator('#tmLeave').scroll_into_view_if_needed(); await b.click('#tmLeave')
             btn = b.locator('.sheet button.danger, [role=dialog] button.danger').first
