@@ -89,9 +89,9 @@ Measured the same way at 360x780 (sample arsenal, 10 balls). Before is v73 (`ori
 ## v79 looks and brand (owner t144u)
 | # | Where | What changed (R removed, N new, C changed) | How to restore |
 |---|---|---|---|
-| 23 | CSS | R: 15 dead rules from `css/app.css` (`.call-card` + tones, `.btile-specs` (+span, small), `.brand-mark`, `.tile-model`, `.assess ul/div`, `.own-grid`, `.sl-pocket`, `#bagTbd .btn`; none had a user in `js/` or `index.html`, 1,441 B). | `git show 937bef1:css/app.css` has them; paste back. |
-| 24 | CSS | C: the color tokens moved from `css/app.css` to the new `css/theme.css`; `--forest`, `--forest-2`, `--black` are gone (use `--brand`, `--brand-2`); `--gold` now equals `--accent`. | Revert the PR, or copy the `:root` and `[data-theme=light]` blocks from v78 back and delete the `theme.css` link and SW entry. |
-| 25 | Me | C: the Theme control (Alley dark, Light, System) is now Mode (Dark, Light, Auto) plus a Look picker (3 cards). Values unchanged. | Replace `lookPicker()` call in `js/screens/more.js`; pref `brand` can stay. |
-| 26 | Icon | C: `icon.svg` and the 4 PNGs replaced (the "AP" badge is gone). | `git checkout 937bef1 -- icon.svg icons/`. |
-| 27 | Light look | C: accent `#B8901F`->`#8F6A0A`, text-3 `#66726B`->`#5F6B64`, good `#167A4C`->`#12714A` (AA). | Edit `[data-theme=light]` in `css/theme.css`; the contrast checker will list what fails. |
+| 26 | CSS | R: 15 dead rules from `css/app.css` (`.call-card` + tones, `.btile-specs` (+span, small), `.brand-mark`, `.tile-model`, `.assess ul/div`, `.own-grid`, `.sl-pocket`, `#bagTbd .btn`; none had a user in `js/` or `index.html`, 1,441 B). | `git show 937bef1:css/app.css` has them; paste back. |
+| 27 | CSS | C: the color tokens moved from `css/app.css` to the new `css/theme.css`; `--forest`, `--forest-2`, `--black` are gone (use `--brand`, `--brand-2`); `--gold` now equals `--accent`. | Revert the PR, or copy the `:root` and `[data-theme=light]` blocks from v78 back and delete the `theme.css` link and SW entry. |
+| 28 | Me | C: the Theme control (Alley dark, Light, System) is now Mode (Dark, Light, Auto) plus a Look picker (3 cards). Values unchanged. | Replace `lookPicker()` call in `js/screens/more.js`; pref `brand` can stay. |
+| 29 | Icon | C: `icon.svg` and the 4 PNGs replaced (the "AP" badge is gone). | `git checkout 937bef1 -- icon.svg icons/`. |
+| 30 | Light look | C: accent `#B8901F`->`#8F6A0A`, text-3 `#66726B`->`#5F6B64`, good `#167A4C`->`#12714A` (AA). | Edit `[data-theme=light]` in `css/theme.css`; the contrast checker will list what fails. |
 
