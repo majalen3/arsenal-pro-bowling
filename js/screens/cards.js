@@ -3,11 +3,14 @@
 // Non-evaluative: counts and the bowler's own words; no averages, no "best", no comparisons.
 import { toast } from '../ui.js';
 export const FONT = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif';
-export const W = 1080, H = 1350, PAD = 72, GREEN = '#0F4D34', GOLD = '#DAAF37';
+export const W = 1080, H = 1350, PAD = 72;
+// v79: share cards wear the chosen look's brand pair (css/theme.css --brand / --brand-hi); frame() refreshes them, so a theme change shows on the next card.
+export let GREEN = '#0F4D34', GOLD = '#DAAF37';
+function brandColors() { const cs = getComputedStyle(document.documentElement); GREEN = cs.getPropertyValue('--brand').trim() || GREEN; GOLD = cs.getPropertyValue('--brand-hi').trim() || GOLD; }
 export function fit(ctx, t, w) { t = String(t || ''); if (ctx.measureText(t).width <= w) return t; while (t.length > 1 && ctx.measureText(t + '\u2026').width > w) t = t.slice(0, -1); return t + '\u2026'; }
 // Header band (eyebrow + title), subtitle, footer with the app name and a source note. Returns the 2d context.
 export function frame(canvas, { eyebrow, title, sub, note }) {
-  canvas.width = W; canvas.height = H; const c = canvas.getContext('2d');
+  brandColors(); canvas.width = W; canvas.height = H; const c = canvas.getContext('2d');
   c.fillStyle = GREEN; c.fillRect(0, 0, W, H);
   c.fillStyle = '#000'; c.fillRect(0, 0, W, 210); c.fillStyle = GOLD; c.fillRect(0, 210, W, 8);
   c.textBaseline = 'alphabetic'; c.fillStyle = GOLD; c.font = `800 34px ${FONT}`; c.fillText(fit(c, String(eyebrow || '').toUpperCase(), W - 2 * PAD), PAD, 92);

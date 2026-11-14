@@ -22,7 +22,7 @@ const surfaceOK=x=>plain(x)&&text(x.ballId)&&date(x.date)&&(text(x.finish,80)||n
 const noteOK=x=>plain(x)&&['lane','oil','adjustment'].every(k=>text(x[k],2048));
 function prefsOf(p,known){
  if(p==null)return {values:[],unsupported:[]};if(!plain(p))throw Error('Unsupported preferences object.');
- const checks={theme:x=>['dark','light','system'].includes(x),textSize:x=>['normal','large','xl'].includes(x),help:x=>typeof x==='boolean',wakeLock:x=>typeof x==='boolean',onboarded:x=>typeof x==='boolean',handAsked:x=>typeof x==='boolean',spareRule:x=>typeof x==='boolean'};
+ const checks={theme:x=>['dark','light','system'].includes(x),brand:x=>['pine','maple','night'].includes(x),textSize:x=>['normal','large','xl'].includes(x),help:x=>typeof x==='boolean',wakeLock:x=>typeof x==='boolean',onboarded:x=>typeof x==='boolean',handAsked:x=>typeof x==='boolean',spareRule:x=>typeof x==='boolean'};
  const values=[],unsupported=[];
  for(const [k,v] of Object.entries(p)){
   if(checks[k]){if(!checks[k](v))throw Error('Invalid preference: '+k);values.push({path:k,value:v});}
