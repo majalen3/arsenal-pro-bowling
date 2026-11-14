@@ -129,7 +129,7 @@ export function render() {
   return { el, title:'Me', destroy:() => { offA(); off(); offD(); offS(); } };
 }
 
-// v79 (owner t144u): the look picker. Each option carries its own data-brand/data-theme, so its tokens (css/theme.css) preview the real colors.
+// v79 (owner t144u): the look picker. Each option carries its own data-brand/data-theme, so its tokens (css/app.css (THEME TOKENS block)) preview the real colors.
 const LOOKS = { pine:['Pine & Brass', 'Green and gold'], maple:['Maple & Copper', 'Warm wood'], night:['Night Pocket', 'Navy and ice'] };
 function lookPicker() {
   const cur = () => BRANDS.includes(prefs().brand) ? prefs().brand : DEFAULT_BRAND, mode = () => document.documentElement.dataset.theme || 'dark';

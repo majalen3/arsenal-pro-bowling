@@ -1,7 +1,7 @@
-// WCAG 2.x contrast for every brand x mode in css/theme.css. Reads the real tokens (no copies), resolves the cascade, derives the tints
+// WCAG 2.x contrast for every brand x mode in the THEME TOKENS block of css/app.css (folded in from css/theme.css in v80). Reads the real tokens (no copies), resolves the cascade, derives the tints
 // from the color-mix percentages in the file. Exit 1 when a pair misses its bar.   node tests/brand/contrast.mjs [--md]
 import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
-const css = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'css', 'theme.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+const css = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'css', 'app.css'), 'utf8').replace(/^[\s\S]*?THEME TOKENS BEGIN[^\n]*\n/, '').replace(/\/\* THEME TOKENS END \*\/[\s\S]*$/, '').replace(/\/\*[\s\S]*?\*\//g, '');
 const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(m => ({ sel: m[1].trim().split(',').map(s => s.trim()), decl: Object.fromEntries([...m[2].matchAll(/(--[\w-]+):([^;]+);/g)].map(d => [d[1], d[2].trim()])) }));
 const matches = (sel, brand, mode) => { if (sel === ':root') return true; const a = [...sel.matchAll(/\[data-(theme|brand)=(\w+)\]/g)].map(m => [m[1], m[2]]); return a.length > 0 && a.every(([k, v]) => (k === 'theme' ? mode : brand) === v); };
 function tokens(brand, mode) { const t = {}; for (const r of rules) if (r.sel.some(s => matches(s, brand, mode))) Object.assign(t, r.decl); return t; }

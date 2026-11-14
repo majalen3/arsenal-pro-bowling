@@ -54,6 +54,7 @@ async function render() {
   if (prev && prev.scr && prev.scr.destroy) prev.scr.destroy();
   cur.scr = scr;
   const pMount = PERF.span('route.mount', path);
+  if (first) scr.el.classList.add('no-anim');   // v80 perf: the cold-open screen paints at once (an opacity fade-in delayed Lighthouse's LCP to a later, noisier paint); later screens keep the entrance
   mountEl.replaceChildren(scr.el);
   if (decorate) { try { decorate(scr.el, path); } catch (e) { console.error(e); } }
   document.title = scr.title ? `${scr.title} · Arsenal Pro` : 'Arsenal Pro';
@@ -64,6 +65,7 @@ async function render() {
   // changes. Every route now opens at the top (scrollRestoration is manual; Back still returns to where you were).
   if (first && !back) { window.scrollTo(0, 0); requestAnimationFrame(() => window.scrollTo(0, 0)); }
   if (!first) { if (!back) { window.scrollTo(0, 0); requestAnimationFrame(() => { if (scrollY) window.scrollTo(0, 0); }); } const hd = scr.el.querySelector('h1'); if (hd) { hd.tabIndex = -1; hd.focus({ preventScroll:true }); } }
+  if (first) PERF.markPainted();
   first = false;
   scr.mounted && scr.mounted();
   pMount(); if (PERF.ON) requestAnimationFrame(() => requestAnimationFrame(() => PERF.mark('screen.painted ' + path)));

@@ -653,7 +653,7 @@ export async function render(o = {}) {
   function bowlerOf(P) { return P.bowler || {}; }
   function num(f) { const v = f && typeof f === 'object' ? f.v : f; return v === '' || v == null || isNaN(+v) ? null : +v; }
   draw();
-  if (!IDX) loadIndex().then(x => { IDX = x; TERT = R.tertiles(x); draw(); }).catch(() => {});
+  if (!IDX) PERF.painted.then(loadIndex).then(x => { IDX = x; TERT = R.tertiles(x); draw(); }).catch(() => {});
   const offs = [on('data', () => { if (!body.contains(document.activeElement) || document.activeElement.tagName === 'BUTTON') draw(); })];
   window.__apTonightMs = Math.round(performance.now() - t0);
   return { el, title: BOWL ? 'Game' : 'Strike line', mounted() { if (document.getElementById('tnNow')) padToThumb(); },

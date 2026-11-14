@@ -28,5 +28,11 @@ function summary() {
 }
 const api = { on: ON, span, timed, tapToPaint, mark, count, entries, counts, summary, table() { console.table(summary()); console.table(counts); return summary(); } };
 if (ON) { window.__perf = api; try { new PerformanceObserver(l => { for (const e of l.getEntries()) entries.push({ name: 'longtask', ms: Math.round(e.duration), at: Math.round(e.startTime), info: null }); }).observe({ type: 'longtask', buffered: true }); } catch (e) { /* not supported */ } }
-export { ON, span, timed, tapToPaint, mark, count, summary };
+// v80 (owner t150u, speed): work that is not needed for the first screen waits for it. `painted` resolves two frames after the first
+// route is mounted plus 0.9 s (or after 5 s, so a route that never mounts cannot hold back sync). Used by the event-log sync start and the
+// pattern-index fetch; later screens get an already-resolved promise. The short pause after the paint keeps those requests out of
+// the first screen's own load (Lighthouse counts every request that starts before the largest paint).
+let paintedDone; const painted = new Promise(r => { paintedDone = r; }); setTimeout(() => paintedDone(), 5000);
+const markPainted = () => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(paintedDone, 900)));
+export { ON, span, timed, tapToPaint, mark, count, summary, painted, markPainted };
 export default api;
