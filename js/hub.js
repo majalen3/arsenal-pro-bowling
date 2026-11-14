@@ -39,7 +39,7 @@ async function init() {
   db.on(() => { emit('data'); setTimeout(migrateStatus, 0); });   // a restored or synced old backup can bring `excluded` back
   window.__apData = { backend: be.kind, bootMs: Math.round(performance.now() - t0), events: () => db.events().length, hash: () => db.hash(), projection: () => db.projection() };
   emit('data');
-  import('./sync.js').then(m => m.startOutbox(db)).catch(() => {});
+  PERF.painted.then(() => import('./sync.js')).then(m => m.startOutbox(db)).catch(() => {});   // v80: after the first screen paints
   endInit();
   return db;
 }

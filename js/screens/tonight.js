@@ -152,7 +152,8 @@ export async function render(o = {}) {
     // ---- setup
     const patIn = h('input', { id: 'tnPattern', type: 'search', list: 'tnPatList', autocomplete: 'off', placeholder: 'House shot (assumed 38 ft)', 'aria-label': 'Pattern', value: pat ? pat.name : s.patternOwn ? s.patternName || '' : '' });
     const dl = h('datalist', { id: 'tnPatList' }, ...(IDX || []).map(x => h('option', { value: x.name })));
-    patIn.onchange = async () => { const v = patIn.value.trim(), row = IDX && IDX.find(x => x.name.toLowerCase() === v.toLowerCase());
+    patIn.onchange = async () => { if (!IDX) { try { IDX = await loadIndex(); TERT = R.tertiles(IDX); } catch (e) { /* offline and not cached: the name is kept as your own */ } }   // a name entered before the index arrived still resolves
+    const v = patIn.value.trim(), row = IDX && IDX.find(x => x.name.toLowerCase() === v.toLowerCase());
       if (!v) await save({ pickId: null, patternOwn: false, patternSlug: null, patternName: null, ft: null, ml: null, ratio: null }); else if (row) await save({ pickId: null, patternOwn: false, patternSlug: row.slug, patternName: row.name, ft: row.ft, ml: row.ml, ratio: row.ratio }); else { const o = OP.ownPattern(v); if (!o) return toast('Type a pattern name', { kind: 'bad' }); await save(o); toast(`Saved as your own pattern. Length not entered, so 38 ft is assumed: add details if you know them.`); } };
     // M2 (Sim2 #9): your own / house pattern. Any name is kept; length, volume and ratio are optional, behind one tap.
     const ownDet = s.patternOwn ? (() => { const f = (id, lbl, val, ph) => h('label', { class: 'fld' }, h('span', { text: lbl }), h('input', { id, autocomplete: 'off', inputmode: 'decimal', placeholder: ph, value: val == null ? '' : String(val) }));
@@ -653,7 +654,9 @@ export async function render(o = {}) {
   function bowlerOf(P) { return P.bowler || {}; }
   function num(f) { const v = f && typeof f === 'object' ? f.v : f; return v === '' || v == null || isNaN(+v) ? null : +v; }
   draw();
-  if (!IDX) loadIndex().then(x => { IDX = x; TERT = R.tertiles(x); draw(); }).catch(() => {});
+  // The pattern index waits for the first paint (v80). A pattern name entered before it arrives awaits it (see patIn.onchange). No redraw is
+  // triggered by a touch: a redraw between pointerdown and click would swallow the tap.
+  if (!IDX) PERF.painted.then(loadIndex).then(x => { IDX = x; TERT = R.tertiles(x); draw(); }).catch(() => {});
   const offs = [on('data', () => { if (!body.contains(document.activeElement) || document.activeElement.tagName === 'BUTTON') draw(); })];
   window.__apTonightMs = Math.round(performance.now() - t0);
   return { el, title: BOWL ? 'Game' : 'Strike line', mounted() { if (document.getElementById('tnNow')) padToThumb(); },

@@ -2,6 +2,12 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## Privacy and Terms, My Team moderation, faster first paint — 2026-11-13 America/Chicago; offline build v80
+- **Privacy and Terms pages.** Plain-language `privacy.html` and `terms.html`, linked from Me › About and from the first screen (one line, nothing blocks you). They say what stays on your phone, what goes to the server and only if you choose it, that there are no cookies, ads or analytics, who hosts the app (GitHub Pages, Render), how to export and delete, and a children note. **Both are drafts for an attorney to review and carry yellow blanks** (operator name, contact email, effective date, governing law, age rule, backup retention). They work offline.
+- **My Team moderation.** *Report* can now name the shared item (card, bag, counts, tags, badge). *Block* hides a teammate and their notes on your phone only; it asks first, can be undone, and the server is never told. For the secretary: *Hide* / *Show again* on a bowler or a note (confirm, then Undo in the toast; nothing is deleted), and *Remove* now says it cannot be undone. A hidden bowler sees a plain notice. Hide and the item picker appear only when the server reports moderation v2, so an older server shows exactly what you had before. Server side: arsenal-pro-api PR #7 (not deployed yet).
+- **Speed.** Lighthouse mobile, Tonight and Bowl: 0.86-0.87 in 10 of 10 local runs (was 0.78-0.87). One stylesheet instead of two, the favicon is inline, the first paint no longer waits on the pattern list or sync, and the preload list is exactly what the first screen needs. Details in docs/PERF_BUDGET.md.
+- simulatePath unchanged; equivalence 7500/0; no locked zone changed. Offline cache is v80.
+
 ## Looks: Pine & Brass, Maple & Copper, Night Pocket, and a new icon — 2026-11-13 America/Chicago; offline build v79
 - **Pick a look.** Me › Appearance now has **Mode** (Dark, Light, Auto) and **Look** (three cards that show their real colors). Bag › Me › a look is 2 taps. The pick is remembered on the phone and works offline; nothing is sent anywhere.
 - **Default: Pine & Brass**, the dark green and gold you already have. If you never open the picker nothing changes except the app icon. The light look got small contrast fixes (darker gold and grey text, a darker green for "good") so every text pair passes WCAG AA.

@@ -6,7 +6,7 @@ import { listenInstall, isStandalone, askPersist } from './cc/protect.js';
 import { applyTextSize } from './cc/wake.js';
 import * as PERF from './perf.js';
 import * as UX from './cc/ux.js';   // Now item 5: on-device counts only (localStorage ap_ux, never synced)
-// theme (v79, owner t144u): mode = dark (default), light or system; brand = one of BRANDS (colors live in css/theme.css as tokens).
+// theme (v79, owner t144u): mode = dark (default), light or system; brand = one of BRANDS (colors live in the THEME TOKENS block of css/app.css as tokens).
 // An unset or unknown brand falls back to DEFAULT_BRAND, so an older install keeps working and lands on the default look.
 export const DEFAULT_BRAND = 'pine';
 export const BRANDS = ['pine', 'maple', 'night'];
@@ -117,19 +117,32 @@ setDecorate((el, path) => {
 const routePreloads = { __proto__:null,
   '/me':['screens/more','screens/account','screens/community','cc/community','cc/card'],
   '/welcome':['screens/welcome','cc/addball','data/spec_catalog','data/match','cc/ownership'],
-  '/tonight':['screens/tonight','cc/quicklog','cc/rank','cc/model','cc/advisor','cc/bag','cc/target','patdata','cc/line','cc/status','cc/bagedit','cc/card','screens/gametotal'],
+  '/tonight':['screens/tonight','cc/quicklog','cc/rank','cc/model','cc/advisor','cc/bag','cc/target','patdata','cc/line','cc/status','cc/bagedit','cc/card','screens/gametotal',
+    // second level of tonight.js, listed here so it loads beside it, not after it (one fewer round trip)
+    'labels','cc/fix','cc/night','cc/league','cc/center','cc/ownpat','cc/drill','cc/hand','screens/hand','cc/nightdone','cc/gametotal','data/events','data/privacy'],
   '/arsenal':['screens/bag','screens/arsenal','cc/rank','cc/model','cc/armory','cc/bag','cc/status'],
   '/bag':['screens/bag','screens/arsenal','cc/rank','cc/model','cc/armory','cc/bag','cc/target','cc/status','cc/bagedit','cc/advisor'],
   '/lane':['screens/lane','lane','deck','ctl','labels','screens/pickers'],
   '/target':['screens/target','lane','ctl','cc/target'],
   '/results':['screens/sessions','cc/card'], '/learn':['screens/learn']
 };
+// The event log and what it needs: not part of the first paint, needed by every screen right after it.
+const BOOT_REST = ['hub', 'data/db', 'data/idb', 'data/seed', 'data/migrate', 'data/schema', 'data/scoring', 'data/project', 'data/foundation'];
 const initialPath = location.hash.replace(/^#/, '').split('?')[0] || '/bag';
-for (const name of routePreloads[initialPath === '/bowl' ? '/tonight' : initialPath] || []) {
-  const link = document.createElement('link'); link.rel = 'modulepreload'; link.href = 'js/' + name + '.js'; document.head.append(link);
-}
-PERF.mark('main.evaluated');
-const firstScreen = start($('#view'), setTab);
+// v80 (owner t150u, speed): the shell (tab bar) paints first; the route's preloads and the router start one frame later, so the
+// first paint competes with nothing but the shell's own files. The timer is the fallback for a page opened in a background tab.
+const firstScreen = new Promise(resolve => {
+  let started = false;
+  const go1 = () => {
+    if (started) return; started = true;
+    for (const name of [...BOOT_REST, ...(routePreloads[initialPath === '/bowl' ? '/tonight' : initialPath] || [])]) {
+      const link = document.createElement('link'); link.rel = 'modulepreload'; link.href = 'js/' + name + '.js'; document.head.append(link);
+    }
+    PERF.mark('main.evaluated');
+    resolve(start($('#view'), setTab));
+  };
+  requestAnimationFrame(() => setTimeout(go1, 0)); setTimeout(go1, 300);
+});
 startSync();
 // v1 event log opens after first paint (IndexedDB; never blocks the lane)
 import('./hub.js').then(m => m.ready()).catch(e => console.error(e));

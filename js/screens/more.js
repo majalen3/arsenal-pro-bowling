@@ -117,7 +117,9 @@ export function render() {
         h('p', { class:'small', id:'aboutPrivacy', text:'Privacy: your games, balls and notes are saved on this phone first and work offline. No server copy is made by default. Choose optional backup-code sync or an account; account signout pauses sync, without copying to a code. A server copy is not a permanent retention guarantee. An account is optional and only needs an email and password; you can export or delete it on this screen. My Team is opt-in: teammates see only the items you choose to share (never your email), and leaving a team removes them. Share cards are made on this phone and are never posted for you. No ads, no tracking, and it is free.' }),
         h('div', { class:'row gap wrap' }, h('a', { class:'btn ghost', href:'https://github.com/majalen3/arsenal-pro-bowling/blob/main/CHANGELOG.md', target:'_blank', rel:'noopener', id:'aboutChanges' }, 'What\u2019s new'),
           h('a', { class:'btn ghost', href:'https://github.com/majalen3/arsenal-pro-bowling', target:'_blank', rel:'noopener', id:'aboutSource' }, 'Source code'),
-          h('a', { class:'btn ghost', href:'#/me/usage', id:'aboutUsage' }, 'Tests and usage')),   // Now item 5: counts on this phone only
+          h('a', { class:'btn ghost', href:'#/me/usage', id:'aboutUsage' }, 'Tests and usage'),
+          h('a', { class:'btn ghost', href:'privacy.html', id:'aboutPrivacyPage' }, 'Privacy'),
+          h('a', { class:'btn ghost', href:'terms.html', id:'aboutTermsPage' }, 'Terms')),   // Now item 5: counts on this phone only
         build));
     if (self.caches) caches.keys().then(ks => { const k = ks.find(x => /^arsenal-pro-v\d+$/.test(x)); if (k) build.textContent += ` \u00b7 offline build ${k.replace('arsenal-pro-', '')}`; }).catch(() => {});
     paintStat();
@@ -129,7 +131,7 @@ export function render() {
   return { el, title:'Me', destroy:() => { offA(); off(); offD(); offS(); } };
 }
 
-// v79 (owner t144u): the look picker. Each option carries its own data-brand/data-theme, so its tokens (css/theme.css) preview the real colors.
+// v79 (owner t144u): the look picker. Each option carries its own data-brand/data-theme, so its tokens (css/app.css (THEME TOKENS block)) preview the real colors.
 const LOOKS = { pine:['Pine & Brass', 'Green and gold'], maple:['Maple & Copper', 'Warm wood'], night:['Night Pocket', 'Navy and ice'] };
 function lookPicker() {
   const cur = () => BRANDS.includes(prefs().brand) ? prefs().brand : DEFAULT_BRAND, mode = () => document.documentElement.dataset.theme || 'dark';

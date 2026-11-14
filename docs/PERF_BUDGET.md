@@ -16,9 +16,9 @@ Exit code 1 = over budget. **It is a local gate.** Wiring it into CI means editi
 | Area | Metric | Measured v75 | Limit | Why this limit |
 |---|---|---|---|---|
 | Bytes | JS under `js/` (excl. lazy OCR vendor) | 1,044,934 B | 1,076,000 | +3% headroom: a new feature fits, a pasted library does not |
-| Bytes | CSS (`css/app.css` + `css/theme.css`) | 84,749 B (v79: app 80,399 + theme 4,350) | 85,000 | +0.3%. v79 is +2,174 B over v78: the 3 looks x 2 modes cost 4.3 KB of tokens, paid back by moving the old tokens out of app.css, the look picker styles, and 1.4 KB of dead rules deleted (15 rules with no user in `js/` or `index.html`) |
+| Bytes | CSS (`css/app.css`, theme tokens are the first block of it since v80) | 85,032 B (v80) | 85,500 | v80 folds theme.css into app.css (one request, was 84,749 B in two files; the rest is the no-anim and Team rules). Earlier note: v79 was +2,174 B over v78: the 3 looks x 2 modes cost 4.3 KB of tokens, paid back by moving the old tokens out of app.css, the look picker styles, and 1.4 KB of dead rules deleted (15 rules with no user in `js/` or `index.html`) |
 | Modules | `js/*.js` files | 119 | 121 | +2 |
-| Service worker | precache entries | 125 (v79: + `css/theme.css`) | 126 | every one must exist (tested). The launch image `icons/splash-1170x2532.png` is linked, not precached |
+| Service worker | precache entries | 126 (v80: - `css/theme.css`, + `privacy.html`, `terms.html`) | 126 | every one must exist (tested). The launch image `icons/splash-1170x2532.png` is linked, not precached |
 | Cold load (empty app, 4x CPU, per route) | JS bytes fetched (measured with the since-reverted preload build; the shipped build fetches ~28 KB less on `#/arsenal`, so these limits have extra room there): `#/bag` 305,929 · `#/arsenal` 293,139 · `#/tonight` 372,717 · `#/results` 301,346 | | +5% each | |
 | Cold load | modules fetched | 50 / 49 / 54 / 51 | +2 each | |
 | Cold load | first contentful paint | ~100 ms local | 400 ms | local server, relative only |
@@ -41,6 +41,9 @@ Lighthouse is noisy here: the same build scored 0.79, 0.86, 0.88, 0.79, 0.79 on 
 |---|---|---|
 | v75 | Budget created from the v75 measurements above | first budget |
 | v75 | Tighten `#/arsenal` cold JS to 5% over its pre-preload measurement (265,464 B, 44 modules) | the preload experiment was reverted |
+| v80 (measured) | Lighthouse 12 mobile defaults, CI serving (`python -m http.server`), 5 runs each. **Tonight** before 0.82 / 0.86 / 0.86 / 0.86 / 0.85, after 0.86 / 0.87 / 0.87 / 0.87 / 0.86. **Bowl** before 0.87 / 0.83 / 0.82 / 0.86 / 0.78, after 0.87 / 0.87 / 0.87 / 0.86 / 0.86. FCP 1.7-2.1 s, LCP 3.9-4.1 s, TBT 0, CLS 0 | CI gate is 0.80; the target is 0.85. Floor now 0.86 in 10 of 10 runs, was 0.78 |
+| v80 | JS limit 1,076,000 -> 1,082,000 (measured 1,075,629); CSS limit 85,000 -> 85,500 (measured 85,032) | My Team moderation UI (Hide, Block, report-an-item) and the paint-gating helper in `js/perf.js`. Nothing else moved |
+| v80 | Perf changes: one stylesheet (theme.css folded into app.css), the favicon is an inline data URI, the first-paint modulepreload list is exactly main.js's static closure and everything else is hinted after the first paint, the screen fade-in is skipped on the first route, the sync outbox and `patterns-index.json` wait for `PERF.painted` (900 ms after the first route mounts) | These requests were being counted before the simulated first paint. Remaining cost is bytes and request count (~448 KB, 54 requests before LCP); more headroom needs bundling, which this app does not do (no build step, CSP `script-src 'self'`) |
 | v79 (measured) | `--browser --runs 3`: 29/29 within budget; cold FCP 92-96 ms; Bag 411 ms, Arsenal 412, Log book 652, Strike line 378, Game 402; Optimize tap 47 ms; JS 1,066,756 B, 119 modules | no regression from the look tokens |
 | v79 | CSS limit 83,500 -> 85,000; precache 125 | owner t144u: `css/theme.css` (3 looks x light/dark as tokens). Second render-blocking stylesheet on the same origin, parallel with app.css; no JS module added |
 | v78 | The Forgiving row became the Lane Optimize tap row (150 ms, same sweep); removed the Strike finder (80 ms) row because `#/strike` is retired |

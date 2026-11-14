@@ -4,7 +4,7 @@
 import { toast } from '../ui.js';
 export const FONT = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif';
 export const W = 1080, H = 1350, PAD = 72;
-// v79: share cards wear the chosen look's brand pair (css/theme.css --brand / --brand-hi); frame() refreshes them, so a theme change shows on the next card.
+// v79: share cards wear the chosen look's brand pair (css/app.css (THEME TOKENS block) --brand / --brand-hi); frame() refreshes them, so a theme change shows on the next card.
 export let GREEN = '#0F4D34', GOLD = '#DAAF37';
 function brandColors() { const cs = getComputedStyle(document.documentElement); GREEN = cs.getPropertyValue('--brand').trim() || GREEN; GOLD = cs.getPropertyValue('--brand-hi').trim() || GOLD; }
 export function fit(ctx, t, w) { t = String(t || ''); if (ctx.measureText(t).width <= w) return t; while (t.length > 1 && ctx.measureText(t + '\u2026').width > w) t = t.slice(0, -1); return t + '\u2026'; }

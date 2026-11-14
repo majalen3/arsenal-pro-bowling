@@ -103,6 +103,7 @@ class MockAccounts:
     """In-memory accounts + My Team (same contract as arsenal-pro-api lib/teams.js, server-side checks included: membership
     404, secretary-only 403, invite expiry/revoke 410). Journeys sign up here, never on the live API."""
     NIGHTS = ('', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
+    moderation = 0   # 2 = the API has moderation v2 (hide / un-hide, report a shared item); 0 = an older API, the app must hide those buttons
     def __init__(self):
         self.users, self.tokens, self.teams, self.members, self.invites, self.shares, self.notes, self.reports, self.n = {}, {}, {}, [], [], {}, [], [], 0
     def uid(self, req):
@@ -165,11 +166,29 @@ class MockAccounts:
         deny = lambda: W(403, {'error': 'only the league secretary can do this'})
         if not sub and m == 'GET':
             ms = [y for y in self.members if y['tid'] == tid]
-            return 200, {'team': self._team(t), 'me': {'memberId': x['id'], 'role': x['role'], 'displayName': x['dn']},
-                         'members': [{'memberId': y['id'], 'displayName': y['dn'], 'role': y['role'], 'joinedAt': y['at'],
-                                      'shares': {k: v for (mid, k), v in self.shares.items() if mid == y['id']}} for y in ms],
-                         'notes': [{'id': n['id'], 'memberId': n['mid'], 'lanes': n['lanes'], 'text': n['text'], 'createdAt': n['at']} for n in reversed(self.notes) if n['tid'] == tid],
-                         'reports': [dict(r) for r in self.reports if r['tid'] == tid] if sec else None}
+            seen = lambda mid: sec or mid == x['id'] or not any(y['id'] == mid and y.get('hidden') for y in ms)
+            v = {'team': self._team(t), 'me': {'memberId': x['id'], 'role': x['role'], 'displayName': x['dn']},
+                 'members': [{'memberId': y['id'], 'displayName': y['dn'], 'role': y['role'], 'joinedAt': y['at'],
+                              'shares': {k: v for (mid, k), v in self.shares.items() if mid == y['id']} if seen(y['id']) else {}} for y in ms],
+                 'notes': [{'id': n['id'], 'memberId': n['mid'], 'lanes': n['lanes'], 'text': n['text'], 'createdAt': n['at']} for n in reversed(self.notes) if n['tid'] == tid and (sec or (not n.get('hidden') and seen(n['mid'])))],
+                 'reports': [dict(r) for r in self.reports if r['tid'] == tid] if sec else None}
+            if self.moderation >= 2:
+                v['moderation'] = 2; v['me']['hidden'] = bool(x.get('hidden'))
+                for mm, y in zip(v['members'], ms):
+                    if y.get('hidden') and (sec or y is x): mm['hidden'] = True
+                for nn in v['notes']:
+                    if sec and next((n for n in self.notes if n['id'] == nn['id']), {}).get('hidden'): nn['hidden'] = True
+            return 200, v
+        if self.moderation >= 2 and len(sub) == 3 and sub[0] == 'members' and sub[2] == 'hide' and m == 'POST':
+            if not sec: return deny()
+            y = next((y for y in self.members if y['id'] == sub[1] and y['tid'] == tid and y['role'] != 'secretary'), None)
+            if not y: return W(404, {'error': 'member not on this team'})
+            y['hidden'] = bool(b.get('hidden')); return W(200, {'memberId': y['id'], 'hidden': y['hidden']})
+        if self.moderation >= 2 and len(sub) == 3 and sub[0] == 'notes' and sub[2] == 'hide' and m == 'POST':
+            if not sec: return deny()
+            n = next((n for n in self.notes if n['id'] == sub[1] and n['tid'] == tid), None)
+            if not n: return W(404, {'error': 'note not found'})
+            n['hidden'] = bool(b.get('hidden')); return W(200, {'noteId': n['id'], 'hidden': n['hidden']})
         if not sub and m == 'DELETE':
             if not sec: return deny()
             del self.teams[tid]; self.members = [y for y in self.members if y['tid'] != tid]; return W(200, {'deleted': 1})
@@ -205,7 +224,7 @@ class MockAccounts:
             if n['mid'] != x['id'] and not sec: return W(403, {'error': 'only the author or the secretary can delete this note'})
             self.notes.remove(n); return W(200, {'deleted': 1})
         if sub == ['reports'] and m == 'POST':
-            self.n += 1; self.reports.append({'id': str(self.n), 'tid': tid, 'reporter': x['id'], 'aboutMember': b.get('memberId'), 'noteId': b.get('noteId'), 'reason': (b.get('reason') or '')[:200], 'createdAt': self._now()})
+            self.n += 1; self.reports.append({'id': str(self.n), 'tid': tid, 'reporter': x['id'], 'aboutMember': b.get('memberId'), 'noteId': b.get('noteId'), 'kind': b.get('kind'), 'reason': (b.get('reason') or '')[:200], 'createdAt': self._now()})
             return W(201, {'id': str(self.n)})
         if len(sub) == 2 and sub[0] == 'reports' and m == 'DELETE':
             if not sec: return deny()
