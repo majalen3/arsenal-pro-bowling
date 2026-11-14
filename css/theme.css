@@ -1,9 +1,5 @@
-/* Arsenal Pro themes (v79, owner t144u). Every color in the app comes from a token defined in this file.
-   Two switches on <html>: data-theme = dark | light (the resolved mode; Settings offers Auto too) and data-brand = pine | maple | night.
-   Default brand: pine (DEFAULT_BRAND in js/theme.js). Change a palette here only; docs/BRAND_TEAM_FINDINGS.md has the contrast table (tests/brand/contrast.mjs).
-   Roles: bg/surface* = backgrounds, text* = copy, accent* = highlight (accent-ink = accent used as text), primary = main button, good/warn/bad/info = shot tones,
-   lane-* = lane and pin-deck canvases, brand/brand-2/brand-hi = the mode-independent anchors (print sheet, share cards, icon, theme-color).
-   Tints are derived (color-mix), not repeated per theme. */
+/* Arsenal Pro themes (v79). Every color is a token defined here. <html data-theme=dark|light> is the resolved mode, data-brand=pine|maple|night the look (DEFAULT_BRAND in js/main.js).
+   Roles and the contrast table: docs/BRAND_TEAM_FINDINGS.md, checked by tests/brand/contrast.mjs. brand/brand-2/brand-hi are mode-independent (print sheet, share cards, icon). Tints are derived. */
 :root,[data-theme=dark],[data-theme=light]{
   --accent-soft:color-mix(in srgb,var(--accent) 14%,transparent); --good-soft:color-mix(in srgb,var(--good) 13%,transparent); --warn-soft:color-mix(in srgb,var(--warn) 13%,transparent);
   --bad-soft:color-mix(in srgb,var(--bad) 13%,transparent); --info-soft:color-mix(in srgb,var(--info) 13%,transparent);
@@ -38,31 +34,29 @@
   --text:#F5EFE6; --text-2:#C2B6A6; --text-3:#9A8F81;
   --accent:#F28C45; --accent-ink:#F7A468; --on-accent:#1C0F05;
   --good:#6CC48C; --warn:#EBC24E; --bad:#FF7A86; --info:#7DB7E8;
-  --lane-top:#3A2614; --lane-bottom:#5C3C1E; --lane-approach:#2A1B0E; --lane-gutter:#0F0B07; --lane-mark:#FFC27A;
-  --brand:#3B2615; --brand-2:#8A5A2B; --brand-hi:#F28C45;
+  --lane-top:#3A2614; --lane-bottom:#5C3C1E; --lane-approach:#2A1B0E; --lane-gutter:#0F0B07;
 }
 [data-brand=maple][data-theme=light]{
   --bg:#FAF5EB; --surface:#FFFDF8; --surface-2:#F3EBDD; --surface-3:#E8DDCA;
   --text:#1F160D; --text-2:#54463A; --text-3:#6F6050;
   --accent:#AE5A12; --accent-ink:#8A4308; --on-accent:#FFFFFF; --primary:#2B1D10; --on-primary:#FFFFFF;
   --good:#16703F; --warn:#8F5A00; --bad:#B0203A; --info:#1F5F99;
-  --lane-top:#4A3019; --lane-bottom:#6E4A24; --lane-approach:#36230F; --lane-gutter:#231810; --lane-mark:#FFC27A;
-  --brand:#3B2615; --brand-2:#8A5A2B; --brand-hi:#F28C45;
+  --lane-top:#4A3019; --lane-bottom:#6E4A24; --lane-approach:#36230F; --lane-gutter:#231810;
 }
+[data-brand=maple]{--lane-mark:#FFC27A; --brand:#3B2615; --brand-2:#8A5A2B; --brand-hi:#F28C45}
 /* ---- Night Pocket: cool navy, ice-blue highlight, pin white. */
 [data-brand=night][data-theme=dark]{
   --bg:#080D18; --surface:#0F1626; --surface-2:#172034; --surface-3:#212C45;
   --text:#EAF0FA; --text-2:#A4B1C8; --text-3:#7C8AA6;
   --accent:#5AA9FF; --accent-ink:#82BEFF; --on-accent:#04111F;
   --good:#4CC98C; --warn:#EDB04C; --bad:#F2776A; --info:#B39DFF;
-  --lane-top:#0D2547; --lane-bottom:#1A4A85; --lane-approach:#0A1B33; --lane-gutter:#040810; --lane-mark:#FFD166;
-  --brand:#12306A; --brand-2:#1E4FA0; --brand-hi:#5AA9FF;
+  --lane-gutter:#040810;
 }
 [data-brand=night][data-theme=light]{
   --bg:#F2F5FB; --surface:#FFFFFF; --surface-2:#E9EEF8; --surface-3:#DCE4F2;
   --text:#0C1426; --text-2:#44506A; --text-3:#5F6B85;
   --accent:#2F6FD0; --accent-ink:#1A4F9E; --on-accent:#FFFFFF; --primary:#14306B; --on-primary:#FFFFFF;
   --good:#12714A; --warn:#9A5B07; --bad:#B3261E; --info:#5B3FB5;
-  --lane-top:#0D2547; --lane-bottom:#1A4A85; --lane-approach:#0A1B33; --lane-gutter:#0C1A30; --lane-mark:#FFD166;
-  --brand:#12306A; --brand-2:#1E4FA0; --brand-hi:#5AA9FF;
+  --lane-gutter:#0C1A30;
 }
+[data-brand=night]{--lane-top:#0D2547; --lane-bottom:#1A4A85; --lane-approach:#0A1B33; --lane-mark:#FFD166; --brand:#12306A; --brand-2:#1E4FA0; --brand-hi:#5AA9FF}

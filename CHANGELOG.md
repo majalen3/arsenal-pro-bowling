@@ -2,6 +2,14 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## Looks: Pine & Brass, Maple & Copper, Night Pocket, and a new icon — 2026-11-13 America/Chicago; offline build v79
+- **Pick a look.** Me › Appearance now has **Mode** (Dark, Light, Auto) and **Look** (three cards that show their real colors). Bag › Me › a look is 2 taps. The pick is remembered on the phone and works offline; nothing is sent anywhere.
+- **Default: Pine & Brass**, the dark green and gold you already have. If you never open the picker nothing changes except the app icon. The light look got small contrast fixes (darker gold and grey text, a darker green for "good") so every text pair passes WCAG AA.
+- **All colors are tokens** in one file, `css/theme.css`. The Lane view, pin deck, share cards, Play sheet and the phone's status-bar color follow the look.
+- **New app icon and launch image.** A brass ball about to meet a cream pin on a pine tile, drawn from plain shapes (no font), rendered locally for 192, 512, maskable 512 and the iPhone home-screen icon. One iPhone launch image (390x844 @3x).
+- Not done: other iPhone launch sizes, icons for the other two looks, a per-look typeface. Team prompt and findings: docs/BRAND_BRIEF.md, docs/BRAND_TEAM_FINDINGS.md.
+- simulatePath unchanged; equivalence 7500/0. CSS +2,174 B net (budget 85,000), one more precached file.
+
 ## The Lane view is the strike page, with Optimize — 2026-11-12 America/Chicago; offline build v78
 - **One screen.** The Strike line tab button ("Your strike line ›") opens the **Lane view**. The v76 strike line page is retired from navigation (`#/strike` redirects to `#/lane`; the code is kept, see docs/CUTS_V73.md #22).
 - **Optimize.** One big button on the Lane view runs the Forgiving sweep from the line on the lane, puts the best stand and target on the lane (the line ends at the pocket) and shows an estimate chip: pocket % against the line it replaced, miss room left/right, and **Undo**. If nothing beats your line it says "Already your best line". Miss size stays in Details (default Auto). No strike % is shown.

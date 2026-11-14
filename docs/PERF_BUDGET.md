@@ -16,9 +16,9 @@ Exit code 1 = over budget. **It is a local gate.** Wiring it into CI means editi
 | Area | Metric | Measured v75 | Limit | Why this limit |
 |---|---|---|---|---|
 | Bytes | JS under `js/` (excl. lazy OCR vendor) | 1,044,934 B | 1,076,000 | +3% headroom: a new feature fits, a pasted library does not |
-| Bytes | CSS | 82,575 B (v78 Lane view + Optimize row) | 83,500 | +1% |
+| Bytes | CSS (`css/app.css` + `css/theme.css`) | 84,749 B (v79: app 80,399 + theme 4,350) | 85,000 | +0.3%. v79 is +2,174 B over v78: the 3 looks x 2 modes cost 4.3 KB of tokens, paid back by moving the old tokens out of app.css, the look picker styles, and 1.4 KB of dead rules deleted (15 rules with no user in `js/` or `index.html`) |
 | Modules | `js/*.js` files | 119 | 121 | +2 |
-| Service worker | precache entries | 124 | 126 | every one must exist (tested) |
+| Service worker | precache entries | 125 (v79: + `css/theme.css`) | 126 | every one must exist (tested). The launch image `icons/splash-1170x2532.png` is linked, not precached |
 | Cold load (empty app, 4x CPU, per route) | JS bytes fetched (measured with the since-reverted preload build; the shipped build fetches ~28 KB less on `#/arsenal`, so these limits have extra room there): `#/bag` 305,929 · `#/arsenal` 293,139 · `#/tonight` 372,717 · `#/results` 301,346 | | +5% each | |
 | Cold load | modules fetched | 50 / 49 / 54 / 51 | +2 each | |
 | Cold load | first contentful paint | ~100 ms local | 400 ms | local server, relative only |
@@ -41,6 +41,7 @@ Lighthouse is noisy here: the same build scored 0.79, 0.86, 0.88, 0.79, 0.79 on 
 |---|---|---|
 | v75 | Budget created from the v75 measurements above | first budget |
 | v75 | Tighten `#/arsenal` cold JS to 5% over its pre-preload measurement (265,464 B, 44 modules) | the preload experiment was reverted |
+| v79 | CSS limit 83,500 -> 85,000; precache 125 | owner t144u: `css/theme.css` (3 looks x light/dark as tokens). Second render-blocking stylesheet on the same origin, parallel with app.css; no JS module added |
 | v78 | The Forgiving row became the Lane Optimize tap row (150 ms, same sweep); removed the Strike finder (80 ms) row because `#/strike` is retired |
 | v76 | Added the Forgiving line sweep row (150 ms) | owner t140u optional miss model; the Strike finder limit (80 ms) is unchanged because the sweep never runs on load |
 
