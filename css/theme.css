@@ -24,9 +24,9 @@
 }
 [data-theme=light]{
   --bg:#F6F5F0; --surface:#FFFFFF; --surface-2:#F1EFE7; --surface-3:#E6E3D8;
-  --text:#111814; --text-2:#4B5751; --text-3:#66726B;
-  --accent:#B8901F; --accent-ink:#7A5E0E; --on-accent:#FFFFFF; --primary:#0F4D34; --on-primary:#FFFFFF;
-  --good:#167A4C; --warn:#9A5B07; --bad:#B3261E; --info:#1F5F99;
+  --text:#111814; --text-2:#4B5751; --text-3:#5F6B64;
+  --accent:#8F6A0A; --accent-ink:#7A5E0E; --on-accent:#FFFFFF; --primary:#0F4D34; --on-primary:#FFFFFF;
+  --good:#12714A; --warn:#9A5B07; --bad:#B3261E; --info:#1F5F99;
   --lane-top:#0F4D34; --lane-bottom:#1A6B49; --lane-approach:#123D2B; --lane-gutter:#1B2A22;
   --tint:color-mix(in srgb,var(--brand-2) 12%,var(--surface)); --toast-bg:var(--text); --toast-act:var(--brand-hi);
   --shadow-1:0 1px 2px rgba(17,24,20,.08); --shadow-2:0 10px 30px rgba(17,24,20,.16); --scrim:rgba(17,24,20,.45); --lane-ink:rgba(255,255,255,.6);
@@ -44,8 +44,8 @@
 [data-brand=maple][data-theme=light]{
   --bg:#FAF5EB; --surface:#FFFDF8; --surface-2:#F3EBDD; --surface-3:#E8DDCA;
   --text:#1F160D; --text-2:#54463A; --text-3:#6F6050;
-  --accent:#C4651A; --accent-ink:#8A4308; --on-accent:#FFFFFF; --primary:#2B1D10; --on-primary:#FFFFFF;
-  --good:#1B7A48; --warn:#8F5A00; --bad:#B0203A; --info:#1F5F99;
+  --accent:#AE5A12; --accent-ink:#8A4308; --on-accent:#FFFFFF; --primary:#2B1D10; --on-primary:#FFFFFF;
+  --good:#16703F; --warn:#8F5A00; --bad:#B0203A; --info:#1F5F99;
   --lane-top:#4A3019; --lane-bottom:#6E4A24; --lane-approach:#36230F; --lane-gutter:#231810; --lane-mark:#FFC27A;
   --brand:#3B2615; --brand-2:#8A5A2B; --brand-hi:#F28C45;
 }
@@ -62,7 +62,7 @@
   --bg:#F2F5FB; --surface:#FFFFFF; --surface-2:#E9EEF8; --surface-3:#DCE4F2;
   --text:#0C1426; --text-2:#44506A; --text-3:#5F6B85;
   --accent:#2F6FD0; --accent-ink:#1A4F9E; --on-accent:#FFFFFF; --primary:#14306B; --on-primary:#FFFFFF;
-  --good:#167A4C; --warn:#9A5B07; --bad:#B3261E; --info:#5B3FB5;
+  --good:#12714A; --warn:#9A5B07; --bad:#B3261E; --info:#5B3FB5;
   --lane-top:#0D2547; --lane-bottom:#1A4A85; --lane-approach:#0A1B33; --lane-gutter:#0C1A30; --lane-mark:#FFD166;
   --brand:#12306A; --brand-2:#1E4FA0; --brand-hi:#5AA9FF;
 }
