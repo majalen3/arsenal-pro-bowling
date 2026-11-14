@@ -654,10 +654,9 @@ export async function render(o = {}) {
   function bowlerOf(P) { return P.bowler || {}; }
   function num(f) { const v = f && typeof f === 'object' ? f.v : f; return v === '' || v == null || isNaN(+v) ? null : +v; }
   draw();
-  // The pattern index waits for the first paint (v80), but the first touch or keystroke on this screen fetches it at once: a pattern name or
-  // length the bowler enters in the first second must not be read without it.
-  const wantIdx = () => { if (!IDX) loadIndex().then(x => { IDX = x; TERT = R.tertiles(x); draw(); }).catch(() => {}); };
-  if (!IDX) { PERF.painted.then(wantIdx); for (const ev of ['pointerdown', 'keydown', 'input', 'change']) el.addEventListener(ev, wantIdx, { capture: true, once: true }); }
+  // The pattern index waits for the first paint (v80). A pattern name entered before it arrives awaits it (see patIn.onchange). No redraw is
+  // triggered by a touch: a redraw between pointerdown and click would swallow the tap.
+  if (!IDX) PERF.painted.then(loadIndex).then(x => { IDX = x; TERT = R.tertiles(x); draw(); }).catch(() => {});
   const offs = [on('data', () => { if (!body.contains(document.activeElement) || document.activeElement.tagName === 'BUTTON') draw(); })];
   window.__apTonightMs = Math.round(performance.now() - t0);
   return { el, title: BOWL ? 'Game' : 'Strike line', mounted() { if (document.getElementById('tnNow')) padToThumb(); },

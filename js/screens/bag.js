@@ -35,8 +35,7 @@ export async function render() {
   const el = h('section', { class: 'screen list-screen', id: 'bag' },
     h('header', { class: 'appbar' }, h('h1', { class: 'title', text: 'Bag' }), h('div', { class: 'appbar-actions' }, h('a', { class: 'btn ghost sm', id: 'bagTeam', href: '#/team' }, 'Team'), h('a', { class: 'btn ghost sm', id: 'bagAdd', href: '#/add-ball' }, 'Add ball'))), body);
   let proposal = null, careId = null, otherOpen = false, undoBag = null, shakeMsg = '';
-  const wantIdx = () => { if (!TERT) loadIndex().then(x => { TERT = R.tertiles(x); if (el.isConnected) draw(); }).catch(() => {}); };   // after the first paint, or at the first touch
-  if (!TERT) { PERF.painted.then(wantIdx); for (const ev of ['pointerdown', 'keydown']) el.addEventListener(ev, wantIdx, { capture: true, once: true }); }
+  if (!TERT) PERF.painted.then(loadIndex).then(x => { TERT = R.tertiles(x); if (el.isConnected) draw(); }).catch(() => {});
   const itemOf = (P, id) => ST.itemOfOwned(P, id);
   const ownedItems = P => Object.keys(P.owned).sort().map(id => itemOf(P, id));
   const evOf = bag => { const last = (prefs().advisor || {}).last;
