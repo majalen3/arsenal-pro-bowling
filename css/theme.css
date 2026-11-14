@@ -1,0 +1,62 @@
+/* Arsenal Pro themes (v79). Every color is a token defined here. <html data-theme=dark|light> is the resolved mode, data-brand=pine|maple|night the look (DEFAULT_BRAND in js/main.js).
+   Roles and the contrast table: docs/BRAND_TEAM_FINDINGS.md, checked by tests/brand/contrast.mjs. brand/brand-2/brand-hi are mode-independent (print sheet, share cards, icon). Tints are derived. */
+:root,[data-theme=dark],[data-theme=light]{
+  --accent-soft:color-mix(in srgb,var(--accent) 14%,transparent); --good-soft:color-mix(in srgb,var(--good) 13%,transparent); --warn-soft:color-mix(in srgb,var(--warn) 13%,transparent);
+  --bad-soft:color-mix(in srgb,var(--bad) 13%,transparent); --info-soft:color-mix(in srgb,var(--info) 13%,transparent);
+  --line:color-mix(in srgb,var(--text) 10%,transparent); --line-2:color-mix(in srgb,var(--text) 17%,transparent);
+  --gold:var(--accent); --primary:var(--accent); --on-primary:var(--on-accent);
+}
+/* ---- Pine & Brass (default). Dark = the app's look since v68, unchanged. */
+:root,[data-theme=dark]{
+  --bg:#0B0F0D; --surface:#131916; --surface-2:#1A221E; --surface-3:#232D28;
+  --text:#EEF2EF; --text-2:#A9B5AE; --text-3:#7F8C85;
+  --accent:#DAAF37; --accent-ink:#E6C45F; --on-accent:#14110A;
+  --good:#46C285; --warn:#EAA94A; --bad:#F2776A; --info:#6CB2EA;
+  --lane-top:#0D3B28; --lane-bottom:#165C3E; --lane-approach:#0C291D; --lane-gutter:#050706; --lane-mark:#DAAF37;
+  --brand:#0F4D34; --brand-2:#17694A; --brand-hi:#DAAF37;
+  --tint:color-mix(in srgb,var(--brand) 55%,var(--surface)); --toast-bg:var(--surface-3); --toast-act:var(--accent-ink);
+  --shadow-1:0 1px 2px rgba(0,0,0,.4); --shadow-2:0 8px 28px rgba(0,0,0,.45); --scrim:rgba(0,0,0,.6); --lane-ink:rgba(255,255,255,.55);
+  color-scheme:dark;
+}
+[data-theme=light]{
+  --bg:#F6F5F0; --surface:#FFFFFF; --surface-2:#F1EFE7; --surface-3:#E6E3D8;
+  --text:#111814; --text-2:#4B5751; --text-3:#5F6B64;
+  --accent:#8F6A0A; --accent-ink:#7A5E0E; --on-accent:#FFFFFF; --primary:#0F4D34; --on-primary:#FFFFFF;
+  --good:#12714A; --warn:#9A5B07; --bad:#B3261E; --info:#1F5F99;
+  --lane-top:#0F4D34; --lane-bottom:#1A6B49; --lane-approach:#123D2B; --lane-gutter:#1B2A22;
+  --tint:color-mix(in srgb,var(--brand-2) 12%,var(--surface)); --toast-bg:var(--text); --toast-act:var(--brand-hi);
+  --shadow-1:0 1px 2px rgba(17,24,20,.08); --shadow-2:0 10px 30px rgba(17,24,20,.16); --scrim:rgba(17,24,20,.45); --lane-ink:rgba(255,255,255,.6);
+  color-scheme:light;
+}
+/* ---- Maple & Copper: warm wood, ink and a copper highlight. */
+[data-brand=maple][data-theme=dark]{
+  --bg:#15110D; --surface:#1E1913; --surface-2:#28211A; --surface-3:#342B22;
+  --text:#F5EFE6; --text-2:#C2B6A6; --text-3:#9A8F81;
+  --accent:#F28C45; --accent-ink:#F7A468; --on-accent:#1C0F05;
+  --good:#6CC48C; --warn:#EBC24E; --bad:#FF7A86; --info:#7DB7E8;
+  --lane-top:#3A2614; --lane-bottom:#5C3C1E; --lane-approach:#2A1B0E; --lane-gutter:#0F0B07;
+}
+[data-brand=maple][data-theme=light]{
+  --bg:#FAF5EB; --surface:#FFFDF8; --surface-2:#F3EBDD; --surface-3:#E8DDCA;
+  --text:#1F160D; --text-2:#54463A; --text-3:#6F6050;
+  --accent:#AE5A12; --accent-ink:#8A4308; --on-accent:#FFFFFF; --primary:#2B1D10; --on-primary:#FFFFFF;
+  --good:#16703F; --warn:#8F5A00; --bad:#B0203A; --info:#1F5F99;
+  --lane-top:#4A3019; --lane-bottom:#6E4A24; --lane-approach:#36230F; --lane-gutter:#231810;
+}
+[data-brand=maple]{--lane-mark:#FFC27A; --brand:#3B2615; --brand-2:#8A5A2B; --brand-hi:#F28C45}
+/* ---- Night Pocket: cool navy, ice-blue highlight, pin white. */
+[data-brand=night][data-theme=dark]{
+  --bg:#080D18; --surface:#0F1626; --surface-2:#172034; --surface-3:#212C45;
+  --text:#EAF0FA; --text-2:#A4B1C8; --text-3:#7C8AA6;
+  --accent:#5AA9FF; --accent-ink:#82BEFF; --on-accent:#04111F;
+  --good:#4CC98C; --warn:#EDB04C; --bad:#F2776A; --info:#B39DFF;
+  --lane-gutter:#040810;
+}
+[data-brand=night][data-theme=light]{
+  --bg:#F2F5FB; --surface:#FFFFFF; --surface-2:#E9EEF8; --surface-3:#DCE4F2;
+  --text:#0C1426; --text-2:#44506A; --text-3:#5F6B85;
+  --accent:#2F6FD0; --accent-ink:#1A4F9E; --on-accent:#FFFFFF; --primary:#14306B; --on-primary:#FFFFFF;
+  --good:#12714A; --warn:#9A5B07; --bad:#B3261E; --info:#5B3FB5;
+  --lane-gutter:#0C1A30;
+}
+[data-brand=night]{--lane-top:#0D2547; --lane-bottom:#1A4A85; --lane-approach:#0A1B33; --lane-mark:#FFD166; --brand:#12306A; --brand-2:#1E4FA0; --brand-hi:#5AA9FF}

@@ -6,11 +6,15 @@ import { listenInstall, isStandalone, askPersist } from './cc/protect.js';
 import { applyTextSize } from './cc/wake.js';
 import * as PERF from './perf.js';
 import * as UX from './cc/ux.js';   // Now item 5: on-device counts only (localStorage ap_ux, never synced)
-// theme: dark (alley) default, light, or system
-export function applyTheme(t = prefs().theme || 'dark') {
+// theme (v79, owner t144u): mode = dark (default), light or system; brand = one of BRANDS (colors live in css/theme.css as tokens).
+// An unset or unknown brand falls back to DEFAULT_BRAND, so an older install keeps working and lands on the default look.
+export const DEFAULT_BRAND = 'pine';
+export const BRANDS = ['pine', 'maple', 'night'];
+export function applyTheme(t = prefs().theme || 'dark', b = prefs().brand) {
   const dark = t === 'system' ? matchMedia('(prefers-color-scheme: dark)').matches : t !== 'light';
-  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-  const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = dark ? '#0B0F0D' : '#F6F5F0';
+  const el = document.documentElement;
+  el.dataset.theme = dark ? 'dark' : 'light'; el.dataset.brand = BRANDS.includes(b) ? b : DEFAULT_BRAND;
+  const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = getComputedStyle(el).getPropertyValue('--bg').trim() || (dark ? '#0B0F0D' : '#F6F5F0');
 }
 applyTextSize(prefs().textSize); applyTheme(); matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme());
 restoreState(); deviceId();

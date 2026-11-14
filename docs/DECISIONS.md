@@ -406,3 +406,12 @@ The full audit also exposed pre-existing small accessibility defects: literal nu
 
 ## Add a ball source chain (owner t139u)
 - **Add a ball** uses one legal source chain, per-field provenance, user confirms (t139u, 2026-11-12, branch spec-fill).** Maker page, archived maker page, USBC approved list (approval date only), allowlisted secondary, never the four banned sites, never forums. Fill-only merge, disagreements shown, a chip per field, nothing saved before Add. Why: owner asked that the missing-spec research live in the find-a-ball search once a name is picked. Consequence: needs the API branch `spec-chain` deployed (cache key v3); until then the app still works with the old response shape. Detail: docs/SPEC_FILL_2026-11-12.md.
+
+## Brand and looks (owner t144u, 2026-11-13, branch brand-themes, v79)
+- **A separate `brand` pref, not a new `theme` value.** `theme` stays dark | light | system (mode); `brand` is pine | maple | night. *Why:* old installs carry `theme` and the restore validator checks it; mode and look are independent choices. *Consequence:* unset or unknown `brand` means `DEFAULT_BRAND` (`js/main.js`), so an old install lands on the default and a bad value cannot break the page.
+- **Default look is Pine & Brass.** *Why:* it scored highest (impact 3, effort 5, confidence 5), is what the app already looked like in dark, and keeps the visual baselines nearly stable. *Reverse:* change `DEFAULT_BRAND` (one line); stored picks stay valid.
+- **All colors in `css/theme.css`.** A second same-origin stylesheet (parallel with `app.css`, precached) instead of splitting into JS or inlining. Tints (`-soft`, `--line`) are derived with `color-mix`, not repeated per look. The lane marks, share cards and Play sheet read `--lane-mark`, `--brand`, `--brand-hi`.
+- **Light-mode AA fixes ride with this change** (accent, text-3, on-accent, good). Found by the new 282-pair checker; dark values untouched.
+- **No inline boot script.** A non-default look flashes the default for ~one frame on load (the CSP forbids inline scripts; a blocking file costs a request and first paint). Documented in BRAND_TEAM_FINDINGS.
+- **Brand assets:** drawn by hand from SVG paths (`tools/brand/mark.svg`), PNGs rendered locally. Nothing from the Urbanek / Honey Badgers work. No trademark search has been run on the mark; do not use it or "Arsenal" on merch before the attorney search.
+

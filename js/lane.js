@@ -23,6 +23,7 @@ export function createLane(canvas, { onAdjust, lefty = () => false, state = null
   const invX = x => mx(LX0 + (x - pad.l) / (W - pad.l - pad.r) * (LX1 - LX0));
   const invY = y => LY0 + (y - pad.t) / (H - pad.t - pad.b) * (LY1 - LY0);
   const css = n => getComputedStyle(canvas).getPropertyValue(n).trim();
+  let _mk = null; const mark = () => _mk || (_mk = css('--lane-mark') || '#DAAF37'), markA = a => { const h = mark().replace('#', ''); return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${a})`; };   // v79: lane marks follow the theme's --lane-mark
   function resize() {
     const r = canvas.getBoundingClientRect(); if (!r.width || !r.height) return false;
     dpr = Math.min(window.devicePixelRatio || 1, 3); W = r.width; H = r.height;
@@ -34,6 +35,7 @@ export function createLane(canvas, { onAdjust, lefty = () => false, state = null
   const ro = new ResizeObserver(() => { if (resize() && last) paint(last, 1); });
   ro.observe(canvas);
   function paint(st, prog) {
+    _mk = null;
     const { ball, result } = st;
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
     const lw = Math.abs(X(LX1) - X(LX0)), sx = lw / (LX1 - LX0), L0 = Math.min(X(LX0), X(LX1)), L1 = L0 + lw;
@@ -57,7 +59,7 @@ export function createLane(canvas, { onAdjust, lefty = () => false, state = null
     const dotsY = Y(FOUL_Y - 7.5 * PX_FT), arrY = Y(FOUL_Y - 15 * PX_FT), rngY = Y(FOUL_Y - 37 * PX_FT);
     g.fillStyle = 'rgba(0,0,0,.65)'; for (let i = 5; i <= 35; i += 5) { g.beginPath(); g.arc(X(boardToX(i, LW)), dotsY, 2, 0, 7); g.fill(); }
     const aw = Math.max(3, Math.min(6, sx * 2.4));
-    [5, 10, 15, 20, 25, 30, 35].forEach(b => { const x = X(boardToX(b, LW)); g.fillStyle = b === 20 ? '#DAAF37' : '#e2554a'; g.beginPath(); g.moveTo(x, arrY - aw * 1.6); g.lineTo(x - aw, arrY + aw); g.lineTo(x + aw, arrY + aw); g.closePath(); g.fill(); });
+    [5, 10, 15, 20, 25, 30, 35].forEach(b => { const x = X(boardToX(b, LW)); g.fillStyle = b === 20 ? mark() : '#e2554a'; g.beginPath(); g.moveTo(x, arrY - aw * 1.6); g.lineTo(x - aw, arrY + aw); g.lineTo(x + aw, arrY + aw); g.closePath(); g.fill(); });
     g.strokeStyle = 'rgba(255,255,255,.30)'; g.lineWidth = 1; [10, 15, 20, 25, 30].forEach(b => { const x = X(boardToX(b, LW)); g.beginPath(); g.moveTo(x, rngY); g.lineTo(x, rngY + 8); g.stroke(); });
     g.fillStyle = 'rgba(0,0,0,.6)'; for (let i = 5; i <= 35; i += 5) { g.beginPath(); g.arc(X(boardToX(i, LW)), Y(LH - 10), 2, 0, 7); g.fill(); }
     g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(L0, Y(FOUL_Y)); g.lineTo(L1, Y(FOUL_Y)); g.stroke();
@@ -75,14 +77,14 @@ export function createLane(canvas, { onAdjust, lefty = () => false, state = null
     const pm = isL() ? -1 : 1;
     pins.forEach(([dx0, dy]) => { const dx = dx0 * pm; g.beginPath(); g.arc(cx + dx * sp, by0 - dy * sp * kv, pr, 0, 7); g.fillStyle = '#f8fafc'; g.fill(); g.strokeStyle = 'rgba(0,0,0,.5)'; g.lineWidth = .8; g.stroke(); g.fillStyle = '#c0392b'; g.fillRect(cx + dx * sp - pr * .7, by0 - dy * sp * kv - pr * .15, pr * 1.4, pr * .3); });
     // pocket target ring (board 17.5)
-    g.strokeStyle = 'rgba(218,175,55,.8)'; g.lineWidth = 1.5; g.beginPath(); g.arc(X(boardToX(17.5, LW)), by0 - sp * kv * .45, pr * 2.1, 0, 7); g.stroke();
+    g.strokeStyle = markA(.8); g.lineWidth = 1.5; g.beginPath(); g.arc(X(boardToX(17.5, LW)), by0 - sp * kv * .45, pr * 2.1, 0, 7); g.stroke();
     // aim line: release (feet) to target at arrows
     const rel = +ss().release, aimB = clampBoard(eyesNow()), relX = X(boardToX(rel, LW));   // was rel − aim (v1, ~10× off)
-    g.setLineDash([4, 4]); g.strokeStyle = 'rgba(218,175,55,.85)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(relX, Y(FOUL_Y - 4)); g.lineTo(X(boardToX(aimB, LW)), arrY); g.stroke(); g.setLineDash([]);
+    g.setLineDash([4, 4]); g.strokeStyle = markA(.85); g.lineWidth = 1.2; g.beginPath(); g.moveTo(relX, Y(FOUL_Y - 4)); g.lineTo(X(boardToX(aimB, LW)), arrY); g.stroke(); g.setLineDash([]);
     // aim handle: a 44 px touch target (22 px radius halo) around the ring, so it reads as draggable by thumb
-    g.globalAlpha = .18; g.fillStyle = '#DAAF37'; g.beginPath(); g.arc(X(boardToX(aimB, LW)), arrY, 22, 0, 7); g.fill(); g.globalAlpha = 1;
-    g.strokeStyle = '#DAAF37'; g.lineWidth = 2.5; g.beginPath(); g.arc(X(boardToX(aimB, LW)), arrY, 9, 0, 7); g.stroke();
-    g.fillStyle = '#DAAF37'; g.beginPath(); g.arc(relX, Y(FOUL_Y - 4), 5, 0, 7); g.fill();
+    g.globalAlpha = .18; g.fillStyle = mark(); g.beginPath(); g.arc(X(boardToX(aimB, LW)), arrY, 22, 0, 7); g.fill(); g.globalAlpha = 1;
+    g.strokeStyle = mark(); g.lineWidth = 2.5; g.beginPath(); g.arc(X(boardToX(aimB, LW)), arrY, 9, 0, 7); g.stroke();
+    g.fillStyle = mark(); g.beginPath(); g.arc(relX, Y(FOUL_Y - 4), 5, 0, 7); g.fill();
     // phase-coloured path
     const pts = result.points, ph = result.phases, n = Math.max(2, Math.floor(pts.length * prog));
     g.lineCap = 'round'; g.lineJoin = 'round'; g.lineWidth = result.strike ? 4 : 3.2;

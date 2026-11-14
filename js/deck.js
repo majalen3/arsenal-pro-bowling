@@ -60,11 +60,13 @@ export function createDeck(canvas) {
   function size() { const r = canvas.getBoundingClientRect(); if (!r.width) return false; dpr = Math.min(3, devicePixelRatio || 1); W = r.width; H = r.height;
     canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); return true; }
   const css = n => getComputedStyle(canvas).getPropertyValue(n).trim();
+  let _mk = null; const mark = () => _mk || (_mk = css('--lane-mark') || '#DAAF37'), markA = a => { const h = mark().replace('#', ''); return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${a})`; };   // v79: lane marks follow the theme's --lane-mark
   function paint({ res, lefty, tone }, prog) {
+    _mk = null;
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
     const s = Math.min(W / (X1 - X0), H / (Y1 - Y0)), ox = W / 2, oy = H - (0 - Y0) * s - (H - (Y1 - Y0) * s) / 2;
     const m = lefty ? -1 : 1, P = (x, y) => [ox + m * x * s, oy - y * s];
-    const toneC = css('--deck-' + tone) || '#DAAF37', gold = css('--gold') || '#DAAF37';
+    const toneC = css('--deck-' + tone) || mark(), gold = mark();
     // deck surface (forest), boards, centre arrow line
     const [lx] = P(xOfBoard(39.5) * m, 0), [rx] = P(xOfBoard(0.5) * m, 0);
     const gr = g.createLinearGradient(0, H, 0, 0); gr.addColorStop(0, css('--lane-bottom') || '#165C3E'); gr.addColorStop(1, css('--lane-top') || '#0D3B28');
@@ -75,10 +77,10 @@ export function createDeck(canvas) {
     // entry-board target line (17.5) and angle window wedge (4-6 deg) into the pocket
     const pk = xOfBoard(17.5);
     const wedge = (a0, a1) => { g.beginPath(); const [px, py] = P(pk, 0); g.moveTo(px, py); [a0, a1].forEach(a => { const r = a * Math.PI / 180, L = -Y0 + 2; const [x, y] = P(pk + Math.sin(r) * L / Math.cos(r), Y0 - 2); g.lineTo(x, y); }); g.closePath(); };
-    g.fillStyle = 'rgba(218,175,55,.18)'; wedge(4, 6); g.fill(); g.strokeStyle = 'rgba(218,175,55,.55)'; g.lineWidth = 1; g.stroke();
+    g.fillStyle = markA(.18); wedge(4, 6); g.fill(); g.strokeStyle = markA(.55); g.lineWidth = 1; g.stroke();
     g.setLineDash([3, 4]); g.strokeStyle = 'rgba(255,255,255,.35)'; { const [x, y0] = P(pk, Y0); g.beginPath(); g.moveTo(x, y0 + 2); g.lineTo(x, P(0, 0)[1]); g.stroke(); } g.setLineDash([]);
     // pocket highlight between head pin and 3 pin (1-2 when mirrored)
-    { const [ax, ay] = P(0, 0), [bx, by] = P(6, ROW); g.save(); g.strokeStyle = 'rgba(218,175,55,.9)'; g.lineWidth = Math.max(6, BALL_R * s * 1.1); g.lineCap = 'round'; g.globalAlpha = .35; g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke(); g.restore(); }
+    { const [ax, ay] = P(0, 0), [bx, by] = P(6, ROW); g.save(); g.strokeStyle = markA(.9); g.lineWidth = Math.max(6, BALL_R * s * 1.1); g.lineCap = 'round'; g.globalAlpha = .35; g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke(); g.restore(); }
     // ball path: approach (solid) to first contact, then the model's deflected path; the straight
     // no-deflection line stays as a faint dashed reference. Animation: approach 0-0.45, pin action 0.45-1.
     const cs = res.entryBoard == null ? [] : contacts(res.entryBoard, res.angle);
@@ -98,7 +100,7 @@ export function createDeck(canvas) {
         const tr = upTo(sim.ball.tr.filter(q => q[2] >= sim.first));
         if (tr.length) { g.strokeStyle = toneC; g.lineWidth = 2.5; g.beginPath(); g.moveTo(...bxy); for (const q of tr) g.lineTo(...P(q[0], q[1])); g.stroke(); bxy = P(...tr[tr.length - 1]); }
       }
-      if (bxy[1] > -BALL_R * s) { g.beginPath(); g.arc(bxy[0], bxy[1], BALL_R * s, 0, 7); g.fillStyle = (last && last.color) || '#DAAF37'; g.globalAlpha = .6; g.fill(); g.globalAlpha = 1; g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); }
+      if (bxy[1] > -BALL_R * s) { g.beginPath(); g.arc(bxy[0], bxy[1], BALL_R * s, 0, 7); g.fillStyle = (last && last.color) || mark(); g.globalAlpha = .6; g.fill(); g.globalAlpha = 1; g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); }
     }
     // pins: true spots; a knocked pin leaves a faint ring on its spot and is drawn along its model path
     // (fading); standing pins stay solid white. Contact dots mark the first-contact geometry on 1/3/5.
@@ -123,7 +125,7 @@ export function createDeck(canvas) {
     // labels
     g.font = '600 10px system-ui,sans-serif'; g.fillStyle = 'rgba(255,255,255,.75)'; g.textBaseline = 'alphabetic';
     { const [x] = P(pk, Y0); g.textAlign = lefty ? 'left' : 'right'; g.fillText('board 17.5', x + (lefty ? 5 : -5), H - 5); }
-    { const [x, y] = P(pk + 4, Y0 + 3); g.textAlign = lefty ? 'right' : 'left'; g.fillStyle = 'rgba(218,175,55,.95)'; g.fillText('4–6°', x + (lefty ? -4 : 4), Math.min(H - 16, y)); }
+    { const [x, y] = P(pk + 4, Y0 + 3); g.textAlign = lefty ? 'right' : 'left'; g.fillStyle = markA(.95); g.fillText('4–6°', x + (lefty ? -4 : 4), Math.min(H - 16, y)); }
     { const [x, y] = P(8, ROW * .42), t = lefty ? '1-2 pocket' : '1-3 pocket'; g.font = '700 10px system-ui,sans-serif'; const tw = g.measureText(t).width; g.textAlign = 'left'; g.fillStyle = gold; g.fillText(t, Math.max(4, Math.min(W - tw - 4, lefty ? x - tw : x)), y); }
   }
   function draw(st, { animate = false } = {}) {

@@ -2,7 +2,7 @@
  "_doc": "Limits for tests/perf_budget.py. Changelog in docs/PERF_BUDGET.md. Times: measured after the v75 pass at 4x CPU on this box x ~1.6. Bytes/counts: measured + small headroom.",
  "static": {
   "js_bytes_max": 1076000,
-  "css_bytes_max": 83500,
+  "css_bytes_max": 85000,
   "modules_max": 121,
   "sw_shell_max": 126
  },

@@ -8,7 +8,7 @@ import { adjust } from '../ctl.js';
 import { go } from '../router.js';
 import * as HAND from '../cc/hand.js';
 import { gameTotalButton } from './gametotal.js';
-import { applyTheme } from '../main.js';
+import { applyTheme, BRANDS, DEFAULT_BRAND } from '../main.js';
 import { helpDot } from './help.js';
 import { START as S } from '../engine.js';
 import { accountCard } from './account.js';
@@ -98,7 +98,8 @@ export function render() {
         h('details', { class:'tn-more', id:'dataMore' }, h('summary', { text:'What\u2019s saved' }), dataCounts),
         h('div', { class:'btn-grid' }, h('a', { class:'btn ghost', href:'#/import', id:'goImport' }, 'Import a file'), h('a', { class:'btn ghost', href:'#/import?kind=lanetrax', id:'goLaneTrax' }, 'LaneTrax report'), h('a', { class:'btn ghost', href:'#/card', id:'goCardMore' }, 'My Bowler Card'), h('a', { class:'btn ghost', href:'#/results', id:'goNights' }, 'Log book'), h('button', { class:'btn ghost', id:'moreExport', onclick:async () => (await import('./export.js')).openExport() }, 'Export my arsenal')),
         gameTotalButton('moreAddTotal', { onDone: sid => go('#/session/' + encodeURIComponent(sid)) })),
-      h('div', { class:'card' }, h('h2', { class:'card-title', text:'Appearance' }), segmented('Theme', [['dark', 'Alley dark'], ['light', 'Light'], ['system', 'System']], prefs().theme || 'dark', v => { setPrefs({ theme:v }); applyTheme(v); }, 'wide'),
+      h('div', { class:'card' }, h('h2', { class:'card-title', text:'Appearance' }), segmented('Mode', [['dark', 'Dark'], ['light', 'Light'], ['system', 'Auto']], prefs().theme || 'dark', v => { setPrefs({ theme:v }); applyTheme(v); markLook(); }, 'wide'),
+        lookPicker(),
         h('div', { class:'fld', id:'textSizeFld' }, h('span', { text:'Text size' }), segmented('Text size', [['normal', 'Normal'], ['large', 'Large'], ['xl', 'Extra large']], prefs().textSize || 'normal', v => { setPrefs({ textSize:v }); WK.applyTextSize(v); }, 'wide')),
         h('div', { class:'fld', id:'wakeFld' }, h('span', { text:'Keep the screen on during a game' }), segmented('Keep the screen on during a game', [['on', 'On'], ['off', 'Off']], prefs().wakeLock === false ? 'off' : 'on', v => setPrefs({ wakeLock: v === 'on' }), 'wide'),
           h('p', { class:'small muted', id:'wakeNote', text: WK.supported() ? 'Only while a game is open; off at the last frame or after 10 idle minutes.' : 'This browser can\u2019t keep the screen on; set Auto-Lock in your phone settings instead.' }))),
@@ -126,4 +127,18 @@ export function render() {
   const off = on('status', paintStat), offD = on('data', paintData), offS = on('sync', paintData);
   const el = h('section', { class:'screen list-screen' }, h('header', { class:'appbar' }, h('h1', { class:'title' }, 'Me', helpDot('bm-matchup', 'Speed / rev match'))), body);
   return { el, title:'Me', destroy:() => { offA(); off(); offD(); offS(); } };
+}
+
+// v79 (owner t144u): the look picker. Each option carries its own data-brand/data-theme, so its tokens (css/theme.css) preview the real colors.
+const LOOKS = { pine:['Pine & Brass', 'Green and gold'], maple:['Maple & Copper', 'Warm wood'], night:['Night Pocket', 'Navy and ice'] };
+function lookPicker() {
+  const cur = () => BRANDS.includes(prefs().brand) ? prefs().brand : DEFAULT_BRAND, mode = () => document.documentElement.dataset.theme || 'dark';
+  return h('div', { class:'fld', id:'lookFld' }, h('span', { text:'Look' }),
+    h('div', { class:'theme-pick', role:'radiogroup', 'aria-label':'Look', id:'lookPick' }, BRANDS.map(b => h('button', { type:'button', role:'radio', class:'theme-opt', id:'look-' + b, 'data-look':b, 'data-brand':b, 'data-theme':mode(), 'aria-checked':String(b === cur()),
+      onclick:() => { setPrefs({ brand:b }); applyTheme(); markLook(); } },
+      h('span', { class:'theme-dots', 'aria-hidden':'true' }, h('i'), h('i'), h('i')), h('span', { text:LOOKS[b][0] }), h('small', { text:LOOKS[b][1] })))));
+}
+function markLook() {   // after a pick or a mode change: tick the chosen option and re-scope each preview to the current mode
+  const cur = BRANDS.includes(prefs().brand) ? prefs().brand : DEFAULT_BRAND;
+  document.querySelectorAll('#lookPick .theme-opt').forEach(b => { b.setAttribute('aria-checked', String(b.dataset.look === cur)); b.dataset.theme = document.documentElement.dataset.theme; });
 }
