@@ -1,0 +1,827 @@
+{
+  "_doc": "Zone map for Arsenal Pro. Prose + rationale: docs/ARCHITECTURE_ZONES.md. Read by tools/zones/boundaries.mjs, tools/zones/locks.mjs and tools/check.mjs. First matching `owns` pattern wins (zones are checked in file order, so list specific zones first). Patterns: exact path, `dir/**` (everything under dir), `*` (within one path segment).",
+  "checks": {
+    "flow": {
+      "label": "Bag -> game -> log book flow (home_game_flow.py)",
+      "py": [
+        "tests/home_game_flow.py",
+        "{base}"
+      ]
+    },
+    "spine": {
+      "label": "Spine tabs + click depth (product_spine.py)",
+      "py": [
+        "tests/product_spine.py",
+        "{base}"
+      ]
+    },
+    "chain": {
+      "label": "Add a ball spec chain (addball_chain_smoke.py)",
+      "py": [
+        "tests/addball_chain_smoke.py"
+      ],
+      "ownServer": true
+    },
+    "recov": {
+      "label": "Local recovery review (local_recovery_smoke.py)",
+      "py": [
+        "tests/local_recovery_smoke.py",
+        "{base}"
+      ]
+    },
+    "found": {
+      "label": "Launch foundation smoke (foundation_smoke.py)",
+      "py": [
+        "tests/foundation_smoke.py",
+        "{base}"
+      ]
+    },
+    "J02": {
+      "label": "Journey J02 home prep",
+      "journey": "J02"
+    },
+    "J03": {
+      "label": "Journey J03 arrival (lane)",
+      "journey": "J03"
+    },
+    "J04": {
+      "label": "Journey J04 solo game",
+      "journey": "J04"
+    },
+    "J05": {
+      "label": "Journey J05 league",
+      "journey": "J05"
+    },
+    "J07": {
+      "label": "Journey J07 recap",
+      "journey": "J07"
+    },
+    "J08": {
+      "label": "Journey J08 insights",
+      "journey": "J08"
+    },
+    "J09": {
+      "label": "Journey J09 learning",
+      "journey": "J09"
+    },
+    "J11": {
+      "label": "Journey J11 data trust",
+      "journey": "J11"
+    },
+    "J12": {
+      "label": "Journey J12 coach",
+      "journey": "J12"
+    },
+    "J13": {
+      "label": "Journey J13 status",
+      "journey": "J13"
+    },
+    "J14": {
+      "label": "Journey J14 bag",
+      "journey": "J14"
+    },
+    "J16": {
+      "label": "Journey J16 team",
+      "journey": "J16"
+    },
+    "J17": {
+      "label": "Journey J17 cards",
+      "journey": "J17"
+    },
+    "J18": {
+      "label": "Journey J18 kit",
+      "journey": "J18"
+    },
+    "J20": {
+      "label": "Journey J20 drill card",
+      "journey": "J20"
+    }
+  },
+  "zones": {
+    "ENGINE": {
+      "title": "Physics engine (simulatePath)",
+      "locked": [
+        "js/engine.js",
+        "tests/engine_equivalence.mjs",
+        "tests/fixtures/engine-inputs.v64.json",
+        "tests/legacy/app.v1.js"
+      ],
+      "escalate": true,
+      "owns": [
+        "js/engine.js",
+        "tests/engine_equivalence.mjs",
+        "tests/fixtures/engine-inputs.v64.json",
+        "tests/legacy/**"
+      ],
+      "public": [
+        "js/engine.js"
+      ],
+      "allow": [
+        "CATALOG"
+      ],
+      "unit": [],
+      "browser": [],
+      "entry": [],
+      "extra": [
+        "engine_equivalence.mjs (simulatePath v1 vs module, 7500 comparisons / 0 mismatches)"
+      ]
+    },
+    "SCORING": {
+      "title": "Ten-pin scoring rules (USBC 2a-2h)",
+      "locked": [
+        "js/data/scoring.js"
+      ],
+      "escalate": true,
+      "owns": [
+        "js/data/scoring.js"
+      ],
+      "public": [
+        "js/data/scoring.js"
+      ],
+      "allow": [],
+      "unit": [
+        "tests/data/scoring_fix.test.mjs",
+        "tests/data/cc1.test.mjs"
+      ],
+      "browser": [
+        "J04"
+      ],
+      "entry": []
+    },
+    "EVENT_LOG": {
+      "title": "Event log schema, events, migrations, projection",
+      "locked": [
+        "js/data/schema.js",
+        "js/data/events.js",
+        "js/data/migrate.js"
+      ],
+      "escalate": true,
+      "owns": [
+        "js/data/schema.js",
+        "js/data/events.js",
+        "js/data/migrate.js",
+        "js/data/project.js"
+      ],
+      "public": [
+        "js/data/schema.js",
+        "js/data/events.js",
+        "js/data/migrate.js",
+        "js/data/project.js"
+      ],
+      "allow": [
+        "SCORING"
+      ],
+      "unit": [
+        "tests/data/d0.test.mjs",
+        "tests/data/health.test.mjs",
+        "tests/data/example.test.mjs"
+      ],
+      "browser": [
+        "J11"
+      ],
+      "entry": []
+    },
+    "CATALOG": {
+      "title": "Ball catalog, spec data, pattern library, catalog tooling",
+      "owns": [
+        "js/data.js",
+        "js/cc/cats.js",
+        "js/data/spec_catalog.js",
+        "js/data/match.js",
+        "js/patdata.js",
+        "data/**",
+        "spec_fill.json",
+        "still_missing.csv",
+        "research_cache/**",
+        "tools/catalog/**",
+        "tools/build_spec_catalog.mjs",
+        "tools/lookup_spotcheck.mjs",
+        "tests/data/fixtures/**"
+      ],
+      "public": [
+        "js/data.js",
+        "js/cc/cats.js",
+        "js/data/spec_catalog.js",
+        "js/data/match.js",
+        "js/patdata.js"
+      ],
+      "allow": [],
+      "unit": [
+        "tests/data/now64.test.mjs",
+        "tests/data/search_browse.test.mjs",
+        "tests/data/perfcache.test.mjs"
+      ],
+      "browser": [],
+      "entry": []
+    },
+    "LANE": {
+      "title": "Lane view, Optimize / strike line, targeting, pin deck",
+      "owns": [
+        "js/lane.js",
+        "js/deck.js",
+        "js/pinsim.js",
+        "js/ctl.js",
+        "js/laneseed.js",
+        "js/labels.js",
+        "js/cc/geom.js",
+        "js/cc/model.js",
+        "js/cc/target.js",
+        "js/cc/line.js",
+        "js/cc/strikeline.js",
+        "js/cc/aimbox.js",
+        "js/cc/pocketfit.js",
+        "js/cc/provenance.js",
+        "js/cc/ownpat.js",
+        "js/screens/lane.js",
+        "js/screens/target.js",
+        "js/screens/strike.js",
+        "js/screens/overlays.js",
+        "js/screens/pattern.js",
+        "js/screens/pickers.js"
+      ],
+      "public": [
+        "js/ctl.js",
+        "js/laneseed.js",
+        "js/labels.js",
+        "js/lane.js",
+        "js/cc/geom.js",
+        "js/cc/model.js",
+        "js/cc/target.js",
+        "js/cc/line.js",
+        "js/cc/strikeline.js",
+        "js/cc/aimbox.js",
+        "js/cc/pocketfit.js",
+        "js/cc/provenance.js",
+        "js/cc/ownpat.js",
+        "js/screens/pickers.js",
+        "js/screens/overlays.js"
+      ],
+      "allow": [
+        "ENGINE",
+        "CATALOG",
+        "PERSISTENCE",
+        "BAG",
+        "GAME",
+        "SHELL"
+      ],
+      "unit": [
+        "tests/data/aimbox.test.mjs",
+        "tests/data/aimdrag.test.mjs",
+        "tests/data/cc0.test.mjs",
+        "tests/data/forgiving.test.mjs",
+        "tests/data/oneline.test.mjs",
+        "tests/data/pocketfit.test.mjs",
+        "tests/data/targeting.test.mjs",
+        "tests/data/ownpat.test.mjs"
+      ],
+      "browser": [
+        "J03",
+        "J12"
+      ],
+      "entry": [
+        "js/screens/lane.js",
+        "js/screens/target.js",
+        "js/screens/pattern.js"
+      ]
+    },
+    "BAG": {
+      "title": "Bag builder: ranking, tonight's bag, status, Keep in bag",
+      "owns": [
+        "js/cc/rank.js",
+        "js/cc/bag.js",
+        "js/cc/advisor.js",
+        "js/cc/bagedit.js",
+        "js/cc/status.js",
+        "js/cc/keep.js",
+        "js/screens/bag.js",
+        "js/screens/status.js"
+      ],
+      "public": [
+        "js/cc/rank.js",
+        "js/cc/bag.js",
+        "js/cc/advisor.js",
+        "js/cc/bagedit.js",
+        "js/cc/status.js",
+        "js/cc/keep.js",
+        "js/screens/status.js"
+      ],
+      "allow": [
+        "CATALOG",
+        "PERSISTENCE",
+        "EVENT_LOG",
+        "SHELL",
+        "GAME"
+      ],
+      "unit": [
+        "tests/data/advisor.test.mjs",
+        "tests/data/bagedit.test.mjs",
+        "tests/data/cc2.test.mjs",
+        "tests/data/status.test.mjs"
+      ],
+      "browser": [
+        "flow",
+        "J02",
+        "J14"
+      ],
+      "entry": [
+        "js/screens/bag.js"
+      ]
+    },
+    "ARSENAL": {
+      "title": "Arsenal manager: ball grid, ball page, compare, armory, drill-card scan",
+      "owns": [
+        "js/cc/armory.js",
+        "js/cc/export.js",
+        "js/cc/drillcard.js",
+        "js/cc/drillocr.js",
+        "js/screens/arsenal.js",
+        "js/screens/ball.js",
+        "js/screens/compare.js",
+        "js/screens/drillscan.js",
+        "js/vendor/tesseract/**"
+      ],
+      "public": [
+        "js/cc/armory.js",
+        "js/cc/export.js",
+        "js/cc/drillcard.js",
+        "js/cc/drillocr.js",
+        "js/screens/drillscan.js",
+        "js/vendor/tesseract/tesseract.esm.min.js"
+      ],
+      "allow": [
+        "SCORING",
+        "CATALOG",
+        "ENGINE",
+        "PERSISTENCE",
+        "EVENT_LOG",
+        "SHELL",
+        "BAG",
+        "LANE",
+        "GAME",
+        "LOGBOOK"
+      ],
+      "unit": [
+        "tests/data/armory.test.mjs",
+        "tests/data/armsort.test.mjs",
+        "tests/data/export.test.mjs",
+        "tests/data/drillcard.test.mjs"
+      ],
+      "browser": [
+        "spine",
+        "J13",
+        "J20"
+      ],
+      "entry": [
+        "js/screens/arsenal.js",
+        "js/screens/ball.js",
+        "js/screens/compare.js"
+      ]
+    },
+    "ADD_BALL": {
+      "title": "Add a ball: search, spec-chain client, ownership, pro-shop kit",
+      "owns": [
+        "js/cc/addball.js",
+        "js/cc/ownership.js",
+        "js/cc/kit.js",
+        "js/screens/addball.js",
+        "js/screens/kit.js",
+        "js/vendor/qrcode.js",
+        "js/vendor/LICENSE-qrcode.txt"
+      ],
+      "public": [
+        "js/cc/addball.js",
+        "js/cc/ownership.js",
+        "js/cc/kit.js"
+      ],
+      "allow": [
+        "CATALOG",
+        "ENGINE",
+        "PERSISTENCE",
+        "EVENT_LOG",
+        "SHELL",
+        "BAG",
+        "GAME"
+      ],
+      "unit": [
+        "tests/data/addball.test.mjs",
+        "tests/data/kit.test.mjs"
+      ],
+      "browser": [
+        "chain",
+        "J18"
+      ],
+      "entry": [
+        "js/screens/addball.js",
+        "js/screens/kit.js"
+      ]
+    },
+    "GAME": {
+      "title": "Game page / night flow: Tonight scoring screen, fix a frame, league, wake lock",
+      "owns": [
+        "js/cc/night.js",
+        "js/cc/quicklog.js",
+        "js/cc/gametotal.js",
+        "js/cc/fix.js",
+        "js/cc/league.js",
+        "js/cc/nightdone.js",
+        "js/screens/tonight.js",
+        "js/screens/gametotal.js",
+        "js/screens/fixgame.js"
+      ],
+      "public": [
+        "js/cc/night.js",
+        "js/cc/quicklog.js",
+        "js/cc/gametotal.js",
+        "js/cc/fix.js",
+        "js/cc/league.js",
+        "js/cc/nightdone.js",
+        "js/screens/gametotal.js",
+        "js/screens/fixgame.js"
+      ],
+      "allow": [
+        "SCORING",
+        "CATALOG",
+        "ENGINE",
+        "PERSISTENCE",
+        "EVENT_LOG",
+        "SHELL",
+        "BAG",
+        "LANE",
+        "LOGBOOK"
+      ],
+      "unit": [
+        "tests/data/cc1.test.mjs",
+        "tests/data/fix.test.mjs",
+        "tests/data/gametotal.test.mjs",
+        "tests/data/league.test.mjs",
+        "tests/data/night.test.mjs"
+      ],
+      "browser": [
+        "flow",
+        "J04",
+        "J05"
+      ],
+      "entry": [
+        "js/screens/tonight.js"
+      ]
+    },
+    "LOGBOOK": {
+      "title": "Log book: nights, sessions, bowler card, insights, wrapped, exports",
+      "owns": [
+        "js/cc/card.js",
+        "js/cc/center.js",
+        "js/cc/community.js",
+        "js/cc/corner.js",
+        "js/cc/drill.js",
+        "js/screens/sessions.js",
+        "js/screens/session.js",
+        "js/screens/card.js",
+        "js/screens/cards.js",
+        "js/screens/wrapped.js",
+        "js/screens/insights.js",
+        "js/screens/corner.js",
+        "js/screens/community.js",
+        "js/screens/export.js"
+      ],
+      "public": [
+        "js/cc/card.js",
+        "js/cc/center.js",
+        "js/cc/community.js",
+        "js/cc/corner.js",
+        "js/cc/drill.js",
+        "js/screens/cards.js",
+        "js/screens/session.js",
+        "js/screens/corner.js",
+        "js/screens/export.js",
+        "js/screens/community.js"
+      ],
+      "allow": [
+        "SCORING",
+        "CATALOG",
+        "ENGINE",
+        "PERSISTENCE",
+        "EVENT_LOG",
+        "SHELL",
+        "IMPORT",
+        "GAME",
+        "LANE",
+        "ARSENAL"
+      ],
+      "unit": [
+        "tests/data/card.test.mjs",
+        "tests/data/center.test.mjs",
+        "tests/data/community.test.mjs",
+        "tests/data/corner.test.mjs",
+        "tests/data/drill.test.mjs"
+      ],
+      "browser": [
+        "J07",
+        "J08",
+        "J17"
+      ],
+      "entry": [
+        "js/screens/sessions.js",
+        "js/screens/card.js",
+        "js/screens/wrapped.js",
+        "js/screens/insights.js",
+        "js/screens/export.js"
+      ]
+    },
+    "IMPORT": {
+      "title": "Imports: CSV, LaneTrax PDF, backup-file import, validation",
+      "owns": [
+        "js/data/importer.js",
+        "js/data/csv.js",
+        "js/data/lanetrax.js",
+        "js/data/validate.js",
+        "js/screens/import.js"
+      ],
+      "public": [
+        "js/data/importer.js",
+        "js/data/csv.js",
+        "js/data/lanetrax.js",
+        "js/data/validate.js"
+      ],
+      "allow": [
+        "SCORING",
+        "EVENT_LOG",
+        "CATALOG",
+        "PERSISTENCE",
+        "SHELL"
+      ],
+      "unit": [
+        "tests/data/d1.test.mjs",
+        "tests/data/d2.test.mjs"
+      ],
+      "browser": [],
+      "entry": [
+        "js/screens/import.js"
+      ]
+    },
+    "PERSISTENCE": {
+      "title": "Local storage, IndexedDB event-log runtime, sync, account, backup, recovery",
+      "owns": [
+        "js/store.js",
+        "js/hub.js",
+        "js/sync.js",
+        "js/account.js",
+        "js/data/db.js",
+        "js/data/idb.js",
+        "js/data/backup.js",
+        "js/data/local_recovery.js",
+        "js/data/privacy.js",
+        "js/data/foundation.js",
+        "js/data/seed.js",
+        "js/data/sync.js",
+        "js/data/account.js",
+        "js/data/team.js",
+        "js/cc/protect.js",
+        "js/screens/recovery.js",
+        "js/screens/account.js",
+        "js/cc/hand.js",
+        "js/screens/hand.js",
+        "js/cc/wake.js"
+      ],
+      "public": [
+        "js/store.js",
+        "js/hub.js",
+        "js/sync.js",
+        "js/account.js",
+        "js/data/backup.js",
+        "js/data/local_recovery.js",
+        "js/data/team.js",
+        "js/data/account.js",
+        "js/data/db.js",
+        "js/data/seed.js",
+        "js/data/foundation.js",
+        "js/cc/protect.js",
+        "js/screens/recovery.js",
+        "js/screens/account.js",
+        "js/cc/hand.js",
+        "js/screens/hand.js",
+        "js/cc/wake.js"
+      ],
+      "allow": [
+        "EVENT_LOG",
+        "CATALOG",
+        "ENGINE",
+        "SHELL"
+      ],
+      "unit": [
+        "tests/data/account.test.mjs",
+        "tests/data/account_races.test.mjs",
+        "tests/data/account_recovery.test.mjs",
+        "tests/data/d3.test.mjs",
+        "tests/data/foundation.test.mjs",
+        "tests/data/local_recovery.test.mjs",
+        "tests/data/restore_safety.test.mjs",
+        "tests/data/protect.test.mjs",
+        "tests/data/hand.test.mjs",
+        "tests/data/wake.test.mjs"
+      ],
+      "browser": [
+        "J11",
+        "recov",
+        "found"
+      ],
+      "entry": []
+    },
+    "ME": {
+      "title": "Me: profile, settings, account card, learn, team, handedness",
+      "owns": [
+        "js/screens/more.js",
+        "js/screens/usage.js",
+        "js/screens/learn.js",
+        "js/screens/patterns.js",
+        "js/screens/conduct.js",
+        "js/screens/team.js",
+        "js/screens/welcome.js"
+      ],
+      "public": [
+        "js/screens/more.js"
+      ],
+      "allow": [
+        "CATALOG",
+        "ENGINE",
+        "PERSISTENCE",
+        "EVENT_LOG",
+        "SHELL",
+        "LANE",
+        "LOGBOOK",
+        "ADD_BALL",
+        "ARSENAL",
+        "GAME"
+      ],
+      "unit": [],
+      "browser": [
+        "J01",
+        "J09",
+        "J16"
+      ],
+      "entry": [
+        "js/screens/more.js",
+        "js/screens/welcome.js",
+        "js/screens/team.js",
+        "js/screens/conduct.js",
+        "js/screens/learn.js",
+        "js/screens/patterns.js",
+        "js/screens/usage.js"
+      ]
+    },
+    "SHELL": {
+      "title": "App shell: index.html, main, router, UI kit, service worker, help, CI",
+      "escalate": true,
+      "owns": [
+        "index.html",
+        "sw.js",
+        "js/main.js",
+        "js/router.js",
+        "js/ui.js",
+        "js/perf.js",
+        "js/cc/ux.js",
+        "js/cc/help.js",
+        "js/screens/help.js",
+        ".github/**",
+        ".nojekyll",
+        ".gitignore"
+      ],
+      "public": [
+        "js/router.js",
+        "js/ui.js",
+        "js/perf.js",
+        "js/cc/ux.js",
+        "js/cc/help.js",
+        "js/screens/help.js",
+        "js/main.js"
+      ],
+      "allow": [
+        "PERSISTENCE",
+        "BAG",
+        "LANE",
+        "ARSENAL",
+        "ADD_BALL",
+        "GAME",
+        "LOGBOOK",
+        "IMPORT",
+        "ME"
+      ],
+      "unit": [
+        "tests/data/help.test.mjs",
+        "tests/data/preload_routes.test.mjs",
+        "tests/data/sw_precache.test.mjs",
+        "tests/data/ux.test.mjs"
+      ],
+      "browser": [
+        "spine"
+      ],
+      "entry": []
+    },
+    "THEME": {
+      "title": "UI theme: CSS, theme tokens, icons, manifest, brand assets",
+      "owns": [
+        "css/**",
+        "icon.svg",
+        "icons/**",
+        "manifest.webmanifest",
+        "js/theme*.js",
+        "js/brand*.js",
+        "js/themes/**",
+        "tools/brand/**",
+        "tests/brand/**"
+      ],
+      "public": [],
+      "allow": [],
+      "unit": [],
+      "browser": [
+        "flow",
+        "spine"
+      ],
+      "entry": []
+    },
+    "TOOLING": {
+      "title": "Zone tooling: boundary check, lock check, zone-scoped quick check",
+      "owns": [
+        "tools/check.mjs",
+        "tools/zones/**",
+        "tests/data/zones.test.mjs"
+      ],
+      "public": [],
+      "allow": [],
+      "unit": [
+        "tests/data/zones.test.mjs"
+      ],
+      "browser": [],
+      "entry": [],
+      "extra": []
+    },
+    "TESTS": {
+      "title": "Test suites and QA harness (not owned by a feature zone)",
+      "owns": [
+        "tests/**",
+        "tools/**"
+      ],
+      "public": [],
+      "allow": [],
+      "unit": [],
+      "browser": [],
+      "entry": []
+    },
+    "DOCS": {
+      "title": "Docs, README, changelog, research notes",
+      "owns": [
+        "docs/**",
+        "README.md",
+        "CHANGELOG.md"
+      ],
+      "public": [],
+      "allow": [],
+      "unit": [],
+      "browser": [],
+      "entry": []
+    }
+  },
+  "exceptions": [
+    {
+      "from": "js/cc/addball.js",
+      "to": "js/cc/model.js",
+      "rule": "layer",
+      "reason": "addball.js calls modelLine/presetFor to show the 'model line' note for a ball being added. model.js is lane/physics logic that wraps the unchanged engine; moving it would change shipped files. Candidate to move into ENGINE-adjacent kernel later."
+    },
+    {
+      "from": "js/hub.js",
+      "to": "js/cc/status.js",
+      "rule": "layer",
+      "reason": "hub.js (event-log runtime) uses status.js (currentBag, status words) to keep the saved bag consistent when events arrive. status.js sits in BAG because it imports bag.js; the proper fix is a lower 'ball status' kernel. Behavior-neutral to leave."
+    },
+    {
+      "from": "js/screens/export.js",
+      "to": "js/screens/more.js",
+      "rule": "layer",
+      "reason": "export.js imports only the VERSION constant from the Me screen (to stamp exports). A shared version constant (e.g. in SHELL) would remove this; left alone to avoid touching shipped files."
+    },
+    {
+      "from": "js/screens/insights.js",
+      "to": "js/screens/ball.js",
+      "rule": "internal",
+      "reason": "Only backBar() (the shared back-bar header) is imported. backBar belongs in the UI kit (js/ui.js); moving it is a shipped-code change, so it is a documented exception."
+    },
+    {
+      "from": "js/screens/pattern.js",
+      "to": "js/screens/ball.js",
+      "rule": "layer",
+      "reason": "Only backBar() (shared back-bar header) is imported; see the insights.js entry."
+    },
+    {
+      "from": "js/screens/pattern.js",
+      "to": "js/screens/ball.js",
+      "rule": "internal",
+      "reason": "Only backBar() (shared back-bar header) is imported; see the insights.js entry."
+    },
+    {
+      "from": "js/store.js",
+      "to": "js/cc/geom.js",
+      "rule": "layer",
+      "reason": "store.js reads AIM_MAX from the lane geometry module to clamp saved aim values. A constant shared via ENGINE/CATALOG would remove this; the clamp must not change."
+    }
+  ]
+}

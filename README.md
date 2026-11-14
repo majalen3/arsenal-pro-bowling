@@ -54,6 +54,8 @@ Tests (none of them call the production API):
 | Release audit (copy, errors, axe, bytes) | `python tests/journeys/release_audit.py --base http://localhost:8300/` |
 | Lighthouse | `tests/lighthouse.sh http://localhost:8300/#/tonight` |
 
+**Zones and quick checks.** The code is split into zones with locked engine, scoring and event-log files ([docs/ARCHITECTURE_ZONES.md](docs/ARCHITECTURE_ZONES.md), [docs/LOCKS.md](docs/LOCKS.md)). `node tools/check.mjs` runs only the zones your change touches (plus the boundary and lock checks and a fast smoke) and escalates to the full suite by itself for locked-zone, shell or app-wide changes. `node tools/zones/boundaries.mjs` and `node tools/zones/locks.mjs` run on their own, with no install.
+
 The Python suites use Playwright (`pip install playwright && python -m playwright install chromium`). CI runs the UI and journey suites on every push.
 
 Backend: [arsenal-pro-api](https://github.com/majalen3/arsenal-pro-api) on Render's free tier (the first call after a quiet spell can take about 30 s; the app keeps working meanwhile).

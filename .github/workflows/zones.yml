@@ -1,0 +1,19 @@
+name: zones
+# Fast (about 15 s, node only) guard for the zone design in docs/ARCHITECTURE_ZONES.md:
+#   - dependency boundaries (no zone imports another zone's internals)
+#   - SHA-256 locks on the engine, scoring and event-log schema (an unlock needs a dated reason in docs/LOCKS.md)
+#   - engine equivalence (7500 comparisons, 0 mismatches)
+# The same checks also run inside the unit tests (tests/data/zones.test.mjs), so this job is the quick, separate signal.
+on: [push, pull_request]
+jobs:
+  zones:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: node tools/zones/boundaries.mjs
+      - run: node tools/zones/locks.mjs
+      - run: node tests/engine_equivalence.mjs
+      - run: node --test tests/data/zones.test.mjs

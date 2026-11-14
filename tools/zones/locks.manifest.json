@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "algorithm": "sha256",
+  "files": {
+    "js/data/events.js": "93425818992cf316fc9bd8d3aa6c07d8a638871410ddf7a656707449954459dd",
+    "js/data/migrate.js": "ec4dcbddce558919719d038a046f9f4886e789064fe6a369e2584fdfb9fee12e",
+    "js/data/schema.js": "5cf221d888ad780eb91a55ac7a35e75e82ae482d41ee62a8204986a5d48fc333",
+    "js/data/scoring.js": "3ed3b29ba987fff12677cc7cebcc1cb3ebe0c8e102cac6e4f072235f32678da3",
+    "js/engine.js": "5a88672c9f17b703fce23e22d60b055e74af422be1b22ae1bccbb82831d58924",
+    "tests/engine_equivalence.mjs": "84749c886dab7a5ba8c086086c1ab89a39cb7e3b0b6dc7f96ea661fef83efe1b",
+    "tests/fixtures/engine-inputs.v64.json": "b78c27e81df273bea3b7eeae212d3385c19bb26e4b0dabd5ef4028d42f1b6a80",
+    "tests/legacy/app.v1.js": "8249ad9bd7c7fcf25bd09c86b0d3be3937ed4cb0d801bee7b088529236eb125f"
+  }
+}
