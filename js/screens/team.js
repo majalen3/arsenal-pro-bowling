@@ -60,12 +60,13 @@ export async function render({ query }) {
   const joinQ = query && query.get('join') ? normCode(query.get('join')) : null;
   if (joinQ && CODE_RE.test(joinQ)) setPrefs({ teamJoin: joinQ });
   const body = h('div', { class: 'stack', id: 'teamBody' });
+  let dst = body;   // where the painters append; draw() points it at an off-screen fragment, then swaps it in at once (no blank flash)
   const chip = h('span', { class: 'pill net-chip', id: 'teamOffline', hidden: true, text: 'Offline' });
   let tid = (query && query.get('t')) || prefs().teamLast || null, busy = false, mod2 = false;   // mod2: the live API can hide / un-hide (moderation v2)
   const err = r => toast(r.error || 'Something went wrong.', { kind: 'bad' });
 
   function signedOut() {
-    body.append(h('div', { class: 'card', id: 'teamPitch' }, h('h2', { class: 'card-title', text: 'My Team' }),
+    dst.append(h('div', { class: 'card', id: 'teamPitch' }, h('h2', { class: 'card-title', text: 'My Team' }),
       h('p', { text: 'Share what you are bringing tonight with your league team, keep lane-pair notes together, and see who is a regular. It needs a free account; your balls and games work without one.' }),
       prefs().teamJoin ? h('p', { class: 'small', id: 'teamJoinHeld', text: `Invite code ${prefs().teamJoin} is saved. Sign in and you can join.` }) : null,
       h('a', { class: 'btn ghost block', href: '#/conduct', id: 'teamConductOut' }, 'Code of conduct')), accountCard());
@@ -96,54 +97,75 @@ export async function render({ query }) {
       h('div', { class: 'fld' }, h('span', { text: 'League night (optional)' }), segmented('League night', NIGHTS.map(n => [n, n]), '', v => { night = v; }, 'wrap tm-nights')),
       h('label', { class: 'fld' }, h('span', { text: 'Start time (optional)' }), tIn),
       h('button', { class: 'btn block ' + (prefs().teamJoin ? 'ghost' : 'primary'), type: 'submit', id: 'tmStartBtn' }, 'Start team'));
-    body.append(prefs().teamJoin ? joinCard : startCard, prefs().teamJoin ? startCard : joinCard);
+    dst.append(prefs().teamJoin ? joinCard : startCard, prefs().teamJoin ? startCard : joinCard);
   }
 
-  let gen = 0;
-  async function draw() {
-    const my = ++gen; body.innerHTML = '';
-    if (!account.active()) return signedOut();
-    let list = team.cached(), fresh = await team.list();
+  // v81 speed (owner t160u): stale-while-revalidate. The last synced team paints at once from this phone (buttons that need the
+  // server stay disabled until it answers), the team list and the team view are fetched in parallel (was one after the other), and
+  // the fresh view replaces the old one in a single swap, so a Hide, a note or a report never blanks the screen while the server
+  // answers (a Render cold start can take seconds). Block is private to this phone, so it repaints from the cache with no request.
+  let gen = 0, shownTid = null, shownLive = false;
+  function paint(fn) { const f = document.createDocumentFragment(); dst = f; try { fn(); } finally { dst = body; } body.replaceChildren(f); }
+  function full(teams, v, live, note) {
+    if (teams.length > 1) dst.append(h('div', { class: 'list-tools', id: 'tmPick' }, segmented('Team', teams.map(t => [t.id, t.name]), tid, x => { tid = x; setPrefs({ teamLast: x }); draw(); }, 'wide')));
+    if (note === 'stale') dst.append(h('p', { class: 'small warn-box', id: 'tmStale', text: `Showing the team as of ${ago(v.at)}. Changes need a connection.` }));
+    else if (note === 'updating') dst.append(h('p', { class: 'small muted', id: 'tmUpdating', role: 'status', text: `Updating\u2026 showing the team as of ${ago(v.at)}.` }));
+    teamView(v.view, live); shownTid = tid; shownLive = live;
+  }
+  async function draw({ net = true } = {}) {
+    const my = ++gen;
+    if (!account.active()) { chip.hidden = true; shownTid = null; return paint(signedOut); }
+    const cl = team.cached(), cTeams = (cl && cl.teams) || [];
+    if (cTeams.length) {
+      if (!cTeams.find(t => t.id === tid)) tid = cTeams[0].id;
+      const cv = team.cached(tid);
+      // Paint the cache when nothing of this team is on screen yet (first open, team switch) or for a local-only change.
+      if (cv && (!net || shownTid !== tid)) paint(() => full(cTeams, cv, net ? false : shownLive, net ? 'updating' : (shownLive ? null : 'stale')));
+    }
+    if (!net) return;
+    const pv = tid ? team.view(tid).catch(() => ({ ok: false, status: 0, offline: true, error: 'Could not reach the team.' })) : null;
+    let fresh; try { fresh = await team.list(); } catch (e) { fresh = { ok: false, status: 0, offline: true, error: 'Could not reach the team.' }; }
     if (my !== gen) return;
     chip.hidden = !fresh.offline;
-    if (fresh.ok) list = { teams: fresh.json.teams }; else if (!list) { body.append(emptyState('Could not load your teams', fresh.error)); return; }
+    const list = fresh.ok ? { teams: fresh.json.teams } : cl;
+    if (!list) { shownTid = null; return paint(() => dst.append(emptyState('Could not load your teams', fresh.error))); }
     const teams = list.teams || [];
-    if (!teams.length) return startOrJoin();
-    if (!teams.find(t => t.id === tid)) tid = teams[0].id;
-    if (teams.length > 1) body.append(h('div', { class: 'list-tools', id: 'tmPick' }, segmented('Team', teams.map(t => [t.id, t.name]), tid, v => { tid = v; setPrefs({ teamLast: v }); draw(); }, 'wide')));
-    let v = team.cached(tid), r = await team.view(tid);
+    if (!teams.length) { shownTid = null; return paint(startOrJoin); }
+    const want = teams.find(t => t.id === tid) ? tid : teams[0].id;
+    const r = pv && want === tid ? await pv : await team.view(want); tid = want;
     if (my !== gen) return;
+    let v = team.cached(tid);
     if (r.ok) v = { at: Date.now(), view: r.json };
-    else if (r.status === 404) { toast('You are no longer on that team.'); tid = null; return draw(); }
-    chip.hidden = r.ok; if (!v) { body.append(emptyState('Could not load the team', r.error)); return; }
-    if (!r.ok) body.append(h('p', { class: 'small warn-box', id: 'tmStale', text: `Showing the team as of ${ago(v.at)}. Changes need a connection.` }));
-    teamView(v.view, r.ok);
+    else if (r.status === 404) { toast('You are no longer on that team.'); tid = null; shownTid = null; return draw(); }
+    chip.hidden = r.ok;
+    if (!v) { shownTid = null; return paint(() => dst.append(emptyState('Could not load the team', r.error))); }
+    paint(() => full(teams, v, r.ok, r.ok ? null : 'stale'));
   }
 
   function teamView(V, live) {
     const T = V.team, me = V.me, sec = me.role === 'secretary', P = proj(), mine = myShares(P), blocked = blockedIds(prefs(), T.id); mod2 = canHide(V);
     if (live) autoRefresh(T.id, mine, V);
-    body.append(h('div', { class: 'card', id: 'tmHead' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: T.name }), h('span', { class: 'pill', text: `${V.members.length} bowler${V.members.length === 1 ? '' : 's'}` })),
+    dst.append(h('div', { class: 'card', id: 'tmHead' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title', text: T.name }), h('span', { class: 'pill', text: `${V.members.length} bowler${V.members.length === 1 ? '' : 's'}` })),
       h('p', { id: 'tmNight', text: nightText(T) })));
     // Me first, then teammates in join order (never sorted by any number).
     const meM = V.members.find(m => m.memberId === me.memberId), others = V.members.filter(m => m.memberId !== me.memberId);
-    body.append(h('h2', { class: 'section-title', text: 'Bowlers' }));
-    if (me.hidden) body.append(h('p', { class: 'small warn-box', id: 'tmHiddenNote', text: 'Your team\u2019s secretary has hidden your shared items and notes from the rest of the team. Nothing was deleted. Ask them about it, or leave the team below.' }));
-    if (meM) body.append(memberCard(meM, { me: true, actions: h('button', { class: 'btn ghost block', id: 'tmShareBtn', disabled: !live, onclick: () => shareSheet(T.id, mine) }, 'Choose what I share') }));
+    dst.append(h('h2', { class: 'section-title', text: 'Bowlers' }));
+    if (me.hidden) dst.append(h('p', { class: 'small warn-box', id: 'tmHiddenNote', text: 'Your team\u2019s secretary has hidden your shared items and notes from the rest of the team. Nothing was deleted. Ask them about it, or leave the team below.' }));
+    if (meM) dst.append(memberCard(meM, { me: true, actions: h('button', { class: 'btn ghost block', id: 'tmShareBtn', disabled: !live, onclick: () => shareSheet(T.id, mine) }, 'Choose what I share') }));
     for (const m of others) {
-      if (blocked.has(m.memberId)) { body.append(h('div', { class: 'card tm-card tm-blocked', 'data-member': m.memberId },
+      if (blocked.has(m.memberId)) { dst.append(h('div', { class: 'card tm-card tm-blocked', 'data-member': m.memberId },
         h('p', { class: 'small', text: `You blocked ${m.displayName}. Their items and notes are hidden on this phone only.` }),
         h('button', { class: 'btn ghost', 'data-unblock': m.memberId, onclick: () => blockMember(T.id, m, false) }, 'Unblock'))); continue; }
-      body.append(memberCard(m, { actions: h('div', { class: 'row gap wrap' },
+      dst.append(memberCard(m, { actions: h('div', { class: 'row gap wrap' },
         sec && mod2 && m.role !== 'secretary' ? h('button', { class: 'btn ghost', 'data-hide': m.memberId, disabled: !live, onclick: () => hideMember(T.id, m, !m.hidden) }, m.hidden ? 'Show again' : 'Hide') : null,
         sec ? h('button', { class: 'btn ghost', 'data-remove': m.memberId, disabled: !live, onclick: () => removeMember(T.id, m) }, 'Remove') : null,
         h('button', { class: 'btn ghost', 'data-report': m.memberId, disabled: !live, onclick: () => reportSheet(T.id, { memberId: m.memberId }, m.displayName, { items: mod2 }) }, 'Report'),
         h('button', { class: 'btn ghost', 'data-block': m.memberId, onclick: () => blockMember(T.id, m, true) }, 'Block')) }));
     }
-    if (!others.length) body.append(h('p', { class: 'small muted', id: 'tmAlone', text: sec ? 'No teammates yet. Make an invite below and send it to them yourself.' : 'Your teammates will show here.' }));
+    if (!others.length) dst.append(h('p', { class: 'small muted', id: 'tmAlone', text: sec ? 'No teammates yet. Make an invite below and send it to them yourself.' : 'Your teammates will show here.' }));
     notesCard(T.id, V, live, sec);
     if (sec) secretaryCard(T, V, live);
-    body.append(h('div', { class: 'card stack', id: 'tmMine' }, h('h2', { class: 'card-title', text: 'My place on the team' }),
+    dst.append(h('div', { class: 'card stack', id: 'tmMine' }, h('h2', { class: 'card-title', text: 'My place on the team' }),
       h('button', { class: 'btn ghost block', id: 'tmRename', disabled: !live, onclick: () => renameSheet(T.id, me.displayName) }, `Change my name (${me.displayName})`),
       h('a', { class: 'btn ghost block', href: '#/conduct', id: 'tmConduct' }, 'Code of conduct'),
       h('button', { class: 'btn ghost block', id: 'tmLeave', disabled: !live, onclick: () => leaveTeam(T) }, 'Leave team'),
@@ -188,7 +210,7 @@ export async function render({ query }) {
     const txt = h('input', { id: 'tmNoteText', maxlength: '200', placeholder: 'What the pair did tonight', 'aria-label': 'Note' });
     const name = id => (V.members.find(m => m.memberId === id) || {}).displayName || 'A former teammate';
     const notes = visibleNotes(V, blockedIds(prefs(), t));
-    body.append(h('div', { class: 'card stack', id: 'tmNotes' }, h('h2', { class: 'card-title' }, 'Lane-pair notes', helpDot('team-notes', 'Lane-pair notes')),
+    dst.append(h('div', { class: 'card stack', id: 'tmNotes' }, h('h2', { class: 'card-title' }, 'Lane-pair notes', helpDot('team-notes', 'Lane-pair notes')),
       notes.length ? h('ul', { class: 'plain stack' }, ...notes.slice(0, 30).map(n => h('li', { class: 'tm-note' + (n.hidden ? ' tm-note-hidden' : ''), 'data-note': n.id },
         h('div', {}, n.lanes ? h('b', { text: 'Lanes ' + n.lanes + ': ' }) : null, h('span', { text: n.text })),
         h('div', { class: 'row between wrap' }, h('span', { class: 'small muted', text: `${name(n.memberId)}, ${ago(Date.parse(n.createdAt))}${n.hidden ? ', hidden from the team' : ''}` }),
@@ -217,7 +239,7 @@ export async function render({ query }) {
         rp.aboutMember ? h('button', { class: 'btn ghost', onclick: () => removeMember(T.id, { memberId: rp.aboutMember, displayName: name(rp.aboutMember) }) }, 'Remove the bowler') : null,
         h('button', { class: 'btn ghost', 'data-dismiss': rp.id, onclick: async () => { const r = await team.dismiss(T.id, rp.id); if (!r.ok) return err(r); toast('Report dismissed.'); draw(); } }, 'Dismiss'))));
     let night = T.night || '', time = T.time || '';
-    body.append(h('div', { class: 'card stack', id: 'tmSec' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title' }, 'Secretary', helpDot('team-secretary', 'League secretary')),
+    dst.append(h('div', { class: 'card stack', id: 'tmSec' }, h('div', { class: 'card-h' }, h('h2', { class: 'card-title' }, 'Secretary', helpDot('team-secretary', 'League secretary')),
       reports.length ? h('span', { class: 'pill', 'data-tone': 'warn', id: 'tmRepCount', text: `${reports.length} report${reports.length === 1 ? '' : 's'}` }) : null),
       h('button', { class: 'btn primary block', id: 'tmInvite', disabled: !live, onclick: async () => {
         const r = await team.invite(T.id); if (!r.ok) return err(r);
@@ -260,7 +282,7 @@ export async function render({ query }) {
   async function blockMember(t, m, on) {
     if (on && !await confirmSheet({ title: `Block ${m.displayName}?`, text: 'You will not see their items or notes on this phone. They are not told, nothing changes for anyone else, and you can unblock them any time. To tell the secretary, use Report.', confirm: 'Block', danger: false })) return;
     setPrefs({ teamBlocked: setBlocked(prefs(), t, m.memberId, on) });
-    toast(on ? `${m.displayName} is blocked on this phone.` : `${m.displayName} is unblocked.`, on ? { action: { label: 'Undo', run: () => { setPrefs({ teamBlocked: setBlocked(prefs(), t, m.memberId, false) }); draw(); } } } : {}); draw();
+    toast(on ? `${m.displayName} is blocked on this phone.` : `${m.displayName} is unblocked.`, on ? { action: { label: 'Undo', run: () => { setPrefs({ teamBlocked: setBlocked(prefs(), t, m.memberId, false) }); draw({ net: false }); } } } : {}); draw({ net: false });
   }
   async function removeMember(t, m) {
     if (!await confirmSheet({ title: `Remove ${m.displayName}?`, text: 'Their shared items and notes leave the team with them. This cannot be undone' + (mod2 ? ' (Hide pauses instead, and can be undone)' : '') + '. They can rejoin only with a new invite.', confirm: 'Remove' })) return;

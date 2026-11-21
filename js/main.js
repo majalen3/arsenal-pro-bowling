@@ -39,7 +39,9 @@ route(/^\/drill-card$/, 'bag', () => import('./screens/drillscan.js'));
 route(/^\/me\/drill-card$/, 'me', () => import('./screens/drillscan.js'));
 // Bag tab: the bag builder (front door). Arsenal tab: the Armory (#/arsenal; the old #/bag?view=all still renders it under the Arsenal tab).
 route(/^\/arsenal$/, 'arsenal', () => import('./screens/arsenal.js'));   // PRODUCT_SPINE: the arsenal manager is its own place (was #/bag?view=all, still works)
-route(/^\/bag$/, (p, q) => (q && q.get('view') === 'all' ? 'arsenal' : 'bag'), () => Promise.all([import('./screens/bag.js'), import('./screens/arsenal.js')]).then(([b, a]) => ({ render: o => (o.query && o.query.get('view') === 'all' ? a : b).render(o) })));
+// v81 speed: the front door (#/bag) loads only the bag builder; the old #/bag?view=all loads only the Armory (was both, every time: 8 modules, ~39 KB).
+const BAG_SCREEN = { render: o => (o.query && o.query.get('view') === 'all' ? import('./screens/arsenal.js') : import('./screens/bag.js')).then(m => m.render(o)) };
+route(/^\/bag$/, (p, q) => (q && q.get('view') === 'all' ? 'arsenal' : 'bag'), () => Promise.resolve(BAG_SCREEN));
 route(/^\/learn$/, 'learn', () => import('./screens/learn.js'));
 route(/^\/learn\/patterns$/, 'learn', () => import('./screens/patterns.js'));
 route(/^\/pattern\/([\w.-]+)$/, 'learn', () => import('./screens/pattern.js'));
@@ -115,19 +117,23 @@ setDecorate((el, path) => {
 // Do not preload Lane + Tonight + their model tools on every Me/Welcome visit.
 // These same-origin hints shorten the selected route's graph without fetching unrelated screens.
 const routePreloads = { __proto__:null,
-  '/me':['screens/more','screens/account','screens/community','cc/community','cc/card'],
-  '/welcome':['screens/welcome','cc/addball','data/spec_catalog','data/match','cc/ownership'],
-  '/tonight':['screens/tonight','cc/quicklog','cc/rank','cc/model','cc/advisor','cc/bag','cc/target','patdata','cc/line','cc/status','cc/bagedit','cc/card','screens/gametotal',
-    // second level of tonight.js, listed here so it loads beside it, not after it (one fewer round trip)
-    'labels','cc/fix','cc/night','cc/league','cc/center','cc/ownpat','cc/drill','cc/hand','screens/hand','cc/nightdone','cc/gametotal','data/events','data/privacy'],
-  '/arsenal':['screens/bag','screens/arsenal','cc/rank','cc/model','cc/armory','cc/bag','cc/status'],
-  '/bag':['screens/bag','screens/arsenal','cc/rank','cc/model','cc/armory','cc/bag','cc/target','cc/status','cc/bagedit','cc/advisor'],
+  // v81 speed: each list is exactly the route screen's static import closure minus the shell (index.html) and BOOT_REST, so the
+  // browser fetches the whole graph in one flat round instead of one level per round trip, and nothing the route does not use.
+  // tests/data/preload_routes.test.mjs recomputes the closures and fails when a list drifts. Exception, measured: Lane and Target
+  // keep their short v80 lists (the full Lane closure made Lighthouse's Lane LCP ~0.26 s worse in 6 of 6 runs); the test allows them a subset.
+  '/me':['screens/more','account','data/team','data/account','screens/community','cc/community','cc/card','cc/quicklog','cc/rank','screens/account','screens/gametotal','cc/night','cc/status','cc/bag','cc/gametotal','cc/hand','ctl'],
+  '/welcome':['screens/welcome','cc/ownership','cc/addball','cc/bag','cc/rank','cc/model','data/match','data/spec_catalog','ctl','cc/hand'],
+  '/tonight':['screens/tonight','cc/nightdone','screens/hand','cc/hand','screens/gametotal','cc/night','cc/quicklog','cc/rank','cc/status','cc/bag','cc/gametotal','cc/bagedit','cc/drill','cc/card','cc/ownpat','cc/center','cc/league','cc/line','cc/model','cc/target','cc/advisor','patdata','cc/fix','labels'],
+  '/arsenal':['screens/arsenal','cc/keep','cc/status','cc/bag','cc/rank','cc/bagedit','cc/armory','labels','screens/pickers','cc/provenance','ctl','cc/hand'],
+  '/bag':['screens/bag','screens/status','cc/status','cc/bag','cc/rank','patdata','cc/night','cc/quicklog','cc/bagedit','cc/advisor'],
   '/lane':['screens/lane','lane','deck','ctl','labels','screens/pickers'],
-  '/target':['screens/target','lane','ctl','cc/target'],
-  '/results':['screens/sessions','cc/card'], '/learn':['screens/learn']
+  '/target':['screens/target','lane','cc/target'],
+  '/results':['screens/sessions','cc/nightdone','screens/session','cc/hand','screens/corner','cc/corner','cc/card','cc/quicklog','cc/rank','screens/gametotal','cc/night','cc/status','cc/bag','cc/gametotal','cc/drill','cc/center','screens/fixgame','cc/fix','data/csv','data/validate','labels'],
+  '/learn':['screens/learn'],
+  '/team':['screens/team','data/team','cc/community','cc/card','cc/quicklog','cc/rank','cc/export','cc/status','cc/bag','cc/armory','screens/account','data/account','account']
 };
 // The event log and what it needs: not part of the first paint, needed by every screen right after it.
-const BOOT_REST = ['hub', 'data/db', 'data/idb', 'data/seed', 'data/migrate', 'data/schema', 'data/scoring', 'data/project', 'data/foundation'];
+const BOOT_REST = ['hub', 'data/db', 'data/idb', 'data/seed', 'data/migrate', 'data/schema', 'data/scoring', 'data/project', 'data/foundation', 'data/events', 'data/privacy'];
 const initialPath = location.hash.replace(/^#/, '').split('?')[0] || '/bag';
 // v80 (owner t150u, speed): the shell (tab bar) paints first; the route's preloads and the router start one frame later, so the
 // first paint competes with nothing but the shell's own files. The timer is the fallback for a page opened in a background tab.

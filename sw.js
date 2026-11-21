@@ -3,7 +3,7 @@
 // Atomic cache-first shell: migration and UI modules stay in one installed release, online or offline. API calls are never cached.
 // Updates: a new worker waits and the page shows "A new version is ready · Refresh" (message 'skip').
 // Exception: upgrading from the v1 single-file app (cache 'arsenal-pro-v2'), which has no update prompt, activates immediately.
-const CACHE = 'arsenal-pro-v80';
+const CACHE = 'arsenal-pro-v81';
 const SHELL = ['./', 'index.html', 'privacy.html', 'terms.html', 'css/app.css', 'manifest.webmanifest', 'icon.svg', 'icons/icon-192.png',
   'js/main.js', 'js/store.js', 'js/ui.js', 'js/router.js', 'js/engine.js', 'js/data.js', 'js/lane.js', 'js/deck.js', 'js/pinsim.js', 'js/ctl.js', 'js/laneseed.js', 'js/labels.js', 'js/patdata.js',
   'js/screens/lane.js', 'js/screens/pickers.js', 'js/screens/arsenal.js', 'js/screens/insights.js', 'js/screens/ball.js', 'js/screens/compare.js',
@@ -29,11 +29,13 @@ self.addEventListener('install', (e) => {
 });
 self.addEventListener('message', (e) => { if (e.data === 'skip') self.skipWaiting(); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k.startsWith('arsenal-pro-') && k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
+// v81 speed: resolve the shell paths once, not ~130 URL parses on every request the page makes.
+const ENTRY = new Set([new URL('./', self.location.href).pathname, new URL('index.html', self.location.href).pathname]);
+const SHELL_PATHS = new Set(SHELL.map(p => new URL(p, self.location.href).pathname));
 self.addEventListener('fetch', (e) => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET' || u.origin !== location.origin || /\/api(?:\/|$)/.test(u.pathname)) return;
-  const entry = [new URL('./', self.location.href).pathname, new URL('index.html', self.location.href).pathname].includes(u.pathname);
-  const shell = entry || SHELL.some(p => new URL(p, self.location.href).pathname === u.pathname);
+  const entry = ENTRY.has(u.pathname), shell = entry || SHELL_PATHS.has(u.pathname);
   e.respondWith(caches.open(CACHE).then(async cache => {
     if (shell) { const hit = await cache.match(entry ? 'index.html' : e.request, { ignoreSearch:true }); if (hit) return hit; }
     try { const r = await fetch(e.request); if (r.ok) await cache.put(e.request, r.clone()); return r; }
