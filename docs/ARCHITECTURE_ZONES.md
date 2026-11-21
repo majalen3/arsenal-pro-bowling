@@ -163,10 +163,10 @@ Generated from `tools/zones/zones.json` (`node tools/zones/zonedoc.mjs --write`)
 
 #### SHELL: App shell: index.html, main, router, UI kit, service worker, help, CI
 
-- **Owns:** `index.html`, `sw.js`, `js/main.js`, `js/router.js`, `js/ui.js`, `js/perf.js`, `js/cc/ux.js`, `js/cc/help.js`, `js/screens/help.js`, `.github/**`, `.nojekyll`, `.gitignore`
-- **Public interface:** `js/router.js`, `js/ui.js`, `js/perf.js`, `js/cc/ux.js`, `js/cc/help.js`, `js/screens/help.js`, `js/main.js`
+- **Owns:** `index.html`, `sw.js`, `js/main.js`, `js/router.js`, `js/ui.js`, `js/perf.js`, `js/cc/ux.js`, `js/cc/help.js`, `js/screens/help.js`, `js/feedback.js`, `js/cc/feedback.js`, `js/screens/feedback.js`, `.github/**`, `.nojekyll`, `.gitignore`
+- **Public interface:** `js/router.js`, `js/ui.js`, `js/perf.js`, `js/cc/ux.js`, `js/cc/help.js`, `js/screens/help.js`, `js/main.js`, `js/feedback.js`, `js/cc/feedback.js`
 - **May import:** PERSISTENCE, BAG, LANE, ARSENAL, ADD_BALL, GAME, LOGBOOK, IMPORT, ME
-- **Tests that cover it:** `help.test.mjs`, `preload_routes.test.mjs`, `sw_precache.test.mjs`, `ux.test.mjs`, Spine tabs + click depth (product_spine.py)
+- **Tests that cover it:** `help.test.mjs`, `preload_routes.test.mjs`, `sw_precache.test.mjs`, `ux.test.mjs`, `feedback.test.mjs`, Spine tabs + click depth (product_spine.py), `Feedback button, survey, opt-ins (feedback_smoke.py)`
 
 #### THEME: UI theme: CSS, theme tokens, icons, manifest, brand assets
 

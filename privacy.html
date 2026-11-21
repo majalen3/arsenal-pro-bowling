@@ -37,8 +37,9 @@ th,td{border-top:1px solid var(--line);padding:6px 8px 6px 0;text-align:left;ver
 <h2 style="margin-top:.6em">The short version</h2>
 <ul>
 <li>Your balls, games, bag and notes are saved <b>on your phone first</b>. The app works fully offline.</li>
-<li>Nothing is sent to our server unless you turn on an account, an optional backup code, My Team, or look up a ball's specs.</li>
-<li>No ads, no analytics, no tracking, no third-party scripts, and the app sets no cookies.</li>
+<li>Nothing is sent to our server unless you turn on an account, an optional backup code, My Team, look up a ball's specs, or send us feedback.</li>
+<li>Usage counts and crash reports are <b>off</b> until you turn them on in Me &rsaquo; Privacy. They go only to our own server, with no name or id.</li>
+<li>No ads, no analytics services, no tracking, no third-party scripts, and the app sets no cookies.</li>
 <li>You can export or delete an account and its server copy in the app. You can delete everything on your phone by clearing the site's data.</li>
 </ul>
 </div>
@@ -50,7 +51,8 @@ th,td{border-top:1px solid var(--line);padding:6px 8px 6px 0;text-align:left;ver
 <li><b>Your profile and settings</b> (localStorage): hand, style, ball speed, rev rate and the optional PAP and axis tilt you type in, look and text size, flags such as "onboarded", and the teammates you block (the server is never told who you block).</li>
 <li><b>A private device code</b> (localStorage). It is only used if you turn on backup-code sync (section 3).</li>
 <li><b>Account sign-in and team cache</b> (localStorage), only if you sign in: a sign-in token (not your password) and the last team view so My Team opens offline.</li>
-<li><b>On-device counters</b> (localStorage, "Tests and usage" in Me): how often screens were opened. These are never sent anywhere.</li>
+<li><b>On-device counters</b> (localStorage, "Tests and usage" in Me): how often screens were opened and a few actions were used. They stay on the phone unless you turn on usage counts (section 3a); then only the totals for the actions listed there are sent.</li>
+<li><b>Feedback waiting to send</b> (localStorage): a note, survey answer or crash report you made while offline, until our server confirms it has it (at most 20, with at most 3 screenshots). Also a list of receipts for what you sent, so you can delete it later, and your two privacy switches.</li>
 <li><b>Short-lived tab state</b> (sessionStorage): where you were and whether a game is open.</li>
 <li><b>Offline files</b> (service worker cache): the app's own code and pictures. If you use the drill-card reader, its reading tools (about 5 MB) are saved too.</li>
 </ul>
@@ -66,6 +68,17 @@ th,td{border-top:1px solid var(--line);padding:6px 8px 6px 0;text-align:left;ver
 <tr><td>Turn on backup-code sync</td><td>The same event log, filed under the private code. <b>Anyone who has the code can read it.</b> Treat it like a password.</td></tr>
 <tr><td>Use My Team</td><td>Team name, league night and time, the name you choose on the team, and only the items you switch on (tonight's bag, plain counts, tags, home center badge). Lane-pair notes you write (up to 280 characters). Invite codes (stored only as a keyed hash). Reports a teammate files. Teammates see the name you chose on the team, never your email.</td></tr>
 </table>
+<h2 id="feedback">3a. Feedback, the post-game question, usage counts and crash reports</h2>
+<p>These go only to our own server on Render, never to an analytics, advertising or crash-reporting company. None of them includes your name, email, account, device code, balls, scores, notes or team. Nothing is sent while you are scoring a game; it waits until you leave the game page. If you are offline it waits on your phone and is sent later.</p>
+<table>
+<tr><th>What</th><th>When</th><th>What is sent and stored</th></tr>
+<tr><td>Feedback (the speech-bubble button, or Me &rsaquo; Feedback)</td><td>Only when you tap Send</td><td>The type (bug, idea or praise), what you type (up to 1,000 characters; anything that looks like an email, link or phone number is removed before it is stored), the app version (for example v82), the screen you were on as a path like <code>/bag</code> (no ids or search text), and the kind of device (phone, tablet or desktop, and whether the app is installed). No phone model, browser or system version.</td></tr>
+<tr><td>A screenshot with your feedback</td><td>Only if you pick one and send it</td><td>The picture you choose, shrunk to at most 1,000 pixels and about 190 KB on your phone. The app copies only the pixels, so the photo's hidden details (such as location) are not sent. <b>A screenshot can show names, scores or teammates; check it before you send.</b> The app never takes a screenshot by itself.</td></tr>
+<tr><td>The post-game question ("How useful was Arsenal Pro tonight?")</td><td>Asked at most once every 3 finished games and once a night, only after you end a night or add game totals, never while you score. "Not now" skips it.</td><td>Your 1&ndash;5 answer, an optional one-line note (up to 140 characters, scrubbed like feedback), the app version and the kind of device.</td></tr>
+<tr><td>Anonymous usage counts</td><td><b>Off unless you turn it on</b> in Me &rsaquo; Privacy. At most twice a day.</td><td>Totals since the last send for: bags built, Optimize taps, games logged, feedback sent, survey answers, and how often the Bag, Arsenal, Lane, Log book, My Team, Me and Add a ball screens were opened. Our server adds them into one total per day, per item and per app version and does not keep the individual send, so the totals cannot be traced back to a phone. Counting starts when you turn it on; earlier counts are never sent.</td></tr>
+<tr><td>Crash reports</td><td><b>Off unless you turn it on</b> in Me &rsaquo; Privacy. At most 5 per visit, each error once.</td><td>The error message and the lines of the app's code where it happened, after the app removes web links, anything in quotes (which can be text you typed or a ball's name) and long numbers. Also the app version, the screen path and the kind of device. Our server groups identical errors into one count per day.</td></tr>
+</table>
+<p>When you send feedback or a survey answer our server gives your phone a random receipt. Only a scrambled form of it is stored with your note, so nobody can look up who sent what. To delete what you sent, tap <b>Delete feedback I sent</b> in Me &rsaquo; Privacy; the receipts on your phone let our server find and delete those notes, answers and screenshots. Usage counts and crash reports cannot be deleted one by one because they are only stored as combined totals with nothing to identify you. Turning a switch off stops sending at once. The owner reads feedback through a protected page on our server. <mark class="ph">[OWNER/ATTORNEY: decide how long feedback, screenshots, survey answers, usage totals and crash reports are kept]</mark></p>
 <p>Everything else, including the whole app without an account, works without any of this. Team moderation: the team's secretary can see reports about members and notes, and can hide or remove content. Hiding keeps the content; removing deletes it.</p>
 
 <h2>4. Who else is involved</h2>
@@ -74,13 +87,14 @@ th,td{border-top:1px solid var(--line);padding:6px 8px 6px 0;text-align:left;ver
 <li><b>Render</b> hosts our server and database (US, Oregon region). It handles the requests described above and keeps its own standard server logs, under <a href="https://render.com/privacy">its own privacy policy</a>.</li>
 <li><b>Maker websites and public references</b> are read by our server, not by your phone, when you look up a ball.</li>
 <li>The app has <b>no analytics, advertising, social, payment or font services</b>. The share button uses your phone's own share sheet; what you share goes where you send it.</li>
-<li>Our server's own request log records the method, path, status and time of each request. It does not log request contents. A short-lived in-memory counter uses your IP address (and, for sync, your device or account) to limit abuse; it is not saved to the database. The server log also holds the standard connection details Render keeps.</li>
+<li>Our server's own request log records the method, path, status and time of each request. It does not log request contents, including feedback. A short-lived in-memory counter uses your IP address (and, for sync, your device or account) to limit abuse; it is not saved to the database. The server log also holds the standard connection details Render keeps.</li>
 </ul>
 
 <h2>5. Keeping, exporting and deleting your data</h2>
 <ul>
 <li><b>On your phone:</b> "Download backup" in Me saves everything as a file. To delete it all, clear this site's data in your browser settings (or remove the installed app). We cannot do that for you.</li>
 <li><b>Account:</b> in Me, "Export my data" downloads your account copy and team footprint; "Delete account and server data" deletes your account, every sign-in and the server copy. Your phone keeps its own data.</li>
+<li><b>Feedback:</b> "Delete feedback I sent" in Me &rsaquo; Privacy removes your feedback notes, screenshots and survey answers from our server (section 3a). Anything still waiting on your phone is dropped and never sent.</li>
 <li><b>Teams:</b> leaving a team removes what you shared and your notes. Deleting your account does the same on every team. If the secretary leaves, the longest-standing member takes over.</li>
 <li><b>Backup-code copy:</b> the app has no delete button for this yet. Ask us to delete it using the contact above and give us the code. <mark class="ph">[OWNER: decide whether to add an in-app delete button before launch]</mark></li>
 <li><b>Backups and retention:</b> the database host may keep routine backups for a while after deletion. A server copy is not a promise of permanent storage; keep your own backup file. <mark class="ph">[ATTORNEY/OWNER: confirm backup retention period]</mark></li>

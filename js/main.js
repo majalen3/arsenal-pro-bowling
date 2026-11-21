@@ -113,7 +113,18 @@ setDecorate((el, path) => {
   if (acts) acts.prepend(t); else bar.append(t);
   // IA P2: "Me" (profile and settings) top-right on every screen; it replaces the More tab.
   if (path !== '/me') { const me = Object.assign(document.createElement('a'), { className:'icon-btn me-btn', id:'meBtn', href:'#/me', innerHTML:icon('me') }); me.setAttribute('aria-label', 'Me: profile and settings'); t.after(me); }
+  // Feedback (owner t163u): one tap from the main screens where the top bar has room (Me has its own card). Not on the game page, Lane or Target (see above).
+  if (!/^\/(me|lane|target)$/.test(path)) { const h0 = bar.offsetHeight, fb = Object.assign(document.createElement('button'), { className:'icon-btn fb-btn', id:'fbBtn', type:'button', innerHTML:icon('chat'), onclick:() => import('./feedback.js').then(m => m.openFeedback()) }); fb.setAttribute('aria-label', 'Send feedback'); fb.setAttribute('aria-haspopup', 'dialog'); t.before(fb);
+    // Only where it fits: if the bar would grow (a title or the actions wrap) or a title would be cut, the screen keeps just Me (Feedback is the first card there, 2 taps).
+    const h1 = bar.querySelector('h1'); if (bar.offsetHeight > h0 + 1 || (h1 && h1.scrollWidth > h1.clientWidth + 1)) fb.remove(); }
+  if (fbRaw().includes('"surveyDue":true')) import('./feedback.js').then(m => m.maybeSurvey()).catch(() => {});
 });
+// Feedback state (js/feedback.js) is read here as a string so the module loads only when something needs it.
+function fbRaw() { try { return localStorage.getItem('ap_fb') || ''; } catch (e) { return ''; } }
+// Crash reports: OFF unless the bowler turned them on in Me > Privacy. Then the scrubbed error goes to our API (rate-limited there and here).
+const fbErr = (kind, err, msg) => { if (fbRaw().includes('"crash":true')) import('./feedback.js').then(m => m.reportError(kind, err, msg)).catch(() => {}); };
+addEventListener('error', e => fbErr('error', e.error, e.message));
+addEventListener('unhandledrejection', e => fbErr('rejection', e.reason));
 // Do not preload Lane + Tonight + their model tools on every Me/Welcome visit.
 // These same-origin hints shorten the selected route's graph without fetching unrelated screens.
 const routePreloads = { __proto__:null,
@@ -121,7 +132,7 @@ const routePreloads = { __proto__:null,
   // browser fetches the whole graph in one flat round instead of one level per round trip, and nothing the route does not use.
   // tests/data/preload_routes.test.mjs recomputes the closures and fails when a list drifts. Exception, measured: Lane and Target
   // keep their short v80 lists (the full Lane closure made Lighthouse's Lane LCP ~0.26 s worse in 6 of 6 runs); the test allows them a subset.
-  '/me':['screens/more','account','data/team','data/account','screens/community','cc/community','cc/card','cc/quicklog','cc/rank','screens/account','screens/gametotal','cc/night','cc/status','cc/bag','cc/gametotal','cc/hand','ctl'],
+  '/me':['screens/more','feedback','cc/feedback','account','data/team','data/account','screens/community','cc/community','cc/card','cc/quicklog','cc/rank','screens/account','screens/gametotal','cc/night','cc/status','cc/bag','cc/gametotal','cc/hand','ctl'],
   '/welcome':['screens/welcome','cc/ownership','cc/addball','cc/bag','cc/rank','cc/model','data/match','data/spec_catalog','ctl','cc/hand'],
   '/tonight':['screens/tonight','cc/nightdone','screens/hand','cc/hand','screens/gametotal','cc/night','cc/quicklog','cc/rank','cc/status','cc/bag','cc/gametotal','cc/bagedit','cc/drill','cc/card','cc/ownpat','cc/center','cc/league','cc/line','cc/model','cc/target','cc/advisor','patdata','cc/fix','labels'],
   '/arsenal':['screens/arsenal','cc/keep','cc/status','cc/bag','cc/rank','cc/bagedit','cc/armory','labels','screens/pickers','cc/provenance','ctl','cc/hand'],
@@ -150,6 +161,8 @@ const firstScreen = new Promise(resolve => {
   requestAnimationFrame(() => setTimeout(go1, 0)); setTimeout(go1, 300);
 });
 startSync();
+// Feedback waiting to send, or opt-in counts on: send after the first screen paints (never on the game page; feedback.js checks).
+firstScreen.then(() => { const r = fbRaw(); if (/"queue":\[\{|"usage":true/.test(r)) setTimeout(() => import('./feedback.js').then(m => m.boot()).catch(() => {}), 1500); });
 // v1 event log opens after first paint (IndexedDB; never blocks the lane)
 import('./hub.js').then(m => m.ready()).catch(e => console.error(e));
 // service worker with prompt-to-update

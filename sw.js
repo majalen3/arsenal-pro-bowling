@@ -3,7 +3,7 @@
 // Atomic cache-first shell: migration and UI modules stay in one installed release, online or offline. API calls are never cached.
 // Updates: a new worker waits and the page shows "A new version is ready · Refresh" (message 'skip').
 // Exception: upgrading from the v1 single-file app (cache 'arsenal-pro-v2'), which has no update prompt, activates immediately.
-const CACHE = 'arsenal-pro-v81';
+const CACHE = 'arsenal-pro-v82';
 const SHELL = ['./', 'index.html', 'privacy.html', 'terms.html', 'css/app.css', 'manifest.webmanifest', 'icon.svg', 'icons/icon-192.png',
   'js/main.js', 'js/store.js', 'js/ui.js', 'js/router.js', 'js/engine.js', 'js/data.js', 'js/lane.js', 'js/deck.js', 'js/pinsim.js', 'js/ctl.js', 'js/laneseed.js', 'js/labels.js', 'js/patdata.js',
   'js/screens/lane.js', 'js/screens/pickers.js', 'js/screens/arsenal.js', 'js/screens/insights.js', 'js/screens/ball.js', 'js/screens/compare.js',
@@ -23,7 +23,9 @@ const SHELL = ['./', 'index.html', 'privacy.html', 'terms.html', 'css/app.css', 
   // Now items 2-6 (2026-11-02): on-device counters + local flags, Me > Tests and usage, earned badges.
   'js/cc/ux.js', 'js/cc/provenance.js', 'js/screens/usage.js', 'js/cc/nightdone.js', 'js/screens/strike.js', 'js/cc/pocketfit.js', 'js/cc/keep.js',
   // v75 (owner t134u): opt-in local perf marks (?perf=1), a no-op otherwise.
-  'js/perf.js'];
+  'js/perf.js',
+  // v82 (owner t163u): first-party feedback button, post-game survey, opt-in usage counts and crash reports.
+  'js/feedback.js', 'js/cc/feedback.js', 'js/screens/feedback.js'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL.map(p => new Request(p, { cache:'reload' })))).then(() => caches.has('arsenal-pro-v2')).then((legacy) => { if (legacy) return self.skipWaiting(); }));
 });

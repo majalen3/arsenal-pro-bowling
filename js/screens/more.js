@@ -14,6 +14,7 @@ import { START as S } from '../engine.js';
 import { accountCard } from './account.js';
 import { communityCard } from './community.js';
 import { account } from '../account.js';
+import * as FB from '../feedback.js';   // owner t163u: Send feedback, and the opt-in usage counts / crash reports (both off by default)
 export const VERSION = '1.1.0';   // release version (CHANGELOG.md); the offline build id comes from the service worker cache name
 // IA P2: the Me screen (header button on every tab): profile, data, appearance, sync, about. PRODUCT_SPINE: Learn, Glossary and patterns links live here (no Learn tab).
 export function render() {
@@ -90,7 +91,11 @@ export function render() {
         h('div', { class:'row between' }, h('span', { class:'small muted', text:'PAP from your drill card' }), h('a', { class:'btn sm ghost', id:'meDrillScan', href:'#/me/drill-card' }, 'Scan a drill card'))),
       ...(hub.db?.meta.ownershipReview?.needed ? [h('div', { class:'card', id:'legacyReview' }, h('p', { class:'small', text:'Your older catalog view is preserved. It did not prove which physical balls you own. Review your selections; saved balls, games, layouts and aims are not removed.' }), h('a', { class:'btn ghost block', href:'#/welcome?review=1' }, 'Review older bag'))] : []),
       ...(hub.db?.meta.ownershipReview?.confirmed ? [h('button', { class:'btn ghost block', id:'undoOwnershipReview', onclick:async () => { await hub.undoOwnershipReview(); draw(); } }, 'Undo older-bag review (keep all history)')] : []),
+      h('div', { class:'card', id:'meFeedback' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Feedback' }),
+          h('button', { class:'btn sm primary', id:'meFeedbackBtn', 'aria-haspopup':'dialog', onclick:() => FB.openFeedback() }, 'Send feedback')),
+        h('p', { class:'small muted', text:'A bug, an idea or praise. It goes only to the Arsenal Pro server, never during a game.' })),
       accountCard(), communityCard(),
+      privacyCard(),
       h('div', { class:'card', id:'dataCard' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Your data' }), protChip), dataInfo, lastBk,
         h('p',{class:'small muted',id:'syncConflictLimit',text:'Same-account sync uses last-write-wins, not conflict review or server Undo. Export this phone before signing in or changing devices.'}),
         hub.db?.meta.localRecovery && !['undone','closed'].includes(hub.db.meta.localRecovery.phase) ? h('a',{class:'btn ghost block',href:'#/import',id:'reviewLocalRecovery'},'Review local recovery') : null,
@@ -143,4 +148,22 @@ function lookPicker() {
 function markLook() {   // after a pick or a mode change: tick the chosen option and re-scope each preview to the current mode
   const cur = BRANDS.includes(prefs().brand) ? prefs().brand : DEFAULT_BRAND;
   document.querySelectorAll('#lookPick .theme-opt').forEach(b => { b.setAttribute('aria-checked', String(b.dataset.look === cur)); b.dataset.theme = document.documentElement.dataset.theme; });
+}
+
+// Me > Privacy (owner t163u): the two opt-ins for first-party feedback data, both OFF until the bowler turns them on.
+function privacyCard() {
+  const st = FB.settings();
+  const queued = h('p', { class:'small muted', id:'fbQueued', text: st.queued ? `${st.queued} waiting on this phone to send.` : '' });
+  const del = h('button', { class:'btn ghost block', id:'fbDelete', hidden: !st.receipts, onclick:async () => {
+    del.disabled = true; const r = await FB.deleteMine(); del.disabled = false;
+    if (r.ok) { del.hidden = true; toast(r.deleted ? `Deleted ${r.deleted} from the server.` : 'Nothing of yours was left on the server.'); } else toast('Could not reach the server. Try again when online.', { kind:'bad' });
+  } }, 'Delete feedback I sent');
+  return h('div', { class:'card', id:'mePrivacy' }, h('h2', { class:'card-title', text:'Privacy' }),
+    h('div', { class:'fld', id:'usageFld' }, h('span', { text:'Share anonymous usage counts' }),
+      segmented('Share anonymous usage counts', [['off', 'Off'], ['on', 'On']], st.usage ? 'on' : 'off', v => { FB.setUsage(v === 'on'); toast(v === 'on' ? 'Usage counts on. Only counts are sent, from now on.' : 'Usage counts off.'); }, 'wide'),
+      h('p', { class:'small muted', text:'Totals only, like how many bags were built, Optimize taps and games logged. No ids, names, balls or scores. Counting starts when you turn it on.' })),
+    h('div', { class:'fld', id:'crashFld' }, h('span', { text:'Send crash reports' }),
+      segmented('Send crash reports', [['off', 'Off'], ['on', 'On']], st.crash ? 'on' : 'off', v => { FB.setCrash(v === 'on'); toast(v === 'on' ? 'Crash reports on.' : 'Crash reports off.'); }, 'wide'),
+      h('p', { class:'small muted', text:'When the app hits an error: the error text and where in the code, with links and anything in quotes removed. App version, screen and device kind. At most 5 per visit.' })),
+    queued, del, h('a', { class:'small fb-link', href:'privacy.html#feedback', id:'mePrivacyLink' }, 'What is collected'));
 }

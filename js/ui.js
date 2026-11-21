@@ -36,6 +36,7 @@ const P = {
   trash:'<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>', edit:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/>', info:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v6M12 7.5v.5"/>',
   sync:'<path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3M18 3v4h-4M6 21v-4h4"/>', cloudOff:'<path d="M3 3l18 18M7 18h10a4 4 0 0 0 1.3-7.8A6 6 0 0 0 8 8"/>',
   star:'<path d="M12 4l2.4 5 5.4.6-4 3.7 1.1 5.3L12 16l-4.9 2.6 1.1-5.3-4-3.7 5.4-.6L12 4z"/>', bag:'<path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+  chat:'<path d="M4.5 5.5h15v10h-9l-4.5 4v-4h-1.5z"/><path d="M8.5 9.5h7M8.5 12.5h4"/>',
   undo:'<path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 0 1 0 12" transform="translate(0 -6)"/>', sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
 };
 export const icon = (n, cls='') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${P[n]||''}</svg>`;

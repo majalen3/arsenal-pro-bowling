@@ -23,7 +23,7 @@ export function openGameTotal({ sessionId = null, onDone = () => {} } = {}) {
     const o = { deviceId: deviceId(), prov: { kind: 'user', method: 'game-total' } }, list = [];
     if (tgt.create && !proj().sessions[sid]) list.push(mkEvent('session.created', sid, { kind: 'tonight', date: tgt.date }, o));
     list.push(mkEvent('game.logged', sid, { sessionId: sid, game: g, score: n, ballId: ball.value || null, date: (proj().sessions[sid] || {}).date || tgt.date }, o));
-    await addMany(list); s.close(); toast(`${n} added as game ${g}.`); setTimeout(() => onDone(sid), 80);
+    await addMany(list); s.close(); toast(`${n} added as game ${g}.`); import('../feedback.js').then(m => m.gamesFinished(1)).catch(() => {}); setTimeout(() => onDone(sid), 80);
   };
   const s = sheet({ title: 'Add a game total', id: 'gameTotal', body: h('div', { class: 'stack' },
     h('p', { class: 'muted small', id: 'gtHint', text: 'Just the final score, no frames. It counts in your games and average; strikes and spares need frames.' }),
