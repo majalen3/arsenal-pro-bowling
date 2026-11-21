@@ -93,10 +93,19 @@ function fuzzyDice(a, b) {
   for (const t of A) { const j = B.findIndex((u, k) => !used.has(k) && tokEq(t, u)); if (j >= 0) { used.add(j); i++; } }
   return i ? (2 * i) / (A.length + B.length) : 0;
 }
+// v81 speed: the brand keys and each entry's canonical name are built once (the catalogue is fixed once loaded), not on every
+// keystroke; search() and browse() were rebuilding them for every entry and every sort comparison. Same results (tested).
+let BKEYS = null, BKEYS_FOR = null;
+function brandKeys() {
+  const all = catalog(); if (BKEYS && BKEYS_FOR === all) return BKEYS;
+  const brands = [...new Set(all.map(e => e.brand).concat(LOOKUP_BRANDS, Object.keys(UNSUPPORTED)))];
+  BKEYS_FOR = all; return (BKEYS = brands.map(b => [norm(b), b]).concat(Object.entries(BRAND_ALIAS)).sort((x, y) => y[0].length - x[0].length));
+}
+const CANON = new WeakMap();
+const canonOf = e => { let c = CANON.get(e); if (!c) { c = { n: canon(e.name), f: canon(e.brand + ' ' + e.name) }; CANON.set(e, c); } return c; };
 export function detectBrand(input) {
   const n = norm(input); if (!n) return { brand: null, rest: '' };
-  const brands = [...new Set(catalog().map(e => e.brand).concat(LOOKUP_BRANDS, Object.keys(UNSUPPORTED)))];
-  const keys = brands.map(b => [norm(b), b]).concat(Object.entries(BRAND_ALIAS)).sort((x, y) => y[0].length - x[0].length);
+  const keys = brandKeys();
   for (const [k, b] of keys) if (n === k || n.startsWith(k + ' ')) return { brand: b, rest: n.slice(k.length).trim() };
   return { brand: null, rest: n };
 }
@@ -115,7 +124,7 @@ export function search(input, { limit = 6 } = {}) {
   const hit = index().get(q) || index().get(squash(q));
   if (hit && hit.size === 1) { const e = entryById([...hit][0]); return { query: input, brand: brand || e.brand, exact: e, candidates: [] }; }
   const c = catalog().map(e => {
-    const n = canon(e.name), f = canon(e.brand + ' ' + e.name);
+    const { n, f } = canonOf(e);
     // With a brand typed, only the model words count (the brand word alone must not make "Storm Phaze 2" look like "Ice Storm").
     const w = brand && qr ? qr : q;
     let s = brand && qr ? fuzzyDice(w, n) : Math.max(fuzzyDice(w, f), fuzzyDice(w, n));
@@ -132,9 +141,11 @@ export function search(input, { limit = 6 } = {}) {
 // Each typed word must start a word of the brand + name (case, hyphens and II/2 ignored), or the squashed text must appear
 // inside the squashed brand + name. The exact alias stays first; typo-tolerant fuzzy candidates from search() follow.
 const PREFIX_ROMAN = { 1: 'i', 2: 'ii', 3: 'iii', 4: 'iv', 5: 'v', 6: 'vi' };
+let MQ_IN = null, MQ = '';   // the last query's canonical form (browse() asks once per catalogue entry with the same input)
 export function matches(e, input) {
-  const q = canon(input); if (!q) return true;
-  const hay = canon(e.brand + ' ' + e.name).split(' '), qt = q.split(' ');
+  if (input !== MQ_IN) { MQ_IN = input; MQ = canon(input); }
+  const q = MQ; if (!q) return true;
+  const hay = canonOf(e).f.split(' '), qt = q.split(' ');
   if (qt.every(t => hay.some(w => w.startsWith(t) || (PREFIX_ROMAN[w] && PREFIX_ROMAN[w].startsWith(t) && t.length > 0 && /^[iv]+$/.test(t))))) return true;
   const sq = squash(q); return sq.length >= 5 && squash(hay.join(' ')).includes(sq);
 }
@@ -144,7 +155,7 @@ export function browse(input, { fuzzy = true } = {}) {
   const push = e => { if (e && !seen.has(e.id)) { seen.add(e.id); out.push(e); } };
   push(r.exact);
   const q = canon(input), hit = all.filter(e => matches(e, input));
-  hit.sort((a, b) => { const na = canon(a.name), nb = canon(b.name), pa = na.startsWith(q) || canon(a.brand + ' ' + a.name).startsWith(q), pb = nb.startsWith(q) || canon(b.brand + ' ' + b.name).startsWith(q);
+  hit.sort((a, b) => { const ca = canonOf(a), cb = canonOf(b), pa = ca.n.startsWith(q) || ca.f.startsWith(q), pb = cb.n.startsWith(q) || cb.f.startsWith(q);
     return (pb - pa) || (a.src === b.src ? 0 : a.src === 'app' ? -1 : 1) || (a.brand + ' ' + a.name).localeCompare(b.brand + ' ' + b.name); }).forEach(push);
   if (fuzzy) r.candidates.forEach(c => push(c.entry));
   return out;
