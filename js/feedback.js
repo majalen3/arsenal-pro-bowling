@@ -36,7 +36,7 @@ export async function flush() {
       const q = s.queue[0]; let r;
       try { r = await fetch(API_BASE + PATH[q.t], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(q.body), cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer' }); }
       catch (e) { break; }   // offline or the server is asleep: keep it, try again later
-      if (r.status === 429 || r.status >= 500) break;
+      if (r.status === 404 || r.status === 429 || r.status >= 500) break;   // 404 = the API has not been updated yet: keep it
       s.queue.shift();       // 2xx sent; 4xx is a malformed item that will never go through, so it is dropped rather than retried forever
       if (r.ok) { try { const j = await r.json(); if (j && typeof j.receipt === 'string') s.receipts = [...s.receipts, j.receipt].slice(-F.RECEIPTS_MAX); } catch (e) {} }
       save();
@@ -49,7 +49,7 @@ async function sendUsage(s) {
   if (!Object.keys(counts).length) { s.usageAt = Date.now(); return; }
   try {
     const r = await fetch(API_BASE + '/api/usage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ build: F.BUILD, counts }), cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer' });
-    if (r.ok || (r.status >= 400 && r.status < 500 && r.status !== 429)) { for (const [k, n] of Object.entries(counts)) s.sent[k] = (s.sent[k] || 0) + n; s.usageAt = Date.now(); }
+    if (r.ok || (r.status >= 400 && r.status < 500 && r.status !== 429 && r.status !== 404)) { for (const [k, n] of Object.entries(counts)) s.sent[k] = (s.sent[k] || 0) + n; s.usageAt = Date.now(); }
   } catch (e) {}
 }
 // Returns 'sent' | 'queued'. The phone keeps it either way until the API says it has it.
