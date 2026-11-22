@@ -5,6 +5,17 @@ import { S, RANGES, FINISHES, PATTERNS } from './engine.js';
 import { BOARDS } from './cc/geom.js';
 const eyesOf = v => { const x = v === '' || v == null ? NaN : +v; return Number.isFinite(x) && x >= BOARDS[0] && x <= BOARDS[1] ? Math.round(x * 2) / 2 : null; };
 export const API_BASE = new URLSearchParams(location.search).get('api') || 'https://arsenal-pro-api.onrender.com';
+// Wake on intent (owner t9s7): the free API sleeps after 15 idle minutes and its first answer then takes ~17 s. When the bowler starts
+// something that uses the server (focuses the ball-lookup name field, opens Sign in / Create account, opens My Team), send ONE
+// fire-and-forget GET /api/health per page session so it is awake by the time they submit. Never on app open (privacy.html), never
+// offline, never awaited, errors ignored. Returns true only when it sent the request.
+let apiWoken = false;
+export function wakeApi() {
+  if (apiWoken || navigator.onLine === false || typeof fetch !== 'function') return false;
+  apiWoken = true;
+  try { fetch(API_BASE + '/api/health', { cache: 'no-store', credentials: 'omit' }).catch(() => {}); } catch (e) {}
+  return true;
+}
 const API_TIMEOUT = 8000, API_WRITE_TIMEOUT = 25000; // writes wait out a free-tier cold start; UI never blocks on them
 export const LS = { lines:'ap_lines', surface:'ap_surface', notes:'ap_notes', dels:'ap_dels', shots:'ap_shots', profile:'ap_profile', prefs:'ap_prefs' };
 const mem = {}; export let memMode = false;   // fallback when localStorage is blocked/full (private mode, quota)

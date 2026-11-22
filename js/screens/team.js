@@ -5,7 +5,7 @@
 import { h, icon, toast, sheet, confirmSheet, segmented, emptyState } from '../ui.js';
 import { back } from '../router.js';
 import { ready, proj } from '../hub.js';
-import { profile, prefs, setPrefs, on } from '../store.js';
+import { profile, prefs, setPrefs, on, wakeApi } from '../store.js';
 import { account, team } from '../account.js';
 import { accountCard } from './account.js';
 import { helpDot } from './help.js';
@@ -56,6 +56,7 @@ export function memberCard(m, { me = false, actions = null } = {}) {
 }
 
 export async function render({ query }) {
+  wakeApi();   // wake on intent: My Team reads the server (one request per session, see store.js)
   await ready();
   const joinQ = query && query.get('join') ? normCode(query.get('join')) : null;
   if (joinQ && CODE_RE.test(joinQ)) setPrefs({ teamJoin: joinQ });

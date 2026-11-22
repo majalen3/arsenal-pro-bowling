@@ -1,7 +1,7 @@
 // Me → Account (optional; DECISIONS 2026-10-31). Never shown during scoring and never required: everything works signed out.
 // Sign-in flow: credentials → (if this phone has data) a choice: add it to the account, or Not now (signs out again).
 import { h, toast, sheet } from '../ui.js';
-import { on, objGet } from '../store.js';
+import { on, objGet, wakeApi } from '../store.js';
 import * as hub from '../hub.js';
 import { account } from '../account.js';
 import { EMAIL_RE, passwordProblem } from '../data/account.js';
@@ -29,6 +29,7 @@ export function chooseMigration(after = () => {}) {
 }
 
 function authSheet(mode0, after) {
+  wakeApi();   // wake on intent: Sign in / Create account talk to the server next (one request per session, see store.js)
   let mode = mode0;
   const err = h('p', { class: 'small fld-err', id: 'acctErr', role: 'alert' });
   const email = h('input', { id: 'acctEmail', type: 'email', inputmode: 'email', autocomplete: 'username', autocapitalize: 'off', spellcheck: 'false', required: '' });

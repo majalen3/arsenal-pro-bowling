@@ -7,7 +7,7 @@ import { START } from '../engine.js';
 import { h, toast, segmented } from '../ui.js';
 import { go } from '../router.js';
 import { ready, proj, add } from '../hub.js';
-import { API_BASE, today } from '../store.js';
+import { API_BASE, today, wakeApi } from '../store.js';
 import { chip } from '../data/schema.js';
 import { norm } from '../data/match.js';
 import { catFromHash } from '../cc/kit.js';
@@ -45,6 +45,7 @@ export async function render() {
     h('header', { class: 'appbar' }, h('button', { class: 'btn ghost', id: 'abBack', 'aria-label': 'Back to Bag', onclick: () => go('#/bag') }, '\u2039 Bag'), h('h1', { class: 'title', text: 'Add a ball' })), body);
   const st = { q: '', brand: '', pick: null, look: null, lookState: 'idle', lookMsg: '', weight: 15, weightSet: false, level: null, ctl: null, makerCands: null, saving: false, manual: {} };
   const q = h('input', { type: 'search', class: 'search', id: 'abQ', placeholder: 'e.g. Storm Hy-Road Pearl', 'aria-label': 'Ball brand and model', autocomplete: 'off', enterkeyhint: 'search' });
+  q.addEventListener('focus', wakeApi);   // wake on intent: the maker lookup is the next step (one request per session, see store.js)
   const brandSel = h('select', { id: 'abBrand', 'aria-label': 'Brand for the maker lookup' }, h('option', { value: '', text: 'Brand: detect from name' }),
     ...A.LOOKUP_BRANDS.concat(Object.keys(A.UNSUPPORTED)).map(b => h('option', { value: b, text: b })));
   const results = h('div', { id: 'abResults', 'aria-live': 'polite' }), detail = h('div', { class: 'stack', id: 'abDetail' });
