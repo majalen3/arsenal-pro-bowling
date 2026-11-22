@@ -195,7 +195,7 @@ export function render({ query } = {}) {
   function undoOpt() { if (!opt || !opt.before) return; restore(opt.before); opt = null; paintOpt(); toast('Back on your previous line'); }
   function optimize() {
     const cat = app.ball; if (!modelOK(cat) || optBtn.disabled) return;
-    UX.count('optimize.used');   // on-device count; sent only as an opt-in total
+    UX.count('optimize.used'); UX.once('first.optimize');   // on-device counts; sent only as opt-in totals
     optBtn.disabled = true; optBtn.setAttribute('aria-busy', 'true'); optBtn.querySelector('#optLbl').textContent = 'Optimizing\u2026';
     loadF().then(() => new Promise(r => setTimeout(r, 20))).then(() => {
       try {

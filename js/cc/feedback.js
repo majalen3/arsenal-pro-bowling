@@ -2,7 +2,7 @@
 // What may leave the phone, and only to our own API (store.js API_BASE): a feedback note the bowler writes and sends, a post-game
 // survey answer, and, only after the bowler turns them on in Me > Privacy (both OFF by default), aggregate usage counts for a few
 // key actions and scrubbed crash reports. Never: names, emails, ball lists, scores, notes, account or device ids, team data.
-export const BUILD = 'v82';   // keep in step with sw.js CACHE (tests/data/feedback.test.mjs checks)
+export const BUILD = 'v83';   // keep in step with sw.js CACHE (tests/data/feedback.test.mjs checks)
 export const KEY = 'ap_fb';
 export const KINDS = [['bug', 'Bug'], ['idea', 'Idea'], ['praise', 'Praise']];
 export const TEXT_MAX = 1000, NOTE_MAX = 140;
@@ -12,17 +12,23 @@ export const SURVEY_GAP_MS = 20 * 3600e3;       // and at most once per league n
 export const USAGE_EVERY_MS = 12 * 3600e3;      // opt-in counts go up at most twice a day
 export const ERRORS_PER_LOAD = 5;
 // Keep in step with the API's lib/feedback.js USAGE_KEYS. Only these on-device counters (cc/ux.js) are ever sent, as deltas.
-export const USAGE_KEYS = ['bag.built', 'optimize.used', 'game.logged', 'feedback.sent', 'survey.answered',
+// LEGACY = what the v82 API accepts. v83 adds the activation funnel (each first.* counter is 0 or 1 per phone: the first bag packed,
+// first ball added, first Optimize, first finished game), balls added, installs, and usage.on (one per opt-in, the funnel's
+// denominator). An API that does not list the keys it stored is the v82 one: only LEGACY keys are then marked sent, so the new
+// counts wait on the phone until the API is updated instead of being dropped (sentKeys below).
+export const LEGACY_USAGE_KEYS = ['bag.built', 'optimize.used', 'game.logged', 'feedback.sent', 'survey.answered',
   'screen.bag', 'screen.arsenal', 'screen.lane', 'screen.results', 'screen.team', 'screen.me', 'screen.add-ball'];
+export const FUNNEL_KEYS = ['usage.on', 'first.bag', 'first.ball', 'first.optimize', 'first.game'];
+export const USAGE_KEYS = [...LEGACY_USAGE_KEYS, 'ball.added', 'app.installed', 'app.shared', ...FUNNEL_KEYS];
 
-export function blank() { return { v: 1, usage: false, crash: false, queue: [], sent: {}, usageAt: 0, games: 0, surveyAt: 0, surveyDue: false, receipts: [] }; }
+export function blank() { return { v: 1, usage: false, crash: false, queue: [], sent: {}, usageAt: 0, games: 0, surveyAt: 0, surveyDue: false, receipts: [], optAsked: 0 }; }
 export function parse(str) {
   let s = null; try { s = JSON.parse(str); } catch (e) {}
   const b = blank(); if (!s || typeof s !== 'object' || s.v !== 1) return b;
   b.usage = s.usage === true; b.crash = s.crash === true;
   b.queue = Array.isArray(s.queue) ? s.queue.filter(q => q && ['feedback', 'survey', 'error'].includes(q.t) && q.body && typeof q.body === 'object').slice(-QUEUE_MAX) : [];
   if (s.sent && typeof s.sent === 'object') for (const k of USAGE_KEYS) if (Number.isFinite(+s.sent[k]) && +s.sent[k] >= 0) b.sent[k] = +s.sent[k];
-  for (const k of ['usageAt', 'games', 'surveyAt']) b[k] = Number.isFinite(+s[k]) && +s[k] >= 0 ? +s[k] : 0;
+  for (const k of ['usageAt', 'games', 'surveyAt', 'optAsked']) b[k] = Number.isFinite(+s[k]) && +s[k] >= 0 ? +s[k] : 0;
   b.surveyDue = s.surveyDue === true;
   b.receipts = Array.isArray(s.receipts) ? s.receipts.filter(r => typeof r === 'string' && /^[A-Za-z0-9_-]{22}$/.test(r)).slice(-RECEIPTS_MAX) : [];
   return b;
@@ -108,3 +114,19 @@ export function usageDeltas(counters, sent) {
 // Turning counts on starts from now: nothing counted before the opt-in is ever sent.
 export function baseline(counters) { const out = {}; for (const k of USAGE_KEYS) out[k] = (counters[k] && +counters[k].n) || 0; return out; }
 export function usageReady(st, now = Date.now()) { return st.usage && now - st.usageAt >= USAGE_EVERY_MS; }
+// Which of the sent counts the server stored: the v83 API answers {keys:[...]}; anything else is the v82 API (LEGACY keys only).
+export function sentKeys(counts, resp) {
+  const ks = Object.keys(counts || {});
+  if (resp && Array.isArray(resp.keys)) return ks.filter(k => resp.keys.includes(k));
+  return ks.filter(k => LEGACY_USAGE_KEYS.includes(k));
+}
+
+// ---- the one-time opt-in offer (v83, owner t177u: no testers, so capture has to come from real visitors). Asked at most ONCE
+// per phone, ever, and only at a good moment off the game page: right after the first bag is packed, or after a 4 or 5 on the
+// post-game question. Never when both switches are already on. Turning anything on stays a separate, explicit tap.
+export const OPT_GOOD_RATING = 4;
+export function optInDue(st, { rating } = {}) {
+  if (!st || st.optAsked || (st.usage && st.crash)) return false;
+  return rating == null || rating >= OPT_GOOD_RATING;
+}
+export function optInAsked(st, now = Date.now()) { st.optAsked = now || 1; return st; }

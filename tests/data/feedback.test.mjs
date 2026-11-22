@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import * as F from '../../js/cc/feedback.js';
 const root = new URL('../../', import.meta.url);
 
-test('build id matches the service worker cache (v82)', () => {
+test('build id matches the service worker cache (v83)', () => {
   const sw = fs.readFileSync(new URL('sw.js', root), 'utf8');
   assert.equal(`arsenal-pro-${F.BUILD}`, /CACHE = '([^']+)'/.exec(sw)[1]);
   for (const f of ['js/feedback.js', 'js/cc/feedback.js', 'js/screens/feedback.js']) assert.ok(sw.includes(`'${f}'`), f + ' precached');
@@ -88,4 +88,38 @@ test('usage counts: allow-listed deltas only, starting from the moment of opt-in
 test('usage keys match the API allow-list', () => {
   for (const k of F.USAGE_KEYS) assert.match(k, /^[a-z0-9.\-]{1,48}$/);
   assert.ok(F.USAGE_KEYS.includes('bag.built') && F.USAGE_KEYS.includes('optimize.used') && F.USAGE_KEYS.includes('game.logged'));
+});
+
+// ---- v83 (owner t177u): activation funnel keys and the one-time opt-in offer
+test('v83 usage keys: legacy set unchanged, funnel + new keys added, no duplicates', () => {
+  assert.deepEqual(F.LEGACY_USAGE_KEYS, ['bag.built', 'optimize.used', 'game.logged', 'feedback.sent', 'survey.answered',
+    'screen.bag', 'screen.arsenal', 'screen.lane', 'screen.results', 'screen.team', 'screen.me', 'screen.add-ball']);
+  for (const k of ['ball.added', 'app.installed', 'app.shared', 'usage.on', 'first.bag', 'first.ball', 'first.optimize', 'first.game']) assert.ok(F.USAGE_KEYS.includes(k), k);
+  assert.equal(new Set(F.USAGE_KEYS).size, F.USAGE_KEYS.length);
+  for (const k of F.USAGE_KEYS) assert.match(k, /^[a-z0-9.\-]{1,48}$/);
+});
+test('sentKeys: a v82 API (no keys list) marks only legacy keys sent, so new counts wait for the updated API', () => {
+  const counts = { 'bag.built': 2, 'first.bag': 1, 'ball.added': 3 };
+  assert.deepEqual(F.sentKeys(counts, { ok: true, stored: 1 }), ['bag.built']);
+  assert.deepEqual(F.sentKeys(counts, null), ['bag.built']);
+  assert.deepEqual(F.sentKeys(counts, { ok: true, keys: ['bag.built', 'first.bag', 'ball.added'] }).sort(), ['bag.built', 'ball.added', 'first.bag']);
+  assert.deepEqual(F.sentKeys(counts, { ok: true, keys: ['first.bag'] }), ['first.bag']);
+});
+test('baseline + deltas: a first.* that happened before the opt-in is never sent', () => {
+  const before = { 'first.bag': { n: 1 }, 'bag.built': { n: 4 } };
+  const sent = F.baseline(before);
+  assert.deepEqual(F.usageDeltas(before, sent), {});
+  assert.deepEqual(F.usageDeltas({ ...before, 'first.ball': { n: 1 }, 'usage.on': { n: 1 } }, sent), { 'first.ball': 1, 'usage.on': 1 });
+});
+test('opt-in offer: once ever, only after a good rating, never when both switches are on, survives a reload', () => {
+  const s = F.blank();
+  assert.equal(F.optInDue(s), true);                       // first bag (no rating)
+  assert.equal(F.optInDue(s, { rating: 3 }), false);       // survey 3 or less: not a good moment
+  assert.equal(F.optInDue(s, { rating: 4 }), true);
+  assert.equal(F.optInDue(Object.assign(F.blank(), { usage: true, crash: true })), false);
+  assert.equal(F.optInDue(Object.assign(F.blank(), { usage: true })), true);   // one switch still off
+  F.optInAsked(s, 1234);
+  assert.equal(F.optInDue(s), false);
+  const r = F.parse(JSON.stringify(s)); assert.equal(r.optAsked, 1234); assert.equal(F.optInDue(r, { rating: 5 }), false);
+  assert.equal(F.parse('{"v":1,"optAsked":"x"}').optAsked, 0);
 });

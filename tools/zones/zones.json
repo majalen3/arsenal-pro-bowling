@@ -746,11 +746,14 @@
         "js/brand*.js",
         "js/themes/**",
         "tools/brand/**",
-        "tests/brand/**"
+        "tests/brand/**",
+        "tests/data/theme_boot.test.mjs"
       ],
       "public": [],
       "allow": [],
-      "unit": [],
+      "unit": [
+        "tests/data/theme_boot.test.mjs"
+      ],
       "browser": [
         "flow",
         "spine"

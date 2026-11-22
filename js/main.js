@@ -19,7 +19,7 @@ export function applyTheme(t = prefs().theme || 'dark', b = prefs().brand) {
 applyTextSize(prefs().textSize); applyTheme(); matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme());
 restoreState(); deviceId();
 // GAP (a): keep the install offer for later (shown once after the first saved game, never mid-game). Installed apps ask for persistent storage at boot (no prompt there).
-listenInstall(); if (isStandalone()) askPersist();
+listenInstall(() => UX.count('app.installed')); if (isStandalone()) askPersist();
 // IA P2 (owner 2026-10-31: "Do the 5-tab layout but keep Help off by default"): Tonight / Bowl / Results / Bag / Learn, Me in the top bar.
 // Lane and Target are tools (no tab of their own): they open from the Stand · Aim chip in the Building and the game, and from Learn.
 route(/^\/lane$/, 'tonight', () => import('./screens/lane.js'));

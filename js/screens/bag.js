@@ -184,7 +184,9 @@ export async function render() {
       await add('bag.saved', b2.id, Object.assign(nb, { event: ev, bring, format: BE.formatOfBring(bring), packedTs: Date.now() }));
       setPrefs({ advisor: Object.assign({}, prefs().advisor, { last: ev, [ev]: Object.assign({}, (prefs().advisor || {})[ev], { packedTs: Date.now(), swaps: {} }) }) });
       UX.count('bag.built');   // on-device count (cc/ux.js); leaves the phone only as an opt-in total (Me > Privacy)
-      toast(`Packed: ${rows.map(r => r.name).join(', ')}.`); go('#/tonight'); } }, `Pack these ${rows.length}`)));
+      const firstBag = UX.once('first.bag');
+      toast(`Packed: ${rows.map(r => r.name).join(', ')}.`); go('#/tonight');
+      if (firstBag) setTimeout(() => import('../feedback.js').then(m => m.offerOptIn('bag')).catch(() => {}), 3000); } }, `Pack these ${rows.length}`)));
     // ---- pack list + event date (details) and care (writes events; health is recomputed from the log, never typed)
     const pack = G.packList(items, spare, ctx);
     const dateIn = h('input', { type: 'date', id: 'bagDate', value: bag.eventDate || '', 'aria-label': 'Event date', onchange: e => { const nb = Object.assign({}, bag, { eventDate: e.target.value || null }); delete nb.id; delete nb.ts; saveBag(bag, nb, ev, bring); } });

@@ -2,6 +2,14 @@
 
 Versions follow [Semantic Versioning](https://semver.org). The offline build id (`arsenal-pro-vNN` in `sw.js`, shown in Me › About) changes with every deploy.
 
+## Feedback without testers: a one-time opt-in offer, funnel counts, Share the app, no theme flash — 2026-11-22 America/Chicago; offline build v83
+- **The app asks once whether you'll help.** After your first packed bag (a quiet 7-second toast with a Choose button) or after a 4 or 5 on the post-game question (a small sheet), never during a game and never again after that. The sheet explains both switches in plain words; *Turn on both*, *Crash reports only* and *No thanks* are equal buttons. Both stay off until you tap.
+- **Me › Feedback:** *Share the app* (your phone's share sheet with the public link, nothing else) and *Help improve it* (the same sheet; hidden once both switches are on).
+- **Activation funnel (opt-in totals only):** counts turned on, first bag packed, first ball added, first Optimize, first finished game, plus balls added, installs and shares. Nothing from before the opt-in is sent. New counts wait on the phone until the API is updated, so nothing is lost whichever ships first.
+- **No more flash of the default look** for Maple, Night or Light: a 1.9 KB same-origin script applies your saved look, mode and text size before the first paint (CSP unchanged, precached).
+- Plan for the next three weeks: `docs/NEXT_PHASE_PLAN.md`. Owner-posted drafts and a printable QR card: `docs/owner-kit/`.
+- simulatePath unchanged; equivalence 7500/0; no locked file changed. Offline cache is v83.
+
 ## Speed: My Team opens at once, a lighter front door, faster ball search — 2026-11-21 America/Chicago; offline build v81
 - **My Team opens from this phone first.** The last synced team paints at once (about 0.2 s, was 5.5 s with a slow or waking server), with "Updating…" until the server answers; buttons that need the server stay disabled until then. The team list and the team view are fetched together (was one after the other), so a fresh team arrives in one round trip instead of two.
 - **Moderation never blanks the screen.** Hide, Show again, Delete a note, Dismiss a report and the rest keep the current team on screen and swap in the new one when the server answers (the screen used to go blank for the whole wait, about 10 s across a Block and a Hide on a slow connection). **Block and Unblock** are private to this phone, so they now repaint from the phone with no server call (0.4 s, was 5.7 s).
