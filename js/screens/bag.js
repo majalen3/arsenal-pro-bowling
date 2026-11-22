@@ -4,6 +4,7 @@
 // tap); step 3 every other owned ball with its "why not" and [Bring]. Edits save at once; "Pack these N" confirms.
 // Rules stay in js/cc (bag.js checks/fill, advisor.js roles, bagedit.js edits); health = fold(events).
 import * as PERF from '../perf.js';
+import * as UX from '../cc/ux.js';
 import { h, toast, segmented, sheet, icon } from '../ui.js';
 import { go } from '../router.js';
 import { ready, proj, add, addMany } from '../hub.js';
@@ -182,6 +183,7 @@ export async function render() {
       const P2 = proj(), b2 = ST.currentBag(P2), nb = Object.assign({}, b2); delete nb.id; delete nb.ts;
       await add('bag.saved', b2.id, Object.assign(nb, { event: ev, bring, format: BE.formatOfBring(bring), packedTs: Date.now() }));
       setPrefs({ advisor: Object.assign({}, prefs().advisor, { last: ev, [ev]: Object.assign({}, (prefs().advisor || {})[ev], { packedTs: Date.now(), swaps: {} }) }) });
+      UX.count('bag.built');   // on-device count (cc/ux.js); leaves the phone only as an opt-in total (Me > Privacy)
       toast(`Packed: ${rows.map(r => r.name).join(', ')}.`); go('#/tonight'); } }, `Pack these ${rows.length}`)));
     // ---- pack list + event date (details) and care (writes events; health is recomputed from the log, never typed)
     const pack = G.packList(items, spare, ctx);

@@ -29,6 +29,13 @@
         "{base}"
       ]
     },
+    "fb": {
+      "label": "Feedback button, survey, opt-ins (feedback_smoke.py)",
+      "py": [
+        "tests/feedback_smoke.py",
+        "{base}"
+      ]
+    },
     "found": {
       "label": "Launch foundation smoke (foundation_smoke.py)",
       "py": [
@@ -686,6 +693,9 @@
         "js/cc/ux.js",
         "js/cc/help.js",
         "js/screens/help.js",
+        "js/feedback.js",
+        "js/cc/feedback.js",
+        "js/screens/feedback.js",
         ".github/**",
         ".nojekyll",
         ".gitignore"
@@ -697,7 +707,9 @@
         "js/cc/ux.js",
         "js/cc/help.js",
         "js/screens/help.js",
-        "js/main.js"
+        "js/main.js",
+        "js/feedback.js",
+        "js/cc/feedback.js"
       ],
       "allow": [
         "PERSISTENCE",
@@ -714,10 +726,12 @@
         "tests/data/help.test.mjs",
         "tests/data/preload_routes.test.mjs",
         "tests/data/sw_precache.test.mjs",
-        "tests/data/ux.test.mjs"
+        "tests/data/ux.test.mjs",
+        "tests/data/feedback.test.mjs"
       ],
       "browser": [
-        "spine"
+        "spine",
+        "fb"
       ],
       "entry": []
     },
