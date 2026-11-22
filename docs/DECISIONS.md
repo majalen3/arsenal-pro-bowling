@@ -423,3 +423,11 @@ The full audit also exposed pre-existing small accessibility defects: literal nu
 - **Hide before Remove.** Hide is reversible (flag on the member or note, nothing deleted), so it has an Undo; Remove deletes and says so.
 - **Perf:** see docs/PERF_BUDGET.md v80. The first route paints before anything the first screen does not need is fetched; `PERF.painted` gates sync and the pattern index.
 - **Gaps for the owner/attorney:** no in-app delete for a backup-code server copy (the policy says to ask by email); the under-13 rule is a placeholder; backup-code sync is readable by anyone holding the code (stated in the policy).
+
+## No-tester feedback loop — 22 November 2026 (America/Chicago), v83 (owner t176u, t177u)
+- **The private beta is replaced.** The owner has no testers to recruit (t177u). Weeks 2-4 of the launch plan become the no-tester loop in `docs/NEXT_PHASE_PLAN.md`: owner dogfooding with a weekly checklist, owner-posted organic channels (drafts in `docs/owner-kit/`; the bot never posts or contacts anyone), and opt-in first-party capture.
+- **Ask once, at a good moment.** The opt-in to usage counts and crash reports is offered at most once per phone: a quiet toast after the first packed bag, or a sheet after a 4 or 5 on the post-game question. Never during scoring, never over another sheet. Both switches stay OFF until tapped; No thanks is a full-size button. Sources: NN/g permission requests, web.dev install promotion patterns.
+- **Funnel, not tracking.** New opt-in totals: `usage.on`, `first.bag`, `first.ball`, `first.optimize`, `first.game` (0 or 1 per phone), `ball.added`, `app.installed`, `app.shared`. Same aggregation as v82 (one total per day, key and build). Nothing before the opt-in is sent. privacy.html 3a lists them.
+- **No data loss across deploy order.** The app marks a usage key as sent only when the API lists it in `keys` (v83 API) or it is one of the 12 v82 keys.
+- **Theme flash fixed with a classic same-origin script** (`js/theme-boot.js`), not an inline script, so the CSP is unchanged. The v79 note ("a blocking script would add a request") still holds; the request is ~1.9 KB, precached, and fetched in parallel with the stylesheet.
+- **The four in-progress UX todos were already shipped in v73** (Bag first with oil/lane, Keep in bag with its hint, Shake it up). Recorded so they are not rebuilt.

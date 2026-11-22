@@ -170,10 +170,10 @@ Generated from `tools/zones/zones.json` (`node tools/zones/zonedoc.mjs --write`)
 
 #### THEME: UI theme: CSS, theme tokens, icons, manifest, brand assets
 
-- **Owns:** `css/**`, `icon.svg`, `icons/**`, `manifest.webmanifest`, `js/theme*.js`, `js/brand*.js`, `js/themes/**`, `tools/brand/**`, `tests/brand/**`
+- **Owns:** `css/**`, `icon.svg`, `icons/**`, `manifest.webmanifest`, `js/theme*.js`, `js/brand*.js`, `js/themes/**`, `tools/brand/**`, `tests/brand/**`, `tests/data/theme_boot.test.mjs`
 - **Public interface:** none (nothing outside imports this zone)
 - **May import:** nothing outside the zone
-- **Tests that cover it:** Bag -> game -> log book flow (home_game_flow.py), Spine tabs + click depth (product_spine.py)
+- **Tests that cover it:** `theme_boot.test.mjs`, Bag -> game -> log book flow (home_game_flow.py), Spine tabs + click depth (product_spine.py)
 
 #### TOOLING: Zone tooling: boundary check, lock check, zone-scoped quick check
 

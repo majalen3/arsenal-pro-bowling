@@ -14,6 +14,7 @@ import { START as S } from '../engine.js';
 import { accountCard } from './account.js';
 import { communityCard } from './community.js';
 import { account } from '../account.js';
+import * as UX from '../cc/ux.js';   // v83: Share the app count (on-device; sent only as an opt-in total)
 import * as FB from '../feedback.js';   // owner t163u: Send feedback, and the opt-in usage counts / crash reports (both off by default)
 export const VERSION = '1.1.0';   // release version (CHANGELOG.md); the offline build id comes from the service worker cache name
 // IA P2: the Me screen (header button on every tab): profile, data, appearance, sync, about. PRODUCT_SPINE: Learn, Glossary and patterns links live here (no Learn tab).
@@ -93,7 +94,10 @@ export function render() {
       ...(hub.db?.meta.ownershipReview?.confirmed ? [h('button', { class:'btn ghost block', id:'undoOwnershipReview', onclick:async () => { await hub.undoOwnershipReview(); draw(); } }, 'Undo older-bag review (keep all history)')] : []),
       h('div', { class:'card', id:'meFeedback' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Feedback' }),
           h('button', { class:'btn sm primary', id:'meFeedbackBtn', 'aria-haspopup':'dialog', onclick:() => FB.openFeedback() }, 'Send feedback')),
-        h('p', { class:'small muted', text:'A bug, an idea or praise. It goes only to the Arsenal Pro server, never during a game.' })),
+        h('p', { class:'small muted', text:'A bug, an idea or praise. It goes only to the Arsenal Pro server, never during a game.' }),
+        // v83 (owner t177u): word of mouth is the only channel, so sharing the link is one tap. The bowler's own share sheet; we send nothing.
+        h('div', { class:'row gap' }, h('button', { class:'btn sm ghost grow', id:'meShareApp', type:'button', onclick:shareApp }, 'Share the app'),
+          FB.settings().usage && FB.settings().crash ? null : h('button', { class:'btn sm ghost grow', id:'meHelpMore', type:'button', 'aria-haspopup':'dialog', onclick:() => FB.openOptIn() }, 'Help improve it'))),
       accountCard(), communityCard(),
       privacyCard(),
       h('div', { class:'card', id:'dataCard' }, h('div', { class:'card-h' }, h('h2', { class:'card-title', text:'Your data' }), protChip), dataInfo, lastBk,
@@ -148,6 +152,14 @@ function lookPicker() {
 function markLook() {   // after a pick or a mode change: tick the chosen option and re-scope each preview to the current mode
   const cur = BRANDS.includes(prefs().brand) ? prefs().brand : DEFAULT_BRAND;
   document.querySelectorAll('#lookPick .theme-opt').forEach(b => { b.setAttribute('aria-checked', String(b.dataset.look === cur)); b.dataset.theme = document.documentElement.dataset.theme; });
+}
+
+// v83: share the app's public link through the phone's own share sheet (or copy it). Only the URL: no ids, no referral codes.
+const APP_URL = 'https://majalen3.github.io/arsenal-pro-bowling/';
+async function shareApp() {
+  try { if (navigator.share) { await navigator.share({ title: 'Arsenal Pro', text: 'Free bowling app: build tonight\u2019s bag, find your line, score your games. Works offline.', url: APP_URL }); UX.count('app.shared'); return; } }
+  catch (e) { if (e && e.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(APP_URL); UX.count('app.shared'); toast('Link copied. Paste it anywhere.'); } catch (e) { toast(APP_URL, { ms: 8000 }); }
 }
 
 // Me > Privacy (owner t163u): the two opt-ins for first-party feedback data, both OFF until the bowler turns them on.
