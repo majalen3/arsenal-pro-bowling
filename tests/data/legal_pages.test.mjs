@@ -20,6 +20,8 @@ test('privacy page covers what the app does, plainly', () => {
   const t = pages['privacy.html'].replace(/<[^>]+>/g, ' ');
   for (const k of ['IndexedDB', 'localStorage', 'no cookies', 'GitHub Pages', 'Render', 'backup-code', 'My Team', 'Export my data', 'Delete account and server data', 'under 13', 'no analytics']) assert.ok(new RegExp(k, 'i').test(t), k);
   assert.ok(!/\b(best|worst) (style|bowler)/i.test(t));
+  // Wake on intent (owner t9s7): the one extra server contact is disclosed next to the promise it qualifies.
+  assert.match(t, /Nothing is sent to our server unless you turn on an account[^.]*\. The app may also briefly contact our server, just to get it ready, when you start a ball lookup \(open Add a ball\) or open Sign in, Create account or My Team\./);
 });
 
 test('terms page says estimates are estimates and gives no medical advice or style ranking', () => {

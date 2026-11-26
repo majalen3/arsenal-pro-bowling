@@ -2110,11 +2110,47 @@ async def account_cycle(b):
     check(not errs, f'[account] no page errors {errs[:3]}')
     for c in (c1, c2, c3): await c.close()
 
+async def wake_cycle(b):
+    # Wake on intent (owner t9s7): app open sends nothing to the API; focusing the Add-a-ball name field, opening Sign in / Create account
+    # or My Team sends ONE GET /api/health per page session; offline sends none. Mock route only (nothing reaches production).
+    from urllib.parse import urlparse
+    errs = []; hits = []
+    async def api(route):
+        path = urlparse(route.request.url).path; hits.append(path)
+        if path == '/api/health': return await route.fulfill(status=200, content_type='application/json', headers={'Access-Control-Allow-Origin': '*'}, body='{"ok":true}')
+        return await route.abort()
+    health = lambda: hits.count('/api/health')
+    c = await b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True); c.set_default_timeout(10000)
+    await c.route(API, api)
+    await c.add_init_script("if(!localStorage.getItem('ap_prefs'))localStorage.setItem('ap_prefs',JSON.stringify({onboarded:true}))")
+    p = await page(c, errs)
+    nav = lambda h: p.evaluate(f"location.hash = '{h}'")
+    await p.goto(BASE + '#/bag'); await p.wait_for_selector('#view > *'); await p.wait_for_timeout(2500)
+    await nav('#/me'); await p.wait_for_selector('#acctSignIn'); await p.wait_for_timeout(800)
+    check(hits == [], f'[wake] app open (Bag, Me) sends nothing to the API {hits}')
+    await nav('#/add-ball'); await p.wait_for_selector('#abQ'); await p.focus('#abQ'); await p.wait_for_timeout(500)
+    check(health() == 1, f'[wake] focusing the ball-lookup name field sends one health request ({health()})')
+    await p.evaluate("document.activeElement && document.activeElement.blur()"); await p.focus('#abQ')
+    await nav('#/team'); await p.wait_for_selector('#teamBody'); await p.wait_for_timeout(500)
+    await nav('#/me'); await p.wait_for_selector('#acctSignIn'); await p.click('#acctSignIn'); await p.wait_for_selector('#acctForm'); await p.wait_for_timeout(500)
+    check(health() == 1 and hits == ['/api/health'], f'[wake] only once per session: refocus, My Team and Sign in add nothing {hits}')
+    for label, h, sel, act in (('Sign in', '#/me', '#acctSignIn', '#acctSignIn'), ('My Team', '#/team', '#teamBody', None)):
+        hits.clear(); await p.goto(BASE + '#/bag'); await p.reload(); await p.wait_for_selector('#view > *'); await p.wait_for_timeout(1500)
+        check(hits == [], f'[wake] reload: nothing sent on open ({label}) {hits}')
+        await nav(h); await p.wait_for_selector(sel)
+        if act: await p.click(act); await p.wait_for_selector('#acctForm')
+        await p.wait_for_timeout(500); check(health() == 1, f'[wake] opening {label} sends one health request ({health()})')
+    hits.clear(); await p.goto(BASE + '#/bag'); await p.reload(); await p.wait_for_selector('#view > *'); await p.wait_for_timeout(1500)
+    await c.set_offline(True); await nav('#/add-ball'); await p.wait_for_selector('#abQ'); await p.focus('#abQ'); await p.wait_for_timeout(500)
+    await c.set_offline(False); check(health() == 0, f'[wake] offline: no health request ({health()})')
+    check(not errs, f'[wake] no page errors {errs[:3]}')
+    await c.close()
+
 async def main():
     async with async_playwright() as pw:
         b = await pw.chromium.launch()
         only = sys.argv[sys.argv.index('--only') + 1].split(',') if '--only' in sys.argv else None
-        steps = [('account', lambda: account_cycle(b)), ('tonightfold', lambda: tonightfold_cycle(b)), ('ia5', lambda: ia5_cycle(b)), ('task12', lambda: task12_cycle(b)), ('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('export', lambda: export_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('armgrid', lambda: armgrid_cycle(b)), ('laneopt', lambda: laneopt_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
+        steps = [('wake', lambda: wake_cycle(b)), ('account', lambda: account_cycle(b)), ('tonightfold', lambda: tonightfold_cycle(b)), ('ia5', lambda: ia5_cycle(b)), ('task12', lambda: task12_cycle(b)), ('sim', lambda: sim_cycle(b)), ('protect', lambda: protect_cycle(b)), ('alley', lambda: alley_cycle(b)), ('phone', lambda: run(b, 'phone')), ('desktop', lambda: run(b, 'desktop')), ('deck', lambda: deck_cases(b)), ('migration', lambda: migration(b)), ('data', lambda: data_cycle(b)), ('csv', lambda: csv_cycle(b)), ('ltx', lambda: ltx_cycle(b)), ('tonight', lambda: tonight_cycle(b)), ('advisor', lambda: advisor_cycle(b)), ('card', lambda: card_cycle(b)), ('quicklog', lambda: quicklog_cycle(b)), ('scoring', lambda: scoring_cycle(b)), ('bag', lambda: bag_cycle(b)), ('onebag', lambda: onebag_cycle(b)), ('bagsize', lambda: bagsize_cycle(b)), ('whynot', lambda: whynot_cycle(b)), ('gametotal', lambda: gametotal_cycle(b)), ('corner', lambda: corner_cycle(b)), ('export', lambda: export_cycle(b)), ('addball', lambda: addball_cycle(b)), ('target', lambda: targeting_cycle(b)), ('aimbox', lambda: aimbox_cycle(b)), ('oneline', lambda: oneline_cycle(b)), ('armory', lambda: armory_cycle(b)), ('armgrid', lambda: armgrid_cycle(b)), ('laneopt', lambda: laneopt_cycle(b)), ('help', lambda: help_cycle(b)), ('guide', lambda: guide_cycle(b)), ('hand', lambda: hand_cycle(b)), ('status', lambda: status_cycle(b)), ('center', lambda: center_cycle(b)), ('ownpat', lambda: ownpat_cycle(b)), ('drill', lambda: drill_cycle(b)), ('aimdrag', lambda: aimdrag_cycle(b)), ('sync', lambda: sync_cycle(b)), ('offline', lambda: offline(b))]
         for name, fn in steps:
             if only and name not in only: continue
             try: await asyncio.wait_for(fn(), 240)
