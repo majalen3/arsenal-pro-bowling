@@ -85,6 +85,8 @@ const ls = () => { try { return globalThis.localStorage || null; } catch (e) { r
 export function load() { if (mem) return mem; const L = ls(); let raw = null; try { raw = L && L.getItem(KEY); } catch (e) {} mem = parse(raw); if (!raw) save(); return mem; }
 export function save() { const L = ls(); try { L && L.setItem(KEY, JSON.stringify(mem)); } catch (e) {} }
 export function count(name) { try { bump(load(), name); save(); } catch (e) {} }
+// v83 funnel: count only the first time (the counter is then 0 or 1 for good). True when this call was the first.
+export function once(name) { try { const st = load(); if (st.c[name] && st.c[name].n) return false; bump(st, name); save(); return true; } catch (e) { return false; } }
 export function flag(name) { try { return flagOf(load(), name); } catch (e) { return DEFAULTS[name]; } }
 export function setFlag(name, v) { const st = load(); if (!FLAGS[name] || !FLAGS[name].values.includes(v)) return; if (v === DEFAULTS[name]) delete st.flags[name]; else st.flags[name] = v; save(); }
 export function setTest(test, on) { enroll(load(), test, on); save(); }

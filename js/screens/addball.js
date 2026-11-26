@@ -12,6 +12,7 @@ import { chip } from '../data/schema.js';
 import { norm } from '../data/match.js';
 import { catFromHash } from '../cc/kit.js';
 import * as A from '../cc/addball.js';
+import * as UX from '../cc/ux.js';   // v83: balls added + first ball (on-device; sent only as opt-in totals)
 import * as G from '../cc/bag.js';
 import { HOUSE_ASSUMED } from '../cc/rank.js';
 import { openNight } from '../cc/night.js';
@@ -246,6 +247,7 @@ export async function render() {
     if (JSON.stringify(data).length > 7800) { delete data.spec.fields; }
     const id = 'own-' + uuid();
     await add('ownedBall.created', id, data, { prov: made ? { kind: 'manufacturer', ref: made.source.ref, url: made.source.url } : { kind: 'user' } });
+    UX.count('ball.added'); UX.once('first.ball');
     toast(`${e.name} added to your arsenal (At home).`); go('#/bag');
   }
   drawResults();

@@ -625,7 +625,7 @@ export async function render(o = {}) {
       const ids = a.slots.concat(a.spare ? [a.spare] : []), slots = ids.map(o => Object.assign({ owned: o, locked: !!(mine && (mine.slots.find(x => x.owned === o) || {}).locked) }, a.fromHome.includes(o) ? { fromHome: true } : {}));
       await add('bag.saved', ST.TONIGHT_BAG, { name: `${A.EVENTS[ev].label}`, format: BE.formatOfBring(bring), bring, slots, spare: a.spare || null, excluded: [], eventDate: (mine && mine.eventDate) || today(), source: 'advisor', event: ev, packedTs: Date.now() });
       const m = Object.assign({}, prefs().advisor), e2 = Object.assign({}, m[ev], { packedTs: Date.now(), swaps: {} }); m[ev] = e2; setPrefs({ advisor: m });
-      await save({ bagId: ST.TONIGHT_BAG, pickId: a.A.ownedId }); UX.count('bag.built'); toast(`Packed: ${a.rows.map(r => r.name).join(', ')}.`); } }, packed ? 'Packed \u2713 Pack again' : `Pack these ${n}`),
+      await save({ bagId: ST.TONIGHT_BAG, pickId: a.A.ownedId }); UX.count('bag.built'); toast(`Packed: ${a.rows.map(r => r.name).join(', ')}.`); if (UX.once('first.bag')) setTimeout(() => import('../feedback.js').then(m => m.offerOptIn('bag')).catch(() => {}), 3000); } }, packed ? 'Packed \u2713 Pack again' : `Pack these ${n}`),
       h('button', { class: 'btn ghost', id: 'advBuilder', onclick: () => go('#/bag') }, `Bag builder \u00b7 Bring ${bring} \u203a`)));
     // P1.5: the reasoning behind one tap (Why not the others, Then, Why this bag, What would change it).
     const whyBox = h('details', { class: 'tn-more', id: 'advMore', open: true }, h('summary', { text: 'Why this bag' }));

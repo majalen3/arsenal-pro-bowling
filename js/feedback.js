@@ -14,7 +14,8 @@ function save() {
   catch (e) { st.queue.forEach(q => { if (q.body) delete q.body.screenshot; }); try { L.setItem(F.KEY, JSON.stringify(st)); } catch (e2) {} }   // storage full: drop images, keep words
 }
 export const settings = () => { const s = load(); return { usage: s.usage, crash: s.crash, queued: s.queue.length, receipts: s.receipts.length }; };
-export function setUsage(on) { boot(); const s = load(); s.usage = !!on; if (on) { s.sent = F.baseline(UX.load().c); s.usageAt = Date.now(); } save(); }
+// Turning counts on takes a baseline (nothing earlier is ever sent), then counts usage.on once so the funnel has a denominator.
+export function setUsage(on) { boot(); const s = load(); const was = s.usage; s.usage = !!on; if (on) { s.sent = F.baseline(UX.load().c); s.usageAt = Date.now(); } save(); if (on && !was) UX.count('usage.on'); }
 export function setCrash(on) { load().crash = !!on; save(); }
 
 export const device = () => F.deviceClass({ w: (globalThis.screen && screen.width) || innerWidth, h: (globalThis.screen && screen.height) || innerHeight,
@@ -49,7 +50,8 @@ async function sendUsage(s) {
   if (!Object.keys(counts).length) { s.usageAt = Date.now(); return; }
   try {
     const r = await fetch(API_BASE + '/api/usage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ build: F.BUILD, counts }), cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer' });
-    if (r.ok || (r.status >= 400 && r.status < 500 && r.status !== 429 && r.status !== 404)) { for (const [k, n] of Object.entries(counts)) s.sent[k] = (s.sent[k] || 0) + n; s.usageAt = Date.now(); }
+    if (r.ok) { let j = null; try { j = await r.json(); } catch (e) {} for (const k of F.sentKeys(counts, j)) s.sent[k] = (s.sent[k] || 0) + counts[k]; s.usageAt = Date.now(); }
+    else if (r.status >= 400 && r.status < 500 && r.status !== 429 && r.status !== 404) { for (const [k, n] of Object.entries(counts)) s.sent[k] = (s.sent[k] || 0) + n; s.usageAt = Date.now(); }
   } catch (e) {}
 }
 // Returns 'sent' | 'queued'. The phone keeps it either way until the API says it has it.
@@ -84,6 +86,7 @@ export function reportError(kind, err, msg) {
 let asking = false;
 export function gamesFinished(n = 1) {
   const s = load(); for (let i = 0; i < Math.min(n, 20); i++) UX.count('game.logged');
+  if (n > 0) UX.once('first.game');
   F.gamesFinished(s, n); save(); setTimeout(maybeSurvey, 700);
 }
 export function maybeSurvey() {
@@ -94,6 +97,17 @@ export function maybeSurvey() {
 }
 export function surveyAsked() { F.surveyAsked(load()); save(); }
 export const openFeedback = () => import('./screens/feedback.js').then(m => m.openFeedback());
+
+// ---- one-time opt-in offer (v83). 'bag': a quiet toast with a Choose button after the first bag is packed. 'survey': the small
+// sheet right after a 4 or 5. Never on the game page, never over another sheet, once per phone (cc/feedback.js optInDue).
+export function offerOptIn(where, { rating } = {}) {
+  const s = load();
+  if (!F.optInDue(s, { rating }) || inGame() || document.body.classList.contains('has-sheet') || /^#\/(welcome|bowl)/.test(location.hash)) return false;
+  F.optInAsked(s); save();
+  import('./screens/feedback.js').then(m => where === 'survey' ? m.openOptIn() : m.optInToast()).catch(() => {});
+  return true;
+}
+export const openOptIn = () => import('./screens/feedback.js').then(m => m.openOptIn());
 
 // ---- boot (main.js, after the first screen paints): send anything waiting, and again whenever the phone comes back online
 let booted = false;

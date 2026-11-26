@@ -21,10 +21,10 @@ export function protectLabel({ persisted = false, standalone = false } = {}) {
 }
 // ---- browser glue (no-ops where unsupported)
 let deferred = null;
-export function listenInstall() {
+export function listenInstall(onInstalled) {
   if (typeof window === 'undefined') return;
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; });
-  window.addEventListener('appinstalled', () => { deferred = null; });
+  window.addEventListener('appinstalled', () => { deferred = null; if (onInstalled) onInstalled(); });
 }
 export const canPrompt = () => !!deferred;
 export async function promptInstall() {

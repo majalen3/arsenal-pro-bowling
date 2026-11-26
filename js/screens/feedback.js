@@ -73,6 +73,27 @@ export function openSurvey({ onDone } = {}) {
     const b = F.surveyBody({ useful, note: note.value, device: FB.device() });
     s.close(); const r = await FB.submit('survey', b);
     toast(r === 'sent' ? 'Thanks for the answer.' : 'Thanks. Saved; it sends when you are back online.');
+    setTimeout(() => FB.offerOptIn('survey', { rating: useful }), 2900);   // v83: once ever, only after a 4 or 5; after the Thanks toast has gone
   });
+  return s;
+}
+
+// v83 (owner t177u): the one-time opt-in offer. Plain words, both switches still OFF until the bowler taps; Me > Privacy changes it any time.
+export function optInToast() {
+  toast('Help make Arsenal Pro better? Anonymous counts, your choice.', { action: { label: 'Choose', run: () => openOptIn() }, ms: 7000 });
+}
+export function openOptIn() {
+  const st = FB.settings();
+  const done = (usage, crash, msg) => { if (usage && !st.usage) FB.setUsage(true); if (crash && !st.crash) FB.setCrash(true); s.close(); if (msg) toast(msg); };
+  const s = sheet({ title: 'Help make it better', id: 'optSheet', body: h('div', { class: 'stack' },
+    h('p', { id: 'optWhy', text: 'Arsenal Pro is free and has no ads or trackers. Two switches tell us what to fix next:' }),
+    h('ul', { class: 'small stack', id: 'optList' },
+      h('li', {}, h('b', { text: 'Usage counts: ' }), 'totals like bags packed, balls added, Optimize taps and games logged. No names, balls, scores or ids.'),
+      h('li', {}, h('b', { text: 'Crash reports: ' }), 'the error and the screen when something breaks, with anything you typed removed.')),
+    h('p', { class: 'small muted', id: 'optWhen', text: 'Sent only to the Arsenal Pro server, never during a game. Change it any time in Me \u203a Privacy. We will not ask again.' }),
+    h('button', { class: 'btn primary block', id: 'optBoth', type: 'button', onclick: () => done(true, true, 'Thanks. Counts and crash reports are on.') }, 'Turn on both'),
+    h('button', { class: 'btn ghost block', id: 'optCrash', type: 'button', onclick: () => done(false, true, 'Crash reports on.') }, 'Crash reports only'),
+    h('button', { class: 'btn ghost block', id: 'optNo', type: 'button', onclick: () => done(false, false, '') }, 'No thanks'),
+    h('a', { class: 'small fb-link', href: 'privacy.html#feedback', id: 'optPrivacy' }, 'Exactly what is sent')) });
   return s;
 }

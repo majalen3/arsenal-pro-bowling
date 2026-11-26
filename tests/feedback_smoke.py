@@ -1,4 +1,4 @@
-"""Feedback button, sheet, offline queue, post-game survey and the two opt-ins (owner t163u, v82). Mock API only: every request to
+"""Feedback button, sheet, offline queue, post-game survey and the two opt-ins (owner t163u, v82), and the v83 one-time opt-in offer + funnel counts (owner t177u). Mock API only: every request to
 the real API host is answered here, so nothing reaches the production server. Also checks 44 px targets, truncation and axe.
 python tests/feedback_smoke.py http://localhost:8099/ --shots /tmp/shots-feedback
 """
@@ -48,7 +48,7 @@ with sync_playwright() as pw:
     p.set_input_files('#fbFile', files=[{'name': 's.png', 'mimeType': 'image/png', 'buffer': PNG}]); p.wait_for_selector('#fbShotImg')
     p.click('#fbSend'); p.wait_for_selector('.toast')
     path, body = sent[-1]
-    assert path == '/api/feedback' and body['type'] == 'bug' and body['route'] == '/results' and body['build'] == 'v82' and body['device'] == 'phone', body
+    assert path == '/api/feedback' and body['type'] == 'bug' and body['route'] == '/results' and body['build'] == 'v83' and body['device'] == 'phone', body
     assert 'a@b.co' not in body['text'] and body['screenshot'].startswith('data:image/jpeg;base64,'), body['text']
     assert set(body) <= {'type', 'text', 'screenshot', 'build', 'route', 'device'}, body.keys()
     # offline: queued, then sent when back online
@@ -78,7 +78,47 @@ with sync_playwright() as pw:
     assert len(er) == 1 and 'Joe' not in er[0]['message'] and 'x.example' not in er[0]['message'], er
     p.click('#fbDelete'); p.wait_for_timeout(600)
     d = [s[1] for s in sent if s[0] == '/api/feedback DELETE']; assert d and d[0]['receipts'], d
-    assert not outside, outside
     assert all('boom' in e or 'off: not reported' in e for e in errs), errs
+    # v83 (owner t177u): the one-time opt-in offer. After a 4 or 5 on the survey: a small sheet; both switches stay OFF until tapped.
+    def fresh():
+        cx = b.new_context(viewport={'width': 360, 'height': 780}, is_mobile=True, has_touch=True, service_workers='block')
+        cx.route('**/*', guard)
+        cx.add_init_script("if(!localStorage.getItem('ap_prefs'))localStorage.setItem('ap_prefs',JSON.stringify({onboarded:true,theme:'dark',help:false}))")
+        pg = cx.new_page(); e2 = []; pg.on('pageerror', lambda e: e2.append(str(e))); return cx, pg, e2
+    c2, q, e2 = fresh()
+    q.goto(BASE + '#/learn'); q.wait_for_timeout(500)
+    q.evaluate("import('./js/feedback.js').then(m => m.gamesFinished(3))"); q.wait_for_selector('#svSheet')
+    q.click('#svRate [data-v="5"]'); q.click('#svSend'); q.wait_for_selector('#optSheet', timeout=6000)
+    st = q.evaluate("JSON.parse(localStorage.ap_fb)"); assert st['usage'] is False and st['crash'] is False and st['optAsked'] > 0, st
+    checks(q, 'opt-in sheet'); q.screenshot(path=str(OUT / 'optin-sheet.png'))
+    q.click('#optBoth'); q.wait_for_timeout(300)
+    st = q.evaluate("JSON.parse(localStorage.ap_fb)"); assert st['usage'] is True and st['crash'] is True, st
+    assert q.evaluate("import('./js/feedback.js').then(m => m.offerOptIn('bag'))") is False, 'asked once, never again'
+    # the funnel: counted only after the opt-in; a v82-style answer (no keys list) leaves the new keys waiting on the phone
+    q.evaluate("import('./js/cc/ux.js').then(U => { U.once('first.ball'); U.once('first.ball'); U.count('ball.added'); U.count('bag.built'); })")
+    q.evaluate("(() => { const s = JSON.parse(localStorage.ap_fb); s.usageAt = 0; localStorage.ap_fb = JSON.stringify(s); })()")
+    q.reload(); q.wait_for_timeout(300); q.evaluate("import('./js/feedback.js').then(m => m.flush())"); q.wait_for_timeout(800)
+    us = [s[1] for s in sent if s[0] == '/api/usage']
+    assert us and us[-1]['counts'].get('usage.on') == 1 and us[-1]['counts'].get('first.ball') == 1 and us[-1]['counts'].get('bag.built') == 1, us[-1:]
+    sentk = q.evaluate("JSON.parse(localStorage.ap_fb).sent")
+    assert sentk.get('bag.built') == 1 and not sentk.get('first.ball'), sentk
+    c2.close()
+    # a 3 is not a good moment: no offer. The first packed bag offers a quiet toast instead; No thanks keeps both OFF.
+    c3, q, e3 = fresh()
+    q.goto(BASE + '#/learn'); q.wait_for_timeout(500)
+    q.evaluate("import('./js/feedback.js').then(m => m.gamesFinished(3))"); q.wait_for_selector('#svSheet')
+    q.click('#svRate [data-v="3"]'); q.click('#svSend'); q.wait_for_timeout(3400); assert not q.query_selector('#optSheet')
+    q.goto(BASE + '#/bowl'); q.wait_for_timeout(400)
+    assert q.evaluate("import('./js/feedback.js').then(m => m.offerOptIn('bag'))") is False, 'never during scoring'
+    q.goto(BASE + '#/learn'); q.wait_for_timeout(400)
+    assert q.evaluate("import('./js/feedback.js').then(m => m.offerOptIn('bag'))") is True
+    q.wait_for_selector('.toast .toast-act'); q.click('.toast .toast-act'); q.wait_for_selector('#optSheet'); q.click('#optNo'); q.wait_for_timeout(300)
+    st = q.evaluate("JSON.parse(localStorage.ap_fb)"); assert st['usage'] is False and st['crash'] is False, st
+    # Me: Share the app + Help improve it (shown while a switch is off)
+    q.goto(BASE + '#/me'); q.wait_for_selector('#meShareApp'); assert q.query_selector('#meHelpMore')
+    q.eval_on_selector('#meFeedback', 'e => e.scrollIntoView({block:"center"})'); checks(q, 'me feedback card'); q.screenshot(path=str(OUT / 'me-feedback-card.png'))
+    assert not e2 and not e3, (e2, e3)
+    c3.close()
+    assert not outside, outside
     b.close()
 print('feedback smoke: PASS (%d mock API calls, 0 outside requests)' % len(sent))
