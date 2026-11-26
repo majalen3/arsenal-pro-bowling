@@ -1,5 +1,8 @@
 # Next phase: feedback and data without recruited testers (v83 → about Dec 13, 2026)
 
+> **26 November 2026, 4:39 PM America/Chicago.** The current launch document is [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md): six workstreams, a go / no-go list, and owner decisions. This file is the 22 November no-tester plan it builds on. Live check that day: PWA still `arsenal-pro-v83`, API deploy `dep-dc1mk960tbcc73au9ke0` still live, `/api/health` 200 (17.2 s cold, 0.07 s warm), owner-summary totals still all zero.
+
+
 Written Sunday, Nov 22, 2026 (America/Chicago). Owner asks: t176u "plan and work on what's next for the app", then t177u "I don't have private beta testers, so we need to figure out how to capture feedback and data."
 
 **What this replaces.** The launch plan Page (canvas 69de6976…, Nov 21) had Weeks 2-4 as a private beta with 10-30 recruited Honey Badgers and league bowlers. The owner has no testers to recruit, so that phase is replaced by the **no-tester loop** below: the owner dogfoods every league night, real visitors come only through channels the owner posts to himself, and the app captures what it can with **opt-in, first-party** data. Week 1 (readiness + feedback build) is done in v82. The later phases (wider beta, launch decision) keep their gates, with the readiness numbers in section 5.
